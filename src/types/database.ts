@@ -86,7 +86,7 @@ export interface AfiliadoSeguro {
   fecha_alta: string
   notas?: string | null
   cuotas?: CuotaSeguro[]
-  cuotasPagadas?: number[]
+  cuotasPagadas: number[]
   cuotasDetalle?: CuotaSeguro[]
 }
 

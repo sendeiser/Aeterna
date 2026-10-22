@@ -20,6 +20,8 @@ import {
   saveInhumacionesToStorage,
   saveAfiliadosToStorage,
   savePagoToStorage,
+  fetchConfigSupabase,
+  saveConfigSupabase,
   fetchParcelasSupabase,
   fetchInhumacionesSupabase,
   fetchAfiliadosSupabase,
@@ -29,6 +31,8 @@ import {
   deleteInhumacionSupabase,
   upsertAfiliadoSupabase,
   deleteAfiliadoSupabase,
+  registrarPagoCuotaSupabase,
+  revertirPagoCuotaSupabase,
   registrarPagoSupabase,
   PagoRecibo,
 } from './services/dataService'
@@ -60,12 +64,16 @@ export default function App() {
     if (!isSupabaseConfigured) return
 
     async function fetchCloudData() {
-      const [cloudParcelas, cloudInhumaciones, cloudAfiliados] = await Promise.all([
+      const [cloudConfig, cloudParcelas, cloudInhumaciones, cloudAfiliados] = await Promise.all([
+        fetchConfigSupabase(),
         fetchParcelasSupabase(),
         fetchInhumacionesSupabase(),
         fetchAfiliadosSupabase(),
       ])
 
+      if (cloudConfig) {
+        setConfig(cloudConfig)
+      }
       if (cloudParcelas && cloudParcelas.length > 0) {
         setParcelas(cloudParcelas)
       }
@@ -203,7 +211,6 @@ export default function App() {
         savePagoToStorage(nuevoPago)
         setPagos((prev) => [nuevoPago, ...prev])
         setRecaudacionHoy((prev) => prev + monto)
-        setQrModal((prev) => ({ ...prev, isOpen: false }))
 
         // Supabase Cloud Sync
         if (isSupabaseConfigured) {
@@ -223,6 +230,7 @@ export default function App() {
       ] || `Mes ${nroCuota}`
     const monto = afiliado.monto_cuota_mensual || 18000
     const concepto = `Seguro Sepelio - Cuota ${mesNombre} 2026 (#${afiliado.numero_afiliado})`
+    const nroRecibo = `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`
 
     setQrModal({
       isOpen: true,
@@ -231,26 +239,49 @@ export default function App() {
       identificador: `AFI-${afiliado.numero_afiliado}-${mesNombre}`,
       titularNombre: afiliado.nombre_completo,
       onConfirm: async () => {
+        let updatedAfiliadosList: AfiliadoSeguro[] = []
         let updatedAfiliado: any = null
 
-        setAfiliados((prev) =>
-          prev.map((a) => {
+        setAfiliados((prev) => {
+          updatedAfiliadosList = prev.map((a) => {
             if (a.id === afiliado.id) {
               const currentPaid = a.cuotasPagadas || []
               const updatedPaid = currentPaid.includes(nroCuota)
                 ? currentPaid
                 : [...currentPaid, nroCuota]
               const alDia = [1, 2, 3].every((m) => updatedPaid.includes(m))
+
+              const currentDetalles = a.cuotasDetalle || []
+              const updatedDetalles = [
+                ...currentDetalles.filter((c) => c.mes !== nroCuota && (c as any).nro_cuota !== nroCuota),
+                {
+                  id: `cuota-${afiliado.id}-${nroCuota}`,
+                  afiliado_id: afiliado.id,
+                  anio: 2026,
+                  nro_cuota: nroCuota,
+                  mes: nroCuota,
+                  monto,
+                  estado: 'pagada' as any,
+                  estado_cuota: 'pagada',
+                  fecha_pago: new Date().toISOString(),
+                  metodo_pago: 'transferencia_qr',
+                  nro_recibo: nroRecibo,
+                },
+              ]
+
               updatedAfiliado = {
                 ...a,
                 cuotasPagadas: updatedPaid,
+                cuotasDetalle: updatedDetalles,
                 estado: alDia ? 'activo' : a.estado,
               }
               return updatedAfiliado
             }
             return a
           })
-        )
+          saveAfiliadosToStorage(updatedAfiliadosList)
+          return updatedAfiliadosList
+        })
 
         const nuevoPago: PagoRecibo = {
           id: `pago-${Date.now()}`,
@@ -260,23 +291,158 @@ export default function App() {
           titularNombre: afiliado.nombre_completo,
           metodo: 'transferencia_qr',
           fecha: new Date().toISOString(),
-          nroRecibo: `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+          nroRecibo,
         }
 
         savePagoToStorage(nuevoPago)
         setPagos((prev) => [nuevoPago, ...prev])
         setRecaudacionHoy((prev) => prev + monto)
-        setQrModal((prev) => ({ ...prev, isOpen: false }))
 
         // Supabase Cloud Sync
         if (isSupabaseConfigured && updatedAfiliado) {
           await Promise.all([
             upsertAfiliadoSupabase(updatedAfiliado),
+            registrarPagoCuotaSupabase(afiliado.id, 2026, nroCuota, {
+              nroRecibo,
+              metodoPago: 'transferencia_qr',
+              monto,
+            }),
             registrarPagoSupabase(nuevoPago),
           ])
         }
       },
     })
+  }
+
+  const handleCobrarMultiplesCuotas = (afiliado: AfiliadoSeguro, nrosCuotas: number[]) => {
+    const mesesNombres = [
+      'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+    ]
+    const nombresStr = nrosCuotas.map((n) => mesesNombres[n - 1]).join(', ')
+    const valorUnitario = afiliado.monto_cuota_mensual || 18000
+    const montoTotal = valorUnitario * nrosCuotas.length
+    const concepto = `Seguro Sepelio - Mora Total (${nombresStr} 2026) (#${afiliado.numero_afiliado})`
+    const nroRecibo = `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`
+
+    setQrModal({
+      isOpen: true,
+      concepto,
+      monto: montoTotal,
+      identificador: `AFI-${afiliado.numero_afiliado}-MORA`,
+      titularNombre: afiliado.nombre_completo,
+      onConfirm: async () => {
+        let updatedAfiliadosList: AfiliadoSeguro[] = []
+        let updatedAfiliado: any = null
+
+        setAfiliados((prev) => {
+          updatedAfiliadosList = prev.map((a) => {
+            if (a.id === afiliado.id) {
+              const currentPaid = a.cuotasPagadas || []
+              const updatedPaid = Array.from(new Set([...currentPaid, ...nrosCuotas]))
+              const alDia = [1, 2, 3].every((m) => updatedPaid.includes(m))
+
+              const currentDetalles = a.cuotasDetalle || []
+              const newDetalles = nrosCuotas.map((m) => ({
+                id: `cuota-${afiliado.id}-${m}`,
+                afiliado_id: afiliado.id,
+                anio: 2026,
+                nro_cuota: m,
+                mes: m,
+                monto: valorUnitario,
+                estado: 'pagada' as any,
+                estado_cuota: 'pagada',
+                fecha_pago: new Date().toISOString(),
+                metodo_pago: 'transferencia_qr',
+                nro_recibo: `${nroRecibo}-M${m}`,
+              }))
+
+              updatedAfiliado = {
+                ...a,
+                cuotasPagadas: updatedPaid,
+                cuotasDetalle: [
+                  ...currentDetalles.filter((c) => !nrosCuotas.includes(c.mes || (c as any).nro_cuota)),
+                  ...newDetalles,
+                ],
+                estado: alDia ? 'activo' : a.estado,
+              }
+              return updatedAfiliado
+            }
+            return a
+          })
+          saveAfiliadosToStorage(updatedAfiliadosList)
+          return updatedAfiliadosList
+        })
+
+        const nuevoPago: PagoRecibo = {
+          id: `pago-${Date.now()}`,
+          concepto,
+          monto: montoTotal,
+          identificador: `AFI-${afiliado.numero_afiliado}-MORA`,
+          titularNombre: afiliado.nombre_completo,
+          metodo: 'transferencia_qr',
+          fecha: new Date().toISOString(),
+          nroRecibo,
+        }
+
+        savePagoToStorage(nuevoPago)
+        setPagos((prev) => [nuevoPago, ...prev])
+        setRecaudacionHoy((prev) => prev + montoTotal)
+
+        // Supabase Cloud Sync
+        if (isSupabaseConfigured && updatedAfiliado) {
+          const promises: Promise<any>[] = [
+            upsertAfiliadoSupabase(updatedAfiliado),
+            registrarPagoSupabase(nuevoPago),
+          ]
+          for (const m of nrosCuotas) {
+            promises.push(
+              registrarPagoCuotaSupabase(afiliado.id, 2026, m, {
+                nroRecibo: `${nroRecibo}-M${m}`,
+                metodoPago: 'transferencia_qr',
+                monto: valorUnitario,
+              })
+            )
+          }
+          await Promise.all(promises)
+        }
+      },
+    })
+  }
+
+  const handleRevertirCuotaAfiliado = async (afiliadoId: string, nroCuota: number) => {
+    let updatedAfiliadosList: AfiliadoSeguro[] = []
+    let updatedAfiliado: any = null
+
+    setAfiliados((prev) => {
+      updatedAfiliadosList = prev.map((a) => {
+        if (a.id === afiliadoId) {
+          const currentPaid = a.cuotasPagadas || []
+          const updatedPaid = currentPaid.filter((m) => m !== nroCuota)
+          const alDia = [1, 2, 3].every((m) => updatedPaid.includes(m))
+          const currentDetalles = a.cuotasDetalle || []
+
+          updatedAfiliado = {
+            ...a,
+            cuotasPagadas: updatedPaid,
+            cuotasDetalle: currentDetalles.filter(
+              (c) => c.mes !== nroCuota && (c as any).nro_cuota !== nroCuota
+            ),
+            estado: alDia ? 'activo' : 'inactivo',
+          }
+          return updatedAfiliado
+        }
+        return a
+      })
+      saveAfiliadosToStorage(updatedAfiliadosList)
+      return updatedAfiliadosList
+    })
+
+    if (isSupabaseConfigured) {
+      await Promise.all([
+        revertirPagoCuotaSupabase(afiliadoId, 2026, nroCuota),
+        updatedAfiliado ? upsertAfiliadoSupabase(updatedAfiliado) : Promise.resolve(true),
+      ])
+    }
   }
 
   // Guardar Parcela (CRUD: Create / Update)
@@ -373,9 +539,11 @@ export default function App() {
         ...datos,
         cuotasPagadas: (editingAfiliado as any).cuotasPagadas || [1, 2],
       }
-      setAfiliados((prev) =>
-        prev.map((a) => (a.id === editingAfiliado.id ? afiliadoTarget : a))
-      )
+      setAfiliados((prev) => {
+        const updated = prev.map((a) => (a.id === editingAfiliado.id ? afiliadoTarget : a))
+        saveAfiliadosToStorage(updated)
+        return updated
+      })
     } else {
       afiliadoTarget = {
         id: `afi-${Date.now()}`,
@@ -388,7 +556,11 @@ export default function App() {
         fecha_alta: new Date().toISOString().slice(0, 10),
         cuotasPagadas: [1, 2, 3],
       }
-      setAfiliados((prev) => [afiliadoTarget, ...prev])
+      setAfiliados((prev) => {
+        const updated = [afiliadoTarget, ...prev]
+        saveAfiliadosToStorage(updated)
+        return updated
+      })
     }
 
     setFormAfiliadoOpen(false)
@@ -418,9 +590,20 @@ export default function App() {
 
   const handleDeleteAfiliado = async (afiId: string) => {
     const target = afiliados.find((a) => a.id === afiId)
-    setAfiliados((prev) => prev.filter((a) => a.id !== afiId))
+    setAfiliados((prev) => {
+      const updated = prev.filter((a) => a.id !== afiId)
+      saveAfiliadosToStorage(updated)
+      return updated
+    })
     if (isSupabaseConfigured && target) {
       await deleteAfiliadoSupabase(target.numero_afiliado || target.id)
+    }
+  }
+
+  const handleSaveConfig = async (nuevaConfig: ConfiguracionCobro) => {
+    setConfig(nuevaConfig)
+    if (isSupabaseConfigured) {
+      await saveConfigSupabase(nuevaConfig)
     }
   }
 
@@ -516,6 +699,8 @@ export default function App() {
             <AfiliadosSeguroView
               afiliados={afiliados}
               onCobrarCuota={handleCobrarAfiliado}
+              onCobrarMultiplesCuotas={handleCobrarMultiplesCuotas}
+              onRevertirCuota={handleRevertirCuotaAfiliado}
               onNuevoAfiliado={() => {
                 setEditingAfiliado(null)
                 setFormAfiliadoOpen(true)
@@ -529,7 +714,7 @@ export default function App() {
           )}
 
           {currentTab === 'configuracion' && (
-            <ConfiguracionView config={config} onSave={setConfig} />
+            <ConfiguracionView config={config} onSave={handleSaveConfig} />
           )}
         </div>
       </main>
