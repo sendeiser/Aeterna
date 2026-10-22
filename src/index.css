@@ -104,12 +104,19 @@
     display: none !important;
   }
 
+  /* Si un modal oficial está abierto para impresión, ocultar la aplicación de fondo */
+  body:has([data-printable-modal="true"]) main {
+    display: none !important;
+  }
+
   body {
     background: #ffffff !important;
     color: #000000 !important;
-    font-size: 11pt !important;
+    font-size: 10pt !important;
     padding: 0 !important;
     margin: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   main {
@@ -119,12 +126,15 @@
     width: 100% !important;
   }
 
-  /* Los modales se imprimen como página principal sin backdrop oscuro */
-  .fixed.inset-0 {
+  /* Desactivar modales flotantes y backdrops oscuros al imprimir */
+  .fixed.inset-0:has([data-printable-modal="true"]),
+  div[data-printable-modal="true"] {
     position: static !important;
     background: transparent !important;
     padding: 0 !important;
     display: block !important;
+    width: 100% !important;
+    box-shadow: none !important;
   }
 
   .shadow-2xl, .shadow-xl, .shadow-sm, .shadow-xs, .shadow-md {
@@ -132,7 +142,19 @@
   }
 
   .border, .border-outline-variant {
-    border-color: #cbd5e1 !important;
+    border-color: #94a3b8 !important;
+  }
+
+  /* Desactivar límites de altura de scroll en tablas para que se impriman todas las filas */
+  .max-h-\[460px\],
+  .max-h-\[380px\],
+  .max-h-\[500px\],
+  .max-h-\[600px\],
+  .max-h-\[75vh\],
+  .max-h-\[90vh\],
+  .max-h-\[92vh\] {
+    max-height: none !important;
+    overflow: visible !important;
   }
 
   /* Tablas oficiales nítidas */
@@ -141,8 +163,12 @@
     border-collapse: collapse !important;
   }
 
+  thead {
+    display: table-header-group !important;
+  }
+
   tr, td, th {
-    page-break-inside: avoid;
+    page-break-inside: avoid !important;
   }
 
   /* Alto contraste para legibilidad legal y municipal */
@@ -157,8 +183,23 @@
     print-color-adjust: exact;
   }
 
-  .bg-emerald-600, .bg-emerald-100 {
+  .bg-emerald-600, .bg-emerald-700, .bg-emerald-100 {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  /* Formato de Ticket Térmico de 80mm */
+  .thermal-receipt-mode {
+    width: 80mm !important;
+    max-width: 80mm !important;
+    margin: 0 auto !important;
+    padding: 2mm !important;
+    font-size: 8pt !important;
+    border: none !important;
+  }
+
+  .thermal-receipt-mode h1,
+  .thermal-receipt-mode h2 {
+    font-size: 11pt !important;
   }
 }

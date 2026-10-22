@@ -11,6 +11,7 @@ import { InhumacionesView } from './components/views/InhumacionesView'
 import { AfiliadosSeguroView } from './components/views/AfiliadosSeguroView'
 import { ConfiguracionView } from './components/views/ConfiguracionView'
 import { CierreCajaModal } from './components/modals/CierreCajaModal'
+import { PortalPagoPublico } from './components/payment/PortalPagoPublico'
 import { Parcela, Inhumacion, AfiliadoSeguro, ConfiguracionCobro } from './types/database'
 import { isSupabaseConfigured } from './lib/supabase'
 import {
@@ -41,6 +42,34 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('dashboard')
   const [searchOpen, setSearchOpen] = useState(false)
   const [cierreCajaOpen, setCierreCajaOpen] = useState(false)
+
+  // Detección de vista pública de pago por URL hash (#pago)
+  const [isPublicPaymentView, setIsPublicPaymentView] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return (
+        window.location.hash.startsWith('#pago') ||
+        window.location.pathname.startsWith('/pago') ||
+        window.location.search.includes('pago=1')
+      )
+    }
+    return false
+  })
+
+  useEffect(() => {
+    const handleHash = () => {
+      setIsPublicPaymentView(
+        window.location.hash.startsWith('#pago') ||
+        window.location.pathname.startsWith('/pago') ||
+        window.location.search.includes('pago=1')
+      )
+    }
+    window.addEventListener('hashchange', handleHash)
+    window.addEventListener('popstate', handleHash)
+    return () => {
+      window.removeEventListener('hashchange', handleHash)
+      window.removeEventListener('popstate', handleHash)
+    }
+  }, [])
 
   // Cargar estado inicial (Storage o Seed)
   const initialData = useMemo(() => loadInitialData(), [])
@@ -610,6 +639,40 @@ export default function App() {
     }
   }
 
+  // Si la URL apunta al portal de pago público (por escaneo de QR con cámara del celular)
+  if (isPublicPaymentView) {
+    const hash = typeof window !== 'undefined' ? window.location.hash || '' : ''
+    const queryIndex = hash.indexOf('?')
+    const queryString =
+      queryIndex !== -1
+        ? hash.slice(queryIndex + 1)
+        : typeof window !== 'undefined'
+        ? window.location.search.slice(1)
+        : ''
+    const p = new URLSearchParams(queryString)
+
+    const pagoPublicoData = {
+      monto: Number(p.get('monto')) || 36000,
+      concepto: p.get('concepto') || 'Mantenimiento Cuatrimestral - Parque Aeterna',
+      identificador: p.get('id') || p.get('identificador') || 'REF-GENERAL',
+      titularNombre: p.get('titular') || 'Contribuyente',
+    }
+
+    return (
+      <PortalPagoPublico
+        monto={pagoPublicoData.monto}
+        concepto={pagoPublicoData.concepto}
+        identificador={pagoPublicoData.identificador}
+        titularNombre={pagoPublicoData.titularNombre}
+        config={config}
+        onVolver={() => {
+          window.location.hash = ''
+          setIsPublicPaymentView(false)
+        }}
+      />
+    )
+  }
+
   return (
     <div className="h-full min-h-screen bg-surface text-on-surface antialiased font-sans flex flex-col">
       {/* Navegación Stitch SideBar & TopBar */}
@@ -640,6 +703,38 @@ export default function App() {
       {/* Canvas Principal */}
       <main className="lg:ml-64 pt-14 min-h-screen pb-20 lg:pb-8 bg-surface text-on-surface">
         <div className="px-2.5 py-4 sm:p-6 max-w-[1600px] w-full mx-auto space-y-6">
+          {/* Encabezado Institucional Oficial para Impresión A4 de Reportes */}
+          <div className="hidden print:block pb-4 mb-6 border-b-2 border-slate-900">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-700 block">
+                  MUNICIPALIDAD DEL DEPARTAMENTO GENERAL BELGRANO · LA RIOJA
+                </span>
+                <h1 className="text-xl font-black text-slate-950 uppercase tracking-tight">
+                  {currentTab === 'dashboard' && 'REPORTE CONSOLIDADO DE GESTIÓN Y RECAUDACIÓN'}
+                  {currentTab === 'parcelas' && 'PADRÓN GENERAL DE CATASTRO Y DERECHO DE PARCELAS'}
+                  {currentTab === 'inhumaciones' && 'LIBRO OFICIAL DE INHUMACIONES Y REGISTRO DE DIFUNTOS'}
+                  {currentTab === 'seguro' && 'PADRÓN DE AFILIADOS Y ESTADO DE COBRANZA SEGURO DE SEPELIO'}
+                  {currentTab === 'configuracion' && 'CONSTANCIA DE PARÁMETROS Y ARANCELES MUNICIPALES'}
+                </h1>
+                <p className="text-xs text-slate-600 font-medium">
+                  Cementerio Parque Municipal Aeterna · Sistema de Gestión y Fiscalización Mortuoria
+                </p>
+              </div>
+              <div className="text-right text-xs space-y-0.5">
+                <span className="block font-bold text-slate-900">
+                  Fecha: {new Date().toLocaleDateString('es-AR')}
+                </span>
+                <span className="block text-slate-600">
+                  Hora: {new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} hs
+                </span>
+                <span className="inline-block mt-1 px-2.5 py-0.5 rounded bg-slate-100 border border-slate-300 text-[10px] font-mono font-bold">
+                  EXPEDIENTE OFICIAL DE REGISTRO
+                </span>
+              </div>
+            </div>
+          </div>
+
           {currentTab === 'dashboard' && (
             <DashboardView
               parcelas={parcelas}
@@ -719,6 +814,24 @@ export default function App() {
           {currentTab === 'configuracion' && (
             <ConfiguracionView config={config} onSave={handleSaveConfig} />
           )}
+
+          {/* Pie de Firma Institucional para Impresión A4 de Reportes Generales */}
+          <div className="hidden print:flex items-end justify-between pt-12 mt-12 border-t border-slate-400 text-xs text-slate-700">
+            <div className="text-center w-52">
+              <div className="border-b border-slate-900 pb-1 mb-1 font-mono">________________________</div>
+              <span className="font-bold block">Firma y Sello de Operador</span>
+              <span className="text-[10px] text-slate-500">Mesa de Entrada / Registro Civil</span>
+            </div>
+            <div className="text-center text-[10px] text-slate-500 max-w-xs">
+              Documento emitido bajo Ordenanza Municipal N° 842/2024. Los datos contenidos en este informe
+              tienen carácter de declaración jurada y testimonio público oficial.
+            </div>
+            <div className="text-center w-52">
+              <div className="border-b border-slate-900 pb-1 mb-1 font-mono">________________________</div>
+              <span className="font-bold block">Dirección de Servicios Públicos</span>
+              <span className="text-[10px] text-slate-500">Municipio de Chamical</span>
+            </div>
+          </div>
         </div>
       </main>
 

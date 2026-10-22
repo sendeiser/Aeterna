@@ -131,11 +131,12 @@ export const AuditoriaModal: React.FC<AuditoriaModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full overflow-hidden border border-outline-variant flex flex-col max-h-[90vh]"
+        data-printable-modal="true"
+        className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full overflow-hidden border border-outline-variant flex flex-col max-h-[90vh] print:border-none print:shadow-none print:max-w-none print:w-full print:max-h-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary to-primary-container p-5 text-white flex items-start justify-between">
+        <div className="bg-gradient-to-r from-primary to-primary-container p-5 text-white flex items-start justify-between print:hidden">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white">
               <span className="material-symbols-outlined text-[24px]">shield</span>
@@ -152,14 +153,27 @@ export const AuditoriaModal: React.FC<AuditoriaModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors print:hidden"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
         </div>
 
+        {/* Encabezado Oficial Institucional para Impresión */}
+        <div className="hidden print:block p-6 pb-4 border-b-2 border-slate-900 text-center space-y-1">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-700 block">
+            MUNICIPALIDAD DEL DEPARTAMENTO GENERAL BELGRANO · LA RIOJA
+          </span>
+          <h2 className="text-xl font-black text-slate-950 uppercase tracking-tight">
+            LIBRO DE AUDITORÍA Y TRAZABILIDAD DE OPERACIONES MUNICIPALES
+          </h2>
+          <p className="text-xs text-slate-600 font-medium">
+            Cementerio Parque Municipal Aeterna · Registro Criptográfico de Acciones y Transacciones
+          </p>
+        </div>
+
         {/* Toolbar & Filters */}
-        <div className="p-4 bg-surface-container-low border-b border-outline-variant flex flex-wrap items-center justify-between gap-3">
+        <div className="p-4 bg-surface-container-low border-b border-outline-variant flex flex-wrap items-center justify-between gap-3 print:hidden">
           <div className="flex items-center gap-2 flex-1 min-w-[240px]">
             <input
               type="text"
@@ -264,10 +278,27 @@ export const AuditoriaModal: React.FC<AuditoriaModalProps> = ({
               </tbody>
             </table>
           </div>
+
+          {/* Firmas Oficiales para Impresión */}
+          <div className="hidden print:flex items-end justify-between pt-10 mt-8 border-t border-slate-400 text-xs text-slate-700">
+            <div className="text-center w-48">
+              <div className="border-b border-slate-900 pb-1 mb-1 font-mono">________________________</div>
+              <span className="font-bold block text-[11px]">Responsable de Sistemas y Datos</span>
+              <span className="text-[9px] text-slate-500">Dirección de Cómputos Chamical</span>
+            </div>
+            <div className="text-center text-[9px] text-slate-500 max-w-xs">
+              Log de auditoría inmutable emitido de acuerdo a la Ley Provincial de Procedimiento Administrativo.
+            </div>
+            <div className="text-center w-48">
+              <div className="border-b border-slate-900 pb-1 mb-1 font-mono">________________________</div>
+              <span className="font-bold block text-[11px]">Secretaría de Obras y Servicios</span>
+              <span className="text-[9px] text-slate-500">Municipio de Chamical</span>
+            </div>
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="p-3 bg-surface-container-low border-t border-outline-variant flex items-center justify-between text-[11px] text-outline">
+        <div className="p-3 bg-surface-container-low border-t border-outline-variant flex items-center justify-between text-[11px] text-outline print:hidden">
           <span>Trazabilidad certificada conforme a Ordenanza Funeraria Municipal N° 842</span>
           <button
             type="button"

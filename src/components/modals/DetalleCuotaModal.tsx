@@ -63,11 +63,12 @@ export const DetalleCuotaModal: React.FC<DetalleCuotaModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-outline-variant flex flex-col"
+        data-printable-modal="true"
+        className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-outline-variant flex flex-col print:border-none print:shadow-none print:max-w-none print:w-full"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Encabezado Comprobante */}
-        <div className="bg-gradient-to-r from-primary to-primary-container p-5 text-white flex items-start justify-between">
+        <div className="bg-gradient-to-r from-primary to-primary-container p-5 text-white flex items-start justify-between print:hidden">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white">
               <span className="material-symbols-outlined text-[24px]">verified</span>
@@ -84,14 +85,27 @@ export const DetalleCuotaModal: React.FC<DetalleCuotaModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors print:hidden"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
         </div>
 
+        {/* Encabezado Oficial Institucional para Impresión */}
+        <div className="hidden print:block p-6 pb-4 border-b-2 border-slate-900 text-center space-y-1">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-700 block">
+            MUNICIPALIDAD DEL DEPARTAMENTO GENERAL BELGRANO · LA RIOJA
+          </span>
+          <h2 className="text-xl font-black text-slate-950 uppercase tracking-tight">
+            RECIBO OFICIAL DE COBRANZA · SEGURO DE SEPELIO
+          </h2>
+          <p className="text-xs text-slate-600 font-medium">
+            Cementerio Parque Municipal Aeterna · Constancia Legal de Pago de Cuota Social
+          </p>
+        </div>
+
         {/* Cuerpo del Recibo */}
-        <div className="p-6 space-y-5 overflow-y-auto max-h-[75vh]">
+        <div className="p-6 space-y-5 overflow-y-auto max-h-[75vh] print:max-h-none print:overflow-visible print:p-4">
           {/* Badge Estado y Nro Recibo */}
           <div className="flex items-center justify-between pb-3 border-b border-dashed border-outline-variant">
             <div>
@@ -214,7 +228,7 @@ export const DetalleCuotaModal: React.FC<DetalleCuotaModalProps> = ({
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center justify-between pt-2 print:hidden">
               <button
                 type="button"
                 onClick={() => setConfirmingRevert(true)}
@@ -226,10 +240,27 @@ export const DetalleCuotaModal: React.FC<DetalleCuotaModalProps> = ({
               <span className="text-[11px] text-outline">Operador: Cobranzas Aeterna</span>
             </div>
           )}
+
+          {/* Firmas Oficiales para Impresión */}
+          <div className="hidden print:flex items-end justify-between pt-8 mt-6 border-t border-slate-400 text-xs text-slate-700">
+            <div className="text-center w-40">
+              <div className="border-b border-slate-900 pb-1 mb-1 font-mono">____________________</div>
+              <span className="font-bold block text-[11px]">Firma y Sello de Caja</span>
+              <span className="text-[9px] text-slate-500">Mesa de Entrada / Operador</span>
+            </div>
+            <div className="text-center text-[9px] text-slate-500 max-w-[160px]">
+              CAE AFIP RG 1415/03 · Exento según Código Tributario Municipal
+            </div>
+            <div className="text-center w-40">
+              <div className="border-b border-slate-900 pb-1 mb-1 font-mono">____________________</div>
+              <span className="font-bold block text-[11px]">Firma del Afiliado Titular</span>
+              <span className="text-[9px] text-slate-500">Conformidad de Pago</span>
+            </div>
+          </div>
         </div>
 
         {/* Acciones del Modal */}
-        <div className="p-4 bg-surface-container-low border-t border-outline-variant flex items-center justify-between gap-3">
+        <div className="p-4 bg-surface-container-low border-t border-outline-variant flex items-center justify-between gap-3 print:hidden">
           <button
             type="button"
             onClick={onClose}

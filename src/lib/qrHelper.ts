@@ -115,3 +115,29 @@ export function generateUniversalPaymentPayload(params: QRParams): string {
   // Generamos un formato multipropósito con datos claros para transferencia
   return `TRANSFERENCIA AETERNA\nAlias: ${cleanAlias}\nCBU: ${cleanCbu}\nTitular: ${params.titular}\nMonto: $${cleanMonto}\nRef: ${params.concepto || params.referencia || 'Servicios Parque Aeterna'}`
 }
+
+/**
+ * Genera la URL del portal de pago web para incrustar en el Código QR.
+ * Al escanear con la cámara de CUALQUIER teléfono celular, abre la página
+ * web con los datos de la cuenta y botones interactivos para Copiar Alias o CBU.
+ */
+export function generateWebPaymentUrl(params: {
+  baseUrl?: string
+  monto: number
+  concepto: string
+  identificador: string
+  titularNombre?: string
+}): string {
+  const base =
+    params.baseUrl ||
+    (typeof window !== 'undefined' && window.location.origin ? window.location.origin : '')
+
+  const searchParams = new URLSearchParams()
+  searchParams.set('pago', '1')
+  if (params.monto) searchParams.set('monto', String(params.monto))
+  if (params.concepto) searchParams.set('concepto', params.concepto)
+  if (params.identificador) searchParams.set('id', params.identificador)
+  if (params.titularNombre) searchParams.set('titular', params.titularNombre)
+
+  return `${base}/#pago?${searchParams.toString()}`
+}

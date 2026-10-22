@@ -61,7 +61,8 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-surface-container-lowest border border-outline-variant w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden text-on-surface flex flex-col max-h-[92vh]"
+        data-printable-modal="true"
+        className="bg-surface-container-lowest border border-outline-variant w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden text-on-surface flex flex-col max-h-[92vh] print:border-none print:shadow-none print:max-w-none print:w-full print:max-h-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Oficial Imprimible */}
@@ -82,14 +83,14 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors print:hidden"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-5 overflow-y-auto custom-scroll flex-1">
+        <div className="p-6 space-y-5 overflow-y-auto custom-scroll flex-1 print:max-h-none print:overflow-visible print:p-4">
           {/* Membrete y Fecha */}
           <div className="text-center pb-3 border-b border-dashed border-outline-variant space-y-1">
             <div className="flex items-center justify-between text-xs text-outline font-code-cadastral">
@@ -223,7 +224,7 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-outline-variant bg-surface-container-low">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-outline-variant bg-surface-container-low print:hidden">
           <button
             type="button"
             onClick={handlePrint}

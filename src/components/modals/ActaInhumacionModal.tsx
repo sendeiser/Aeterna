@@ -23,9 +23,12 @@ export const ActaInhumacionModal: React.FC<ActaInhumacionModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-      <div className="bg-surface-container-lowest border border-outline-variant w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden text-on-surface flex flex-col max-h-[92vh]">
+      <div
+        data-printable-modal="true"
+        className="bg-surface-container-lowest border border-outline-variant w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden text-on-surface flex flex-col max-h-[92vh] print:border-none print:shadow-none print:max-w-none print:w-full print:max-h-none"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-outline-variant bg-surface-container-low">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-outline-variant bg-surface-container-low print:hidden">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-[22px]">description</span>
             <span className="font-bold text-sm text-primary uppercase tracking-wide">
@@ -50,7 +53,7 @@ export const ActaInhumacionModal: React.FC<ActaInhumacionModalProps> = ({
         </div>
 
         {/* Printable Certificate Body */}
-        <div id="printable-receipt" className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scroll bg-white">
+        <div id="printable-receipt" className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scroll bg-white print:p-0 print:overflow-visible">
           {/* Municipal Crest & Title */}
           <div className="text-center pb-4 border-b-2 border-primary/20 space-y-1">
             <div className="text-[11px] font-bold text-outline uppercase tracking-widest">
@@ -133,16 +136,21 @@ export const ActaInhumacionModal: React.FC<ActaInhumacionModalProps> = ({
           </div>
 
           {/* Signatures */}
-          <div className="pt-8 grid grid-cols-2 gap-8 text-center text-xs">
+          <div className="pt-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center text-xs">
             <div className="space-y-1">
-              <div className="w-40 mx-auto border-b border-outline-variant pb-8"></div>
+              <div className="w-36 mx-auto border-b border-outline-variant pb-7"></div>
               <div className="font-bold text-on-surface">Lic. R. Albarracín</div>
               <div className="text-[10px] text-outline">Oficial Mayor de Catastro</div>
             </div>
             <div className="space-y-1">
-              <div className="w-40 mx-auto border-b border-outline-variant pb-8"></div>
+              <div className="w-36 mx-auto border-b border-outline-variant pb-7"></div>
               <div className="font-bold text-on-surface">{inhumacion.empresa_funebrera || 'Aeterna Sepelios'}</div>
               <div className="text-[10px] text-outline">Servicio de Pompas Fúnebres</div>
+            </div>
+            <div className="space-y-1">
+              <div className="w-36 mx-auto border-b border-outline-variant pb-7"></div>
+              <div className="font-bold text-on-surface">Of. Registro Civil</div>
+              <div className="text-[10px] text-outline">Constatación y Firma Legal</div>
             </div>
           </div>
         </div>
