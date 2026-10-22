@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { formatCurrency, copyToClipboard } from '../../lib/formatters'
+import { generateBCRAEMVCoQR, generateUniversalPaymentPayload } from '../../lib/qrHelper'
 import { ConfiguracionCobro } from '../../types/database'
 
 interface QRPaymentModalProps {
@@ -29,15 +30,39 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
   onConfirmarPago,
 }) => {
   const [metodo, setMetodo] = useState<'transferencia_qr' | 'efectivo'>('transferencia_qr')
+  const [qrMode, setQrMode] = useState<'bcra' | 'universal'>('bcra')
   const [comprobante, setComprobante] = useState('7849')
   const [copiedField, setCopiedField] = useState<'alias' | 'cbu' | null>(null)
   const [pagoConfirmado, setPagoConfirmado] = useState(false)
   const [reciboNro, setReciboNro] = useState(`REC-2026-${Math.floor(1000 + Math.random() * 9000)}`)
 
+  // Generación de payload EMVCo interoperable oficial (BCRA Transferencias 3.0 con CRC-16)
+  const bcraPayload = useMemo(() => {
+    return generateBCRAEMVCoQR({
+      cbu: config.cbu,
+      alias: config.alias_cbu,
+      titular: config.titular_cuenta,
+      monto,
+      referencia: identificador,
+      concepto,
+    })
+  }, [config, monto, identificador, concepto])
+
+  // Payload universal legible por cámaras estándar de celulares
+  const universalPayload = useMemo(() => {
+    return generateUniversalPaymentPayload({
+      cbu: config.cbu,
+      alias: config.alias_cbu,
+      titular: config.titular_cuenta,
+      monto,
+      referencia: identificador,
+      concepto,
+    })
+  }, [config, monto, identificador, concepto])
+
   if (!isOpen) return null
 
-  // CBU / Alias interoperable payload
-  const qrTransferPayload = `00020101021243650014ar.gob.bcra.cbu0122${config.cbu}0214${config.alias_cbu}520400005303032540${monto.toFixed(2)}5802AR5920${config.titular_cuenta}6008Chamical62070503***6304`
+  const activeQRPayload = qrMode === 'bcra' ? bcraPayload : universalPayload
 
   const handleCopy = async (field: 'alias' | 'cbu', text: string) => {
     const success = await copyToClipboard(text)
@@ -163,18 +188,47 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
           <div className="px-5 pb-4 space-y-4 flex-1">
             {metodo === 'transferencia_qr' ? (
               <>
+                {/* Selector de Modo de QR */}
+                <div className="flex items-center justify-between bg-surface-container p-1 rounded-lg border border-outline-variant text-[11px] font-semibold">
+                  <span className="text-outline px-2">Modo QR:</span>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setQrMode('bcra')}
+                      className={`px-2.5 py-1 rounded transition-all ${
+                        qrMode === 'bcra'
+                          ? 'bg-surface-container-lowest text-primary shadow-xs font-bold border border-outline-variant'
+                          : 'text-on-surface-variant hover:text-on-surface'
+                      }`}
+                    >
+                      Billeteras BCRA (Interoperable)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setQrMode('universal')}
+                      className={`px-2.5 py-1 rounded transition-all ${
+                        qrMode === 'universal'
+                          ? 'bg-surface-container-lowest text-primary shadow-xs font-bold border border-outline-variant'
+                          : 'text-on-surface-variant hover:text-on-surface'
+                      }`}
+                    >
+                      Cámara / Celular
+                    </button>
+                  </div>
+                </div>
+
                 <div className="flex flex-col sm:flex-row items-center gap-4 p-3.5 bg-surface-container-lowest rounded-lg border border-outline-variant">
                   {/* QR Box with Interoperable Badge */}
                   <div className="relative w-[180px] h-[180px] bg-white p-2.5 rounded-lg border border-[#CBD5E1] shadow-sm flex items-center justify-center shrink-0">
                     <QRCodeSVG
-                      value={qrTransferPayload}
+                      value={activeQRPayload}
                       size={160}
                       level="M"
                       includeMargin={false}
                       className="w-full h-full"
                     />
                     <span className="absolute -bottom-2 bg-primary text-on-primary text-[10px] font-semibold px-2 py-0.5 rounded-full tracking-wide uppercase shadow-sm">
-                      Interoperable
+                      {qrMode === 'bcra' ? 'BCRA 3.0' : 'Universal'}
                     </span>
                   </div>
                   {/* Instructions */}
@@ -184,7 +238,9 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
                       <span className="text-body-sm font-semibold">Listo para recibir acreditación</span>
                     </div>
                     <p className="text-body-md text-on-surface font-medium leading-snug">
-                      Escaneá desde cualquier billetera virtual o app bancaria:
+                      {qrMode === 'bcra'
+                        ? 'Escaneá desde cualquier app bancaria o billetera virtual:'
+                        : 'Escaneá directamente con la cámara de cualquier teléfono:'}
                     </p>
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       <span className="px-2 py-0.5 bg-surface-container rounded text-label-caps font-semibold text-primary border border-outline-variant">Mercado Pago</span>
@@ -286,16 +342,27 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
               onClick={onClose}
               className="h-10 px-4 bg-surface-container-lowest border border-outline-variant text-on-surface font-title-md text-body-md rounded-lg hover:bg-surface-container-low transition-colors"
             >
-              Cancelar / Volver
+              {pagoConfirmado ? 'Cerrar' : 'Cancelar / Volver'}
             </button>
-            <button
-              type="button"
-              onClick={handleConfirmar}
-              className="h-10 px-5 bg-[#059669] hover:bg-[#047857] text-white font-title-md text-body-md font-semibold rounded-lg shadow-sm flex items-center gap-2 active:scale-[0.99] transition-all"
-            >
-              <span className="material-symbols-outlined text-[18px]">verified</span>
-              <span>Confirmar Cobro y Emitir Recibo</span>
-            </button>
+            {pagoConfirmado ? (
+              <button
+                type="button"
+                onClick={onClose}
+                className="h-10 px-5 bg-emerald-700 hover:bg-emerald-800 text-white font-title-md text-body-md font-semibold rounded-lg shadow-sm flex items-center gap-2 active:scale-[0.99] transition-all"
+              >
+                <span className="material-symbols-outlined text-[18px]">done_all</span>
+                <span>¡Cobro Registrado! Finalizar</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleConfirmar}
+                className="h-10 px-5 bg-[#059669] hover:bg-[#047857] text-white font-title-md text-body-md font-semibold rounded-lg shadow-sm flex items-center gap-2 active:scale-[0.99] transition-all"
+              >
+                <span className="material-symbols-outlined text-[18px]">verified</span>
+                <span>Confirmar Cobro y Emitir Recibo</span>
+              </button>
+            )}
           </div>
         </div>
 

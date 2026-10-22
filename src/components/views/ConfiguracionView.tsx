@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { ConfiguracionCobro } from '../../types/database'
 import { QRCodeSVG } from 'qrcode.react'
 import { syncDataToSupabase } from '../../services/dataService'
 import { isSupabaseConfigured } from '../../lib/supabase'
+import { generateBCRAEMVCoQR } from '../../lib/qrHelper'
 
 interface ConfiguracionViewProps {
   config: ConfiguracionCobro
@@ -50,7 +51,16 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({ config, on
     }
   }
 
-  const previewQR = `00020101021243650014ar.gob.bcra.cbu0122${cbu}0214${alias}5204000053030325802AR5920${titular}6008Chamical62070503***6304`
+  const previewQR = useMemo(() => {
+    return generateBCRAEMVCoQR({
+      cbu,
+      alias,
+      titular,
+      monto: 18000,
+      referencia: 'VISTA-PREVIA',
+      concepto: 'Mantenimiento Parque',
+    })
+  }, [cbu, alias, titular])
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">

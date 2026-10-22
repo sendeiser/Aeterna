@@ -88,6 +88,7 @@ export const OmniboxSearch: React.FC<OmniboxSearchProps> = ({
         <div className="flex items-center px-4 py-3 border-b border-outline-variant gap-3 bg-white">
           <span className="material-symbols-outlined text-secondary text-[22px] shrink-0">search</span>
           <input
+            id="modal-omnibox-input"
             ref={inputRef}
             type="text"
             value={query}
