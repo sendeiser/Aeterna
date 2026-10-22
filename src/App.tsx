@@ -136,11 +136,12 @@ export default function App() {
     const list: SearchResultItem[] = []
 
     for (const p of parcelas) {
+      const dniStr = p.titular?.dni ? ` · DNI: ${p.titular.dni}` : ''
       list.push({
         id: p.id,
         title: `Parcela ${p.nomenclatura}`,
         subtitle: p.titular
-          ? `Titular: ${p.titular.nombre_completo} (${p.titular.direccion || 'Chamical'})`
+          ? `Titular: ${p.titular.nombre_completo} (${p.titular.direccion || 'Chamical'})${dniStr}`
           : 'Sin titular asignado',
         type: 'parcela',
         badge: p.estado === 'en_mora' ? 'En Mora' : p.estado.toUpperCase(),
@@ -150,10 +151,11 @@ export default function App() {
 
     for (const inh of inhumaciones) {
       const pNom = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela
+      const dniStr = inh.dni_difunto ? ` · DNI: ${inh.dni_difunto}` : ''
       list.push({
         id: inh.id,
         title: inh.nombre_difunto,
-        subtitle: `Inhumado el ${inh.fecha_inhumacion?.slice(0, 10)} - Parcela: ${pNom || 'S/D'}`,
+        subtitle: `Inhumado el ${inh.fecha_inhumacion?.slice(0, 10)} - Parcela: ${pNom || 'S/D'}${dniStr}`,
         type: 'difunto',
         badge: inh.es_covid ? 'COVID-19' : 'Ordinario',
         item: inh,
@@ -161,10 +163,11 @@ export default function App() {
     }
 
     for (const a of afiliados) {
+      const dniStr = a.dni ? ` · DNI: ${a.dni}` : ''
       list.push({
         id: a.id,
         title: `${a.nombre_completo} (#${a.numero_afiliado})`,
-        subtitle: `${a.direccion_cobro || 'Chamical'} - ${a.zona_cobro || 'Zona 1'}`,
+        subtitle: `${a.direccion_cobro || 'Chamical'} - ${a.zona_cobro || 'Zona 1'}${dniStr}`,
         type: 'afiliado',
         badge: a.estado === 'activo' ? 'Al Día' : 'En Mora',
         item: a,

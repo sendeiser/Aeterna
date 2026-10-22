@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="aeternaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00236f" />
+      <stop offset="100%" stop-color="#0051d5" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#fbbf24" />
+    </linearGradient>
+  </defs>
+  <!-- Background Rounded Shield / Icon Base -->
+  <rect width="64" height="64" rx="16" fill="url(#aeternaGrad)" />
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+  
+  <!-- Stylized Classical Monument / Portal Emblem -->
+  <!-- Pediment / Roof Triangle -->
+  <polygon points="32,13 14,24 50,24" fill="url(#goldGrad)" />
+  <rect x="13" y="24" width="38" height="3" rx="1" fill="#ffffff" />
+  
+  <!-- Columns -->
+  <rect x="18" y="27" width="5" height="19" rx="1" fill="#ffffff" opacity="0.95" />
+  <rect x="29.5" y="27" width="5" height="19" rx="1" fill="#ffffff" opacity="0.95" />
+  <rect x="41" y="27" width="5" height="19" rx="1" fill="#ffffff" opacity="0.95" />
+  
+  <!-- Base / Steps -->
+  <rect x="13" y="46" width="38" height="3" rx="1" fill="#ffffff" />
+  <rect x="10" y="49" width="44" height="4" rx="1.5" fill="url(#goldGrad)" />
+</svg>

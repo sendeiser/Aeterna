@@ -88,18 +88,77 @@
   background: var(--outline);
 }
 
-/* Optimización para impresión de recibos térmicos y A4 */
+/* ========================================================================= */
+/* ESTILOS DE IMPRESIÓN OFICIAL (A4, PLANILLAS Y RECIBOS TÉRMICOS)           */
+/* ========================================================================= */
 @media print {
-  body * {
-    visibility: hidden;
+  /* Ocultar elementos de interfaz no imprimibles */
+  header,
+  aside,
+  nav,
+  button:not(.force-print),
+  .no-print,
+  input,
+  select,
+  [data-no-print="true"] {
+    display: none !important;
   }
-  #printable-receipt, #printable-receipt * {
-    visibility: visible;
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
-  #printable-receipt {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
+
+  main {
+    margin-left: 0 !important;
+    padding-top: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Los modales se imprimen como página principal sin backdrop oscuro */
+  .fixed.inset-0 {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+
+  .shadow-2xl, .shadow-xl, .shadow-sm, .shadow-xs, .shadow-md {
+    box-shadow: none !important;
+  }
+
+  .border, .border-outline-variant {
+    border-color: #cbd5e1 !important;
+  }
+
+  /* Tablas oficiales nítidas */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  tr, td, th {
+    page-break-inside: avoid;
+  }
+
+  /* Alto contraste para legibilidad legal y municipal */
+  .text-primary, .text-secondary, .text-on-surface, .text-on-surface-variant {
+    color: #0f172a !important;
+  }
+
+  .bg-primary, .bg-primary-container, .bg-secondary {
+    background-color: #00236f !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .bg-emerald-600, .bg-emerald-100 {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }

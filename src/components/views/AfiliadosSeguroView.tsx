@@ -89,7 +89,8 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
       const nro = a.numero_afiliado.toString()
       const nom = a.nombre_completo.toLowerCase()
       const dir = (a.direccion_cobro || '').toLowerCase()
-      return nro.includes(q) || nom.includes(q) || dir.includes(q)
+      const dni = (a.dni || '').toLowerCase()
+      return nro.includes(q) || nom.includes(q) || dir.includes(q) || dni.includes(q)
     }
     return true
   })

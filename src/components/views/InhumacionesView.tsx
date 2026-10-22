@@ -97,7 +97,8 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
       const nom = i.nombre_difunto.toLowerCase()
       const parc = (typeof i.parcela === 'object' ? i.parcela?.nomenclatura : i.parcela) || ''
       const causa = (i.causa_defuncion || '').toLowerCase()
-      return nom.includes(q) || parc.toLowerCase().includes(q) || causa.includes(q)
+      const dni = (i.dni_difunto || '').toLowerCase()
+      return nom.includes(q) || parc.toLowerCase().includes(q) || causa.includes(q) || dni.includes(q)
     }
     return true
   })
