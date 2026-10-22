@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-22T03:41:00Z",
+  "title": "Design System: Aeterna Cemetery Management System",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Municipal Navy", "canonical": "#00236f" },
+      "primary-container": { "role": "primary", "displayName": "Deep Navy Container", "canonical": "#1e3a8a" },
+      "secondary": { "role": "secondary", "displayName": "Electric Cobalt", "canonical": "#0051d5" },
+      "surface": { "role": "neutral", "displayName": "Surface Canvas", "canonical": "#faf8ff" },
+      "surface-container": { "role": "neutral", "displayName": "Surface Container", "canonical": "#eaedff" },
+      "surface-container-lowest": { "role": "neutral", "displayName": "Pure Card White", "canonical": "#ffffff" },
+      "outline": { "role": "neutral", "displayName": "Outline", "canonical": "#757682" },
+      "outline-variant": { "role": "neutral", "displayName": "Outline Variant", "canonical": "#c5c5d3" },
+      "error": { "role": "error", "displayName": "Crimson Error", "canonical": "#ba1a1a" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display Hero", "purpose": "Header cards and printable titles" },
+      "headline": { "displayName": "Headline", "purpose": "Module and modal titles" },
+      "title": { "displayName": "Title", "purpose": "Card titles and table column headers" },
+      "body": { "displayName": "Body", "purpose": "Data rows and form entries" },
+      "label": { "displayName": "Label", "purpose": "Status pills and badges" }
+    },
+    "shadows": [
+      { "name": "card-rest", "value": "0 1px 3px rgba(19, 27, 46, 0.08)", "purpose": "Standard card boundary" },
+      { "name": "modal-elevation", "value": "0 25px 50px -12px rgba(19, 27, 46, 0.25)", "purpose": "Dialog popovers" }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Micro interactions and tab transitions" }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Municipal Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action button for new records and confirmations",
+      "html": "<button class=\"ds-btn-primary\">NUEVO REGISTRO</button>",
+      "css": ".ds-btn-primary { background: #00236f; color: #ffffff; padding: 8px 16px; border-radius: 8px; font-weight: 500; font-size: 13px; border: none; cursor: pointer; transition: background 0.15s ease; } .ds-btn-primary:hover { background: #0051d5; }"
+    },
+    {
+      "name": "Status Pill Disponible",
+      "kind": "chip",
+      "refersTo": "chip-status",
+      "description": "Indicates available cadastral parcel",
+      "html": "<span class=\"ds-chip-disponible\">DISPONIBLE</span>",
+      "css": ".ds-chip-disponible { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Municipal Rigor & High-Density Civic Cadastre",
+    "overview": "Aeterna Parque is an institutional management and cadastral system engineered for municipal cemeteries and funeral services in Chamical, La Rioja.",
+    "keyCharacteristics": [
+      "Institutional Authority grounded in municipal deep navy (#00236f)",
+      "Cool surface tinting (#faf8ff to #eaedff)",
+      "Cadastral legibility with JetBrains Mono",
+      "Strict biosecurity indicators for COVID-19"
+    ],
+    "rules": [
+      { "name": "The Municipal Solemnity Rule", "body": "Primary navy #00236f anchors hierarchy, saturated tones strictly reserved for status.", "section": "colors" },
+      { "name": "The Tabular Alignment Rule", "body": "All currencies, dates, and parcel numbers must use monospaced tabular numerals.", "section": "typography" },
+      { "name": "The Structural Border Rule", "body": "Depth is established via 1px outline-variant borders on surface containers rather than blurry shadows.", "section": "elevation" }
+    ],
+    "dos": [
+      "Format plot nomenclatures as SECTOR-MANZANA-PARCELA in font-mono",
+      "Highlight COVID-19 records with violet badges",
+      "Use bg-surface-container-lowest for cards and bg-surface for canvas"
+    ],
+    "donts": [
+      "Do not use generic raw RGB colors when semantic tokens exist",
+      "Do not use border-radius larger than 12px",
+      "Do not hide Tomo/Folio records"
+    ]
+  }
+}

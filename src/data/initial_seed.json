@@ -1,0 +1,4236 @@
+{
+  "parcelas": [
+    {
+      "nomenclatura": "A-25-96",
+      "sector": "A",
+      "manzana": "25",
+      "numero": "96",
+      "titular": "ABALLAYDERODRIGLEZESTERALILOMABLANCA-E-160",
+      "direccion": "msestig",
+      "saldo_mantenimiento": 441128.44,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-30-94",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "94",
+      "titular": "ABALLAYRAMONADELCARMEN",
+      "direccion": "CALLE1CASA354",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-19-85",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "85",
+      "titular": "ABDALACARLAVANESA",
+      "direccion": "MENDOZANo250",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-13-56",
+      "sector": "A",
+      "manzana": "13",
+      "numero": "56",
+      "titular": "ABDALAMARIABRIZUELADE",
+      "direccion": "BRASILN042",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-17-108",
+      "sector": "A",
+      "manzana": "17",
+      "numero": "108",
+      "titular": "ACEVEDOEDGAR",
+      "direccion": "",
+      "saldo_mantenimiento": 334806.55,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-40-89",
+      "sector": "A",
+      "manzana": "40",
+      "numero": "89",
+      "titular": "ACEVEDOPABLO",
+      "direccion": "CHAMICAL",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-27-72",
+      "sector": "A",
+      "manzana": "27",
+      "numero": "72",
+      "titular": "halel",
+      "direccion": "ADIGAZI",
+      "saldo_mantenimiento": 0.0,
+      "estado": "baja"
+    },
+    {
+      "nomenclatura": "A-16-47",
+      "sector": "A",
+      "manzana": "16",
+      "numero": "47",
+      "titular": "ADI JORGE ENRIQUE Da AUR",
+      "direccion": "seoru",
+      "saldo_mantenimiento": 230095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-13-127",
+      "sector": "E",
+      "manzana": "13",
+      "numero": "127",
+      "titular": "AGUEROCARLOSMIGUEL",
+      "direccion": "",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-13-128",
+      "sector": "E",
+      "manzana": "13",
+      "numero": "128",
+      "titular": "AGUEROCARLOSMIGUEL",
+      "direccion": "",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-13-129",
+      "sector": "E",
+      "manzana": "13",
+      "numero": "129",
+      "titular": "AGUEROCARLOSMIGUEL",
+      "direccion": "CASA3",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-13-130",
+      "sector": "E",
+      "manzana": "13",
+      "numero": "130",
+      "titular": "AGUEROCARLOSMIGUEL",
+      "direccion": "CASA3",
+      "saldo_mantenimiento": 100060.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-13-131",
+      "sector": "E",
+      "manzana": "13",
+      "numero": "131",
+      "titular": "AGUEROCARLOSMIGUEL",
+      "direccion": "",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-10-124",
+      "sector": "E",
+      "manzana": "10",
+      "numero": "124",
+      "titular": "AGUERONICOLASFRANCISCO",
+      "direccion": "AV.PERONN440",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-25-115",
+      "sector": "E",
+      "manzana": "25",
+      "numero": "115",
+      "titular": "AGUIRRETERESITAESTELA",
+      "direccion": "M.MORENO124",
+      "saldo_mantenimiento": 470028.66,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-29-90",
+      "sector": "A",
+      "manzana": "29",
+      "numero": "90",
+      "titular": "AIDAGERONIMABRITOSSLdS",
+      "direccion": "9DEJULIO303",
+      "saldo_mantenimiento": 230095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-40-79",
+      "sector": "A",
+      "manzana": "40",
+      "numero": "79",
+      "titular": "AV.PTE.PERONY",
+      "direccion": "ALCAZARFERNANDO",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-40-80",
+      "sector": "A",
+      "manzana": "40",
+      "numero": "80",
+      "titular": "ALCAZARFERNANDO",
+      "direccion": "CASTROBARRO79",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-12-52",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "52",
+      "titular": "VICENTEALMONACI",
+      "direccion": "ALDECOJUANANICOLAZA",
+      "saldo_mantenimiento": 180000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-30-70",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "70",
+      "titular": "ANDRADADORADOMINGA",
+      "direccion": "MANUEL",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-30-71",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "71",
+      "titular": "ANDRADADORADOMINGA",
+      "direccion": "MANUEL",
+      "saldo_mantenimiento": 180000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-20-88",
+      "sector": "A",
+      "manzana": "20",
+      "numero": "88",
+      "titular": "ANDRADATERESITA",
+      "direccion": "Culeri",
+      "saldo_mantenimiento": 421710.21,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-40-82",
+      "sector": "A",
+      "manzana": "40",
+      "numero": "82",
+      "titular": "APUDACAPEDROLUIS",
+      "direccion": "CHAMICAL",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-31-103",
+      "sector": "A",
+      "manzana": "31",
+      "numero": "103",
+      "titular": "NARCARLOSMURIAS",
+      "direccion": "ARABELMARIAFABIANA",
+      "saldo_mantenimiento": 265246.43,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-25-106",
+      "sector": "A",
+      "manzana": "25",
+      "numero": "106",
+      "titular": "ARAYAANTONIOFLORENCIO",
+      "direccion": "PEATONALB24",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-37-65",
+      "sector": "A",
+      "manzana": "37",
+      "numero": "65",
+      "titular": "ARAYAJUANRAMONA",
+      "direccion": "12 DE OCTUBRE190",
+      "saldo_mantenimiento": 449827.51,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-29-97",
+      "sector": "A",
+      "manzana": "29",
+      "numero": "97",
+      "titular": "AREVALOREYES",
+      "direccion": "Snolnoks",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-25-120",
+      "sector": "E",
+      "manzana": "25",
+      "numero": "120",
+      "titular": "ARGANDOYAFRANCISCOMIGUEL",
+      "direccion": "JUJUY815",
+      "saldo_mantenimiento": 100090.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-18-46",
+      "sector": "A",
+      "manzana": "18",
+      "numero": "46",
+      "titular": "ARGUELLOLEONARDOK",
+      "direccion": "",
+      "saldo_mantenimiento": 334806.55,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-20-107",
+      "sector": "A",
+      "manzana": "20",
+      "numero": "107",
+      "titular": "ARROYOATILIODELVALLE",
+      "direccion": "G. LONGEVILLE 10",
+      "saldo_mantenimiento": 230217.36,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "B-01-03",
+      "sector": "B",
+      "manzana": "01",
+      "numero": "03",
+      "titular": "ARROYORICADOHECTOR",
+      "direccion": "12DEOCTUBRE451",
+      "saldo_mantenimiento": 334806.55,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "B-01-04",
+      "sector": "B",
+      "manzana": "01",
+      "numero": "04",
+      "titular": "ARROYORICADOHECTOR",
+      "direccion": "12DEOCTUBRE451",
+      "saldo_mantenimiento": 334806.55,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-30-87",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "87",
+      "titular": "ARROYORICARDO",
+      "direccion": "LONGEVILLE1810",
+      "saldo_mantenimiento": 334806.55,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-30-88",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "88",
+      "titular": "ARROYORICARDO",
+      "direccion": "LONGEVILLE1810",
+      "saldo_mantenimiento": 334806.55,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-30-91",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "91",
+      "titular": "ARROYORICARDO",
+      "direccion": "LONGEVILLE1810",
+      "saldo_mantenimiento": 334806.55,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-12-80",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "80",
+      "titular": "ARROYOTELLOBRAIANNAHUEL",
+      "direccion": "D.DEARROYO308",
+      "saldo_mantenimiento": 467370.62,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-15-95",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "95",
+      "titular": "ARTAZARAMONALFREDOS.",
+      "direccion": "ELIXABDALAN426",
+      "saldo_mantenimiento": 180060.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-19-96",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "96",
+      "titular": "ASISMARIABERNARDINA",
+      "direccion": "ESTEBANPENALOZA",
+      "saldo_mantenimiento": 465485.83,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-27-90",
+      "sector": "A",
+      "manzana": "27",
+      "numero": "90",
+      "titular": "AVILAANTONIODELCARMEN",
+      "direccion": "",
+      "saldo_mantenimiento": 230076.32,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-12-105",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "105",
+      "titular": "AVILACARLOSJAVIER",
+      "direccion": "COLON596",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-18-90",
+      "sector": "A",
+      "manzana": "18",
+      "numero": "90",
+      "titular": "AVILAFRANCISCORAMON",
+      "direccion": "CALLE1#379",
+      "saldo_mantenimiento": 230095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-18-91",
+      "sector": "A",
+      "manzana": "18",
+      "numero": "91",
+      "titular": "AVILAFRANCISCORAMON",
+      "direccion": "CALLE1#379",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-37-91",
+      "sector": "A",
+      "manzana": "37",
+      "numero": "91",
+      "titular": "AYANDEREARTEOLGA",
+      "direccion": "AV.PTE.PERON121",
+      "saldo_mantenimiento": 289378.11,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-37-92",
+      "sector": "A",
+      "manzana": "37",
+      "numero": "92",
+      "titular": "AYANDEREARTEOLGA",
+      "direccion": "AV.PTE.PERON121",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-37-93",
+      "sector": "A",
+      "manzana": "37",
+      "numero": "93",
+      "titular": "AYANDEREARTEOLGA",
+      "direccion": "AV.PTE.PERON121",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-28-76",
+      "sector": "A",
+      "manzana": "28",
+      "numero": "76",
+      "titular": "BAEZALBERTOCESAR",
+      "direccion": "JUJUY853",
+      "saldo_mantenimiento": 157128.44,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-25-93",
+      "sector": "A",
+      "manzana": "25",
+      "numero": "93",
+      "titular": "BALLESIEMILIAMERCEDES",
+      "direccion": "GABRIEL",
+      "saldo_mantenimiento": 0.0,
+      "estado": "baja"
+    },
+    {
+      "nomenclatura": "A-13-96",
+      "sector": "A",
+      "manzana": "13",
+      "numero": "96",
+      "titular": "BARRERASARAC-A",
+      "direccion": "12DEOCTUBREN053",
+      "saldo_mantenimiento": 415622.95,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-19-86",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "86",
+      "titular": "BARRERASJUANCARLOS",
+      "direccion": "CHAMICAL",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-20-78",
+      "sector": "A",
+      "manzana": "20",
+      "numero": "78",
+      "titular": "BAZANGABRIELAROSALINDA",
+      "direccion": "BAJA",
+      "saldo_mantenimiento": 466790.67,
+      "estado": "baja"
+    },
+    {
+      "nomenclatura": "A-18-43",
+      "sector": "A",
+      "manzana": "18",
+      "numero": "43",
+      "titular": "BAZANNOELIA",
+      "direccion": "DaesBser",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-26-98",
+      "sector": "A",
+      "manzana": "26",
+      "numero": "98",
+      "titular": "BENEGASMARTINOSVALDO",
+      "direccion": "SECTOR5",
+      "saldo_mantenimiento": 180000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-26-99",
+      "sector": "A",
+      "manzana": "26",
+      "numero": "99",
+      "titular": "BENEGASMARTINOSVALDO",
+      "direccion": "SECTOR5",
+      "saldo_mantenimiento": 180000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-24-82",
+      "sector": "A",
+      "manzana": "24",
+      "numero": "82",
+      "titular": "BERNARDIGRACIELALIDIA",
+      "direccion": "SANTA RITA No796",
+      "saldo_mantenimiento": 413581.41,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-20-98",
+      "sector": "A",
+      "manzana": "20",
+      "numero": "98",
+      "titular": "BERNARDINO ALEJO BRIZUELA",
+      "direccion": "FELIX ABDALA N 168",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-58-37",
+      "sector": "A",
+      "manzana": "58",
+      "numero": "37",
+      "titular": "BERRAJAVIERSEBASTIAN",
+      "direccion": "FELIXABDALA210",
+      "saldo_mantenimiento": 463605.86,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-24-90",
+      "sector": "A",
+      "manzana": "24",
+      "numero": "90",
+      "titular": "BERTOLAMARIAEUGENIA",
+      "direccion": "CALLA 1810 N062",
+      "saldo_mantenimiento": 304330.25,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-13-135",
+      "sector": "E",
+      "manzana": "13",
+      "numero": "135",
+      "titular": "BIOGLIOJUANAHAIDEE",
+      "direccion": "PEATONAL7Nro.508",
+      "saldo_mantenimiento": 419023.14,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-39-91",
+      "sector": "A",
+      "manzana": "39",
+      "numero": "91",
+      "titular": "BLANCO LUISANDRO",
+      "direccion": "",
+      "saldo_mantenimiento": 80000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-21-104",
+      "sector": "A",
+      "manzana": "21",
+      "numero": "104",
+      "titular": "BONAUDIPAMELA",
+      "direccion": "ABORIGENS/N",
+      "saldo_mantenimiento": 242661.23,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-22-103",
+      "sector": "A",
+      "manzana": "22",
+      "numero": "103",
+      "titular": "BONAUDIPAMELA",
+      "direccion": "ABORIGENS/N",
+      "saldo_mantenimiento": 272946.55,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-42-74",
+      "sector": "A",
+      "manzana": "42",
+      "numero": "74",
+      "titular": "BONAUDIPAMELA",
+      "direccion": "ABORIGENS/N",
+      "saldo_mantenimiento": 373469.05,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-17-80",
+      "sector": "A",
+      "manzana": "17",
+      "numero": "80",
+      "titular": "BONINOMARCELO",
+      "direccion": "LONGEVILLEN/20",
+      "saldo_mantenimiento": 230095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-30-89",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "89",
+      "titular": "BORDON EDMUNDOAUDENCIO",
+      "direccion": "CASTROBARROS159",
+      "saldo_mantenimiento": 230095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-17-47",
+      "sector": "A",
+      "manzana": "17",
+      "numero": "47",
+      "titular": "BRACMELINA",
+      "direccion": "",
+      "saldo_mantenimiento": 334806.55,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-30-100",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "100",
+      "titular": "FACUNDOQUIROGA",
+      "direccion": "BRIONGONZALEZLILIANAISABEL",
+      "saldo_mantenimiento": 420908.7,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-17-56",
+      "sector": "A",
+      "manzana": "17",
+      "numero": "56",
+      "titular": "PUBLICA S/N",
+      "direccion": "CONTRERAS",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-14-54",
+      "sector": "A",
+      "manzana": "14",
+      "numero": "54",
+      "titular": "BRITOSBERTADELCARMEN",
+      "direccion": "LONGUEVILLE735",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-40-60",
+      "sector": "A",
+      "manzana": "40",
+      "numero": "60",
+      "titular": "BRITOSLEONCIOCESAR",
+      "direccion": "VILLANUEVA510",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-40-61",
+      "sector": "A",
+      "manzana": "40",
+      "numero": "61",
+      "titular": "MANUEL",
+      "direccion": "BRITOSLEONCIOCESAR",
+      "saldo_mantenimiento": 100164.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-42-86",
+      "sector": "A",
+      "manzana": "42",
+      "numero": "86",
+      "titular": "BRITOSMARIAANGELICA",
+      "direccion": "MARTINGOMEZ252",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-23-78",
+      "sector": "A",
+      "manzana": "23",
+      "numero": "78",
+      "titular": "BRITOSMARIO",
+      "direccion": "MENDOZA502",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-17-42",
+      "sector": "A",
+      "manzana": "17",
+      "numero": "42",
+      "titular": "BRIZUELACELESTINO",
+      "direccion": "BOLIVIA18",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-14-39",
+      "sector": "A",
+      "manzana": "14",
+      "numero": "39",
+      "titular": "BRIZUELAHECTORANDRES",
+      "direccion": "SANTARITA832",
+      "saldo_mantenimiento": 430270.72,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-14-40",
+      "sector": "A",
+      "manzana": "14",
+      "numero": "40",
+      "titular": "BRIZUELAHECTORANDRES",
+      "direccion": "SANTARITA832",
+      "saldo_mantenimiento": 380428.31,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-17-104",
+      "sector": "A",
+      "manzana": "17",
+      "numero": "104",
+      "titular": "BRIZUELANICOLASAEMILIA",
+      "direccion": "NCOLASM.AYAN463",
+      "saldo_mantenimiento": 467370.62,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-11-54",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "54",
+      "titular": "BRIZUELAOSCARRUBEN",
+      "direccion": "",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-29-80",
+      "sector": "A",
+      "manzana": "29",
+      "numero": "80",
+      "titular": "BRUNORAYMUNDONIETO",
+      "direccion": "PEATONAL1CASA5",
+      "saldo_mantenimiento": 469011.2,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-13-54",
+      "sector": "A",
+      "manzana": "13",
+      "numero": "54",
+      "titular": "BURGOSSARAEDITH",
+      "direccion": "FALUCHON054",
+      "saldo_mantenimiento": 465195.85,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-38-188",
+      "sector": "A",
+      "manzana": "38",
+      "numero": "188",
+      "titular": "RRBUSTAMANTERAMONALEIREI",
+      "direccion": "PROYEOTADASN",
+      "saldo_mantenimiento": 461808.54,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-19-46",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "46",
+      "titular": "BUSTOGRACIELALEONOR",
+      "direccion": "CASA30",
+      "saldo_mantenimiento": 469448.72,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-26-75",
+      "sector": "A",
+      "manzana": "26",
+      "numero": "75",
+      "titular": "BUSTOSBRUNO",
+      "direccion": "CASA229",
+      "saldo_mantenimiento": 469448.72,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-18-56",
+      "sector": "A",
+      "manzana": "18",
+      "numero": "56",
+      "titular": "BUSTOSCLAUDIAANA",
+      "direccion": "CASAN16",
+      "saldo_mantenimiento": 230095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-26-76",
+      "sector": "A",
+      "manzana": "26",
+      "numero": "76",
+      "titular": "BUSTOSDECOLLANTEMARIELA",
+      "direccion": "CASA 229",
+      "saldo_mantenimiento": 466790.67,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-15-70",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "70",
+      "titular": "BUSTOSROSADE",
+      "direccion": "",
+      "saldo_mantenimiento": 60.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-19-104",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "104",
+      "titular": "CABANESMARIADELCARMEN",
+      "direccion": "EXPEAT14",
+      "saldo_mantenimiento": 180000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-12-127",
+      "sector": "E",
+      "manzana": "12",
+      "numero": "127",
+      "titular": "CABRERAMIGUEL",
+      "direccion": "",
+      "saldo_mantenimiento": 334806.55,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-15-84",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "84",
+      "titular": "CACERESNILDADELVALLE",
+      "direccion": "PEATONAL4N0393",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-17-49",
+      "sector": "A",
+      "manzana": "17",
+      "numero": "49",
+      "titular": "CAMPOSCELESTEDELVALLE",
+      "direccion": "CALLE8S/N",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-15-52",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "52",
+      "titular": "CAMPOSOSCAREDUARDO",
+      "direccion": "",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-20-80",
+      "sector": "A",
+      "manzana": "20",
+      "numero": "80",
+      "titular": "CARABAJALMARIATERESA",
+      "direccion": "CALLE1No.351",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "baja"
+    },
+    {
+      "nomenclatura": "A-22-106",
+      "sector": "A",
+      "manzana": "22",
+      "numero": "106",
+      "titular": "CARBELALEJANDRADELVALLE",
+      "direccion": "FELIXABDALA8",
+      "saldo_mantenimiento": 380176.41,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-22-78",
+      "sector": "A",
+      "manzana": "22",
+      "numero": "78",
+      "titular": "CARBELALEJANDRADELVALLE",
+      "direccion": "FELIXABDALA8",
+      "saldo_mantenimiento": 473382.64,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-22-101",
+      "sector": "A",
+      "manzana": "22",
+      "numero": "101",
+      "titular": "CARBELMARIADELCARMEN",
+      "direccion": "LAPRIDA45",
+      "saldo_mantenimiento": 182000.41,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-22-102",
+      "sector": "A",
+      "manzana": "22",
+      "numero": "102",
+      "titular": "CARBELMARIADELCARMEN",
+      "direccion": "LAPRIDA45",
+      "saldo_mantenimiento": 182000.41,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-22-104",
+      "sector": "A",
+      "manzana": "22",
+      "numero": "104",
+      "titular": "CARBELOMARDARIO",
+      "direccion": "AV.J.D.PERON251",
+      "saldo_mantenimiento": 240728.11,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-42-88",
+      "sector": "A",
+      "manzana": "42",
+      "numero": "88",
+      "titular": "CARRANZAANDREACARINA",
+      "direccion": "PENISULATRINIDAD",
+      "saldo_mantenimiento": 163860.4,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-26-74",
+      "sector": "A",
+      "manzana": "26",
+      "numero": "74",
+      "titular": "CASTILLOEUSEBIADELVALLE",
+      "direccion": "CASA N2",
+      "saldo_mantenimiento": 462972.77,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-29-89",
+      "sector": "A",
+      "manzana": "29",
+      "numero": "89",
+      "titular": "CASTRODEVOSSNIMIA",
+      "direccion": "R.V.PEXALOZA 177",
+      "saldo_mantenimiento": 60.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-19-92",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "92",
+      "titular": "CASTROFAUSTOAMON",
+      "direccion": "No31",
+      "saldo_mantenimiento": 180000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-21-80",
+      "sector": "A",
+      "manzana": "21",
+      "numero": "80",
+      "titular": "CASTRONICOLASALBERTO",
+      "direccion": "ELCHACHO330",
+      "saldo_mantenimiento": 100060.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-21-81",
+      "sector": "A",
+      "manzana": "21",
+      "numero": "81",
+      "titular": "CASTRONICOLASALBERTO",
+      "direccion": "ELCHACHO330",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-37-67",
+      "sector": "A",
+      "manzana": "37",
+      "numero": "67",
+      "titular": "CATTANEOCARLOSALBERTO",
+      "direccion": "LENGUEVILLE85",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-38-65",
+      "sector": "A",
+      "manzana": "38",
+      "numero": "65",
+      "titular": "CEBALLOSEDITHDELVALLE",
+      "direccion": "CATAMARCAN276",
+      "saldo_mantenimiento": 266986.23,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-19-89",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "89",
+      "titular": "CENTENO ELIAS CARMELO",
+      "direccion": "MARIANO MORENO",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-24-88",
+      "sector": "A",
+      "manzana": "24",
+      "numero": "88",
+      "titular": "CENTENOLUIS",
+      "direccion": "9 DEJULION384",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-24-89",
+      "sector": "A",
+      "manzana": "24",
+      "numero": "89",
+      "titular": "CENTENOLUIS",
+      "direccion": "9 DEJULIO N384",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-11-125",
+      "sector": "E",
+      "manzana": "11",
+      "numero": "125",
+      "titular": "CENTURIONMIGUELANGEL",
+      "direccion": "CASA33",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-26-114",
+      "sector": "E",
+      "manzana": "26",
+      "numero": "114",
+      "titular": "CHAIGLUISELIAS",
+      "direccion": "COLONN0536",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-26-115",
+      "sector": "E",
+      "manzana": "26",
+      "numero": "115",
+      "titular": "CHAIJJORGEALBERTO",
+      "direccion": "BRASIL268",
+      "saldo_mantenimiento": 378301.88,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-17-85",
+      "sector": "A",
+      "manzana": "17",
+      "numero": "85",
+      "titular": "CONSTANTINO",
+      "direccion": "CHIEVAZZASEBASTIAN",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-35-60",
+      "sector": "A",
+      "manzana": "35",
+      "numero": "60",
+      "titular": "COBRESIIVAN",
+      "direccion": "CONSTANTINO",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-35-51",
+      "sector": "A",
+      "manzana": "35",
+      "numero": "51",
+      "titular": "CONTRERAWENCESALAUEUTAKIO",
+      "direccion": "JUJUY257",
+      "saldo_mantenimiento": 449829.14,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-41-90",
+      "sector": "A",
+      "manzana": "41",
+      "numero": "90",
+      "titular": "CONTRERASNAHUEL",
+      "direccion": "CENTRO",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-30-84",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "84",
+      "titular": "CONTRERASSILVIABEATRIZ",
+      "direccion": "CALLE1CASA346",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-23-101",
+      "sector": "A",
+      "manzana": "23",
+      "numero": "101",
+      "titular": "CORTEZJORGEDANIEL",
+      "direccion": "CARBELN244",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-23-102",
+      "sector": "A",
+      "manzana": "23",
+      "numero": "102",
+      "titular": "CORTEZMA.ELSARITA",
+      "direccion": "LONGUEVILLEN3599",
+      "saldo_mantenimiento": 469448.72,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-11-48",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "48",
+      "titular": "CORZOMIRTARAMONA",
+      "direccion": "PROYECTADAN1440",
+      "saldo_mantenimiento": 392478.44,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-15-74",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "74",
+      "titular": "Corzo Nora",
+      "direccion": "MARTINGOMEZESQ",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-41-88",
+      "sector": "A",
+      "manzana": "41",
+      "numero": "88",
+      "titular": "CORZOSANTLAGOTOMAS",
+      "direccion": "DIEGARROYO",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-23-70",
+      "sector": "A",
+      "manzana": "23",
+      "numero": "70",
+      "titular": "CORZOSEGUNDOHORACIO",
+      "direccion": "9DEJULION181",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-28-86",
+      "sector": "A",
+      "manzana": "28",
+      "numero": "86",
+      "titular": "COTA VICTORIA ESTHER",
+      "direccion": "4#304",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-15-96",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "96",
+      "titular": "CRISTIANJOELARTAZA",
+      "direccion": "FELIXABDALA426",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-35-62",
+      "sector": "A",
+      "manzana": "35",
+      "numero": "62",
+      "titular": "DELAFUENTESTELLAEDITH",
+      "direccion": "GONZALEZ379",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-35-63",
+      "sector": "A",
+      "manzana": "35",
+      "numero": "63",
+      "titular": "DELAFUENTESTELLAEDITH",
+      "direccion": "GONZALEZ 379",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-45-94",
+      "sector": "E",
+      "manzana": "45",
+      "numero": "94",
+      "titular": "DELMORALHECTORRICARDO",
+      "direccion": "MISIONES 719",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-45-95",
+      "sector": "E",
+      "manzana": "45",
+      "numero": "95",
+      "titular": "DELMORALHECTORRICARDO",
+      "direccion": "MISIONES 719",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-45-96",
+      "sector": "E",
+      "manzana": "45",
+      "numero": "96",
+      "titular": "DELMORALHECTORRICARDO",
+      "direccion": "MISIONES 719",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-45-97",
+      "sector": "E",
+      "manzana": "45",
+      "numero": "97",
+      "titular": "DELMORALHECTORRICARDO",
+      "direccion": "MISIONES 719",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-29-104",
+      "sector": "A",
+      "manzana": "29",
+      "numero": "104",
+      "titular": "DIAZANIBALGERONIMO",
+      "direccion": "CASTROBARROS75",
+      "saldo_mantenimiento": 299135.79,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-11-52",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "52",
+      "titular": "DIAZ CLAUDIA ALEJANDRA",
+      "direccion": "ROCA422",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-13-62",
+      "sector": "A",
+      "manzana": "13",
+      "numero": "62",
+      "titular": "DIAZCRISTINAPAOLA",
+      "direccion": "",
+      "saldo_mantenimiento": 230095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-33-99",
+      "sector": "A",
+      "manzana": "33",
+      "numero": "99",
+      "titular": "DIAZDE GARCIA MA.BLANCA",
+      "direccion": "SAG. CORAZON N358",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-42-84",
+      "sector": "A",
+      "manzana": "42",
+      "numero": "84",
+      "titular": "DIAZESCALANTE CLAUDIA",
+      "direccion": "CHAMICAL",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-20-116",
+      "sector": "E",
+      "manzana": "20",
+      "numero": "116",
+      "titular": "DIAZFERMINB.",
+      "direccion": "CATAMARCA132",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-33-98",
+      "sector": "A",
+      "manzana": "33",
+      "numero": "98",
+      "titular": "DIAZMARIABLANCACLARA",
+      "direccion": "CALLE3N358",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "B-2-2",
+      "sector": "B",
+      "manzana": "2",
+      "numero": "2",
+      "titular": "DiazRamon",
+      "direccion": "Chamica",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "B-01-02",
+      "sector": "B",
+      "manzana": "01",
+      "numero": "02",
+      "titular": "DIAZRAMONHUGO",
+      "direccion": "RUTA79ANEXO",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-17-60",
+      "sector": "A",
+      "manzana": "17",
+      "numero": "60",
+      "titular": "DIAZSEVEROFLORENCIO",
+      "direccion": "BOLIVIA16",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-42-78",
+      "sector": "A",
+      "manzana": "42",
+      "numero": "78",
+      "titular": "DIPPKATHERINE",
+      "direccion": "JUJUY S/N",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-42-79",
+      "sector": "A",
+      "manzana": "42",
+      "numero": "79",
+      "titular": "DIPPKATHERINE",
+      "direccion": "JUJUY S/N",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-42-80",
+      "sector": "A",
+      "manzana": "42",
+      "numero": "80",
+      "titular": "DIPPKATHERINE",
+      "direccion": "JUJUYS/N",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-42-81",
+      "sector": "A",
+      "manzana": "42",
+      "numero": "81",
+      "titular": "DIPPKATHERINE",
+      "direccion": "JUJUY S/N",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-42-82",
+      "sector": "A",
+      "manzana": "42",
+      "numero": "82",
+      "titular": "DIPPKATHERINE",
+      "direccion": "JUJUY S/N",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-42-83",
+      "sector": "A",
+      "manzana": "42",
+      "numero": "83",
+      "titular": "DIPP KATHERINE",
+      "direccion": "JUJUY S/N",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-24-80",
+      "sector": "A",
+      "manzana": "24",
+      "numero": "80",
+      "titular": "FAJARDOVICTORJOSE",
+      "direccion": "CASA 132",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-42-87",
+      "sector": "A",
+      "manzana": "42",
+      "numero": "87",
+      "titular": "FARIASROBERTOJOSE",
+      "direccion": "SARMIENTO",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-28-105",
+      "sector": "A",
+      "manzana": "28",
+      "numero": "105",
+      "titular": "FERREYRAGUILLERMOGABRIEL",
+      "direccion": "LONGEVILLE",
+      "saldo_mantenimiento": 419380.78,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-15-77",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "77",
+      "titular": "FLORES CESAR O.",
+      "direccion": "MANUEL",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-37-97",
+      "sector": "A",
+      "manzana": "37",
+      "numero": "97",
+      "titular": "NUEVA656",
+      "direccion": "",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-21-116",
+      "sector": "E",
+      "manzana": "21",
+      "numero": "116",
+      "titular": "FUENTESBARRERASILVIA",
+      "direccion": "SANJUAN390",
+      "saldo_mantenimiento": 281653.93,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-13-101",
+      "sector": "A",
+      "manzana": "13",
+      "numero": "101",
+      "titular": "FUENTESBEATRIZ",
+      "direccion": "SAN LUIS No117",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-21-83",
+      "sector": "A",
+      "manzana": "21",
+      "numero": "83",
+      "titular": "FUNESANDREAROSA",
+      "direccion": "BOLIVIA26",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-29-105",
+      "sector": "A",
+      "manzana": "29",
+      "numero": "105",
+      "titular": "FURQUEDETOLEDOGLADYSLILIAN",
+      "direccion": "SANJUAN60",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-27-119",
+      "sector": "E",
+      "manzana": "27",
+      "numero": "119",
+      "titular": "GARCIACNRLOS",
+      "direccion": "ENTRER8S465",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-12-37",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "37",
+      "titular": "GARCIAMARIAALICIA",
+      "direccion": "ESQPASAJEANTO",
+      "saldo_mantenimiento": 230095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-12-38",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "38",
+      "titular": "GARCIAMARIAALICIA",
+      "direccion": "ESQPSJSANANT",
+      "saldo_mantenimiento": 230095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-21-90",
+      "sector": "A",
+      "manzana": "21",
+      "numero": "90",
+      "titular": "GARRORAULBENITO",
+      "direccion": "QUIROGA461",
+      "saldo_mantenimiento": 344028.12,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-38-66",
+      "sector": "A",
+      "manzana": "38",
+      "numero": "66",
+      "titular": "GARZINOMARIASILVIA",
+      "direccion": "",
+      "saldo_mantenimiento": 449827.51,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-25-112",
+      "sector": "E",
+      "manzana": "25",
+      "numero": "112",
+      "titular": "GodoyJosefa",
+      "direccion": "",
+      "saldo_mantenimiento": 100120.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-14-38",
+      "sector": "A",
+      "manzana": "14",
+      "numero": "38",
+      "titular": "GOMEZELSAMA",
+      "direccion": "INDEPENDENCIA S.N.",
+      "saldo_mantenimiento": 329973.74,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-30-86",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "86",
+      "titular": "GOMEZHUGO RAMON",
+      "direccion": "LOS DESAMP.",
+      "saldo_mantenimiento": 180.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-30-85",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "85",
+      "titular": "GOMEZMARIASOFIA",
+      "direccion": "ECHEVERRIA N970",
+      "saldo_mantenimiento": 60.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-08-132",
+      "sector": "E",
+      "manzana": "08",
+      "numero": "132",
+      "titular": "GONZALESMARIANICOLASA",
+      "direccion": "PEATONAL7N555",
+      "saldo_mantenimiento": 60.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-08-133",
+      "sector": "E",
+      "manzana": "08",
+      "numero": "133",
+      "titular": "GONZALESMARIANICOLASA",
+      "direccion": "PEATONAL7N555",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "B-1-1",
+      "sector": "B",
+      "manzana": "1",
+      "numero": "1",
+      "titular": "GONZALESNICOLASDELVALLE",
+      "direccion": "SANTARITAN23B",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-08-131",
+      "sector": "E",
+      "manzana": "08",
+      "numero": "131",
+      "titular": "GONZALESNICOLASDELVALLE",
+      "direccion": "SANTARITAN23B",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-11-45",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "45",
+      "titular": "GONZALEZPILARBENITO",
+      "direccion": "R.V.PEYALOZA426",
+      "saldo_mantenimiento": 342869.57,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-20-90",
+      "sector": "A",
+      "manzana": "20",
+      "numero": "90",
+      "titular": "GONZALEZROQUE",
+      "direccion": "",
+      "saldo_mantenimiento": 466742.35,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-23-115",
+      "sector": "E",
+      "manzana": "23",
+      "numero": "115",
+      "titular": "GONZALEZVERAVILMAROSA",
+      "direccion": "SAVEDRA1143",
+      "saldo_mantenimiento": 228066.2,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-12-96",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "96",
+      "titular": "GUANANJAY CATALINAOLGA",
+      "direccion": "12 DE OCTUBRE N*113",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-12-97",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "97",
+      "titular": "GUANANJAY CATALINA OLGA",
+      "direccion": "12 DE OCTUBRE N*113",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-12-98",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "98",
+      "titular": "GUANANJAYCATALINA OLGA",
+      "direccion": "12 DE OCTUBRE N*113",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-29-93",
+      "sector": "A",
+      "manzana": "29",
+      "numero": "93",
+      "titular": "GUANANJAYMARIAELENA",
+      "direccion": "No64",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-09-135",
+      "sector": "E",
+      "manzana": "09",
+      "numero": "135",
+      "titular": "GUANANJAYROMINASOLEDAD",
+      "direccion": "CALLE1810388",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-15-62",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "62",
+      "titular": "GUDIYO VICTOR RAUL",
+      "direccion": "PEYALOZA",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-26-101",
+      "sector": "A",
+      "manzana": "26",
+      "numero": "101",
+      "titular": "HEMMESELIASCARLOS",
+      "direccion": "CALLE181611",
+      "saldo_mantenimiento": 464132.62,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-26-102",
+      "sector": "A",
+      "manzana": "26",
+      "numero": "102",
+      "titular": "HEMMESELIASCARLOS",
+      "direccion": "CALLE181611",
+      "saldo_mantenimiento": 461909.54,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-37-66",
+      "sector": "A",
+      "manzana": "37",
+      "numero": "66",
+      "titular": "HILALJORGEEDUARDO",
+      "direccion": "MAJULAYAN(O)N0275",
+      "saldo_mantenimiento": 469448.72,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-15-90",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "90",
+      "titular": "IBAYEZANDREA",
+      "direccion": "C.DIAZMURIER",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-11-116",
+      "sector": "E",
+      "manzana": "11",
+      "numero": "116",
+      "titular": "IRUSTAEVAEGLE",
+      "direccion": "CALLE1810Nr0.44",
+      "saldo_mantenimiento": 463673.51,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-39-92",
+      "sector": "A",
+      "manzana": "39",
+      "numero": "92",
+      "titular": "ITURRIADEARMANDOJOSE",
+      "direccion": "ROSARIO V.",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-16-43",
+      "sector": "A",
+      "manzana": "16",
+      "numero": "43",
+      "titular": "JOFREMARIELA",
+      "direccion": "MALAVIO2344",
+      "saldo_mantenimiento": 334806.55,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-12-123",
+      "sector": "E",
+      "manzana": "12",
+      "numero": "123",
+      "titular": "KATHERINESCHEIBENGRAF",
+      "direccion": "FELIZABDALAN15",
+      "saldo_mantenimiento": 230095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-11-46",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "46",
+      "titular": "LEDESMAGERARDO",
+      "direccion": "1810YR.S.PEYA",
+      "saldo_mantenimiento": 262314.35,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-19-87",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "87",
+      "titular": "LEDESMAJUANASEBASTIANA",
+      "direccion": "ROQUESAENZPEYA",
+      "saldo_mantenimiento": 459976.41,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-38-67",
+      "sector": "A",
+      "manzana": "38",
+      "numero": "67",
+      "titular": "LELLIRAULEDUARDO",
+      "direccion": "SANMARTINN69",
+      "saldo_mantenimiento": 230095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-06-126",
+      "sector": "E",
+      "manzana": "06",
+      "numero": "126",
+      "titular": "LEZCANORUBENEDUARDO",
+      "direccion": "",
+      "saldo_mantenimiento": 469448.72,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-36-99",
+      "sector": "A",
+      "manzana": "36",
+      "numero": "99",
+      "titular": "LIRIODE ORTENZIMARIA B.DE",
+      "direccion": "PUERTOARGENTINO",
+      "saldo_mantenimiento": 291311.23,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-12-95",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "95",
+      "titular": "LIRIOMARIALAURA",
+      "direccion": "BRASIL150",
+      "saldo_mantenimiento": 180000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-30-80",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "80",
+      "titular": "LOPEZJORGEMARTIN",
+      "direccion": "SANTARITACASA11",
+      "saldo_mantenimiento": 448899.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-30-81",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "81",
+      "titular": "LOPEZJORGEMARTIN",
+      "direccion": "SANTARITACASA11",
+      "saldo_mantenimiento": 448580.64,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-12-53",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "53",
+      "titular": "LOZADAFRANCISCOGABRIEL",
+      "direccion": "PUBLICASN",
+      "saldo_mantenimiento": 225400.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-15-107",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "107",
+      "titular": "LUJANELENADELCARMEN",
+      "direccion": "MARTINGOMEZN057",
+      "saldo_mantenimiento": 384584.52,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-18-52",
+      "sector": "A",
+      "manzana": "18",
+      "numero": "52",
+      "titular": "LUJANELOISADELROSARIO",
+      "direccion": "FELIZABDALA506",
+      "saldo_mantenimiento": 180000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-27-104",
+      "sector": "A",
+      "manzana": "27",
+      "numero": "104",
+      "titular": "LUNAARGENTINAGREGORIA",
+      "direccion": "CATAMARCA238",
+      "saldo_mantenimiento": 281906.86,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-27-105",
+      "sector": "A",
+      "manzana": "27",
+      "numero": "105",
+      "titular": "LUNAARGENTINAGREGORIA",
+      "direccion": "CATAMARCA238",
+      "saldo_mantenimiento": 230095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-27-106",
+      "sector": "A",
+      "manzana": "27",
+      "numero": "106",
+      "titular": "LUNAARGENTINAGREGORIA",
+      "direccion": "CATAMARCA238",
+      "saldo_mantenimiento": 397633.12,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-15-100",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "100",
+      "titular": "LUNACESARRICARDO",
+      "direccion": "CEMENTERIO",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-13-61",
+      "sector": "A",
+      "manzana": "13",
+      "numero": "61",
+      "titular": "LUNADANIELRICARDO",
+      "direccion": "No3.ANGELB.",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-17-75",
+      "sector": "A",
+      "manzana": "17",
+      "numero": "75",
+      "titular": "LUNAFELIXOSCAR",
+      "direccion": "JUJUY279",
+      "saldo_mantenimiento": 465340.83,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-05-122",
+      "sector": "E",
+      "manzana": "05",
+      "numero": "122",
+      "titular": "LUNASANDRAELIZABETH",
+      "direccion": "JUJUY368",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-22-105",
+      "sector": "A",
+      "manzana": "22",
+      "numero": "105",
+      "titular": "MACCHIAVELLOMARIACRISTINA",
+      "direccion": "",
+      "saldo_mantenimiento": 324174.36,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-16-44",
+      "sector": "A",
+      "manzana": "16",
+      "numero": "44",
+      "titular": "MACHUCAEMANUELNICOLAS",
+      "direccion": "MAJULAYAN280",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-30-65",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "65",
+      "titular": "MALDONADONICOLASWALDO",
+      "direccion": "12DEOCTUBRE190",
+      "saldo_mantenimiento": 230095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-40-83",
+      "sector": "A",
+      "manzana": "40",
+      "numero": "83",
+      "titular": "MARTINEZFERNANDOMIGUEL",
+      "direccion": "LOSVALDEZ",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-10-118",
+      "sector": "E",
+      "manzana": "10",
+      "numero": "118",
+      "titular": "MARTINEZJORGEEDGARDO",
+      "direccion": "CALLE1.CASA310",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-11-136",
+      "sector": "E",
+      "manzana": "11",
+      "numero": "136",
+      "titular": "MARTINEZJORGEEDGARDO",
+      "direccion": "CALLE1CASA310",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-09-127",
+      "sector": "E",
+      "manzana": "09",
+      "numero": "127",
+      "titular": "MARTINEZLIBERTAD",
+      "direccion": "CALLE181081",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-14-56",
+      "sector": "A",
+      "manzana": "14",
+      "numero": "56",
+      "titular": "MATINEZCIPRIANOOSCAR",
+      "direccion": "SANTARITASN",
+      "saldo_mantenimiento": 299135.79,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-42-72",
+      "sector": "A",
+      "manzana": "42",
+      "numero": "72",
+      "titular": "MENEMEDGARDO",
+      "direccion": "BLASTALAS",
+      "saldo_mantenimiento": 291311.23,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-41-91",
+      "sector": "A",
+      "manzana": "41",
+      "numero": "91",
+      "titular": "MERCADOANAEVA",
+      "direccion": "D. DE ARROYO 79",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-41-92",
+      "sector": "A",
+      "manzana": "41",
+      "numero": "92",
+      "titular": "MERCADO ANA EVA",
+      "direccion": "D. DE ARROYO 79",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-19-90",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "90",
+      "titular": "MERCADODEALCAZARTERESA L.",
+      "direccion": "COLON No97",
+      "saldo_mantenimiento": 180000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-27-75",
+      "sector": "A",
+      "manzana": "27",
+      "numero": "75",
+      "titular": "MERCADOJUANCARLOS",
+      "direccion": "BARRIOBANCARIO",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-16-101",
+      "sector": "A",
+      "manzana": "16",
+      "numero": "101",
+      "titular": "MERCADOPABLONICOLAS",
+      "direccion": "PEATONAL4N0323",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-20-86",
+      "sector": "A",
+      "manzana": "20",
+      "numero": "86",
+      "titular": "MERCADOROSACANDIDA",
+      "direccion": "CASA 43",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-24-85",
+      "sector": "A",
+      "manzana": "24",
+      "numero": "85",
+      "titular": "MOLINAANDRESNICOLAS",
+      "direccion": "G.LONGEVILLE479",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-24-86",
+      "sector": "A",
+      "manzana": "24",
+      "numero": "86",
+      "titular": "MOLINAANDRESNICOLAS",
+      "direccion": "G.LONGEVILLE479",
+      "saldo_mantenimiento": 276624.06,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-19-105",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "105",
+      "titular": "MOLINADIEGOALEJANDRO",
+      "direccion": "No152",
+      "saldo_mantenimiento": 476146.99,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-12-107",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "107",
+      "titular": "MOLINAFRANCISCOHIPOLITO",
+      "direccion": "",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-12-106",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "106",
+      "titular": "MOLINAFRANCISCORAMON",
+      "direccion": "CASTROBARROS692",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-12-116",
+      "sector": "E",
+      "manzana": "12",
+      "numero": "116",
+      "titular": "MOLINA MICAELA CLORINDA",
+      "direccion": "BELGRANO S.N.",
+      "saldo_mantenimiento": 81445.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-27-85",
+      "sector": "A",
+      "manzana": "27",
+      "numero": "85",
+      "titular": "MONTAYEZBLANCAIRIS",
+      "direccion": "CASA36",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-15-116",
+      "sector": "E",
+      "manzana": "15",
+      "numero": "116",
+      "titular": "MONTANEZJORGEORLANDO",
+      "direccion": "CASA12",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-27-84",
+      "sector": "A",
+      "manzana": "27",
+      "numero": "84",
+      "titular": "MONTERREYBLANCAIRIS",
+      "direccion": "12DEOCTUBRE",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-40-91",
+      "sector": "A",
+      "manzana": "40",
+      "numero": "91",
+      "titular": "COLON130",
+      "direccion": "MONTESDEOCAVIDABLECARLA",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-40-92",
+      "sector": "A",
+      "manzana": "40",
+      "numero": "92",
+      "titular": "COLON130",
+      "direccion": "",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-19-98",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "98",
+      "titular": "MORACECILIA",
+      "direccion": "PE￥ALOZAN0324",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-16-81",
+      "sector": "A",
+      "manzana": "16",
+      "numero": "81",
+      "titular": "MORALESMARIACRISTINA",
+      "direccion": "Ng509",
+      "saldo_mantenimiento": 449832.37,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-16-82",
+      "sector": "A",
+      "manzana": "16",
+      "numero": "82",
+      "titular": "MARIANOMORENO",
+      "direccion": "MORALESMARIACRISTINA",
+      "saldo_mantenimiento": 476815.28,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-14-88",
+      "sector": "A",
+      "manzana": "14",
+      "numero": "88",
+      "titular": "MORALESNANCYDELVALLE",
+      "direccion": "9DEJULIO184",
+      "saldo_mantenimiento": 466549.03,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-40-78",
+      "sector": "A",
+      "manzana": "40",
+      "numero": "78",
+      "titular": "MORALESNANCYDELVALLE",
+      "direccion": "9DEJULIO184",
+      "saldo_mantenimiento": 230095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-23-104",
+      "sector": "A",
+      "manzana": "23",
+      "numero": "104",
+      "titular": "MORENOAGRIPINA",
+      "direccion": "ELCHACO359",
+      "saldo_mantenimiento": 441128.44,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-21-92",
+      "sector": "A",
+      "manzana": "21",
+      "numero": "92",
+      "titular": "MORENODECARBELVILMA ROSA",
+      "direccion": "MURIAS1",
+      "saldo_mantenimiento": 278069.32,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-25-76",
+      "sector": "A",
+      "manzana": "25",
+      "numero": "76",
+      "titular": "MORENOILDA",
+      "direccion": "CASTROBARROSN82",
+      "saldo_mantenimiento": 463813.69,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-37-95",
+      "sector": "A",
+      "manzana": "37",
+      "numero": "95",
+      "titular": "MORENOLUCIANA",
+      "direccion": "CHAMICAL",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-15-92",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "92",
+      "titular": "MORENOMERCEDESPATRICIA",
+      "direccion": "12DEOCTUBRE354",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-17-43",
+      "sector": "A",
+      "manzana": "17",
+      "numero": "43",
+      "titular": "MORENOSILVIO",
+      "direccion": "GABRIELLONGEVIL",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-21-56",
+      "sector": "A",
+      "manzana": "21",
+      "numero": "56",
+      "titular": "MOREYRA RAMON NICOLAS",
+      "direccion": "656 BO. TIRO",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-35-110",
+      "sector": "E",
+      "manzana": "35",
+      "numero": "110",
+      "titular": "MOYANOMARIAGLADYS",
+      "direccion": "CATAMARCA43",
+      "saldo_mantenimiento": 240728.11,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-16-107",
+      "sector": "A",
+      "manzana": "16",
+      "numero": "107",
+      "titular": "MOYANOOLGA",
+      "direccion": "CATAMARCAN35",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-11-40",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "40",
+      "titular": "MUNICIPALIDAD DE CHAMICAL",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-11-41",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "41",
+      "titular": "MUNICIPALIDADDECHAMICAL",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-11-42",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "42",
+      "titular": "MUNICIPALIDAD DE CHAMICAL",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-11-43",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "43",
+      "titular": "MUNICIPALIDADDECHAMICAL",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-11-44",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "44",
+      "titular": "MUNICIPALIDADDECHAMICAL",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-11-50",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "50",
+      "titular": "MUNICIPALIDADDECHAMICAL",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-11-53",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "53",
+      "titular": "MUNICIPALIDADDECHAMICAL",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-11-56",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "56",
+      "titular": "MUNICIPALIDADDECHAMICAL",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-11-60",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "60",
+      "titular": "MUNICIPALIDADDECHAMICAL",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-14-50",
+      "sector": "A",
+      "manzana": "14",
+      "numero": "50",
+      "titular": "MUNICIPALIDADDECHAMICAL",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-14-58",
+      "sector": "A",
+      "manzana": "14",
+      "numero": "58",
+      "titular": "MUNICIPALIDADDECHAMICAL",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-15-75",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "75",
+      "titular": "MUNICIPALIDADDECHAMICAL",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-17-39",
+      "sector": "A",
+      "manzana": "17",
+      "numero": "39",
+      "titular": "MUNICIPALIDADDECHAMICAL",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-20-50",
+      "sector": "A",
+      "manzana": "20",
+      "numero": "50",
+      "titular": "MUNICIPALIDADDECHAMICAL",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-25-85",
+      "sector": "A",
+      "manzana": "25",
+      "numero": "85",
+      "titular": "MUNICIPALIDADDECHAMICAL",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-28-106",
+      "sector": "A",
+      "manzana": "28",
+      "numero": "106",
+      "titular": "MUNICIPALIDADDECHAMICAL",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-18-40",
+      "sector": "A",
+      "manzana": "18",
+      "numero": "40",
+      "titular": "NARBONAANTONIO",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-25-95",
+      "sector": "A",
+      "manzana": "25",
+      "numero": "95",
+      "titular": "NIETODEABALLAYVICTORIA M.",
+      "direccion": "FELIX ABDALA 430",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-18-99",
+      "sector": "A",
+      "manzana": "18",
+      "numero": "99",
+      "titular": "NIETODENIETO",
+      "direccion": "FELIX ABDALA 635",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-19-102",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "102",
+      "titular": "NIETOMARIANAALEJANDRA",
+      "direccion": "MANUEL",
+      "saldo_mantenimiento": 426823.33,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-35-80",
+      "sector": "A",
+      "manzana": "35",
+      "numero": "80",
+      "titular": "NORMARAQUELBAJIMAY",
+      "direccion": "CARBEL357",
+      "saldo_mantenimiento": 466771.33,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-41-82",
+      "sector": "A",
+      "manzana": "41",
+      "numero": "82",
+      "titular": "OLARIAGAMYRIAMBEATRIZ",
+      "direccion": "CORRIENTES",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-19-125",
+      "sector": "E",
+      "manzana": "19",
+      "numero": "125",
+      "titular": "OROPELHERMANNICOLAS",
+      "direccion": "",
+      "saldo_mantenimiento": 323014.47,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-11-39",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "39",
+      "titular": "OROPELRODRIGUEZROSANOELIA",
+      "direccion": "AVRIVADAVIA7632B",
+      "saldo_mantenimiento": 354137.81,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-12-117",
+      "sector": "E",
+      "manzana": "12",
+      "numero": "117",
+      "titular": "ORTEGAAIDOSAUL",
+      "direccion": "MENDOZANo297",
+      "saldo_mantenimiento": 222869.71,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-17-106",
+      "sector": "A",
+      "manzana": "17",
+      "numero": "106",
+      "titular": "OVIEDOELIASJOSE",
+      "direccion": "S/DIRECCION",
+      "saldo_mantenimiento": 474871.15,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-17-107",
+      "sector": "A",
+      "manzana": "17",
+      "numero": "107",
+      "titular": "OVIEDOELIASJOSE",
+      "direccion": "S/DIRECCION",
+      "saldo_mantenimiento": 455636.56,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-24-78",
+      "sector": "A",
+      "manzana": "24",
+      "numero": "78",
+      "titular": "OYOLAANGELICAE.YRIS",
+      "direccion": "9DEJULIO395",
+      "saldo_mantenimiento": 370569.38,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-24-79",
+      "sector": "A",
+      "manzana": "24",
+      "numero": "79",
+      "titular": "OYOLAANGELICAE.YRIS",
+      "direccion": "CHAMICAL",
+      "saldo_mantenimiento": 427016.62,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-21-135",
+      "sector": "E",
+      "manzana": "21",
+      "numero": "135",
+      "titular": "OYOLACIRILOMARTIN",
+      "direccion": "INDEPENDENCIA25",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-11-51",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "51",
+      "titular": "OYOLATRIFONCANDIDO",
+      "direccion": "S.N.",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-26-116",
+      "sector": "E",
+      "manzana": "26",
+      "numero": "116",
+      "titular": "PAIGESBLANCAIRIS",
+      "direccion": "VICENTEALMANACID",
+      "saldo_mantenimiento": 476509.45,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-40-55",
+      "sector": "A",
+      "manzana": "40",
+      "numero": "55",
+      "titular": "PALACIOAYAN MARIA DOLEDAD",
+      "direccion": "1810N77",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-11-70",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "70",
+      "titular": "PALACIOSPEDROGUSTAVO",
+      "direccion": "FALUCHON0391",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-14-81",
+      "sector": "A",
+      "manzana": "14",
+      "numero": "81",
+      "titular": "PARCELA DISPONIBLE",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-15-67",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "67",
+      "titular": "PARCELADISPONIBLE",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-16-80",
+      "sector": "A",
+      "manzana": "16",
+      "numero": "80",
+      "titular": "PARCELADISPONIBLE",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-26-77",
+      "sector": "A",
+      "manzana": "26",
+      "numero": "77",
+      "titular": "PARCELADISPONIBLE",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-30-79",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "79",
+      "titular": "PARCELA DISPONIBLE",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-39-90",
+      "sector": "A",
+      "manzana": "39",
+      "numero": "90",
+      "titular": "PARCELADISPONIBLE",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-10-140",
+      "sector": "E",
+      "manzana": "10",
+      "numero": "140",
+      "titular": "PARCELADISPONIBLE",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-11-127",
+      "sector": "E",
+      "manzana": "11",
+      "numero": "127",
+      "titular": "PARCELADISPONIBLE",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-12-121",
+      "sector": "E",
+      "manzana": "12",
+      "numero": "121",
+      "titular": "PARCELADISPONIBLE",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-12-125",
+      "sector": "E",
+      "manzana": "12",
+      "numero": "125",
+      "titular": "PARCELADISPONIBLE",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-16-115",
+      "sector": "E",
+      "manzana": "16",
+      "numero": "115",
+      "titular": "PARCELADISPONIBLE",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-24-116",
+      "sector": "E",
+      "manzana": "24",
+      "numero": "116",
+      "titular": "PARCELADISPONIBLE",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-42-77",
+      "sector": "A",
+      "manzana": "42",
+      "numero": "77",
+      "titular": "PAULOFRANCISCOVOTTERO",
+      "direccion": "FELIZABDALA385",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-25-89",
+      "sector": "A",
+      "manzana": "25",
+      "numero": "89",
+      "titular": "PEYALOZABLANCA LIDIA",
+      "direccion": "CALLE2N*398",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-19-100",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "100",
+      "titular": "PEYALOZAMARIA ILDA",
+      "direccion": "CATAMARCAN0251",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-25-91",
+      "sector": "A",
+      "manzana": "25",
+      "numero": "91",
+      "titular": "PEYALOZAMAURICIAEMMA",
+      "direccion": "VICANAMARCAM57ID",
+      "saldo_mantenimiento": 60.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-21-98",
+      "sector": "A",
+      "manzana": "21",
+      "numero": "98",
+      "titular": "PEIRETTTILUIS",
+      "direccion": "CENTROCENTRO",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-21-99",
+      "sector": "A",
+      "manzana": "21",
+      "numero": "99",
+      "titular": "PEIRETTTILUIS",
+      "direccion": "CENTROCENTRO",
+      "saldo_mantenimiento": 180000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-35-59",
+      "sector": "A",
+      "manzana": "35",
+      "numero": "59",
+      "titular": "PEREYRAMARIACRISTINA",
+      "direccion": "CALLE2NO.363",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-35-61",
+      "sector": "A",
+      "manzana": "35",
+      "numero": "61",
+      "titular": "PEREYRAMARIACRISTINA",
+      "direccion": "CALLE2NO.363",
+      "saldo_mantenimiento": 268110.82,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-11-106",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "106",
+      "titular": "PEREZCLARADELVALLE",
+      "direccion": "VILLANUEVAN770",
+      "saldo_mantenimiento": 312409.96,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-16-108",
+      "sector": "A",
+      "manzana": "16",
+      "numero": "108",
+      "titular": "PIVIEROMARTHA",
+      "direccion": "CATAMARCA45",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-08-135",
+      "sector": "E",
+      "manzana": "08",
+      "numero": "135",
+      "titular": "POTURGALJUANA",
+      "direccion": "",
+      "saldo_mantenimiento": 180000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-19-83",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "83",
+      "titular": "QUAGLIAROALICIA",
+      "direccion": "MAJULAYANN0258",
+      "saldo_mantenimiento": 283578.73,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-19-95",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "95",
+      "titular": "QUAGLIAROCARINAVIVIANA",
+      "direccion": "J.V.GONZALEZ107.",
+      "saldo_mantenimiento": 463601.02,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-19-103",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "103",
+      "titular": "QUAGLIAROLUISALBERTO",
+      "direccion": "SANLUISN0402",
+      "saldo_mantenimiento": 291311.23,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-13-64",
+      "sector": "A",
+      "manzana": "13",
+      "numero": "64",
+      "titular": "QUAGLIARORICARDOFABIO",
+      "direccion": "MAJULAYANN0258",
+      "saldo_mantenimiento": 365978.19,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-24-76",
+      "sector": "A",
+      "manzana": "24",
+      "numero": "76",
+      "titular": "QUINTEROSANDREACARLA",
+      "direccion": "JUJUY640",
+      "saldo_mantenimiento": 130095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-26-100",
+      "sector": "A",
+      "manzana": "26",
+      "numero": "100",
+      "titular": "QUINTEROSARMANDORUPERTO",
+      "direccion": "",
+      "saldo_mantenimiento": 467370.62,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-21-105",
+      "sector": "A",
+      "manzana": "21",
+      "numero": "105",
+      "titular": "AV. J. D. PERON 63",
+      "direccion": "GRACIE",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-21-106",
+      "sector": "A",
+      "manzana": "21",
+      "numero": "106",
+      "titular": "AV.J. D. PERON 63",
+      "direccion": "GRACIE",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-23-100",
+      "sector": "A",
+      "manzana": "23",
+      "numero": "100",
+      "titular": "QUINTEROSPEDRO",
+      "direccion": "PUBLICA206",
+      "saldo_mantenimiento": 363561.79,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-37-94",
+      "sector": "A",
+      "manzana": "37",
+      "numero": "94",
+      "titular": "REARTESMIRIAM",
+      "direccion": "CONSTANTINO",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-10-136",
+      "sector": "E",
+      "manzana": "10",
+      "numero": "136",
+      "titular": "REINOSOEDITHDELVALLE",
+      "direccion": "CARBEL301",
+      "saldo_mantenimiento": 339639.36,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-17-83",
+      "sector": "A",
+      "manzana": "17",
+      "numero": "83",
+      "titular": "RENAUDEAUMIRTADELVALLE",
+      "direccion": "LONGOVILLEN210",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-08-130",
+      "sector": "E",
+      "manzana": "08",
+      "numero": "130",
+      "titular": "REYNOSODIDAMARTA",
+      "direccion": "1810 N 420",
+      "saldo_mantenimiento": 180000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-08-134",
+      "sector": "E",
+      "manzana": "08",
+      "numero": "134",
+      "titular": "REYNOSOMERCEDESDELROSARIO",
+      "direccion": "BO.A.V.PE￥ALOZA",
+      "saldo_mantenimiento": 205864.56,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-15-106",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "106",
+      "titular": "RICARTERAMONARMANDO",
+      "direccion": "CIUDADELAN0180",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-32-101",
+      "sector": "A",
+      "manzana": "32",
+      "numero": "101",
+      "titular": "RIGACCIJOSE CARLOS",
+      "direccion": "SANMARTINN187",
+      "saldo_mantenimiento": 289378.11,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-14-106",
+      "sector": "A",
+      "manzana": "14",
+      "numero": "106",
+      "titular": "RIVERODANIELSERGIO",
+      "direccion": "MURIE210",
+      "saldo_mantenimiento": 461063.81,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-14-105",
+      "sector": "A",
+      "manzana": "14",
+      "numero": "105",
+      "titular": "RIVERO GABRIELENRIQUE",
+      "direccion": "MIGUELAYANNo116",
+      "saldo_mantenimiento": 469448.72,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-25-77",
+      "sector": "A",
+      "manzana": "25",
+      "numero": "77",
+      "titular": "ROBLESRUBEN",
+      "direccion": "CASTROBARROSNI82",
+      "saldo_mantenimiento": 289374.89,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-30-78",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "78",
+      "titular": "RODRIGUEZGLADYSANA",
+      "direccion": "CASA 14",
+      "saldo_mantenimiento": 440602.58,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-40-81",
+      "sector": "A",
+      "manzana": "40",
+      "numero": "81",
+      "titular": "ROJASJULIO",
+      "direccion": "PUERTO MADERO 142",
+      "saldo_mantenimiento": 179092.47,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-49-09",
+      "sector": "A",
+      "manzana": "49",
+      "numero": "09",
+      "titular": "AY.J.D.EIUIN0",
+      "direccion": "SOLEDA",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-15-54",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "54",
+      "titular": "ROMERO JORGE HUGO",
+      "direccion": "CALLEPUBLICA S/N",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-25-81",
+      "sector": "A",
+      "manzana": "25",
+      "numero": "81",
+      "titular": "ROMEROMAGALISARA",
+      "direccion": "PADREMARTINEZ",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-19-107",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "107",
+      "titular": "ROMEROMARICELDELVALLE",
+      "direccion": "GOMEZ340",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-12-90",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "90",
+      "titular": "ROMEROMIGUELFRANCISCO",
+      "direccion": "MISIONES448",
+      "saldo_mantenimiento": 180020.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-12-91",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "91",
+      "titular": "ROMEROMIGUELFRANCISCO",
+      "direccion": "MISIONES448",
+      "saldo_mantenimiento": 326107.49,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-30-97",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "97",
+      "titular": "RUIZROQUERAMON",
+      "direccion": "SANTARITAS/N",
+      "saldo_mantenimiento": 423137.83,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-13-80",
+      "sector": "A",
+      "manzana": "13",
+      "numero": "80",
+      "titular": "SAAVEDRAGREGORIOIRINEO",
+      "direccion": "",
+      "saldo_mantenimiento": 415240.99,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-11-108",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "108",
+      "titular": "SALADINOANAMARIAMERCEDES",
+      "direccion": "CALLEPUBLICAN31",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-28-95",
+      "sector": "A",
+      "manzana": "28",
+      "numero": "95",
+      "titular": "SANCHEZLIDIARUPERTA",
+      "direccion": "EL CHACHO163",
+      "saldo_mantenimiento": 449836.52,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-28-96",
+      "sector": "A",
+      "manzana": "28",
+      "numero": "96",
+      "titular": "SANCHEZSANTIAGOJOSE",
+      "direccion": "FERRERVIEYRA156",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-28-97",
+      "sector": "A",
+      "manzana": "28",
+      "numero": "97",
+      "titular": "SANCHEZSANTIAGOJOSE",
+      "direccion": "FERRER VIEYRA 156",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-17-71",
+      "sector": "A",
+      "manzana": "17",
+      "numero": "71",
+      "titular": "GABRIEL",
+      "direccion": "SANCHOAZUCENA",
+      "saldo_mantenimiento": 466790.67,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-21-115",
+      "sector": "E",
+      "manzana": "21",
+      "numero": "115",
+      "titular": "SARMIENTOALBERTO",
+      "direccion": "SCHEINBENGRAFHELMUTH",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-12-129",
+      "sector": "E",
+      "manzana": "12",
+      "numero": "129",
+      "titular": "F.ABDALA",
+      "direccion": "",
+      "saldo_mantenimiento": 262819.54,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-18-58",
+      "sector": "A",
+      "manzana": "18",
+      "numero": "58",
+      "titular": "SILVATOMASABENITAR",
+      "direccion": "CARLOSMURIA323",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-36-68",
+      "sector": "A",
+      "manzana": "36",
+      "numero": "68",
+      "titular": "SINCICHALEJANDROSERGIO",
+      "direccion": "No207",
+      "saldo_mantenimiento": 373469.05,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-20-106",
+      "sector": "A",
+      "manzana": "20",
+      "numero": "106",
+      "titular": "SOSA CARLOS ALBERTO",
+      "direccion": "PEATONAL4N382",
+      "saldo_mantenimiento": 261328.07,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-13-66",
+      "sector": "A",
+      "manzana": "13",
+      "numero": "66",
+      "titular": "SOSASILVIOCESAR",
+      "direccion": "ELCHACONo167",
+      "saldo_mantenimiento": 180000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-30-41",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "41",
+      "titular": "STELLA",
+      "direccion": "ZARAGOZA",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-45-200",
+      "sector": "E",
+      "manzana": "45",
+      "numero": "200",
+      "titular": "STELLA",
+      "direccion": "ZARAGOZA",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-08-129",
+      "sector": "E",
+      "manzana": "08",
+      "numero": "129",
+      "titular": "TEUMACOREINALDO FERNANDO",
+      "direccion": "25DEMAYO258",
+      "saldo_mantenimiento": 452727.19,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-11-49",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "49",
+      "titular": "TOLEDODOMINGO",
+      "direccion": "25 DE MAYO S.N.",
+      "saldo_mantenimiento": 471575.17,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-11-47",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "47",
+      "titular": "TOLEDOTEODORAAGUSTINA",
+      "direccion": "COLON568",
+      "saldo_mantenimiento": 230095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-29-86",
+      "sector": "A",
+      "manzana": "29",
+      "numero": "86",
+      "titular": "ANGELV.PEYALOZA",
+      "direccion": "TORRES CRESENCIO HECTOR",
+      "saldo_mantenimiento": 230218.17,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-15-85",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "85",
+      "titular": "COLON 248",
+      "direccion": "DOMING",
+      "saldo_mantenimiento": 180060.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-14-107",
+      "sector": "A",
+      "manzana": "14",
+      "numero": "107",
+      "titular": "TORRESDERUIZROSALBADELVAL",
+      "direccion": "RUTAAPOLCOS/N",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-30-90",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "90",
+      "titular": "TORRESISADORANICOLASA",
+      "direccion": "ESPA￥AN/156",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-26-78",
+      "sector": "A",
+      "manzana": "26",
+      "numero": "78",
+      "titular": "TORRESJHONATANRICARDO",
+      "direccion": "CALLE1810N121",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-16-84",
+      "sector": "A",
+      "manzana": "16",
+      "numero": "84",
+      "titular": "TORRESLORENZO",
+      "direccion": "SANLUIS13",
+      "saldo_mantenimiento": 449827.51,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-42-65",
+      "sector": "A",
+      "manzana": "42",
+      "numero": "65",
+      "titular": "CASTRO BARROS",
+      "direccion": "TORRES MARIA ESTHER",
+      "saldo_mantenimiento": 329973.74,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-42-66",
+      "sector": "A",
+      "manzana": "42",
+      "numero": "66",
+      "titular": "TORRES MARIA ESTHER",
+      "direccion": "CASTRO BARROS",
+      "saldo_mantenimiento": 449827.51,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-14-137",
+      "sector": "A",
+      "manzana": "14",
+      "numero": "137",
+      "titular": "TORRESROSAURA",
+      "direccion": "",
+      "saldo_mantenimiento": 284806.55,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-20-105",
+      "sector": "A",
+      "manzana": "20",
+      "numero": "105",
+      "titular": "TUYONDEBAZANDORINDA",
+      "direccion": "SANMARTIN170",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-37-85",
+      "sector": "A",
+      "manzana": "37",
+      "numero": "85",
+      "titular": "VALDEZDEVEGAROSA",
+      "direccion": "FALUCHO N058",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-12-40",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "40",
+      "titular": "VALDEZPABLO",
+      "direccion": "MARTINGOMEZ07",
+      "saldo_mantenimiento": 334806.55,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-27-103",
+      "sector": "A",
+      "manzana": "27",
+      "numero": "103",
+      "titular": "VALENCIAHUGOVICTORIANO",
+      "direccion": "CATAMARCAN0360",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-35-55",
+      "sector": "A",
+      "manzana": "35",
+      "numero": "55",
+      "titular": "VALENCIORITADELVALLE",
+      "direccion": "M.VILLANUEVA646",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-35-64",
+      "sector": "A",
+      "manzana": "35",
+      "numero": "64",
+      "titular": "VALENCIORITADELVALLE",
+      "direccion": "M.VILLANUEVA646",
+      "saldo_mantenimiento": 458864.87,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-35-65",
+      "sector": "A",
+      "manzana": "35",
+      "numero": "65",
+      "titular": "VALENCIORITADELVALLE",
+      "direccion": "M.VILLANUEVA646",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-27-102",
+      "sector": "A",
+      "manzana": "27",
+      "numero": "102",
+      "titular": "VALENCIOVICTORHUGO",
+      "direccion": "CATAMARCAS/N",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-30-75",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "75",
+      "titular": "VANINETTIMONICA",
+      "direccion": "CASA255",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-30-76",
+      "sector": "A",
+      "manzana": "30",
+      "numero": "76",
+      "titular": "VANINETTIMONICA",
+      "direccion": "CASA255",
+      "saldo_mantenimiento": 318277.82,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-19-106",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "106",
+      "titular": "VANZETTIOSCARENRIQUE",
+      "direccion": "CALLE3N0354",
+      "saldo_mantenimiento": 230095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-17-105",
+      "sector": "A",
+      "manzana": "17",
+      "numero": "105",
+      "titular": "VARAS NORMA BEATRIZ",
+      "direccion": "",
+      "saldo_mantenimiento": 100060.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-19-94",
+      "sector": "A",
+      "manzana": "19",
+      "numero": "94",
+      "titular": "VARELA LUISA BEATRIZ",
+      "direccion": "LOMABLANCANo148",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-28-99",
+      "sector": "A",
+      "manzana": "28",
+      "numero": "99",
+      "titular": "VARGAS ENZO GABRIEL",
+      "direccion": "STA CRUZ N 569",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-28-100",
+      "sector": "A",
+      "manzana": "28",
+      "numero": "100",
+      "titular": "VARGAS NOELIA SALOME",
+      "direccion": "CALLE 3",
+      "saldo_mantenimiento": 382904.56,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-18-57",
+      "sector": "A",
+      "manzana": "18",
+      "numero": "57",
+      "titular": "VARGASNUEVO",
+      "direccion": "",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-14-41",
+      "sector": "A",
+      "manzana": "14",
+      "numero": "41",
+      "titular": "334.806.55",
+      "direccion": "SANLUIS349",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-12-48",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "48",
+      "titular": "VEGAGABRIELAF",
+      "direccion": "SANLUIS349",
+      "saldo_mantenimiento": 334806.55,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-12-87",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "87",
+      "titular": "VEGAMARIA ANGELA",
+      "direccion": "FALUCHO N018",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-37-89",
+      "sector": "A",
+      "manzana": "37",
+      "numero": "89",
+      "titular": "VEGASILVIA",
+      "direccion": "MISIONES703",
+      "saldo_mantenimiento": 459976.41,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-36-164",
+      "sector": "A",
+      "manzana": "36",
+      "numero": "164",
+      "titular": "VEGASILVIANORA",
+      "direccion": "BUENPASTOR",
+      "saldo_mantenimiento": 286478.42,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-32-70",
+      "sector": "A",
+      "manzana": "32",
+      "numero": "70",
+      "titular": "VERAAIDADELROSARIO",
+      "direccion": "CASA172",
+      "saldo_mantenimiento": 471575.17,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-36-64",
+      "sector": "A",
+      "manzana": "36",
+      "numero": "64",
+      "titular": "VERADEBRIZUELAMARIA",
+      "direccion": "CASA131",
+      "saldo_mantenimiento": 100060.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-20-101",
+      "sector": "A",
+      "manzana": "20",
+      "numero": "101",
+      "titular": "VERADELUNABLANCAESTHER",
+      "direccion": "CASA198",
+      "saldo_mantenimiento": 420830.62,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-20-102",
+      "sector": "A",
+      "manzana": "20",
+      "numero": "102",
+      "titular": "VERADELUNABLANCAESTHER",
+      "direccion": "CASA198",
+      "saldo_mantenimiento": 432429.38,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-12-104",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "104",
+      "titular": "VERADOMINGAADELAIDA",
+      "direccion": "No420",
+      "saldo_mantenimiento": 463601.02,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-40-77",
+      "sector": "A",
+      "manzana": "40",
+      "numero": "77",
+      "titular": "VERAELOYMIGUEL",
+      "direccion": "HIRIGOYEN",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-15-60",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "60",
+      "titular": "VERA JAVIER HUGO",
+      "direccion": "9DEJULIO325",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-12-47",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "47",
+      "titular": "VERAMABELMARTA",
+      "direccion": "LONGEVILLE849",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-30-113",
+      "sector": "E",
+      "manzana": "30",
+      "numero": "113",
+      "titular": "VERA MARCOS",
+      "direccion": "COLON75",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "E-30-114",
+      "sector": "E",
+      "manzana": "30",
+      "numero": "114",
+      "titular": "VERAMARCOS",
+      "direccion": "COLON75",
+      "saldo_mantenimiento": 100060.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-20-75",
+      "sector": "A",
+      "manzana": "20",
+      "numero": "75",
+      "titular": "VERAMARTADELVALLE",
+      "direccion": "POZODELA.VACA",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-15-72",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "72",
+      "titular": "VERA MIGUEL ANGEL",
+      "direccion": "INGENIEROERA 52",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-15-73",
+      "sector": "A",
+      "manzana": "15",
+      "numero": "73",
+      "titular": "VERA MIGUEL ANGEL",
+      "direccion": "INGENIEROV",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "E-10-120",
+      "sector": "E",
+      "manzana": "10",
+      "numero": "120",
+      "titular": "VERAMIGUELMARCIAL",
+      "direccion": "SARMIENTG",
+      "saldo_mantenimiento": 467853.89,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-13-98",
+      "sector": "A",
+      "manzana": "13",
+      "numero": "98",
+      "titular": "VERDU GLADYS",
+      "direccion": "NICOLAS M.AYAN 157",
+      "saldo_mantenimiento": 230095.6,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-12-147",
+      "sector": "A",
+      "manzana": "12",
+      "numero": "147",
+      "titular": "VERTAMARTAM",
+      "direccion": "",
+      "saldo_mantenimiento": 228650.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-13-103",
+      "sector": "A",
+      "manzana": "13",
+      "numero": "103",
+      "titular": "VILLARANTONIOESTEBAN",
+      "direccion": "ATILESNg102",
+      "saldo_mantenimiento": 180000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-41-79",
+      "sector": "A",
+      "manzana": "41",
+      "numero": "79",
+      "titular": "ZAPATADANIELHORACIO",
+      "direccion": "AVFEDERALN480",
+      "saldo_mantenimiento": 100000.0,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-29-180",
+      "sector": "A",
+      "manzana": "29",
+      "numero": "180",
+      "titular": "RRBUSTAMANTERAMONALEIQEI",
+      "direccion": ".PROYEOTADASAN",
+      "saldo_mantenimiento": 461809.54,
+      "estado": "en_mora"
+    },
+    {
+      "nomenclatura": "A-11-5",
+      "sector": "A",
+      "manzana": "11",
+      "numero": "5",
+      "titular": "22/05/2004",
+      "direccion": "23/05/2004",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-16-45",
+      "sector": "A",
+      "manzana": "16",
+      "numero": "45",
+      "titular": "25/04/2021",
+      "direccion": "25/04/2021",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-20-100",
+      "sector": "A",
+      "manzana": "20",
+      "numero": "100",
+      "titular": "23/05/200424/05/2004",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    },
+    {
+      "nomenclatura": "A-21-65",
+      "sector": "A",
+      "manzana": "21",
+      "numero": "65",
+      "titular": "28/07/1997 12/08/1997",
+      "direccion": "",
+      "saldo_mantenimiento": 0.0,
+      "estado": "ocupada"
+    }
+  ],
+  "afiliados": [
+    {
+      "numero_afiliado": 1,
+      "nombre_completo": "MORENO LUCIANA",
+      "direccion_cobro": "LOMA BLANCA 161",
+      "monto_cuota_mensual": 18000.0,
+      "zona_cobro": "Chamical Centro / Rutas",
+      "estado": "activo"
+    },
+    {
+      "numero_afiliado": 2,
+      "nombre_completo": "PENA",
+      "direccion_cobro": "",
+      "monto_cuota_mensual": 18000.0,
+      "zona_cobro": "Chamical Centro / Rutas",
+      "estado": "activo"
+    },
+    {
+      "numero_afiliado": 3,
+      "nombre_completo": "MONTANEZNORMAMAGDALENA",
+      "direccion_cobro": "MANUEL VILLANLEVA 636",
+      "monto_cuota_mensual": 18000.0,
+      "zona_cobro": "Chamical Centro / Rutas",
+      "estado": "activo"
+    },
+    {
+      "numero_afiliado": 6,
+      "nombre_completo": "BONAUDIDEMARTINEZELENAUR",
+      "direccion_cobro": "RCALLE2NRO..",
+      "monto_cuota_mensual": 18000.0,
+      "zona_cobro": "Chamical Centro / Rutas",
+      "estado": "activo"
+    },
+    {
+      "numero_afiliado": 12,
+      "nombre_completo": "DE OCTUBRE",
+      "direccion_cobro": "",
+      "monto_cuota_mensual": 18000.0,
+      "zona_cobro": "Chamical Centro / Rutas",
+      "estado": "activo"
+    },
+    {
+      "numero_afiliado": 9,
+      "nombre_completo": "DEJULION",
+      "direccion_cobro": "",
+      "monto_cuota_mensual": 18000.0,
+      "zona_cobro": "Chamical Centro / Rutas",
+      "estado": "activo"
+    }
+  ],
+  "inhumaciones_covid": [
+    {
+      "nombre_difunto": "acele)",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "Sector Salinas",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "kfuuenlistee",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "Sector Salinas",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "TeacaAutonohona",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "Sector Salinas",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "2年Oy cy meleirinlisted",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "Sector Salinas",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "Aisina Sixto",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "Sector Salinas",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "Adau Tose Oliva",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "i1-45",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "LuisAbeiteFune)",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "11-39",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "Jueu N Canera",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "12-38",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "Sector Salinces",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "12-38",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "hauuvare Cscier Dicey",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "12-43",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "Perman Valdea",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "12-4",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "Hrma Elena.",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "12-56",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "MiauceO Aungel",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "12-52",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "Rotrete",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "Sector Salinas",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "fuillemoFeleucHokd3",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "Sector Salinas",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "Maniano Orloudo Veqa",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "Sector Salinas",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "020421",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "14-53",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "Noelial R.Looda",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "Sector Salinas",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "MolnaAngelHensert",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "Sector Salinas",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "Annoey",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "Sector Salinas",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "k ez z!",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "Sector Salinas",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "A1e-43",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "A16-4",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "Z042.1",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "A16-4",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "A16-4h",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "A6-4",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "MkoniCaOvied",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "A6-46",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "Albed randedinse",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "A6-46",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "Mouica Rodic",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "Sector Salinas",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "266720",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "A6-49",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "A6 -49",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "A6-49",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    },
+    {
+      "nombre_difunto": "241.0421",
+      "fecha_inhumacion": "2021-04-15",
+      "parcela": "A6-49",
+      "es_covid": true,
+      "causa_defuncion": "Protocolo COVID-19 / Sanitario"
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #00236f;
+  --primary-container: #1e3a8a;
+  --on-primary: #ffffff;
+  --on-primary-container: #90a8ff;
+  --primary-fixed: #dce1ff;
+  --primary-fixed-dim: #b6c4ff;
+  --on-primary-fixed: #00164e;
+  --on-primary-fixed-variant: #264191;
+
+  --secondary: #0051d5;
+  --secondary-container: #316bf3;
+  --on-secondary: #ffffff;
+  --on-secondary-container: #fefcff;
+  --secondary-fixed: #dbe1ff;
+  --secondary-fixed-dim: #b4c5ff;
+  --on-secondary-fixed: #00174b;
+  --on-secondary-fixed-variant: #003ea8;
+
+  --tertiary: #003120;
+  --tertiary-container: #004a32;
+  --on-tertiary: #ffffff;
+  --on-tertiary-container: #4ac08f;
+  --tertiary-fixed: #85f8c4;
+  --tertiary-fixed-dim: #68dba9;
+  --on-tertiary-fixed: #002114;
+  --on-tertiary-fixed-variant: #005137;
+
+  --surface: #faf8ff;
+  --surface-bright: #faf8ff;
+  --surface-dim: #d2d9f4;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f2f3ff;
+  --surface-container: #eaedff;
+  --surface-container-high: #e2e7ff;
+  --surface-container-highest: #dae2fd;
+  --surface-variant: #dae2fd;
+  --surface-tint: #4059aa;
+
+  --on-surface: #131b2e;
+  --on-surface-variant: #444651;
+  --outline: #757682;
+  --outline-variant: #c5c5d3;
+
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
+  --on-error: #ffffff;
+  --on-error-container: #93000a;
+
+  --background: #faf8ff;
+  --on-background: #131b2e;
+}
+
+@layer base {
+  body {
+    background-color: var(--surface);
+    color: var(--on-surface);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    font-size: 20px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+  }
+}
+
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: var(--surface-container-low);
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: var(--outline-variant);
+  border-radius: 3px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--outline);
+}
+
+/* Optimización para impresión de recibos térmicos y A4 */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-receipt, #printable-receipt * {
+    visibility: visible;
+  }
+  #printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}

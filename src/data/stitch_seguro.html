@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-background" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Padrón de Seguro de Sepelio - Aeterna Parque &amp; Sepelios</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Fonts: Inter & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with custom configuration -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-lowest": "#ffffff",
+            "inverse-on-surface": "#eef0ff",
+            "surface-bright": "#faf8ff",
+            "inverse-primary": "#b6c4ff",
+            "surface-dim": "#d2d9f4",
+            "on-secondary-fixed-variant": "#003ea8",
+            "primary": "#00236f",
+            "outline-variant": "#c5c5d3",
+            "on-primary-fixed-variant": "#264191",
+            "secondary-fixed": "#dbe1ff",
+            "primary-container": "#1e3a8a",
+            "primary-fixed": "#dce1ff",
+            "on-error": "#ffffff",
+            "on-secondary": "#ffffff",
+            "on-tertiary-fixed": "#002114",
+            "primary-fixed-dim": "#b6c4ff",
+            "on-tertiary-container": "#4ac08f",
+            "surface-variant": "#dae2fd",
+            "on-surface-variant": "#444651",
+            "on-background": "#131b2e",
+            "on-error-container": "#93000a",
+            "on-tertiary": "#ffffff",
+            "surface-container-low": "#f2f3ff",
+            "tertiary": "#003120",
+            "secondary-fixed-dim": "#b4c5ff",
+            "on-primary": "#ffffff",
+            "tertiary-fixed": "#85f8c4",
+            "tertiary-container": "#004a32",
+            "outline": "#757682",
+            "surface": "#faf8ff",
+            "on-surface": "#131b2e",
+            "surface-container-high": "#e2e7ff",
+            "on-secondary-fixed": "#00174b",
+            "inverse-surface": "#283044",
+            "secondary": "#0051d5",
+            "error-container": "#ffdad6",
+            "surface-tint": "#4059aa",
+            "surface-container": "#eaedff",
+            "on-primary-fixed": "#00164e",
+            "error": "#ba1a1a",
+            "tertiary-fixed-dim": "#68dba9",
+            "background": "#faf8ff",
+            "surface-container-highest": "#dae2fd",
+            "on-tertiary-fixed-variant": "#005137",
+            "secondary-container": "#316bf3",
+            "on-secondary-container": "#fefcff",
+            "on-primary-container": "#90a8ff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-lg": "1rem",
+            "gutter": "1rem",
+            "gutter-desktop": "1.25rem",
+            "space-xl": "1.5rem",
+            "space-xs": "0.25rem",
+            "space-md": "0.75rem",
+            "space-xxs": "0.125rem",
+            "space-2xl": "2rem",
+            "space-sm": "0.5rem",
+            "margin": "1rem",
+            "margin-desktop": "1.5rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Inter"],
+            "headline-sm": ["Inter"],
+            "body-sm": ["Inter"],
+            "body-md": ["Inter"],
+            "body-lg": ["Inter"],
+            "headline-lg": ["Inter"],
+            "title-md": ["Inter"],
+            "code-cadastral": ["JetBrains Mono"],
+            "label-caps": ["Inter"],
+            "label-numeric": ["JetBrains Mono"],
+            "display": ["Inter"]
+          },
+          "fontSize": {
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "title-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "code-cadastral": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "label-numeric": ["13px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "display": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="h-full bg-background text-on-surface antialiased overflow-x-hidden selection:bg-primary selection:text-white">
+<!-- ========================================================================= -->
+<!-- SIDE NAV BAR (Shared Component Anchor)                                   -->
+<!-- Active state strictly mapped to: "Seguro de Sepelio"                      -->
+<!-- ========================================================================= -->
+<aside class="fixed left-0 top-0 bottom-0 h-screen w-64 flex flex-col justify-between p-4 z-40 bg-surface-container-lowest dark:bg-inverse-surface border-r border-outline-variant dark:border-outline shadow-[0_1px_2px_0_rgba(15,23,42,0.04)]">
+<div class="flex flex-col gap-6">
+<!-- Institutional Header -->
+<div class="flex items-center gap-3 px-1 py-1">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-2xl" data-icon="account_balance">account_balance</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="text-title-md font-title-md font-semibold text-primary dark:text-inverse-primary tracking-tight truncate">Aeterna Parque</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant truncate">Registro &amp; Sepelios</span>
+</div>
+</div>
+<!-- Quick Action CTA -->
+<button class="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-secondary text-white font-title-md text-title-md shadow-sm hover:bg-primary transition-colors active:scale-[0.99] duration-100" onclick="openModal('Cobro Rápido QR', 'Cuota de Seguro', 18000, '#GENERAL')">
+<span class="material-symbols-outlined text-lg" data-icon="qr_code_scanner">qr_code_scanner</span>
+<span>Cobro Rápido QR</span>
+</button>
+<!-- Main Navigation Tabs -->
+<nav class="flex flex-col gap-1">
+<!-- 1. Dashboard -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-inverse-surface transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="dashboard">dashboard</span>
+<span class="text-body-md font-body-md">Dashboard</span>
+</a>
+<!-- 2. Parcelas & Catastro -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-inverse-surface transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="domain">domain</span>
+<span class="text-body-md font-body-md">Parcelas &amp; Catastro</span>
+</a>
+<!-- 3. Inhumaciones -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-inverse-surface transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="calendar_month">calendar_month</span>
+<span class="text-body-md font-body-md">Inhumaciones</span>
+</a>
+<!-- 4. Seguro de Sepelio [ACTIVE COMPONENT] -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-container dark:bg-primary-container text-primary dark:text-on-primary-container font-semibold border-l-4 border-primary dark:border-secondary-container active:scale-[0.99] transition-transform duration-100 shadow-xs" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="security" data-weight="fill" style="font-variation-settings: 'FILL' 1;">security</span>
+<span class="text-body-md font-body-md">Seguro de Sepelio</span>
+</a>
+<!-- 5. Caja & Cobros -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-inverse-surface transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="point_of_sale">point_of_sale</span>
+<span class="text-body-md font-body-md">Caja &amp; Cobros</span>
+</a>
+<!-- 6. Configuración -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-inverse-surface transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="settings">settings</span>
+<span class="text-body-md font-body-md">Configuración</span>
+</a>
+</nav>
+</div>
+<!-- Institutional Footer Links -->
+<div class="flex flex-col gap-1 pt-4 border-t border-outline-variant/50">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="help">help</span>
+<span class="text-body-md font-body-md">Soporte Municipal</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="shield">shield</span>
+<span class="text-body-md font-body-md">Auditoría</span>
+</a>
+<div class="mt-2 pt-2 px-3 flex items-center justify-between text-on-surface-variant/70 text-body-sm font-code-cadastral">
+<span>v2.4.1 Chamical</span>
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+</div>
+</div>
+</aside>
+<!-- ========================================================================= -->
+<!-- TOP APP BAR (Shared Component Anchor)                                    -->
+<!-- ========================================================================= -->
+<header class="fixed top-0 right-0 left-64 h-14 z-30 flex items-center justify-between px-6 bg-surface-container-lowest dark:bg-inverse-surface border-b border-outline-variant dark:border-outline shadow-[0_1px_2px_0_rgba(15,23,42,0.04)]">
+<!-- Left: Product Identity & Search -->
+<div class="flex items-center gap-6">
+<span class="text-headline-sm font-headline-sm font-bold text-primary dark:text-inverse-primary uppercase tracking-wide">
+        Aeterna Sistema Mortuorio
+      </span>
+<div class="hidden md:flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline-variant/60 w-80 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg" data-icon="search">search</span>
+<input class="bg-transparent border-none p-0 text-body-md font-body-md focus:ring-0 w-full placeholder:text-on-surface-variant/60 focus:outline-none" placeholder="Búsqueda rápida en padrón..." type="text"/>
+<kbd class="text-[10px] bg-white px-1.5 py-0.5 rounded border border-outline-variant font-code-cadastral">Ctrl+K</kbd>
+</div>
+</div>
+<!-- Right: Operational Actions & Operator Profile -->
+<div class="flex items-center gap-3">
+<!-- Trailing Icon Actions -->
+<div class="flex items-center gap-1 border-r border-outline-variant/60 pr-3">
+<button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors active:scale-[0.99]" title="Escanear QR">
+<span class="material-symbols-outlined text-xl" data-icon="qr_code_scanner">qr_code_scanner</span>
+</button>
+<button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors active:scale-[0.99]" title="Imprimir Reporte">
+<span class="material-symbols-outlined text-xl" data-icon="print">print</span>
+</button>
+<button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors active:scale-[0.99] relative" title="Notificaciones">
+<span class="material-symbols-outlined text-xl" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error"></span>
+</button>
+</div>
+<!-- Action Buttons -->
+<button class="px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low text-on-surface font-title-md text-title-md transition-colors active:scale-[0.99]">
+        Cierre de Caja
+      </button>
+<button class="px-3.5 py-1.5 rounded-lg bg-primary hover:bg-secondary text-white font-title-md text-title-md shadow-xs transition-colors active:scale-[0.99] flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base" data-icon="person_add">person_add</span>
+<span>Nuevo Registro</span>
+</button>
+<!-- Profile Avatar -->
+<div class="flex items-center gap-2 pl-2">
+<div class="w-8 h-8 rounded-full bg-primary-container text-white flex items-center justify-center font-semibold text-xs border border-white shadow-xs" title="Retrato del oficial de registro civil y tesorería mortuoria">
+          RC
+        </div>
+</div>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- MAIN CONTENT CANVAS (Padrón de Seguro de Sepelio)                        -->
+<!-- ========================================================================= -->
+<main class="ml-64 pt-14 min-h-screen bg-background p-6">
+<div class="max-w-[1720px] mx-auto space-y-5">
+<!-- Screen Header with Solemn Administrative Dignity -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-outline-variant/60">
+<div>
+<div class="flex items-center gap-2 text-label-caps font-label-caps text-secondary mb-1">
+<span class="material-symbols-outlined text-sm" data-icon="shield">shield</span>
+<span>MÓDULO DE ADMISIÓN Y ASISTENCIA MUTUAL · DEPARTAMENTO GENERAL BELGRANO</span>
+</div>
+<h1 class="text-headline-lg font-headline-lg text-primary tracking-tight">
+            Padrón General de Afiliados al Seguro de Sepelio
+          </h1>
+<p class="text-body-md font-body-md text-on-surface-variant mt-0.5">
+            Gestión de Cobranzas, Cuotas Anuales y Hojas de Ruta de Cobradores de Calle.
+          </p>
+</div>
+<!-- Metric Counters: Estado Cobranza Mensual (Marzo 2026) -->
+<div class="flex items-center gap-3 bg-surface-container-lowest p-2 rounded-xl border border-outline-variant shadow-xs shrink-0">
+<div class="px-3.5 py-1.5 rounded-lg bg-surface-container border border-outline-variant/50">
+<span class="text-label-caps font-label-caps text-on-surface-variant block">TOTAL AFILIADOS</span>
+<span class="text-headline-md font-code-cadastral text-on-surface font-bold">156</span>
+</div>
+<div class="px-3.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200">
+<span class="text-label-caps font-label-caps text-emerald-800 block">AL DÍA (MARZO)</span>
+<div class="flex items-center gap-1.5">
+<span class="text-headline-md font-code-cadastral text-emerald-700 font-bold">118</span>
+<span class="text-body-sm font-body-sm text-emerald-600">(75.6%)</span>
+</div>
+</div>
+<div class="px-3.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
+<span class="text-label-caps font-label-caps text-amber-800 block">PENDIENTES / MORA</span>
+<div class="flex items-center gap-1.5">
+<span class="text-headline-md font-code-cadastral text-amber-700 font-bold">38</span>
+<span class="text-body-sm font-body-sm text-amber-600">(24.4%)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Administrative Operational Control Toolbar -->
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-xs flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4">
+<!-- Filter & Search Controls -->
+<div class="flex flex-wrap items-center gap-3 flex-1">
+<!-- Live Input Search -->
+<div class="relative min-w-[320px] flex-1">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface-variant">
+<span class="material-symbols-outlined text-lg" data-icon="search">search</span>
+</span>
+<input class="w-full h-9 pl-9 pr-14 text-body-md font-body-md bg-white border border-outline-variant rounded-lg focus:border-secondary focus:ring-2 focus:ring-secondary/20 placeholder:text-on-surface-variant/60" id="searchBox" placeholder="Buscar por Nombre, DNI o N° de Afiliado... (Ctrl+K)" type="text"/>
+<div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
+<span class="text-[10px] bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant font-code-cadastral">Ctrl+K</span>
+</div>
+</div>
+<!-- Zone / Street Collector Selector -->
+<div class="flex items-center gap-2">
+<label class="text-body-sm font-body-sm text-on-surface-variant whitespace-nowrap font-medium flex items-center gap-1" for="zoneFilter">
+<span class="material-symbols-outlined text-base" data-icon="two_wheeler">two_wheeler</span>
+<span>Zona / Cobrador:</span>
+</label>
+<select class="h-9 text-body-md font-body-md bg-white border border-outline-variant rounded-lg px-3 py-1 pr-8 focus:border-secondary focus:ring-2 focus:ring-secondary/20 font-medium" id="zoneFilter">
+<option value="all">[Todas las Zonas - 156 Afiliados]</option>
+<option value="z1">[Zona 1 - Ruta 1 / B° Tiro - Cobr. Flores]</option>
+<option value="z2">[Zona 2 - B° Loma Blanca - Cobr. Gómez]</option>
+<option value="z3">[Zona 3 - Centro Chamical - Cobr. Mercado]</option>
+</select>
+</div>
+<!-- Status Filter Pills -->
+<div class="flex items-center gap-1 border border-outline-variant rounded-lg p-0.5 bg-surface-container-low text-body-sm font-body-sm">
+<button class="px-2.5 py-1 rounded-md bg-white shadow-xs font-semibold text-primary">Todos (156)</button>
+<button class="px-2.5 py-1 rounded-md text-on-surface-variant hover:text-on-surface">Con Deuda (38)</button>
+<button class="px-2.5 py-1 rounded-md text-on-surface-variant hover:text-on-surface">Al Día (118)</button>
+</div>
+</div>
+<!-- Export & New Record Actions -->
+<div class="flex items-center gap-2.5 shrink-0">
+<button class="h-9 px-3.5 rounded-lg border border-outline-variant bg-white hover:bg-surface-container-low text-on-surface font-title-md text-title-md transition-colors active:scale-[0.99] flex items-center gap-2 shadow-xs" onclick="window.print()">
+<span class="material-symbols-outlined text-lg text-primary" data-icon="print">print</span>
+<span>Imprimir Planilla de Ruta para Cobrador</span>
+</button>
+<button class="h-9 px-4 rounded-lg bg-secondary hover:bg-primary text-white font-title-md text-title-md transition-colors active:scale-[0.99] flex items-center gap-1.5 shadow-sm" onclick="alert('Abriendo asistente de registro de nuevo afiliado y emisión de credencial municipal.')">
+<span class="material-symbols-outlined text-lg" data-icon="add_circle">add_circle</span>
+<span>+ Nuevo Afiliado</span>
+</button>
+</div>
+</div>
+<!-- Matrix Interactive Ledger Card -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-xs overflow-hidden">
+<!-- Table Toolbar & Fiscal Year Header -->
+<div class="px-5 py-3 border-b border-outline-variant bg-surface-container-low flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="calendar_month">calendar_month</span>
+<span class="text-title-md font-title-md text-primary font-bold">EJERCICIO FISCAL 2026</span>
+</div>
+<span class="text-body-sm font-body-sm text-on-surface-variant">· Cobertura Parroquial y Municipal para Servicios Fúnebres Completos</span>
+</div>
+<!-- Color Key & Legend for Matrix -->
+<div class="flex items-center gap-4 text-body-sm font-body-sm bg-white px-3 py-1.5 rounded-lg border border-outline-variant/80">
+<span class="text-label-caps font-label-caps text-on-surface-variant font-semibold">REFERENCIAS:</span>
+<div class="flex items-center gap-1.5">
+<span class="w-4 h-4 rounded bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">✓</span>
+<span class="text-on-surface font-medium">Pagada</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-4 h-4 rounded bg-red-600 text-white flex items-center justify-center text-[10px] font-bold">!</span>
+<span class="text-red-700 font-medium">Vencida / Cobro directo</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-4 h-4 rounded bg-slate-100 border border-slate-300 text-slate-400 flex items-center justify-center text-[10px]">·</span>
+<span class="text-on-surface-variant">A vencer (Meses futuros)</span>
+</div>
+</div>
+</div>
+<!-- Ledger Table with 12-Month Matrix -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-slate-50 border-b border-outline-variant text-[11px] font-label-caps text-on-surface-variant uppercase tracking-wider h-8">
+<th class="px-4 py-2 w-28 text-left font-semibold">N° Afiliado</th>
+<th class="px-4 py-2 min-w-[280px] font-semibold">Afiliado / Titular &amp; Domicilio</th>
+<th class="px-4 py-2 w-32 font-semibold">Cuota Base</th>
+<th class="px-4 py-2 min-w-[500px] text-center font-semibold">
+<span>Estado Cuotas 2026 (Ene · Feb · Mar · Abr · May · Jun · Jul · Ago · Sep · Oct · Nov · Dic)</span>
+</th>
+<th class="px-4 py-2 w-32 text-right font-semibold">Saldo Deuda</th>
+<th class="px-4 py-2 w-44 text-right font-semibold">Acciones Rápidas</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/40 font-body-md text-on-surface">
+<!-- ROW 1: Afiliado #12 (Mora 1 cuota) -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<!-- Col 1: N° Afiliado -->
+<td class="px-4 py-3 align-middle">
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-surface-container text-primary font-code-cadastral text-code-cadastral font-bold border border-outline-variant">
+                    #12
+                  </span>
+<span class="block text-[10px] text-on-surface-variant/70 font-code-cadastral mt-0.5">ALTA: 2018</span>
+</td>
+<!-- Col 2: Info Afiliado -->
+<td class="px-4 py-3 align-middle">
+<div class="font-semibold text-primary text-body-lg">Gutiérrez, Héctor Rogelio</div>
+<div class="text-body-sm text-on-surface-variant flex items-center gap-2 mt-0.5">
+<span class="font-code-cadastral font-medium">DNI 14.882.109</span>
+<span>•</span>
+<span class="flex items-center gap-0.5"><span class="material-symbols-outlined text-xs" data-icon="location_on">location_on</span> Av. Castro Barros 340</span>
+</div>
+<div class="mt-1">
+<span class="inline-flex items-center gap-1 text-[11px] font-medium text-secondary bg-secondary-fixed/50 px-1.5 py-0.2 rounded">
+<span class="material-symbols-outlined text-xs" data-icon="two_wheeler">two_wheeler</span> Zona 1 - Ruta 1 / B° Tiro
+                    </span>
+</div>
+</td>
+<!-- Col 3: Cuota Mensual -->
+<td class="px-4 py-3 align-middle">
+<div class="font-code-cadastral font-bold text-on-surface text-body-md">$ 18.000</div>
+<span class="text-[10px] text-on-surface-variant block uppercase">Mensual Fijo</span>
+</td>
+<!-- Col 4: Matriz 12 Cuotas -->
+<td class="px-4 py-3 align-middle">
+<div class="flex items-center justify-center gap-1.5">
+<!-- Ene: Pagado -->
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs transition-transform hover:scale-105" title="Enero 2026: Pagado ($18.000) - Recibo #8831">
+<span class="text-[9px] leading-none font-bold">1</span>
+<span class="text-[10px] leading-none font-black">✓</span>
+</button>
+<!-- Feb: Pagado -->
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs transition-transform hover:scale-105" title="Febrero 2026: Pagado ($18.000) - Recibo #9102">
+<span class="text-[9px] leading-none font-bold">2</span>
+<span class="text-[10px] leading-none font-black">✓</span>
+</button>
+<!-- Mar: Adeudada / Vencida -->
+<button class="w-8 h-8 rounded-md bg-red-600 hover:bg-red-700 text-white flex flex-col items-center justify-center shadow-xs border-2 border-red-300 animate-pulse transition-transform hover:scale-110" onclick="openModal('Gutiérrez, Héctor Rogelio', 'Cuota 03 / Marzo 2026', 18000, '#12')" title="Marzo 2026: VENCIDA - Hacer click para cobrar">
+<span class="text-[9px] leading-none font-bold">3</span>
+<span class="text-[10px] leading-none font-bold">!</span>
+</button>
+<!-- Abr a Dic: A vencer -->
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">4</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">5</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">6</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">7</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">8</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">9</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">10</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">11</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">12</span>
+</div>
+</td>
+<!-- Col 5: Saldo Total Deuda -->
+<td class="px-4 py-3 align-middle text-right">
+<div class="font-code-cadastral font-bold text-red-700 text-body-lg">$ 18.000</div>
+<span class="inline-flex items-center text-[10px] font-bold text-red-800 bg-red-100 px-1.5 py-0.2 rounded border border-red-200">1 cuota en mora</span>
+</td>
+<!-- Col 6: Acciones -->
+<td class="px-4 py-3 align-middle text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-title-md text-body-sm shadow-xs flex items-center gap-1 active:scale-[0.98]" onclick="openModal('Gutiérrez, Héctor Rogelio', 'Cuota 03 / Marzo 2026', 18000, '#12')">
+<span class="material-symbols-outlined text-sm" data-icon="qr_code_2">qr_code_2</span>
+<span>Cobrar</span>
+</button>
+<button class="p-1.5 rounded-lg border border-outline-variant hover:bg-surface-container-low text-on-surface-variant transition-colors" title="Editar Afiliado y Grupo Familiar">
+<span class="material-symbols-outlined text-base" data-icon="family_restroom">family_restroom</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 2: Afiliado #14 (Totalmente al día) -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="px-4 py-3 align-middle">
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-surface-container text-primary font-code-cadastral text-code-cadastral font-bold border border-outline-variant">
+                    #14
+                  </span>
+<span class="block text-[10px] text-on-surface-variant/70 font-code-cadastral mt-0.5">ALTA: 2017</span>
+</td>
+<td class="px-4 py-3 align-middle">
+<div class="font-semibold text-primary text-body-lg">Mercado de Corzo, Ramona Isabel</div>
+<div class="text-body-sm text-on-surface-variant flex items-center gap-2 mt-0.5">
+<span class="font-code-cadastral font-medium">DNI 11.204.912</span>
+<span>•</span>
+<span class="flex items-center gap-0.5"><span class="material-symbols-outlined text-xs" data-icon="location_on">location_on</span> B° Loma Blanca Mza 4 Lote 12</span>
+</div>
+<div class="mt-1">
+<span class="inline-flex items-center gap-1 text-[11px] font-medium text-secondary bg-secondary-fixed/50 px-1.5 py-0.2 rounded">
+<span class="material-symbols-outlined text-xs" data-icon="two_wheeler">two_wheeler</span> Zona 2 - B° Loma Blanca
+                    </span>
+</div>
+</td>
+<td class="px-4 py-3 align-middle">
+<div class="font-code-cadastral font-bold text-on-surface text-body-md">$ 18.000</div>
+<span class="text-[10px] text-on-surface-variant block uppercase">Mensual Fijo</span>
+</td>
+<td class="px-4 py-3 align-middle">
+<div class="flex items-center justify-center gap-1.5">
+<!-- Ene, Feb, Mar: Pagados -->
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs">
+<span class="text-[9px] leading-none font-bold">1</span>
+<span class="text-[10px] leading-none font-black">✓</span>
+</button>
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs">
+<span class="text-[9px] leading-none font-bold">2</span>
+<span class="text-[10px] leading-none font-black">✓</span>
+</button>
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs">
+<span class="text-[9px] leading-none font-bold">3</span>
+<span class="text-[10px] leading-none font-black">✓</span>
+</button>
+<!-- Abr a Dic: A vencer -->
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">4</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">5</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">6</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">7</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">8</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">9</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">10</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">11</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">12</span>
+</div>
+</td>
+<td class="px-4 py-3 align-middle text-right">
+<div class="font-code-cadastral font-bold text-emerald-700 text-body-lg">$ 0,00</div>
+<span class="inline-flex items-center text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded border border-emerald-200">Al día (Marzo)</span>
+</td>
+<td class="px-4 py-3 align-middle text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1.5 rounded-lg border border-outline-variant bg-white hover:bg-surface-container-low text-on-surface font-title-md text-body-sm shadow-xs flex items-center gap-1 active:scale-[0.98]" onclick="openModal('Mercado de Corzo, Ramona', 'Adelanto Cuota 04 / Abril 2026', 18000, '#14')">
+<span class="material-symbols-outlined text-sm" data-icon="payments">payments</span>
+<span>Adelantar</span>
+</button>
+<button class="p-1.5 rounded-lg border border-outline-variant hover:bg-surface-container-low text-on-surface-variant transition-colors" title="Editar Afiliado y Grupo Familiar">
+<span class="material-symbols-outlined text-base" data-icon="family_restroom">family_restroom</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 3: Afiliado #28 (Mora 2 cuotas: Feb y Mar) -->
+<tr class="hover:bg-surface-container-low/60 transition-colors bg-red-50/20">
+<td class="px-4 py-3 align-middle">
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-surface-container text-primary font-code-cadastral text-code-cadastral font-bold border border-outline-variant">
+                    #28
+                  </span>
+<span class="block text-[10px] text-on-surface-variant/70 font-code-cadastral mt-0.5">ALTA: 2019</span>
+</td>
+<td class="px-4 py-3 align-middle">
+<div class="font-semibold text-primary text-body-lg">Carrizo, Waldo Benjamín</div>
+<div class="text-body-sm text-on-surface-variant flex items-center gap-2 mt-0.5">
+<span class="font-code-cadastral font-medium">DNI 22.451.980</span>
+<span>•</span>
+<span class="flex items-center gap-0.5"><span class="material-symbols-outlined text-xs" data-icon="location_on">location_on</span> Calle Facundo Quiroga 115</span>
+</div>
+<div class="mt-1">
+<span class="inline-flex items-center gap-1 text-[11px] font-medium text-secondary bg-secondary-fixed/50 px-1.5 py-0.2 rounded">
+<span class="material-symbols-outlined text-xs" data-icon="two_wheeler">two_wheeler</span> Zona 3 - Centro Chamical
+                    </span>
+</div>
+</td>
+<td class="px-4 py-3 align-middle">
+<div class="font-code-cadastral font-bold text-on-surface text-body-md">$ 18.000</div>
+<span class="text-[10px] text-on-surface-variant block uppercase">Mensual Fijo</span>
+</td>
+<td class="px-4 py-3 align-middle">
+<div class="flex items-center justify-center gap-1.5">
+<!-- Ene: Pagada -->
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs">
+<span class="text-[9px] leading-none font-bold">1</span>
+<span class="text-[10px] leading-none font-black">✓</span>
+</button>
+<!-- Feb: Vencida -->
+<button class="w-8 h-8 rounded-md bg-red-600 text-white flex flex-col items-center justify-center shadow-xs border border-red-400" onclick="openModal('Carrizo, Waldo Benjamín', 'Cuota 02 (Feb) + 03 (Mar)', 36000, '#28')" title="Febrero 2026: VENCIDA">
+<span class="text-[9px] leading-none font-bold">2</span>
+<span class="text-[10px] leading-none font-bold">!</span>
+</button>
+<!-- Mar: Vencida -->
+<button class="w-8 h-8 rounded-md bg-red-600 text-white flex flex-col items-center justify-center shadow-xs border-2 border-red-300 animate-pulse" onclick="openModal('Carrizo, Waldo Benjamín', 'Cuota 02 (Feb) + 03 (Mar)', 36000, '#28')" title="Marzo 2026: VENCIDA">
+<span class="text-[9px] leading-none font-bold">3</span>
+<span class="text-[10px] leading-none font-bold">!</span>
+</button>
+<!-- Abr a Dic: A vencer -->
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">4</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">5</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">6</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">7</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">8</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">9</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">10</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">11</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">12</span>
+</div>
+</td>
+<td class="px-4 py-3 align-middle text-right">
+<div class="font-code-cadastral font-bold text-red-700 text-body-lg">$ 36.000</div>
+<span class="inline-flex items-center text-[10px] font-bold text-red-800 bg-red-100 px-1.5 py-0.2 rounded border border-red-200">2 cuotas adeudadas</span>
+</td>
+<td class="px-4 py-3 align-middle text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-title-md text-body-sm shadow-xs flex items-center gap-1 active:scale-[0.98]" onclick="openModal('Carrizo, Waldo Benjamín', 'Liquidación Total (Feb + Mar 2026)', 36000, '#28')">
+<span class="material-symbols-outlined text-sm" data-icon="qr_code_2">qr_code_2</span>
+<span>Cobrar $36k</span>
+</button>
+<button class="p-1.5 rounded-lg border border-outline-variant hover:bg-surface-container-low text-on-surface-variant transition-colors" title="Editar Afiliado y Grupo Familiar">
+<span class="material-symbols-outlined text-base" data-icon="family_restroom">family_restroom</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 4: Afiliado #45 (Pago Anual Completo Anticipado) -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="px-4 py-3 align-middle">
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-surface-container text-primary font-code-cadastral text-code-cadastral font-bold border border-outline-variant">
+                    #45
+                  </span>
+<span class="block text-[10px] text-on-surface-variant/70 font-code-cadastral mt-0.5">ALTA: 2015</span>
+</td>
+<td class="px-4 py-3 align-middle">
+<div class="font-semibold text-primary text-body-lg">Toledo, Carlos Alberto</div>
+<div class="text-body-sm text-on-surface-variant flex items-center gap-2 mt-0.5">
+<span class="font-code-cadastral font-medium">DNI 17.390.418</span>
+<span>•</span>
+<span class="flex items-center gap-0.5"><span class="material-symbols-outlined text-xs" data-icon="location_on">location_on</span> Gob. Gordillo 88</span>
+</div>
+<div class="mt-1">
+<span class="inline-flex items-center gap-1 text-[11px] font-medium text-secondary bg-secondary-fixed/50 px-1.5 py-0.2 rounded">
+<span class="material-symbols-outlined text-xs" data-icon="two_wheeler">two_wheeler</span> Zona 3 - Centro Chamical
+                    </span>
+</div>
+</td>
+<td class="px-4 py-3 align-middle">
+<div class="font-code-cadastral font-bold text-on-surface text-body-md">$ 18.000</div>
+<span class="text-[10px] text-on-surface-variant block uppercase">Mensual Fijo</span>
+</td>
+<td class="px-4 py-3 align-middle">
+<div class="flex items-center justify-center gap-1.5">
+<!-- 1 a 12 TODOS PAGADOS -->
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs"><span class="text-[9px] leading-none font-bold">1</span><span class="text-[10px] leading-none font-black">✓</span></button>
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs"><span class="text-[9px] leading-none font-bold">2</span><span class="text-[10px] leading-none font-black">✓</span></button>
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs"><span class="text-[9px] leading-none font-bold">3</span><span class="text-[10px] leading-none font-black">✓</span></button>
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs"><span class="text-[9px] leading-none font-bold">4</span><span class="text-[10px] leading-none font-black">✓</span></button>
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs"><span class="text-[9px] leading-none font-bold">5</span><span class="text-[10px] leading-none font-black">✓</span></button>
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs"><span class="text-[9px] leading-none font-bold">6</span><span class="text-[10px] leading-none font-black">✓</span></button>
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs"><span class="text-[9px] leading-none font-bold">7</span><span class="text-[10px] leading-none font-black">✓</span></button>
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs"><span class="text-[9px] leading-none font-bold">8</span><span class="text-[10px] leading-none font-black">✓</span></button>
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs"><span class="text-[9px] leading-none font-bold">9</span><span class="text-[10px] leading-none font-black">✓</span></button>
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs"><span class="text-[9px] leading-none font-bold">10</span><span class="text-[10px] leading-none font-black">✓</span></button>
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs"><span class="text-[9px] leading-none font-bold">11</span><span class="text-[10px] leading-none font-black">✓</span></button>
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs"><span class="text-[9px] leading-none font-bold">12</span><span class="text-[10px] leading-none font-black">✓</span></button>
+</div>
+</td>
+<td class="px-4 py-3 align-middle text-right">
+<div class="font-code-cadastral font-bold text-emerald-700 text-body-lg">$ 0,00</div>
+<span class="inline-flex items-center text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded border border-emerald-200">Abono Anual Cancelado</span>
+</td>
+<td class="px-4 py-3 align-middle text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1.5 rounded-lg border border-outline-variant bg-white hover:bg-surface-container-low text-on-surface font-title-md text-body-sm shadow-xs flex items-center gap-1" title="Comprobante Fiscal Anual">
+<span class="material-symbols-outlined text-sm" data-icon="receipt_long">receipt_long</span>
+<span>Recibo</span>
+</button>
+<button class="p-1.5 rounded-lg border border-outline-variant hover:bg-surface-container-low text-on-surface-variant transition-colors" title="Editar Afiliado y Grupo Familiar">
+<span class="material-symbols-outlined text-base" data-icon="family_restroom">family_restroom</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 5: Afiliado #84 (Mora 1 cuota) -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="px-4 py-3 align-middle">
+<span class="inline-flex items-center px-2 py-0.5 rounded bg-surface-container text-primary font-code-cadastral text-code-cadastral font-bold border border-outline-variant">
+                    #84
+                  </span>
+<span class="block text-[10px] text-on-surface-variant/70 font-code-cadastral mt-0.5">ALTA: 2021</span>
+</td>
+<td class="px-4 py-3 align-middle">
+<div class="font-semibold text-primary text-body-lg">Zárate, Nélida Esther</div>
+<div class="text-body-sm text-on-surface-variant flex items-center gap-2 mt-0.5">
+<span class="font-code-cadastral font-medium">DNI 08.431.112</span>
+<span>•</span>
+<span class="flex items-center gap-0.5"><span class="material-symbols-outlined text-xs" data-icon="location_on">location_on</span> Ruta Prov. 1 Km 3 (B° Tiro)</span>
+</div>
+<div class="mt-1">
+<span class="inline-flex items-center gap-1 text-[11px] font-medium text-secondary bg-secondary-fixed/50 px-1.5 py-0.2 rounded">
+<span class="material-symbols-outlined text-xs" data-icon="two_wheeler">two_wheeler</span> Zona 1 - Ruta 1 / B° Tiro
+                    </span>
+</div>
+</td>
+<td class="px-4 py-3 align-middle">
+<div class="font-code-cadastral font-bold text-on-surface text-body-md">$ 18.000</div>
+<span class="text-[10px] text-on-surface-variant block uppercase">Mensual Fijo</span>
+</td>
+<td class="px-4 py-3 align-middle">
+<div class="flex items-center justify-center gap-1.5">
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs"><span class="text-[9px] leading-none font-bold">1</span><span class="text-[10px] leading-none font-black">✓</span></button>
+<button class="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs"><span class="text-[9px] leading-none font-bold">2</span><span class="text-[10px] leading-none font-black">✓</span></button>
+<button class="w-8 h-8 rounded-md bg-red-600 hover:bg-red-700 text-white flex flex-col items-center justify-center shadow-xs border-2 border-red-300 animate-pulse" onclick="openModal('Zárate, Nélida Esther', 'Cuota 03 / Marzo 2026', 18000, '#84')" title="Marzo 2026: VENCIDA">
+<span class="text-[9px] leading-none font-bold">3</span>
+<span class="text-[10px] leading-none font-bold">!</span>
+</button>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">4</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">5</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">6</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">7</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">8</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">9</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">10</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">11</span>
+<span class="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center text-[11px] font-code-cadastral">12</span>
+</div>
+</td>
+<td class="px-4 py-3 align-middle text-right">
+<div class="font-code-cadastral font-bold text-red-700 text-body-lg">$ 18.000</div>
+<span class="inline-flex items-center text-[10px] font-bold text-red-800 bg-red-100 px-1.5 py-0.2 rounded border border-red-200">1 cuota en mora</span>
+</td>
+<td class="px-4 py-3 align-middle text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-title-md text-body-sm shadow-xs flex items-center gap-1 active:scale-[0.98]" onclick="openModal('Zárate, Nélida Esther', 'Cuota 03 / Marzo 2026', 18000, '#84')">
+<span class="material-symbols-outlined text-sm" data-icon="qr_code_2">qr_code_2</span>
+<span>Cobrar</span>
+</button>
+<button class="p-1.5 rounded-lg border border-outline-variant hover:bg-surface-container-low text-on-surface-variant transition-colors" title="Editar Afiliado y Grupo Familiar">
+<span class="material-symbols-outlined text-base" data-icon="family_restroom">family_restroom</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Pagination & Operational Summary Footer -->
+<div class="px-5 py-3 border-t border-outline-variant bg-surface-container-lowest flex flex-col sm:flex-row items-center justify-between gap-3 text-body-sm font-body-sm text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span>Mostrando <strong class="text-on-surface font-semibold">1 a 5</strong> de <strong class="text-on-surface font-semibold">156</strong> afiliados registrados</span>
+<span>•</span>
+<span class="inline-flex items-center gap-1 text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded text-[11px] font-medium border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+              Padrón auditado y sincronizado con Registro Civil Chamical
+            </span>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-2.5 py-1 rounded border border-outline-variant bg-white text-on-surface-variant hover:bg-surface-container-low disabled:opacity-50" disabled="">Anterior</button>
+<button class="px-3 py-1 rounded border border-secondary bg-secondary text-white font-semibold">1</button>
+<button class="px-3 py-1 rounded border border-outline-variant bg-white text-on-surface hover:bg-surface-container-low">2</button>
+<button class="px-3 py-1 rounded border border-outline-variant bg-white text-on-surface hover:bg-surface-container-low">3</button>
+<span class="px-1 text-on-surface-variant">...</span>
+<button class="px-3 py-1 rounded border border-outline-variant bg-white text-on-surface hover:bg-surface-container-low">32</button>
+<button class="px-2.5 py-1 rounded border border-outline-variant bg-white text-on-surface hover:bg-surface-container-low">Siguiente</button>
+</div>
+</div>
+</div>
+<!-- Secondary Info Panels: Collector Routes & Financial Health -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+<!-- Panel 1: Ruta Cobrador 1 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-xs">
+<div class="flex items-center justify-between pb-2 mb-3 border-b border-outline-variant/60">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary" data-icon="route">route</span>
+<span class="text-title-md font-title-md text-primary font-bold">Hoja de Ruta 1</span>
+</div>
+<span class="text-[11px] bg-secondary-fixed text-primary px-2 py-0.5 rounded font-code-cadastral font-bold">Ruta 1 / B° Tiro</span>
+</div>
+<p class="text-body-sm text-on-surface-variant mb-3">
+            Cobrador asignado: <strong>Oficial Juan Flores</strong>. Cobertura semanal de 54 afiliados en sectores suburbanos y rurales de Chamical.
+          </p>
+<div class="flex items-center justify-between text-body-sm font-body-sm pt-2 border-t border-outline-variant/40">
+<span class="text-on-surface-variant">Cobranza del mes:</span>
+<span class="font-code-cadastral font-bold text-emerald-700">82% completada</span>
+</div>
+</div>
+<!-- Panel 2: Ruta Cobrador 2 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-xs">
+<div class="flex items-center justify-between pb-2 mb-3 border-b border-outline-variant/60">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary" data-icon="route">route</span>
+<span class="text-title-md font-title-md text-primary font-bold">Hoja de Ruta 2</span>
+</div>
+<span class="text-[11px] bg-secondary-fixed text-primary px-2 py-0.5 rounded font-code-cadastral font-bold">B° Loma Blanca</span>
+</div>
+<p class="text-body-sm text-on-surface-variant mb-3">
+            Cobrador asignado: <strong>Oficial Mario Gómez</strong>. Recorrido domiciliario para 48 afiliados con cobranza en efectivo y QR físico.
+          </p>
+<div class="flex items-center justify-between text-body-sm font-body-sm pt-2 border-t border-outline-variant/40">
+<span class="text-on-surface-variant">Cobranza del mes:</span>
+<span class="font-code-cadastral font-bold text-emerald-700">71% completada</span>
+</div>
+</div>
+<!-- Panel 3: Fondo Solidario de Sepelio -->
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-xs">
+<div class="flex items-center justify-between pb-2 mb-3 border-b border-outline-variant/60">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary" data-icon="security">security</span>
+<span class="text-title-md font-title-md text-primary font-bold">Fondo de Cobertura Inmediata</span>
+</div>
+<span class="text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">Activo</span>
+</div>
+<p class="text-body-sm text-on-surface-variant mb-3">
+            Garantiza féretro de primera calidad, capilla ardiente municipal, carroza y parcela en perpetuidad para el titular y grupo a cargo.
+          </p>
+<div class="flex items-center justify-between text-body-sm font-body-sm pt-2 border-t border-outline-variant/40">
+<span class="text-on-surface-variant">Estado de Reserva:</span>
+<span class="font-code-cadastral font-bold text-primary">$ 2.808.000 / mes</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- ========================================================================= -->
+<!-- MODAL: COBRANZA QR INTERACTIVA (Level 3 Elevation)                        -->
+<!-- ========================================================================= -->
+<div class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/45 backdrop-blur-[1px]" id="paymentModal">
+<div class="bg-surface-container-lowest rounded-xl max-w-md w-full border border-slate-400 shadow-[0_20px_25px_-5px_rgba(15,23,42,0.12),0_8px_10px_-6px_rgba(15,23,42,0.04)] overflow-hidden">
+<!-- Modal Header -->
+<div class="px-5 py-3.5 bg-primary text-white flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-xl" data-icon="qr_code_scanner">qr_code_scanner</span>
+<span class="text-title-md font-title-md font-semibold">Cobranza Rápida QR Interoperable</span>
+</div>
+<button class="text-white/80 hover:text-white p-1 rounded transition-colors" onclick="closeModal()">
+<span class="material-symbols-outlined text-lg" data-icon="close">close</span>
+</button>
+</div>
+<!-- Modal Body -->
+<div class="p-6 text-center space-y-4">
+<!-- Target Info -->
+<div>
+<span class="text-label-caps font-code-cadastral text-secondary font-bold tracking-wider" id="modalAffiliateCode">AFILIADO #12</span>
+<h3 class="text-headline-md font-headline-md text-primary mt-0.5" id="modalAffiliateName">Gutiérrez, Héctor Rogelio</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant" id="modalConcept">Cuota 03 / Marzo 2026 - Seguro de Sepelio Aeterna</p>
+</div>
+<!-- Total Display -->
+<div class="py-2 px-4 rounded-lg bg-surface-container-low border border-outline-variant/60 inline-block w-full">
+<span class="text-label-caps font-label-caps text-on-surface-variant block uppercase">Total a Percibir</span>
+<span class="text-headline-lg font-code-cadastral font-bold text-primary" id="modalAmount">$ 18.000,00</span>
+</div>
+<!-- Dynamic QR Container -->
+<div class="flex flex-col items-center justify-center p-4 bg-white rounded-lg border-2 border-dashed border-outline-variant mx-auto w-56 h-56 relative group">
+<!-- QR Visual Representation -->
+<svg class="w-44 h-44 text-slate-900" fill="currentColor" viewbox="0 0 100 100">
+<path d="M0,0 h30 v30 h-30 z M5,5 v20 h20 v-20 z M10,10 h10 v10 h-10 z"></path>
+<path d="M70,0 h30 v30 h-30 z M75,5 v20 h20 v-20 z M80,10 h10 v10 h-10 z"></path>
+<path d="M0,70 h30 v30 h-30 z M5,75 v20 h20 v-20 z M10,80 h10 v10 h-10 z"></path>
+<rect height="8" width="8" x="35" y="5"></rect>
+<rect height="8" width="12" x="50" y="5"></rect>
+<rect height="15" width="6" x="35" y="18"></rect>
+<rect height="6" width="15" x="45" y="25"></rect>
+<rect height="6" width="15" x="10" y="35"></rect>
+<rect height="15" width="8" x="5" y="45"></rect>
+<rect height="8" width="8" x="20" y="55"></rect>
+<rect class="text-primary fill-current" height="30" rx="3" width="30" x="35" y="35"></rect>
+<rect height="8" width="20" x="75" y="35"></rect>
+<rect height="15" width="8" x="85" y="48"></rect>
+<rect height="8" width="12" x="70" y="68"></rect>
+<rect height="10" width="10" x="35" y="70"></rect>
+<rect height="6" width="15" x="50" y="75"></rect>
+<rect height="8" width="25" x="40" y="85"></rect>
+<rect height="15" width="10" x="70" y="80"></rect>
+<rect height="8" width="10" x="85" y="85"></rect>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+<div class="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-outline-variant">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="account_balance">account_balance</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-center gap-2 text-body-sm font-body-sm text-emerald-700 bg-emerald-50 py-1.5 px-3 rounded-lg border border-emerald-200">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+<span>Esperando acreditación en línea (Interbanking / MODO / MP)...</span>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="px-5 py-3.5 bg-surface-container-low border-t border-outline-variant flex items-center justify-between">
+<button class="px-3 py-1.5 rounded-lg border border-outline-variant bg-white text-on-surface font-title-md text-body-md hover:bg-slate-50" onclick="closeModal()">
+          Cancelar
+        </button>
+<button class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-title-md text-body-md shadow-xs flex items-center gap-1.5" onclick="confirmPayment()">
+<span class="material-symbols-outlined text-base" data-icon="check_circle">check_circle</span>
+<span>Confirmar Cobro Manual</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Inline Micro-interactions JavaScript -->
+<script>
+    // Modal Management Functions
+    function openModal(affiliateName, concept, amount, code) {
+      document.getElementById('modalAffiliateName').innerText = affiliateName;
+      document.getElementById('modalConcept').innerText = concept;
+      document.getElementById('modalAmount').innerText = '$ ' + amount.toLocaleString('es-AR') + ',00';
+      document.getElementById('modalAffiliateCode').innerText = 'AFILIADO ' + code;
+      
+      const modal = document.getElementById('paymentModal');
+      modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('paymentModal');
+      modal.classList.add('hidden');
+    }
+
+    function confirmPayment() {
+      alert('¡Pago registrado con éxito! Se ha emitido el recibo electrónico de cuota y actualizado la matriz anual 2026.');
+      closeModal();
+    }
+
+    // Close modal on Escape key press
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeModal();
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
+        const search = document.getElementById('searchBox');
+        if (search) search.focus();
+      }
+    });
+  </script>
+</body></html>

@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-background" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Aeterna Parque - Formulario y Catastro de Parcelas y Titulares</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-lowest": "#ffffff",
+            "inverse-on-surface": "#eef0ff",
+            "surface-bright": "#faf8ff",
+            "inverse-primary": "#b6c4ff",
+            "surface-dim": "#d2d9f4",
+            "on-secondary-fixed-variant": "#003ea8",
+            "primary": "#00236f",
+            "outline-variant": "#c5c5d3",
+            "on-primary-fixed-variant": "#264191",
+            "secondary-fixed": "#dbe1ff",
+            "primary-container": "#1e3a8a",
+            "primary-fixed": "#dce1ff",
+            "on-error": "#ffffff",
+            "on-secondary": "#ffffff",
+            "on-tertiary-fixed": "#002114",
+            "primary-fixed-dim": "#b6c4ff",
+            "on-tertiary-container": "#4ac08f",
+            "surface-variant": "#dae2fd",
+            "on-surface-variant": "#444651",
+            "on-background": "#131b2e",
+            "on-error-container": "#93000a",
+            "on-tertiary": "#ffffff",
+            "surface-container-low": "#f2f3ff",
+            "tertiary": "#003120",
+            "secondary-fixed-dim": "#b4c5ff",
+            "on-primary": "#ffffff",
+            "tertiary-fixed": "#85f8c4",
+            "tertiary-container": "#004a32",
+            "outline": "#757682",
+            "surface": "#faf8ff",
+            "on-surface": "#131b2e",
+            "surface-container-high": "#e2e7ff",
+            "on-secondary-fixed": "#00174b",
+            "inverse-surface": "#283044",
+            "secondary": "#0051d5",
+            "error-container": "#ffdad6",
+            "surface-tint": "#4059aa",
+            "surface-container": "#eaedff",
+            "on-primary-fixed": "#00164e",
+            "error": "#ba1a1a",
+            "tertiary-fixed-dim": "#68dba9",
+            "background": "#faf8ff",
+            "surface-container-highest": "#dae2fd",
+            "on-tertiary-fixed-variant": "#005137",
+            "secondary-container": "#316bf3",
+            "on-secondary-container": "#fefcff",
+            "on-primary-container": "#90a8ff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-lg": "1rem",
+            "gutter": "1rem",
+            "gutter-desktop": "1.25rem",
+            "space-xl": "1.5rem",
+            "space-xs": "0.25rem",
+            "space-md": "0.75rem",
+            "space-xxs": "0.125rem",
+            "space-2xl": "2rem",
+            "space-sm": "0.5rem",
+            "margin": "1rem",
+            "margin-desktop": "1.5rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Inter"],
+            "headline-sm": ["Inter"],
+            "body-sm": ["Inter"],
+            "body-md": ["Inter"],
+            "body-lg": ["Inter"],
+            "headline-lg": ["Inter"],
+            "title-md": ["Inter"],
+            "code-cadastral": ["JetBrains Mono"],
+            "label-caps": ["Inter"],
+            "label-numeric": ["JetBrains Mono"],
+            "display": ["Inter"]
+          },
+          "fontSize": {
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "title-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "code-cadastral": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "label-numeric": ["13px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "display": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 18px;
+      line-height: 1;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #f2f3ff;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #c5c5d3;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="h-full bg-background text-on-surface antialiased overflow-hidden font-body-md text-body-md">
+<!-- SideNavBar Component: Docked fixed shell -->
+<aside class="fixed left-0 top-0 bottom-0 h-screen w-64 flex flex-col justify-between p-4 z-40 bg-surface-container-lowest border-r border-outline-variant shadow-sm">
+<div class="flex flex-col gap-4">
+<!-- Institutional Logo & Header -->
+<div class="flex items-center gap-3 px-2 py-1">
+<div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-on-primary shadow-sm flex-shrink-0">
+<span class="material-symbols-outlined text-white text-[20px]" data-icon="domain">domain</span>
+</div>
+<div class="flex flex-col overflow-hidden">
+<span class="text-title-md font-title-md font-semibold text-primary tracking-tight truncate">Aeterna Parque</span>
+<span class="text-body-sm font-body-sm text-outline truncate">Registro &amp; Sepelios</span>
+</div>
+</div>
+<!-- Quick Action CTA -->
+<button class="w-full h-9 bg-primary hover:bg-secondary text-on-primary rounded-lg flex items-center justify-center gap-2 px-3 text-body-md font-medium transition-colors shadow-sm active:scale-[0.99]">
+<span class="material-symbols-outlined text-white text-[18px]" data-icon="qr_code_scanner">qr_code_scanner</span>
+<span>Cobro Rápido QR</span>
+</button>
+<!-- Main Navigation Links -->
+<nav class="flex flex-col gap-1 mt-2">
+<!-- Tab 1: Dashboard (Inactive) -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-body-md font-body-md">Dashboard</span>
+</a>
+<!-- Tab 2: Parcelas & Catastro (ACTIVE per requirement) -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-container text-primary font-semibold border-l-4 border-primary" href="#">
+<span class="material-symbols-outlined" data-icon="domain" data-weight="fill" style="font-variation-settings: 'FILL' 1;">domain</span>
+<span class="text-body-md font-body-md">Parcelas &amp; Catastro</span>
+</a>
+<!-- Tab 3: Inhumaciones (Inactive) -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span class="text-body-md font-body-md">Inhumaciones</span>
+</a>
+<!-- Tab 4: Seguro de Sepelio (Inactive) -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+<span class="text-body-md font-body-md">Seguro de Sepelio</span>
+</a>
+<!-- Tab 5: Caja & Cobros (Inactive) -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="point_of_sale">point_of_sale</span>
+<span class="text-body-md font-body-md">Caja &amp; Cobros</span>
+</a>
+<!-- Tab 6: Configuración (Inactive) -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-body-md font-body-md">Configuración</span>
+</a>
+</nav>
+</div>
+<!-- Navigation Footer -->
+<div class="flex flex-col gap-1 pt-3 border-t border-outline-variant">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low text-body-sm font-body-sm transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span>Soporte Municipal</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low text-body-sm font-body-sm transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="shield">shield</span>
+<span>Auditoría</span>
+</a>
+<!-- System Operator Profile Snapshot -->
+<div class="mt-2 pt-2 px-2 flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary font-semibold text-body-sm">
+          RC
+        </div>
+<div class="flex flex-col overflow-hidden leading-tight">
+<span class="text-body-sm font-medium text-on-surface truncate">Of. Registro Civil</span>
+<span class="text-[11px] text-outline truncate">Chamical, La Rioja</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 right-0 left-64 h-14 z-30 flex items-center justify-between px-6 bg-surface-container-lowest border-b border-outline-variant shadow-sm">
+<div class="flex items-center gap-4 flex-1">
+<h1 class="text-headline-sm font-headline-sm font-bold text-primary tracking-wide uppercase">
+        Aeterna Sistema Mortuorio
+      </h1>
+<span class="text-outline-variant">|</span>
+<div class="flex items-center gap-2 text-body-sm text-on-surface-variant font-medium">
+<span class="material-symbols-outlined text-outline" data-icon="domain">domain</span>
+<span>Módulo de Catastro Parcelario</span>
+</div>
+</div>
+<!-- Actions & Global Icons -->
+<div class="flex items-center gap-3">
+<!-- Search global inside TopBar -->
+<div class="relative w-56">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full h-8 pl-8 pr-3 text-body-sm bg-surface rounded border border-outline-variant focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none" placeholder="Buscar parcela o DNI..." type="text"/>
+</div>
+<div class="h-5 w-px bg-outline-variant mx-1"></div>
+<button class="w-8 h-8 flex items-center justify-center rounded hover:bg-surface-container-low text-on-surface-variant transition-colors" title="Escanear Código QR">
+<span class="material-symbols-outlined" data-icon="qr_code_scanner">qr_code_scanner</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded hover:bg-surface-container-low text-on-surface-variant transition-colors" title="Imprimir Registro Oficial">
+<span class="material-symbols-outlined" data-icon="print">print</span>
+</button>
+<button class="relative w-8 h-8 flex items-center justify-center rounded hover:bg-surface-container-low text-on-surface-variant transition-colors" title="Notificaciones Pendientes">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error"></span>
+</button>
+<div class="h-5 w-px bg-outline-variant mx-1"></div>
+<button class="h-8 px-3 rounded text-body-sm font-medium bg-surface-container text-primary hover:bg-surface-container-high transition-colors">
+        Cierre de Caja
+      </button>
+<button class="h-8 px-3 rounded text-body-sm font-medium bg-primary text-on-primary hover:bg-secondary transition-colors flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]" data-icon="add">add</span>
+<span>Nuevo Registro</span>
+</button>
+</div>
+</header>
+<!-- Main Content Workspace (2 Columns Balanced Grid) -->
+<main class="fixed top-14 left-64 right-0 bottom-0 overflow-y-auto p-4 bg-surface-bright custom-scroll">
+<div class="max-w-[1720px] mx-auto grid grid-cols-12 gap-4 h-full">
+<!-- LEFT COLUMN: Formulario de Carga Ágil de Parcela (Cols 5) -->
+<section class="col-span-12 xl:col-span-5 flex flex-col gap-3">
+<div class="bg-surface-container-lowest rounded border border-outline-variant p-4 shadow-sm flex flex-col justify-between">
+<!-- Card Header with Supabase Live Sync Indicator -->
+<div class="flex items-center justify-between pb-3 border-b border-outline-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="edit_note">edit_note</span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface font-semibold">Registro / Edición de Parcela</h2>
+</div>
+<!-- Supabase Synced Badge -->
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-medium tracking-wide">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+<span>Supabase Conectado</span>
+</div>
+</div>
+<!-- Form Body -->
+<form class="space-y-3.5 mt-3">
+<!-- SECCIÓN: GRUPO TITULAR -->
+<fieldset class="border border-outline-variant/70 rounded p-3 bg-surface/50">
+<legend class="text-label-caps font-label-caps text-outline uppercase px-1.5 font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="person">person</span>
+<span>Datos del Titular Responsable</span>
+</legend>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 mt-1">
+<!-- Nombre y Apellido con autocompletado -->
+<div class="md:col-span-2">
+<label class="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1">
+                    Nombre y Apellido del Titular <span class="text-error">*</span>
+</label>
+<div class="relative">
+<input class="w-full h-9 px-3 pr-8 text-body-md bg-white border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none" id="input-titular" placeholder="Buscar por apellido o ingresar nuevo..." type="text" value="Fernández, Héctor Osvaldo"/>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]" data-icon="person_search">person_search</span>
+</div>
+</div>
+<!-- DNI / CUIT -->
+<div>
+<label class="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1">
+                    DNI / CUIT <span class="text-error">*</span>
+</label>
+<input class="w-full h-9 px-3 font-code-cadastral text-code-cadastral bg-white border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none" type="text" value="20-18452981-4"/>
+</div>
+<!-- Teléfono / WhatsApp con prefijo +54 9 -->
+<div>
+<label class="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1">
+                    Teléfono / WhatsApp
+                  </label>
+<div class="flex">
+<span class="inline-flex items-center px-2.5 h-9 rounded-l border border-r-0 border-outline-variant bg-surface-container-low text-body-sm font-code-cadastral text-outline select-none">
+                      +54 9
+                    </span>
+<input class="w-full h-9 px-3 text-body-md bg-white border border-outline-variant rounded-r focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none" placeholder="3826 ..." type="tel" value="3826 44-8921"/>
+</div>
+</div>
+<!-- Domicilio en Chamical -->
+<div class="md:col-span-2">
+<label class="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1">
+                    Domicilio en Chamical / Localidad
+                  </label>
+<div class="relative">
+<input class="w-full h-9 pl-8 pr-3 text-body-md bg-white border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none" type="text" value="Av. San Martín 452, B° Centro, Chamical"/>
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]" data-icon="location_on">location_on</span>
+</div>
+</div>
+</div>
+</fieldset>
+<!-- SECCIÓN: GRUPO PARCELA Y CATASTRO -->
+<fieldset class="border border-outline-variant/70 rounded p-3 bg-surface/50">
+<legend class="text-label-caps font-label-caps text-outline uppercase px-1.5 font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="grid_4x4">grid_4x4</span>
+<span>Catastro y Fosa (schema.sql)</span>
+</legend>
+<div class="space-y-3 mt-1">
+<!-- Selector desplegable de Sector -->
+<div>
+<label class="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1">
+                    Sector del Parque <span class="text-error">*</span>
+</label>
+<select class="w-full h-9 px-3 text-body-md bg-white border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none" id="select-sector">
+<option selected="" value="A">Sector A (Tradicional)</option>
+<option value="E">Sector E (Parque Central)</option>
+<option value="SALINAS">Sector Salinas (Panteón)</option>
+</select>
+</div>
+<!-- Fila/Manzana + Parcela + Nomenclatura Preview -->
+<div class="grid grid-cols-12 gap-2.5 items-end">
+<div class="col-span-3">
+<label class="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1">
+                      Fila / Manz.
+                    </label>
+<input class="w-full h-9 px-3 font-code-cadastral text-code-cadastral text-center bg-white border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none" id="input-fila" type="text" value="25"/>
+</div>
+<div class="col-span-3">
+<label class="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1">
+                      N° Parcela
+                    </label>
+<input class="w-full h-9 px-3 font-code-cadastral text-code-cadastral text-center bg-white border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none" id="input-parcela" type="text" value="96"/>
+</div>
+<!-- Dynamic Nomenclature Box -->
+<div class="col-span-6 bg-surface-container border border-primary/20 rounded p-1.5 flex flex-col justify-center items-center h-9">
+<span class="text-[10px] text-primary uppercase font-bold tracking-wider leading-none">Nomenclatura Oficial</span>
+<span class="font-code-cadastral text-[14px] font-bold text-primary tracking-wide" id="preview-nomenclatura">A-25-96</span>
+</div>
+</div>
+<!-- Capacidad Total de la Fosa (Segmented Control) -->
+<div>
+<label class="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1.5">
+                    Capacidad Total de la Fosa (Niveles Superpuestos)
+                  </label>
+<div class="grid grid-cols-3 gap-1.5 p-1 bg-surface-container-high rounded border border-outline-variant">
+<label class="flex items-center justify-center py-1.5 px-2 rounded cursor-pointer transition-all text-body-sm text-on-surface-variant has-[:checked]:bg-white has-[:checked]:text-primary has-[:checked]:font-semibold has-[:checked]:shadow-sm">
+<input class="sr-only" name="capacidad_fosa" type="radio" value="1"/>
+<span>1 Nivel</span>
+</label>
+<label class="flex items-center justify-center py-1.5 px-2 rounded cursor-pointer transition-all text-body-sm text-on-surface-variant has-[:checked]:bg-white has-[:checked]:text-primary has-[:checked]:font-semibold has-[:checked]:shadow-sm">
+<input class="sr-only" name="capacidad_fosa" type="radio" value="2"/>
+<span>2 Niveles</span>
+</label>
+<label class="flex items-center justify-center py-1.5 px-2 rounded cursor-pointer transition-all text-body-sm has-[:checked]:bg-white has-[:checked]:text-primary has-[:checked]:font-semibold has-[:checked]:shadow-sm">
+<input checked="" class="sr-only" name="capacidad_fosa" type="radio" value="3"/>
+<span class="truncate">3 Niv. (Familiar)</span>
+</label>
+</div>
+</div>
+</div>
+</fieldset>
+<!-- SECCIÓN: ESTADO DE LA PARCELA & SALDO -->
+<fieldset class="border border-outline-variant/70 rounded p-3 bg-surface/50">
+<legend class="text-label-caps font-label-caps text-outline uppercase px-1.5 font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="flag">flag</span>
+<span>Estado Administrativo &amp; Aranceles</span>
+</legend>
+<!-- Badges de Estado Seleccionables -->
+<div class="mb-3">
+<label class="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1.5">
+                  Estado Operativo Actual
+                </label>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+<!-- Disponible -->
+<button class="py-1 px-2 rounded text-body-sm font-medium border border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:border-secondary transition-all text-center" type="button">
+                    Disponible
+                  </button>
+<!-- Ocupada (Selected) -->
+<button class="py-1 px-2 rounded text-body-sm font-semibold border-2 border-primary bg-primary text-on-primary shadow-sm text-center" type="button">
+                    Ocupada
+                  </button>
+<!-- En Mora -->
+<button class="py-1 px-2 rounded text-body-sm font-medium border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 transition-all text-center" type="button">
+                    En Mora
+                  </button>
+<!-- Baja / En litigio -->
+<button class="py-1 px-2 rounded text-body-sm font-medium border border-red-300 bg-red-50 text-red-800 hover:bg-red-100 transition-all text-center" type="button">
+                    Baja / Litigio
+                  </button>
+</div>
+</div>
+<!-- Saldo de Mantenimiento ($ ARS) -->
+<div>
+<label class="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1">
+                  Saldo de Mantenimiento Cuatrimestral ($ ARS)
+                </label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 font-code-cadastral text-outline font-semibold">$</span>
+<input class="w-full h-9 pl-7 pr-3 font-code-cadastral text-headline-sm font-semibold text-primary bg-white border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none" type="text" value="36.000,00"/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 text-body-sm text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">Al día</span>
+</div>
+</div>
+</fieldset>
+<!-- Bottom Actions Buttons -->
+<div class="pt-2 flex items-center justify-end gap-2 border-t border-outline-variant">
+<button class="h-9 px-4 rounded text-body-md font-medium bg-surface-container-lowest border border-outline-variant text-on-surface hover:bg-surface-container-low transition-colors active:scale-[0.99]" type="button">
+                Cancelar
+              </button>
+<button class="h-9 px-5 rounded text-body-md font-semibold bg-primary hover:bg-secondary text-on-primary transition-colors flex items-center gap-1.5 shadow-sm active:scale-[0.99]" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="save">save</span>
+<span>Guardar Parcela</span>
+</button>
+</div>
+</form>
+</div>
+</section>
+<!-- RIGHT COLUMN: Listado y Catastro con Vista Rápida (Cols 7) -->
+<section class="col-span-12 xl:col-span-7 flex flex-col gap-3">
+<!-- Search & Filter Toolbar -->
+<div class="bg-surface-container-lowest rounded border border-outline-variant p-3 shadow-sm flex flex-col gap-2.5">
+<!-- Filter Tabs / Sector Chips -->
+<div class="flex items-center justify-between flex-wrap gap-2">
+<div class="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
+<button class="px-3 py-1 rounded text-body-sm font-semibold bg-primary text-on-primary whitespace-nowrap shadow-xs">
+                Todos (428)
+              </button>
+<button class="px-3 py-1 rounded text-body-sm font-medium bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors whitespace-nowrap">
+                Sector A (194)
+              </button>
+<button class="px-3 py-1 rounded text-body-sm font-medium bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors whitespace-nowrap">
+                Sector E (142)
+              </button>
+<button class="px-3 py-1 rounded text-body-sm font-medium bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors whitespace-nowrap">
+                Salinas (92)
+              </button>
+<button class="px-3 py-1 rounded text-body-sm font-medium border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 transition-colors whitespace-nowrap">
+                En Mora (34)
+              </button>
+</div>
+<!-- Quick Counter Metric -->
+<span class="text-body-sm font-code-cadastral text-outline">Total reg: 428 parcelas</span>
+</div>
+<!-- Quick Search Cadastral Input -->
+<div class="flex items-center gap-2">
+<div class="relative flex-1">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full h-9 pl-9 pr-3 text-body-md bg-surface-container-low border border-outline-variant rounded focus:border-secondary focus:bg-white focus:outline-none" placeholder="Filtrar por nomenclatura (ej. A-25), apellido titular o DNI..." type="text"/>
+</div>
+<button class="h-9 px-3 rounded border border-outline-variant bg-surface text-on-surface hover:bg-surface-container flex items-center gap-1 text-body-sm font-medium">
+<span class="material-symbols-outlined text-[18px]" data-icon="filter_list">filter_list</span>
+<span>Filtrar</span>
+</button>
+</div>
+</div>
+<!-- Parcel List / Interactive Data Grid -->
+<div class="bg-surface-container-lowest rounded border border-outline-variant shadow-sm flex-1 flex flex-col overflow-hidden">
+<div class="px-3 py-2 bg-surface-container-low border-b border-outline-variant flex items-center justify-between">
+<span class="text-label-caps font-label-caps text-outline uppercase font-semibold">Listado Catastral Dinámico</span>
+<span class="text-[11px] text-outline">Seleccione una fila para cargar su ficha rápida</span>
+</div>
+<div class="overflow-x-auto flex-1 max-h-[360px] custom-scroll">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/70 border-b border-outline-variant text-label-caps font-label-caps text-outline uppercase sticky top-0 z-10">
+<th class="py-2 px-3">Nomenclatura</th>
+<th class="py-2 px-3">Titular Actual</th>
+<th class="py-2 px-3 text-center">Ocupación / Niveles</th>
+<th class="py-2 px-3">Estado</th>
+<th class="py-2 px-3 text-right">Saldo</th>
+<th class="py-2 px-2 text-center">Acción</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/40 text-body-sm font-body-sm">
+<!-- ROW 1 (Active/Selected: A-25-96) -->
+<tr class="bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer border-l-4 border-l-primary">
+<td class="py-2.5 px-3">
+<span class="font-code-cadastral text-code-cadastral font-bold text-primary block">A-25-96</span>
+<span class="text-[11px] text-outline">Sec. Tradicional</span>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-medium text-on-surface truncate max-w-[160px]">Fernández, Héctor Osvaldo</div>
+<div class="font-code-cadastral text-[11px] text-outline">DNI: 18.452.981</div>
+</td>
+<td class="py-2.5 px-3 text-center">
+<div class="inline-flex flex-col items-center">
+<span class="font-medium text-on-surface text-[12px]">2 de 3 ocupados</span>
+<!-- Level Indicator Bars (3 bars) -->
+<div class="flex gap-1 mt-1">
+<div class="w-4 h-1.5 rounded-sm bg-primary" title="Nivel 1 Ocupado"></div>
+<div class="w-4 h-1.5 rounded-sm bg-primary" title="Nivel 2 Ocupado"></div>
+<div class="w-4 h-1.5 rounded-sm bg-outline-variant/60" title="Nivel 3 Disponible"></div>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-900 border border-blue-200">
+                      Ocupada
+                    </span>
+</td>
+<td class="py-2.5 px-3 text-right font-code-cadastral font-semibold text-emerald-800">
+                    $ 36.000
+                  </td>
+<td class="py-2.5 px-2 text-center">
+<button class="w-7 h-7 inline-flex items-center justify-center rounded hover:bg-surface-container text-primary">
+<span class="material-symbols-outlined text-[18px]" data-icon="visibility">visibility</span>
+</button>
+</td>
+</tr>
+<!-- ROW 2: A-25-97 -->
+<tr class="hover:bg-surface-container-low transition-colors cursor-pointer">
+<td class="py-2.5 px-3">
+<span class="font-code-cadastral text-code-cadastral font-bold text-on-surface block">A-25-97</span>
+<span class="text-[11px] text-outline">Sec. Tradicional</span>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-medium text-on-surface truncate max-w-[160px]">Gómez, Mirta Beatriz</div>
+<div class="font-code-cadastral text-[11px] text-outline">DNI: 14.102.394</div>
+</td>
+<td class="py-2.5 px-3 text-center">
+<div class="inline-flex flex-col items-center">
+<span class="font-medium text-on-surface text-[12px]">3 de 3 ocupados</span>
+<div class="flex gap-1 mt-1">
+<div class="w-4 h-1.5 rounded-sm bg-primary"></div>
+<div class="w-4 h-1.5 rounded-sm bg-primary"></div>
+<div class="w-4 h-1.5 rounded-sm bg-primary"></div>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-900 border border-amber-200">
+                      En Mora
+                    </span>
+</td>
+<td class="py-2.5 px-3 text-right font-code-cadastral font-semibold text-error">
+                    $ 72.000
+                  </td>
+<td class="py-2.5 px-2 text-center">
+<button class="w-7 h-7 inline-flex items-center justify-center rounded hover:bg-surface-container text-outline">
+<span class="material-symbols-outlined text-[18px]" data-icon="edit">edit</span>
+</button>
+</td>
+</tr>
+<!-- ROW 3: E-12-04 -->
+<tr class="hover:bg-surface-container-low transition-colors cursor-pointer">
+<td class="py-2.5 px-3">
+<span class="font-code-cadastral text-code-cadastral font-bold text-on-surface block">E-12-04</span>
+<span class="text-[11px] text-outline">Sec. Parque Central</span>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-medium text-outline italic truncate max-w-[160px]">(Sin titular asignado)</div>
+<div class="font-code-cadastral text-[11px] text-outline">Parcela Municipal</div>
+</td>
+<td class="py-2.5 px-3 text-center">
+<div class="inline-flex flex-col items-center">
+<span class="font-medium text-outline text-[12px]">0 de 2 ocupados</span>
+<div class="flex gap-1 mt-1">
+<div class="w-4 h-1.5 rounded-sm bg-outline-variant/60"></div>
+<div class="w-4 h-1.5 rounded-sm bg-outline-variant/60"></div>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-900 border border-emerald-200">
+                      Disponible
+                    </span>
+</td>
+<td class="py-2.5 px-3 text-right font-code-cadastral text-outline">
+                    $ 0,00
+                  </td>
+<td class="py-2.5 px-2 text-center">
+<button class="w-7 h-7 inline-flex items-center justify-center rounded hover:bg-surface-container text-outline">
+<span class="material-symbols-outlined text-[18px]" data-icon="add_circle">add_circle</span>
+</button>
+</td>
+</tr>
+<!-- ROW 4: SAL-04-18 -->
+<tr class="hover:bg-surface-container-low transition-colors cursor-pointer">
+<td class="py-2.5 px-3">
+<span class="font-code-cadastral text-code-cadastral font-bold text-on-surface block">SAL-04-18</span>
+<span class="text-[11px] text-outline">Sec. Salinas (Panteón)</span>
+</td>
+<td class="py-2.5 px-3">
+<div class="font-medium text-on-surface truncate max-w-[160px]">Bustos, Ramón Alberto</div>
+<div class="font-code-cadastral text-[11px] text-outline">DNI: 08.234.119</div>
+</td>
+<td class="py-2.5 px-3 text-center">
+<div class="inline-flex flex-col items-center">
+<span class="font-medium text-on-surface text-[12px]">1 de 2 ocupados</span>
+<div class="flex gap-1 mt-1">
+<div class="w-4 h-1.5 rounded-sm bg-primary"></div>
+<div class="w-4 h-1.5 rounded-sm bg-outline-variant/60"></div>
+</div>
+</div>
+</td>
+<td class="py-2.5 px-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-900 border border-blue-200">
+                      Ocupada
+                    </span>
+</td>
+<td class="py-2.5 px-3 text-right font-code-cadastral font-semibold text-emerald-800">
+                    $ 42.500
+                  </td>
+<td class="py-2.5 px-2 text-center">
+<button class="w-7 h-7 inline-flex items-center justify-center rounded hover:bg-surface-container text-outline">
+<span class="material-symbols-outlined text-[18px]" data-icon="visibility">visibility</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- FICHA RÁPIDA INFERIOR (Detalle de personas sepultadas en parcela A-25-96) -->
+<div class="bg-surface-container-lowest rounded border border-outline-variant p-3.5 shadow-sm">
+<div class="flex items-center justify-between pb-2 mb-2.5 border-b border-outline-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="inventory_2">inventory_2</span>
+<h3 class="text-title-md font-title-md text-on-surface font-semibold">
+                Ficha Rápida: Parcela <span class="font-code-cadastral text-primary">A-25-96</span>
+</h3>
+<span class="text-body-sm text-outline">| Capacidad: 2/3 Ocupados</span>
+</div>
+<button class="h-8 px-3 rounded text-body-sm font-semibold bg-secondary hover:bg-primary text-white transition-colors flex items-center gap-1.5 shadow-xs">
+<span class="material-symbols-outlined text-[16px]" data-icon="add_circle">add_circle</span>
+<span>Registrar Nueva Inhumación en esta Parcela</span>
+</button>
+</div>
+<!-- List of Deceased in this plot -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+<!-- Difunto 1 (Nivel 1 - Base) -->
+<div class="p-2.5 rounded border border-outline-variant/80 bg-surface flex items-start justify-between">
+<div class="flex items-start gap-2.5">
+<div class="w-7 h-7 rounded bg-surface-container text-primary font-bold flex items-center justify-center font-code-cadastral text-[12px] flex-shrink-0">
+                  N1
+                </div>
+<div>
+<h4 class="text-body-md font-semibold text-on-surface">Fernández Morales, Ernesto</h4>
+<div class="flex items-center gap-2 text-body-sm text-outline mt-0.5">
+<span class="flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]" data-icon="event">event</span>
+<span>Inhumado: 14/06/1998</span>
+</span>
+<span>•</span>
+<span class="font-code-cadastral text-[11px]">Acta #451-B</span>
+</div>
+</div>
+</div>
+<span class="text-[11px] font-medium text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                Regular
+              </span>
+</div>
+<!-- Difunto 2 (Nivel 2 - Medio) -->
+<div class="p-2.5 rounded border border-outline-variant/80 bg-surface flex items-start justify-between">
+<div class="flex items-start gap-2.5">
+<div class="w-7 h-7 rounded bg-surface-container text-primary font-bold flex items-center justify-center font-code-cadastral text-[12px] flex-shrink-0">
+                  N2
+                </div>
+<div>
+<h4 class="text-body-md font-semibold text-on-surface">Morales de Fernández, Carmen Rosa</h4>
+<div class="flex items-center gap-2 text-body-sm text-outline mt-0.5">
+<span class="flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]" data-icon="event">event</span>
+<span>Inhumado: 09/11/2017</span>
+</span>
+<span>•</span>
+<span class="font-code-cadastral text-[11px]">Acta #882-C</span>
+</div>
+</div>
+</div>
+<span class="text-[11px] font-medium text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                Regular
+              </span>
+</div>
+<!-- Nivel 3 (Disponible) -->
+<div class="md:col-span-2 p-2 rounded border border-dashed border-outline-variant bg-surface-bright flex items-center justify-between text-body-sm text-outline">
+<div class="flex items-center gap-2">
+<span class="w-7 h-7 rounded border border-dashed border-outline-variant flex items-center justify-center font-code-cadastral text-[12px] font-medium text-outline">
+                  N3
+                </span>
+<span class="font-medium text-on-surface-variant">Nivel Superior Disponible para futura asignación familiar</span>
+</div>
+<span class="font-code-cadastral text-[12px] text-primary font-semibold">Espacio Apto</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Interactive script for dynamic Nomenclature & UI Sync -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const selectSector = document.getElementById('select-sector');
+      const inputFila = document.getElementById('input-fila');
+      const inputParcela = document.getElementById('input-parcela');
+      const previewNom = document.getElementById('preview-nomenclatura');
+
+      function updateNomenclature() {
+        if (!selectSector || !inputFila || !inputParcela || !previewNom) return;
+        const sectorVal = selectSector.value;
+        const filaVal = inputFila.value.trim() || '00';
+        const parcelaVal = inputParcela.value.trim() || '00';
+        previewNom.textContent = `${sectorVal}-${filaVal}-${parcelaVal}`;
+      }
+
+      if (selectSector && inputFila && inputParcela) {
+        selectSector.addEventListener('change', updateNomenclature);
+        inputFila.addEventListener('input', updateNomenclature);
+        inputParcela.addEventListener('input', updateNomenclature);
+      }
+    });
+  </script>
+</body></html>

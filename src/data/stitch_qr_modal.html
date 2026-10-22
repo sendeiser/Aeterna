@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Aeterna Parque - Registro &amp; Sepelios | Cobranza QR y Recibo</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-lowest": "#ffffff",
+            "inverse-on-surface": "#eef0ff",
+            "surface-bright": "#faf8ff",
+            "inverse-primary": "#b6c4ff",
+            "surface-dim": "#d2d9f4",
+            "on-secondary-fixed-variant": "#003ea8",
+            "primary": "#00236f",
+            "outline-variant": "#c5c5d3",
+            "on-primary-fixed-variant": "#264191",
+            "secondary-fixed": "#dbe1ff",
+            "primary-container": "#1e3a8a",
+            "primary-fixed": "#dce1ff",
+            "on-error": "#ffffff",
+            "on-secondary": "#ffffff",
+            "on-tertiary-fixed": "#002114",
+            "primary-fixed-dim": "#b6c4ff",
+            "on-tertiary-container": "#4ac08f",
+            "surface-variant": "#dae2fd",
+            "on-surface-variant": "#444651",
+            "on-background": "#131b2e",
+            "on-error-container": "#93000a",
+            "on-tertiary": "#ffffff",
+            "surface-container-low": "#f2f3ff",
+            "tertiary": "#003120",
+            "secondary-fixed-dim": "#b4c5ff",
+            "on-primary": "#ffffff",
+            "tertiary-fixed": "#85f8c4",
+            "tertiary-container": "#004a32",
+            "outline": "#757682",
+            "surface": "#faf8ff",
+            "on-surface": "#131b2e",
+            "surface-container-high": "#e2e7ff",
+            "on-secondary-fixed": "#00174b",
+            "inverse-surface": "#283044",
+            "secondary": "#0051d5",
+            "error-container": "#ffdad6",
+            "surface-tint": "#4059aa",
+            "surface-container": "#eaedff",
+            "on-primary-fixed": "#00164e",
+            "error": "#ba1a1a",
+            "tertiary-fixed-dim": "#68dba9",
+            "background": "#faf8ff",
+            "surface-container-highest": "#dae2fd",
+            "on-tertiary-fixed-variant": "#005137",
+            "secondary-container": "#316bf3",
+            "on-secondary-container": "#fefcff",
+            "on-primary-container": "#90a8ff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-lg": "1rem",
+            "gutter": "1rem",
+            "gutter-desktop": "1.25rem",
+            "space-xl": "1.5rem",
+            "space-xs": "0.25rem",
+            "space-md": "0.75rem",
+            "space-xxs": "0.125rem",
+            "space-2xl": "2rem",
+            "space-sm": "0.5rem",
+            "margin": "1rem",
+            "margin-desktop": "1.5rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Inter"],
+            "headline-sm": ["Inter"],
+            "body-sm": ["Inter"],
+            "body-md": ["Inter"],
+            "body-lg": ["Inter"],
+            "headline-lg": ["Inter"],
+            "title-md": ["Inter"],
+            "code-cadastral": ["JetBrains Mono"],
+            "label-caps": ["Inter"],
+            "label-numeric": ["JetBrains Mono"],
+            "display": ["Inter"]
+          },
+          "fontSize": {
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "title-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "code-cadastral": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "label-numeric": ["13px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "display": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 18px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background-color: #CBD5E1;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface h-full font-body-md text-body-md antialiased overflow-hidden selection:bg-secondary-fixed selection:text-primary">
+<!-- ========================================================================= -->
+<!-- BACKGROUND ADMINISTRATIVE SHELL (Dimmable Backdrop UI)                   -->
+<!-- ========================================================================= -->
+<!-- TopNavBar (Fixed Top Shell) -->
+<header class="fixed top-0 right-0 left-64 h-14 z-30 flex items-center justify-between px-6 bg-surface-container-lowest border-b border-outline-variant shadow-sm pointer-events-none">
+<div class="flex items-center gap-4">
+<span class="font-headline-sm text-headline-sm font-bold text-primary uppercase tracking-wide">Aeterna Sistema Mortuorio</span>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-label-caps font-label-caps bg-surface-container text-on-surface-variant border border-outline-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Terminal Caja 02 - Chamical
+      </span>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-1 text-on-surface-variant pr-2 border-r border-outline-variant">
+<button class="w-8 h-8 rounded flex items-center justify-center hover:bg-surface-container-low text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="qr_code_scanner">qr_code_scanner</span>
+</button>
+<button class="w-8 h-8 rounded flex items-center justify-center hover:bg-surface-container-low text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="print">print</span>
+</button>
+<button class="w-8 h-8 rounded flex items-center justify-center hover:bg-surface-container-low text-on-surface-variant relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error"></span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-3 h-8 bg-surface-container-lowest border border-outline-variant text-on-surface font-title-md text-body-sm rounded-lg hover:bg-surface-container-low">
+          Cierre de Caja
+        </button>
+<button class="px-3 h-8 bg-primary text-on-primary font-title-md text-body-sm rounded-lg hover:bg-primary-container">
+          Nuevo Registro
+        </button>
+</div>
+</div>
+</header>
+<!-- SideNavBar (Fixed Left Rail) -->
+<aside class="fixed left-0 top-0 bottom-0 h-screen w-64 flex flex-col justify-between p-4 z-40 bg-surface-container-lowest border-r border-outline-variant shadow-sm pointer-events-none">
+<div class="space-y-4">
+<!-- Brand & Header -->
+<div class="flex items-center gap-3 pb-3 border-b border-outline-variant">
+<div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-on-primary font-bold shadow-sm">
+<span class="material-symbols-outlined text-[22px]" data-icon="domain" style="font-variation-settings: 'FILL' 1;">domain</span>
+</div>
+<div>
+<h1 class="text-title-md font-title-md font-semibold text-primary tracking-tight leading-tight">Aeterna Parque</h1>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Registro &amp; Sepelios</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="domain">domain</span>
+<span class="font-body-md text-body-md">Parcelas &amp; Catastro</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span class="font-body-md text-body-md">Inhumaciones</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+<span class="font-body-md text-body-md">Seguro de Sepelio</span>
+</a>
+<!-- Active Tab: Caja & Cobros -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-container text-primary font-semibold border-l-4 border-primary" href="#">
+<span class="material-symbols-outlined" data-icon="point_of_sale" style="font-variation-settings: 'FILL' 1;">point_of_sale</span>
+<span class="font-body-md text-body-md">Caja &amp; Cobros</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">Configuración</span>
+</a>
+</nav>
+</div>
+<!-- Sidebar Bottom Actions -->
+<div class="space-y-3 pt-3 border-t border-outline-variant">
+<button class="w-full flex items-center justify-center gap-2 py-2 px-3 bg-secondary text-on-secondary rounded-lg font-title-md text-body-sm shadow-sm hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-[16px]" data-icon="qr_code_scanner">qr_code_scanner</span>
+        Cobro Rápido QR
+      </button>
+<div class="space-y-0.5">
+<a class="flex items-center gap-3 px-3 py-1.5 rounded-lg text-body-sm text-on-surface-variant hover:bg-surface-container-low" href="#">
+<span class="material-symbols-outlined text-[16px]" data-icon="help">help</span>
+<span>Soporte Municipal</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-1.5 rounded-lg text-body-sm text-on-surface-variant hover:bg-surface-container-low" href="#">
+<span class="material-symbols-outlined text-[16px]" data-icon="shield">shield</span>
+<span>Auditoría</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Administrative Main Canvas (Blurred/Attenuated under backdrop) -->
+<main class="ml-64 pt-14 p-6 h-screen overflow-hidden flex flex-col gap-6 filter blur-[2px] opacity-45 pointer-events-none select-none">
+<!-- Header Summary Block -->
+<div class="flex items-center justify-between pb-4 border-b border-outline-variant">
+<div>
+<h2 class="text-headline-lg font-headline-lg text-primary">Libro Diario de Caja &amp; Aranceles</h2>
+<p class="text-on-surface-variant text-body-md">Gestión de recaudación municipal de derechos de sepultura y cuotas de mantenimiento</p>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-body-md font-code-cadastral text-outline bg-surface-container px-3 py-1.5 rounded border border-outline-variant">SESIÓN #2026-CH-049</span>
+</div>
+</div>
+<!-- Mock Metrics Grid -->
+<div class="grid grid-cols-4 gap-4">
+<div class="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant shadow-sm">
+<div class="text-label-caps font-label-caps uppercase text-outline">Cobranza del Día</div>
+<div class="text-headline-lg font-headline-lg text-primary mt-1">$ 482.400,00</div>
+<div class="text-body-sm text-emerald-700 mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span> +14.2% vs. promedio
+        </div>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant shadow-sm">
+<div class="text-label-caps font-label-caps uppercase text-outline">Operaciones QR / Interoperables</div>
+<div class="text-headline-lg font-headline-lg text-secondary mt-1">28 tx</div>
+<div class="text-body-sm text-on-surface-variant mt-1">74% del volumen total</div>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant shadow-sm">
+<div class="text-label-caps font-label-caps uppercase text-outline">Recibos Emitidos</div>
+<div class="text-headline-lg font-headline-lg text-on-surface mt-1">42</div>
+<div class="text-body-sm text-on-surface-variant mt-1">1 pendiente de timbrado</div>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant shadow-sm">
+<div class="text-label-caps font-label-caps uppercase text-outline">Mora Regularizada</div>
+<div class="text-headline-lg font-headline-lg text-emerald-800 mt-1">$ 96.000,00</div>
+<div class="text-body-sm text-emerald-700 mt-1">6 parcelas puestas al día</div>
+</div>
+</div>
+<!-- Data Table Skeleton -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg flex-1 overflow-hidden">
+<div class="h-10 bg-surface-container-low px-4 flex items-center justify-between border-b border-outline-variant">
+<span class="text-label-caps font-label-caps uppercase text-outline font-semibold">Últimos Movimientos de Recaudación</span>
+</div>
+<div class="p-4 space-y-3">
+<div class="h-8 bg-surface-container rounded w-full"></div>
+<div class="h-8 bg-surface-container-low rounded w-full"></div>
+<div class="h-8 bg-surface-container rounded w-full"></div>
+<div class="h-8 bg-surface-container-low rounded w-full"></div>
+</div>
+</div>
+</main>
+<!-- ========================================================================= -->
+<!-- MODAL CURTAIN & BACKDROP SCRIM                                            -->
+<!-- ========================================================================= -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-[#0F172A]/50 backdrop-blur-sm overflow-y-auto custom-scroll" id="modal-container">
+<!-- MODAL WRAPPER (Responsive Grid containing Primary Modal & Digital Receipt Panel) -->
+<div class="relative w-full max-w-5xl my-auto flex flex-col lg:flex-row items-stretch justify-center gap-5 transition-all">
+<!-- ======================================================================= -->
+<!-- MAIN FLOATING PAYMENT MODAL (Optimal width 560px)                      -->
+<!-- ======================================================================= -->
+<div class="w-full lg:w-[560px] bg-surface-container-lowest rounded-xl border border-[#CBD5E1] shadow-2xl flex flex-col overflow-hidden">
+<!-- Modal Top Institutional Accent Strip -->
+<div class="h-1.5 w-full bg-gradient-to-r from-primary via-secondary to-emerald-600"></div>
+<!-- Encabezado -->
+<div class="p-5 pb-4 border-b border-outline-variant bg-surface-bright/80">
+<div class="flex items-start justify-between gap-3">
+<div>
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded bg-primary-container text-on-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]" data-icon="point_of_sale">point_of_sale</span>
+</span>
+<h3 class="text-headline-md font-headline-md text-primary tracking-tight">Registrar Cobranza Inmediata</h3>
+</div>
+<p class="mt-1 text-body-md font-body-md text-on-surface">
+<span class="font-code-cadastral font-semibold text-primary">Parcela A-25-96</span>
+<span class="text-outline">/</span> 
+                Afiliado #14 - <strong class="font-semibold text-on-surface">Lidia Sánchez</strong>
+</p>
+</div>
+<button class="text-outline hover:text-on-surface p-1 rounded hover:bg-surface-container transition-colors" title="Cerrar modal">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<!-- Badge de Servicio -->
+<div class="mt-2.5 flex items-center">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-label-caps font-label-caps bg-surface-container text-primary border border-outline-variant">
+<span class="material-symbols-outlined text-[14px]" data-icon="security" style="font-variation-settings: 'FILL' 1;">security</span>
+              Mantenimiento Parque Cuatrimestre 1 / Seguro Sepelio
+            </span>
+</div>
+</div>
+<!-- Monto Destacado -->
+<div class="px-5 py-4 bg-surface-container-low border-b border-outline-variant flex items-center justify-between">
+<div>
+<span class="text-label-caps font-label-caps uppercase text-outline tracking-wider">Monto Total a Regularizar</span>
+<div class="text-display font-display text-primary tracking-tight font-bold flex items-baseline gap-1 mt-0.5">
+<span>$ 18.000,00</span>
+<span class="text-title-md font-title-md font-medium text-outline">ARS</span>
+</div>
+</div>
+<div class="text-right">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-label-caps font-label-caps bg-emerald-50 text-emerald-800 border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span> Cuota Vto: 28/02/2026
+            </span>
+<div class="text-body-sm font-code-cadastral text-outline mt-1">Sin recargo por mora</div>
+</div>
+</div>
+<!-- Selector de Método de Pago (Segmented Control) -->
+<div class="p-5 pb-3">
+<div class="grid grid-cols-2 p-1 bg-surface-container rounded-lg border border-outline-variant text-center">
+<!-- Pestaña Inactiva -->
+<button class="py-2 px-3 rounded text-body-md font-title-md text-on-surface-variant hover:text-on-surface transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="payments">payments</span>
+              Efectivo en Caja
+            </button>
+<!-- Pestaña Activa -->
+<button class="py-2 px-3 rounded-md text-body-md font-title-md bg-surface-container-lowest text-primary font-semibold shadow-sm border border-outline-variant flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary" data-icon="qr_code_2" style="font-variation-settings: 'FILL' 1;">qr_code_2</span>
+              Transferencia QR / Bancaria
+            </button>
+</div>
+</div>
+<!-- Contenido Central: Transferencia QR & Datos Bancarios -->
+<div class="px-5 pb-4 space-y-4 flex-1">
+<!-- QR Frame & Instructions -->
+<div class="flex flex-col sm:flex-row items-center gap-4 p-3.5 bg-surface-container-lowest rounded-lg border border-outline-variant">
+<!-- QR 200x200px con logotipo central de red interoperable -->
+<div class="relative w-[180px] h-[180px] sm:w-[190px] sm:h-[190px] bg-white p-2.5 rounded-lg border border-[#CBD5E1] shadow-sm flex items-center justify-center shrink-0">
+<!-- Generación visual precisa de QR estilizado interoperable -->
+<svg class="w-full h-full text-slate-900 fill-current" shape-rendering="crispEdges" viewbox="0 0 100 100">
+<!-- Outer Corners -->
+<rect fill="#00236F" height="30" rx="3" width="30" x="0" y="0"></rect>
+<rect fill="#FFFFFF" height="20" rx="2" width="20" x="5" y="5"></rect>
+<rect fill="#00236F" height="12" rx="1.5" width="12" x="9" y="9"></rect>
+<rect fill="#00236F" height="30" rx="3" width="30" x="70" y="0"></rect>
+<rect fill="#FFFFFF" height="20" rx="2" width="20" x="75" y="5"></rect>
+<rect fill="#00236F" height="12" rx="1.5" width="12" x="79" y="9"></rect>
+<rect fill="#00236F" height="30" rx="3" width="30" x="0" y="70"></rect>
+<rect fill="#FFFFFF" height="20" rx="2" width="20" x="5" y="75"></rect>
+<rect fill="#00236F" height="12" rx="1.5" width="12" x="9" y="79"></rect>
+<!-- Alignment Pattern -->
+<rect fill="#00236F" height="18" rx="2" width="18" x="68" y="68"></rect>
+<rect fill="#FFFFFF" height="10" rx="1" width="10" x="72" y="72"></rect>
+<rect fill="#00236F" height="4" width="4" x="75" y="75"></rect>
+<!-- Timing Stripes & Data Bits Matrix -->
+<circle cx="36" cy="12" fill="#0F172A" r="2.2"></circle>
+<circle cx="44" cy="12" fill="#0F172A" r="2.2"></circle>
+<circle cx="52" cy="12" fill="#0F172A" r="2.2"></circle>
+<circle cx="60" cy="12" fill="#0F172A" r="2.2"></circle>
+<circle cx="12" cy="36" fill="#0F172A" r="2.2"></circle>
+<circle cx="12" cy="44" fill="#0F172A" r="2.2"></circle>
+<circle cx="12" cy="52" fill="#0F172A" r="2.2"></circle>
+<circle cx="12" cy="60" fill="#0F172A" r="2.2"></circle>
+<rect fill="#0F172A" height="4" width="8" x="36" y="24"></rect>
+<rect fill="#0F172A" height="4" width="12" x="48" y="20"></rect>
+<rect fill="#059669" height="6" width="6" x="34" y="34"></rect>
+<rect fill="#0F172A" height="8" width="4" x="42" y="32"></rect>
+<rect fill="#0F172A" height="4" width="8" x="56" y="34"></rect>
+<rect fill="#00236F" height="12" width="4" x="48" y="44"></rect>
+<rect fill="#0F172A" height="4" width="8" x="22" y="48"></rect>
+<rect fill="#0F172A" height="4" width="8" x="34" y="52"></rect>
+<rect fill="#059669" height="6" width="6" x="58" y="52"></rect>
+<rect fill="#0F172A" height="4" width="6" x="36" y="66"></rect>
+<rect fill="#0F172A" height="4" width="8" x="48" y="62"></rect>
+<rect fill="#0F172A" height="4" width="12" x="36" y="78"></rect>
+<rect fill="#0F172A" height="10" width="4" x="52" y="76"></rect>
+<rect fill="#0F172A" height="4" width="10" x="40" y="88"></rect>
+<rect fill="#00236F" height="6" width="6" x="56" y="86"></rect>
+<!-- Center Interoperable Anchor Badge -->
+<rect fill="#FFFFFF" height="26" rx="4" stroke="#00236F" stroke-width="2" width="26" x="37" y="37"></rect>
+<text fill="#00236F" font-family="Inter" font-size="9" font-weight="700" text-anchor="middle" x="50" y="53">QR</text>
+</svg>
+<!-- Escaneo Activo Micro-Badge -->
+<span class="absolute -bottom-2 bg-primary text-on-primary text-[10px] font-semibold px-2 py-0.5 rounded-full tracking-wide uppercase shadow-sm">
+                Interoperable
+              </span>
+</div>
+<!-- Interoperable Instruction & Wallets -->
+<div class="flex-1 space-y-2 text-left">
+<div class="flex items-center gap-1.5 text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200">
+<span class="material-symbols-outlined text-[16px] text-emerald-600" data-icon="sync" style="font-variation-settings: 'FILL' 1;">sync</span>
+<span class="text-body-sm font-semibold">Listo para recibir acreditación</span>
+</div>
+<p class="text-body-md text-on-surface font-medium leading-snug">
+                Escaneá desde cualquier billetera virtual o app bancaria:
+              </p>
+<!-- Badges de Apps Interoperables -->
+<div class="flex flex-wrap gap-1.5 pt-1">
+<span class="px-2 py-1 bg-surface-container rounded text-label-caps font-semibold text-primary border border-outline-variant">Mercado Pago</span>
+<span class="px-2 py-1 bg-surface-container rounded text-label-caps font-semibold text-primary border border-outline-variant">BNA+</span>
+<span class="px-2 py-1 bg-surface-container rounded text-label-caps font-semibold text-primary border border-outline-variant">MODO</span>
+<span class="px-2 py-1 bg-surface-container rounded text-label-caps font-semibold text-on-surface-variant border border-outline-variant">+ Todas</span>
+</div>
+<p class="text-[11px] text-outline pt-1">Transferencia directa e inmediata con acreditación en línea.</p>
+</div>
+</div>
+<!-- 2 Tarjetas de Copiado Rápido (Alias / CBU) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+<!-- Tarjeta 1: ALIAS -->
+<div class="p-2.5 bg-surface-bright rounded-lg border border-outline-variant flex items-center justify-between hover:border-secondary transition-colors">
+<div class="overflow-hidden mr-2">
+<span class="text-[10px] font-label-caps uppercase text-outline font-semibold block">Alias CBU</span>
+<span class="font-code-cadastral text-title-md font-bold text-primary truncate block" id="alias-val">AETERNA.CHAMICAL</span>
+</div>
+<button class="shrink-0 h-8 px-2.5 bg-surface-container-lowest border border-outline-variant hover:bg-surface-container text-primary font-semibold text-body-sm rounded flex items-center gap-1.5 transition-all shadow-sm" onclick="copyToClipboard('AETERNA.CHAMICAL', this)">
+<span class="material-symbols-outlined text-[15px]" data-icon="content_copy">content_copy</span>
+<span>Copiar</span>
+</button>
+</div>
+<!-- Tarjeta 2: CBU -->
+<div class="p-2.5 bg-surface-bright rounded-lg border border-outline-variant flex items-center justify-between hover:border-secondary transition-colors">
+<div class="overflow-hidden mr-2">
+<span class="text-[10px] font-label-caps uppercase text-outline font-semibold block">CBU Institucional</span>
+<span class="font-code-cadastral text-[12px] font-bold text-primary tracking-tight truncate block" id="cbu-val">0000003100012345678901</span>
+</div>
+<button class="shrink-0 h-8 px-2.5 bg-surface-container-lowest border border-outline-variant hover:bg-surface-container text-primary font-semibold text-body-sm rounded flex items-center gap-1.5 transition-all shadow-sm" onclick="copyToClipboard('0000003100012345678901', this)">
+<span class="material-symbols-outlined text-[15px]" data-icon="content_copy">content_copy</span>
+<span>Copiar</span>
+</button>
+</div>
+</div>
+<!-- Información Fiscal y Bancaria Institucional -->
+<div class="p-2.5 bg-surface-container-low rounded border border-outline-variant text-[11px] text-on-surface-variant leading-relaxed">
+<div class="flex items-center gap-1.5 font-semibold text-on-surface mb-0.5">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="account_balance">account_balance</span>
+              Banco Rioja - Cuenta Corriente Especial en Pesos
+            </div>
+<div>Titular: <strong class="text-on-surface">Aeterna Servicios S.R.L.</strong> | CUIT: <span class="font-code-cadastral text-on-surface">30-71234567-9</span></div>
+</div>
+<!-- Input Opcional Cajero -->
+<div>
+<label class="block text-body-sm font-semibold text-on-surface mb-1" for="comprobante-input">
+              N° de Comprobante / Últimos 4 dígitos de la transferencia <span class="text-outline font-normal">(Opcional)</span>
+</label>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-outline">
+<span class="material-symbols-outlined text-[16px]" data-icon="tag">tag</span>
+</div>
+<input class="w-full h-9 pl-8 pr-3 text-body-md font-code-cadastral uppercase bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-2 focus:ring-secondary-fixed text-on-surface placeholder:text-outline" id="comprobante-input" maxlength="12" placeholder="Ej: 7849 ó #TR-9942" type="text" value="7849"/>
+</div>
+</div>
+</div>
+<!-- Pie del Modal (Acciones) -->
+<div class="p-4 bg-surface-bright border-t border-outline-variant flex items-center justify-between gap-3">
+<button class="h-10 px-4 bg-surface-container-lowest border border-outline-variant text-on-surface font-title-md text-body-md rounded-lg hover:bg-surface-container-low transition-colors">
+            Cancelar / Volver
+          </button>
+<button class="h-10 px-5 bg-[#059669] hover:bg-[#047857] text-white font-title-md text-body-md font-semibold rounded-lg shadow-sm flex items-center gap-2 active:scale-[0.99] transition-all" id="btn-confirmar" onclick="triggerReceiptConfirmation()">
+<span class="material-symbols-outlined text-[18px]" data-icon="verified">verified</span>
+            Confirmar Cobro y Emitir Recibo
+          </button>
+</div>
+</div>
+<!-- ======================================================================= -->
+<!-- CARD / PANEL COMPLEMENTARIO: EMISIÓN DE RECIBO DIGITAL                  -->
+<!-- ======================================================================= -->
+<div class="w-full lg:w-[400px] bg-surface-container-lowest rounded-xl border border-[#CBD5E1] shadow-2xl flex flex-col justify-between overflow-hidden relative" id="receipt-card">
+<!-- Top Verified Bar -->
+<div class="h-1.5 w-full bg-emerald-600"></div>
+<div>
+<!-- Header del Recibo -->
+<div class="p-5 pb-3 border-b border-outline-variant bg-emerald-50/50">
+<div class="flex items-center justify-between">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-caps font-label-caps font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+<span class="material-symbols-outlined text-[15px] text-emerald-700" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                Cobro Acreditado Exitosamente
+              </span>
+<span class="font-code-cadastral text-[11px] text-outline font-semibold">AFIP RG 1415</span>
+</div>
+<div class="mt-3">
+<span class="text-label-caps font-label-caps uppercase text-outline block">N° Recibo Oficial</span>
+<div class="text-headline-md font-code-cadastral font-bold text-primary tracking-tight flex items-center gap-2">
+<span>REC-2026-000492</span>
+<span class="material-symbols-outlined text-emerald-600 text-[18px]" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<p class="text-[11px] text-on-surface-variant font-code-cadastral mt-0.5">Fecha: 24/02/2026 11:42:18 hs - Terminal 02</p>
+</div>
+</div>
+<!-- Resumen de Rubros Liquidados -->
+<div class="p-4 space-y-3">
+<div class="bg-surface-container-low rounded-lg p-3 border border-outline-variant space-y-2 text-body-sm">
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>Titular Contribuyente:</span>
+<span class="font-semibold text-on-surface">Lidia Sánchez</span>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>Catastro Parcela:</span>
+<span class="font-code-cadastral font-bold text-primary">SEC-A / P-25-96</span>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>Canal de Ingreso:</span>
+<span class="inline-flex items-center gap-1 font-semibold text-emerald-800">
+<span class="material-symbols-outlined text-[14px]" data-icon="qr_code">qr_code</span> Transf. QR Interoperable
+                </span>
+</div>
+<div class="flex justify-between items-center text-on-surface-variant">
+<span>Ref. Operación:</span>
+<span class="font-code-cadastral text-on-surface">#TR-7849-BIO</span>
+</div>
+<div class="border-t border-outline-variant pt-2 flex justify-between items-baseline font-bold">
+<span class="text-primary text-body-md">Total Cancelado:</span>
+<span class="text-headline-sm font-code-cadastral text-emerald-800">$ 18.000,00 ARS</span>
+</div>
+</div>
+<!-- Código de barras / Hash de Validación Tributaria -->
+<div class="p-2.5 bg-surface-bright rounded border border-dashed border-outline-variant text-center space-y-1">
+<div class="flex items-center justify-center gap-1 h-7 text-outline">
+<!-- Simulación gráfica de código de barras denso -->
+<span class="w-1 h-6 bg-slate-800 inline-block"></span>
+<span class="w-0.5 h-6 bg-slate-800 inline-block"></span>
+<span class="w-2 h-6 bg-slate-800 inline-block"></span>
+<span class="w-1 h-6 bg-slate-800 inline-block"></span>
+<span class="w-0.5 h-6 bg-slate-800 inline-block"></span>
+<span class="w-1.5 h-6 bg-slate-800 inline-block"></span>
+<span class="w-0.5 h-6 bg-slate-800 inline-block"></span>
+<span class="w-2 h-6 bg-slate-800 inline-block"></span>
+<span class="w-1 h-6 bg-slate-800 inline-block"></span>
+<span class="w-0.5 h-6 bg-slate-800 inline-block"></span>
+<span class="w-1.5 h-6 bg-slate-800 inline-block"></span>
+<span class="w-2 h-6 bg-slate-800 inline-block"></span>
+<span class="w-0.5 h-6 bg-slate-800 inline-block"></span>
+<span class="w-1 h-6 bg-slate-800 inline-block"></span>
+</div>
+<div class="text-[10px] font-code-cadastral text-outline">CAE: 74192038472910 | Vto CAE: 06/03/2026</div>
+</div>
+</div>
+</div>
+<!-- Botones de Salida Multiformato (Acciones directas del Recibo) -->
+<div class="p-4 bg-surface-container-low border-t border-outline-variant space-y-2">
+<div class="text-label-caps font-label-caps uppercase text-outline font-semibold mb-1">
+            Formatos de Impresión y Entrega
+          </div>
+<!-- Imprimir Ticket Térmico -->
+<button class="w-full h-9 bg-surface-container-lowest hover:bg-surface-container border border-outline-variant text-primary font-title-md text-body-sm font-semibold rounded-lg flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.99]" onclick="simulatePrint('Ticket 80mm')">
+<span class="material-symbols-outlined text-[17px] text-primary" data-icon="receipt_long">receipt_long</span>
+            Imprimir Ticket Térmico 80mm
+          </button>
+<!-- Imprimir Factura / Recibo A4 -->
+<button class="w-full h-9 bg-surface-container-lowest hover:bg-surface-container border border-outline-variant text-on-surface font-title-md text-body-sm font-semibold rounded-lg flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.99]" onclick="simulatePrint('Factura A4 Oficial')">
+<span class="material-symbols-outlined text-[17px] text-outline" data-icon="description">description</span>
+            Imprimir Factura / Recibo A4
+          </button>
+<!-- Compartir por WhatsApp -->
+<button class="w-full h-9 bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/40 text-[#075E54] font-title-md text-body-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.99]" onclick="simulateWhatsApp()">
+<span class="material-symbols-outlined text-[17px] text-[#25D366]" data-icon="chat" style="font-variation-settings: 'FILL' 1;">chat</span>
+            Compartir por WhatsApp (+54 9 3826 44-8921)
+          </button>
+</div>
+<!-- Feedback Toast Notifier (In-Card Toast) -->
+<div class="absolute bottom-3 left-4 right-4 bg-inverse-surface text-inverse-on-surface text-body-sm py-2 px-3 rounded shadow-lg flex items-center justify-between opacity-0 pointer-events-none transition-opacity duration-200" id="toast">
+<span class="flex items-center gap-2" id="toast-text">
+<span class="material-symbols-outlined text-emerald-400 text-[16px]" data-icon="check">check</span>
+<span>Copiado al portapapeles</span>
+</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Inline Micro-interactions Script -->
+<script>
+    function copyToClipboard(text, btnElement) {
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = btnElement.innerHTML;
+        btnElement.innerHTML = `
+          <span class="material-symbols-outlined text-[15px] text-emerald-700" style="font-variation-settings: 'FILL' 1;">check</span>
+          <span class="text-emerald-700">Copiado</span>
+        `;
+        showToast(`Copiado: ${text}`);
+        setTimeout(() => {
+          btnElement.innerHTML = originalText;
+        }, 2200);
+      }).catch(err => {
+        showToast("Error al copiar texto");
+      });
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastText = document.getElementById('toast-text');
+      if (toast && toastText) {
+        toastText.innerHTML = `
+          <span class="material-symbols-outlined text-emerald-400 text-[16px]">check</span>
+          <span>${message}</span>
+        `;
+        toast.classList.remove('opacity-0', 'pointer-events-none');
+        toast.classList.add('opacity-100');
+        setTimeout(() => {
+          toast.classList.remove('opacity-100');
+          toast.classList.add('opacity-0', 'pointer-events-none');
+        }, 2500);
+      }
+    }
+
+    function simulatePrint(type) {
+      showToast(`Enviando a spooler: ${type}...`);
+    }
+
+    function simulateWhatsApp() {
+      showToast("Enlace de comprobante enviado a +54 9 3826 44-8921");
+    }
+
+    function triggerReceiptConfirmation() {
+      const btn = document.getElementById('btn-confirmar');
+      btn.innerHTML = `
+        <span class="material-symbols-outlined text-[18px] animate-spin">refresh</span>
+        Procesando Recibo...
+      `;
+      setTimeout(() => {
+        btn.innerHTML = `
+          <span class="material-symbols-outlined text-[18px]">done_all</span>
+          ¡Recibo Generado!
+        `;
+        showToast("Cobro liquidado e ingresado en Libro Diario #2026-CH-049");
+      }, 800);
+    }
+  </script>
+</body></html>

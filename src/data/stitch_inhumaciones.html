@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Aeterna Parque - Libro Digital de Inhumaciones</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-lowest": "#ffffff",
+            "inverse-on-surface": "#eef0ff",
+            "surface-bright": "#faf8ff",
+            "inverse-primary": "#b6c4ff",
+            "surface-dim": "#d2d9f4",
+            "on-secondary-fixed-variant": "#003ea8",
+            "primary": "#00236f",
+            "outline-variant": "#c5c5d3",
+            "on-primary-fixed-variant": "#264191",
+            "secondary-fixed": "#dbe1ff",
+            "primary-container": "#1e3a8a",
+            "primary-fixed": "#dce1ff",
+            "on-error": "#ffffff",
+            "on-secondary": "#ffffff",
+            "on-tertiary-fixed": "#002114",
+            "primary-fixed-dim": "#b6c4ff",
+            "on-tertiary-container": "#4ac08f",
+            "surface-variant": "#dae2fd",
+            "on-surface-variant": "#444651",
+            "on-background": "#131b2e",
+            "on-error-container": "#93000a",
+            "on-tertiary": "#ffffff",
+            "surface-container-low": "#f2f3ff",
+            "tertiary": "#003120",
+            "secondary-fixed-dim": "#b4c5ff",
+            "on-primary": "#ffffff",
+            "tertiary-fixed": "#85f8c4",
+            "tertiary-container": "#004a32",
+            "outline": "#757682",
+            "surface": "#faf8ff",
+            "on-surface": "#131b2e",
+            "surface-container-high": "#e2e7ff",
+            "on-secondary-fixed": "#00174b",
+            "inverse-surface": "#283044",
+            "secondary": "#0051d5",
+            "error-container": "#ffdad6",
+            "surface-tint": "#4059aa",
+            "surface-container": "#eaedff",
+            "on-primary-fixed": "#00164e",
+            "error": "#ba1a1a",
+            "tertiary-fixed-dim": "#68dba9",
+            "background": "#faf8ff",
+            "surface-container-highest": "#dae2fd",
+            "on-tertiary-fixed-variant": "#005137",
+            "secondary-container": "#316bf3",
+            "on-secondary-container": "#fefcff",
+            "on-primary-container": "#90a8ff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-lg": "1rem",
+            "gutter": "1rem",
+            "gutter-desktop": "1.25rem",
+            "space-xl": "1.5rem",
+            "space-xs": "0.25rem",
+            "space-md": "0.75rem",
+            "space-xxs": "0.125rem",
+            "space-2xl": "2rem",
+            "space-sm": "0.5rem",
+            "margin": "1rem",
+            "margin-desktop": "1.5rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Inter"],
+            "headline-sm": ["Inter"],
+            "body-sm": ["Inter"],
+            "body-md": ["Inter"],
+            "body-lg": ["Inter"],
+            "headline-lg": ["Inter"],
+            "title-md": ["Inter"],
+            "code-cadastral": ["JetBrains Mono"],
+            "label-caps": ["Inter"],
+            "label-numeric": ["JetBrains Mono"],
+            "display": ["Inter"]
+          },
+          "fontSize": {
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "title-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "code-cadastral": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "label-numeric": ["13px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "display": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 18px;
+      line-height: 1;
+      display: inline-block;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased flex h-screen overflow-hidden font-body-md text-body-md select-none">
+<!-- ==================== SIDENAVBAR COMPONENT ==================== -->
+<aside class="fixed left-0 top-0 bottom-0 h-screen w-64 flex flex-col justify-between p-4 z-40 bg-surface-container-lowest dark:bg-inverse-surface border-r border-outline-variant dark:border-outline shadow-[0_1px_2px_0_rgba(15,23,42,0.04)]">
+<div class="flex flex-col gap-6">
+<!-- Institutional Brand Header -->
+<div class="flex items-center gap-3 px-2 pt-1 border-b border-outline-variant/40 pb-4">
+<div class="w-10 h-10 rounded-lg bg-primary-container text-surface-container-lowest flex items-center justify-center font-bold text-title-md border border-primary">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<div class="flex flex-col">
+<h1 class="text-title-md font-title-md font-semibold text-primary dark:text-inverse-primary tracking-tight">Aeterna Parque</h1>
+<p class="text-label-caps font-label-caps text-on-surface-variant">Registro &amp; Sepelios</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav aria-label="Navegación principal" class="flex flex-col gap-1">
+<!-- 1. Dashboard -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-inverse-surface transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-body-md font-body-md">Dashboard</span>
+</a>
+<!-- 2. Parcelas & Catastro -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-inverse-surface transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined">domain</span>
+<span class="text-body-md font-body-md">Parcelas &amp; Catastro</span>
+</a>
+<!-- 3. Inhumaciones (ACTIVE ITEM) -->
+<a aria-current="page" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-container dark:bg-primary-container text-primary dark:text-on-primary-container font-semibold border-l-4 border-primary dark:border-secondary-container active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">calendar_month</span>
+<span class="text-body-md font-body-md">Inhumaciones</span>
+</a>
+<!-- 4. Seguro de Sepelio -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-inverse-surface transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined">security</span>
+<span class="text-body-md font-body-md">Seguro de Sepelio</span>
+</a>
+<!-- 5. Caja & Cobros -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-inverse-surface transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined">point_of_sale</span>
+<span class="text-body-md font-body-md">Caja &amp; Cobros</span>
+</a>
+<!-- 6. Configuración -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-inverse-surface transition-colors duration-150 active:scale-[0.99]" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-body-md font-body-md">Configuración</span>
+</a>
+</nav>
+</div>
+<!-- Sidenav Footer & Direct Action -->
+<div class="flex flex-col gap-3 pt-3 border-t border-outline-variant/40">
+<!-- Direct QR CTA -->
+<button class="w-full flex items-center justify-center gap-2 bg-primary-container text-surface-container-lowest hover:bg-secondary transition-colors py-2 px-3 rounded text-label-caps font-label-caps tracking-wider active:scale-[0.99] shadow-sm">
+<span class="material-symbols-outlined text-[16px]">qr_code_scanner</span>
+        Cobro Rápido QR
+      </button>
+<div class="flex flex-col gap-1 text-on-surface-variant">
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded hover:bg-surface-container-low text-body-sm font-body-sm transition-colors" href="#">
+<span class="material-symbols-outlined text-[16px]">help</span>
+          Soporte Municipal
+        </a>
+<a class="flex items-center gap-2.5 px-3 py-1.5 rounded hover:bg-surface-container-low text-body-sm font-body-sm transition-colors" href="#">
+<span class="material-symbols-outlined text-[16px]">shield</span>
+          Auditoría
+        </a>
+</div>
+<div class="px-3 pt-1 text-[10px] text-outline flex items-center justify-between">
+<span>V. 4.12.0 - Bioseguridad</span>
+<span class="inline-block w-2 h-2 rounded-full bg-emerald-600" title="En línea"></span>
+</div>
+</div>
+</aside>
+<!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+<div class="ml-64 flex flex-col flex-1 h-full overflow-hidden bg-background">
+<!-- ==================== TOPNAVBAR COMPONENT ==================== -->
+<header class="h-14 flex-shrink-0 z-30 flex items-center justify-between px-6 bg-surface-container-lowest dark:bg-inverse-surface border-b border-outline-variant dark:border-outline shadow-[0_1px_2px_0_rgba(15,23,42,0.04)]">
+<!-- Search & Title -->
+<div class="flex items-center gap-6">
+<span class="text-headline-sm font-headline-sm font-bold text-primary dark:text-inverse-primary uppercase tracking-wide">
+          Aeterna Sistema Mortuorio
+        </span>
+<div class="h-5 w-[1px] bg-outline-variant/60"></div>
+<div class="relative w-80">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">search</span>
+<input class="w-full h-[32px] pl-8 pr-3 bg-surface-container-low border border-outline-variant rounded text-body-sm font-body-sm focus:border-secondary focus:ring-1 focus:ring-secondary/30 outline-none text-on-surface placeholder:text-outline" placeholder="Buscar inhumación por DNI, acta o parcela..." type="text"/>
+</div>
+</div>
+<!-- Action Cluster -->
+<div class="flex items-center gap-3">
+<!-- Quick Action Icons -->
+<div class="flex items-center gap-1 border-r border-outline-variant pr-3">
+<button class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors active:scale-[0.99]" title="Escanear QR de Parcela / Acta">
+<span class="material-symbols-outlined">qr_code_scanner</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors active:scale-[0.99]" title="Impresión Directa de Formularios">
+<span class="material-symbols-outlined">print</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors active:scale-[0.99] relative" title="Notificaciones Sanitarias">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error"></span>
+</button>
+</div>
+<!-- Secondary Button -->
+<button class="h-[32px] px-3 bg-surface-container-lowest border border-outline-variant text-on-surface font-title-md text-body-sm rounded hover:bg-surface-container-low transition-colors active:scale-[0.99] flex items-center gap-1.5 shadow-sm">
+<span class="material-symbols-outlined text-[16px]">lock_clock</span>
+          Cierre de Caja
+        </button>
+<!-- Primary Button -->
+<button class="h-[32px] px-3.5 bg-primary-container text-surface-container-lowest font-title-md text-body-sm rounded hover:bg-secondary transition-colors active:scale-[0.99] flex items-center gap-1.5 shadow-sm">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+          Nuevo Registro
+        </button>
+<div class="h-6 w-[1px] bg-outline-variant/60 mx-1"></div>
+<!-- Registry Officer Profile Badge -->
+<div class="flex items-center gap-2 pl-1" title="Retrato del oficial de registro civil y tesorería mortuoria">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed text-primary flex items-center justify-center font-bold text-body-sm border border-secondary/30">
+            AR
+          </div>
+<div class="hidden xl:flex flex-col">
+<span class="text-body-sm font-semibold leading-tight text-on-surface">Lic. R. Albarracín</span>
+<span class="text-[10px] text-outline leading-tight font-label-caps">Oficial Reg. Catastral</span>
+</div>
+</div>
+</div>
+</header>
+<!-- ==================== SCROLLABLE CANVAS ==================== -->
+<main class="flex-1 overflow-y-auto custom-scroll p-6 space-y-6">
+<!-- Breadcrumbs & Operational Context Banner -->
+<div class="flex flex-wrap items-center justify-between gap-3 pb-1 border-b border-outline-variant/40">
+<div class="flex items-center gap-2 text-body-sm text-outline">
+<span class="hover:text-primary cursor-pointer flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">home</span> Registro Central
+          </span>
+<span>/</span>
+<span class="text-on-surface font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">history_edu</span> Libro Digital de Inhumaciones
+          </span>
+</div>
+<div class="flex items-center gap-3">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Libro Abierto Tomo XXXII - Folio 148
+          </span>
+<span class="text-label-caps font-label-caps text-outline bg-surface-container px-2 py-0.5 rounded">
+            Jurisdicción: Parque Municipal Este
+          </span>
+</div>
+</div>
+<!-- ==================== REGISTRATION CARD (MODAL / FORMSPANEL) ==================== -->
+<section class="bg-surface-container-lowest border border-outline-variant rounded-lg p-5 shadow-[0_1px_2px_0_rgba(15,23,42,0.04)]">
+<!-- Header of Form -->
+<div class="flex items-start justify-between pb-4 mb-4 border-b border-outline-variant/50">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary/10 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">note_add</span>
+</div>
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface font-bold tracking-tight">
+                Registro de Nueva Inhumación en Fosa / Parcela
+              </h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant">
+                Completar los recaudos de defunción conforme a Ley Sanitaria 4.120 y Ordenanza Funeraria Municipal.
+              </p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-label-caps font-label-caps text-outline uppercase bg-surface-container-low px-2 py-1 rounded">
+              Expediente: #INH-2026-0891
+            </span>
+</div>
+</div>
+<!-- Form Layout aligned with schema.sql -->
+<form class="space-y-4">
+<!-- Row 1: Parcela, Difunto, DNI -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+<!-- Parcela Destino con autocompletado y validación -->
+<div class="md:col-span-4 flex flex-col gap-1">
+<label class="text-label-caps font-label-caps text-on-surface flex items-center justify-between">
+<span>Parcela Destino (Predictivo Catastral) <span class="text-error">*</span></span>
+<span class="text-emerald-700 font-code-cadastral text-[11px] font-bold flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[13px]">check_circle</span> DISPONIBLE
+                </span>
+</label>
+<div class="relative">
+<input class="w-full h-[36px] px-3 font-code-cadastral text-code-cadastral bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none uppercase font-semibold text-primary" type="text" value="A-25-96"/>
+<button class="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-2 text-[11px] font-label-caps bg-surface-container-low text-primary rounded hover:bg-surface-container flex items-center gap-1 border border-outline-variant/60" title="Seleccionar en plano catastral" type="button">
+<span class="material-symbols-outlined text-[14px]">map</span> Plano
+                </button>
+</div>
+<p class="text-[11px] text-emerald-800 bg-emerald-50 px-2 py-1 rounded border border-emerald-200 mt-0.5">
+                Capacidad: <strong>Nivel 2 libre</strong> de 3 niveles en fosa común/familiar.
+              </p>
+</div>
+<!-- Nombre Completo del Difunto -->
+<div class="md:col-span-5 flex flex-col gap-1">
+<label class="text-label-caps font-label-caps text-on-surface">
+                Nombre Completo del Difunto (nombre_difunto) <span class="text-error">*</span>
+</label>
+<input class="w-full h-[36px] px-3 text-body-md font-body-md bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-on-surface" placeholder="Ej. Gómez Miranda, Roberto Carlos" type="text" value="Vázquez Donoso, Marcelo Ignacio"/>
+<span class="text-[10px] text-outline">Identidad cotejada con acta RENAPER / Registro Civil de Defunciones.</span>
+</div>
+<!-- DNI del Fallecido -->
+<div class="md:col-span-3 flex flex-col gap-1">
+<label class="text-label-caps font-label-caps text-on-surface">
+                DNI del Fallecido <span class="text-error">*</span>
+</label>
+<input class="w-full h-[36px] px-3 font-code-cadastral text-code-cadastral bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-on-surface" placeholder="Ej. 14.882.341" type="text" value="17.432.890"/>
+<span class="text-[10px] text-outline">Cédula de Identidad / Matrícula</span>
+</div>
+</div>
+<!-- Row 2: Fechas, Nivel en Fosa -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+<!-- Fecha de Defunción -->
+<div class="md:col-span-3 flex flex-col gap-1">
+<label class="text-label-caps font-label-caps text-on-surface">
+                Fecha de Defunción <span class="text-error">*</span>
+</label>
+<div class="relative">
+<input class="w-full h-[36px] px-3 text-body-md font-body-md bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-on-surface" type="date" value="2026-03-28"/>
+</div>
+</div>
+<!-- Fecha y Hora de Inhumación -->
+<div class="md:col-span-4 flex flex-col gap-1">
+<label class="text-label-caps font-label-caps text-on-surface">
+                Fecha y Hora de Inhumación (fecha_inhumacion) <span class="text-error">*</span>
+</label>
+<div class="relative">
+<input class="w-full h-[36px] px-3 text-body-md font-body-md bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-on-surface" type="datetime-local" value="2026-03-30T10:30"/>
+</div>
+</div>
+<!-- Selector de Nivel Ocupado en la Fosa -->
+<div class="md:col-span-5 flex flex-col gap-1">
+<label class="text-label-caps font-label-caps text-on-surface">
+                Nivel Asignado en Fosa / Panteón <span class="text-error">*</span>
+</label>
+<div class="grid grid-cols-3 gap-1.5 h-[36px]">
+<label class="opacity-60 cursor-not-allowed border border-outline-variant bg-surface-container-high rounded flex items-center justify-center px-1 text-[11px] font-medium text-outline" title="Ocupado previamente (1998)">
+<input class="hidden" disabled="" name="nivel" type="radio"/>
+<span>Nivel 1 (Ocup.)</span>
+</label>
+<label class="border-2 border-primary bg-primary/5 rounded flex items-center justify-center px-1 text-[11px] font-semibold text-primary cursor-pointer shadow-xs">
+<input checked="" class="hidden" name="nivel" type="radio"/>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">check_box</span>
+                    Niv. 2 (Libre)
+                  </span>
+</label>
+<label class="border border-outline-variant bg-surface-container-lowest rounded flex items-center justify-center px-1 text-[11px] font-medium text-on-surface hover:bg-surface-container-low cursor-pointer">
+<input class="hidden" name="nivel" type="radio"/>
+<span>Niv. 3 (Superior)</span>
+</label>
+</div>
+</div>
+</div>
+<!-- Row 3: Biosecurity Banner & COVID Switch (Prominent Violet Badge) -->
+<div class="p-3 bg-[#F5F3FF] border-2 border-[#7C3AED] rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded bg-[#7C3AED] text-white flex items-center justify-center flex-shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">biotech</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="text-[11px] font-bold tracking-wider px-2 py-0.5 rounded bg-[#7C3AED] text-white uppercase font-label-caps">
+                    Alerta Sanitaria Biosegura
+                  </span>
+<label class="text-body-md font-bold text-[#5B21B6] cursor-pointer select-none" for="check-covid">
+                    [X] Fallecido por COVID-19 / Protocolo Especial Sanitario (es_covid)
+                  </label>
+</div>
+<p class="text-body-sm text-[#5B21B6] mt-0.5">
+                  Obligatoriedad: Féretro herméticamente sellado de fábrica con soldadura de plomo/cinc, desinfección Nivel IV y no apertura de tapa mortuoria.
+                </p>
+</div>
+</div>
+<div class="flex items-center gap-2 flex-shrink-0">
+<input checked="" class="w-5 h-5 rounded text-[#7C3AED] border-[#7C3AED] focus:ring-[#7C3AED] focus:ring-offset-0 cursor-pointer" id="check-covid" type="checkbox"/>
+<label class="text-label-caps font-label-caps text-[#5B21B6] font-semibold cursor-pointer" for="check-covid">
+                Protocolo Activado
+              </label>
+</div>
+</div>
+<!-- Row 4: Empresa Fúnebre y Notas Sanitarias -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+<!-- Empresa Fúnebre Interviniente -->
+<div class="md:col-span-5 flex flex-col gap-1">
+<label class="text-label-caps font-label-caps text-on-surface">
+                Empresa Fúnebre Interviniente <span class="text-error">*</span>
+</label>
+<select class="w-full h-[36px] px-3 text-body-md font-body-md bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-on-surface">
+<option selected="" value="chamical">Servicios Sociales Chamical - Mat. Fun. 104-A</option>
+<option value="larioja">Cochería La Rioja Integral - Mat. Fun. 042-C</option>
+<option value="sanpedro">Empresa Fúnebre San Pedro - Mat. Fun. 018-B</option>
+<option value="municipal">Traslado de Oficio Municipal de Salud</option>
+</select>
+<span class="text-[10px] text-outline">Vehículo fúnebre habilitado con cabina estanca de desinfección.</span>
+</div>
+<!-- Notas Sanitarias / Disposiciones Funerarias -->
+<div class="md:col-span-7 flex flex-col gap-1">
+<label class="text-label-caps font-label-caps text-on-surface">
+                Notas Sanitarias / Disposiciones Funerarias
+              </label>
+<input class="w-full h-[36px] px-3 text-body-md font-body-md bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-on-surface" placeholder="Ej. Certificado de defunción N° 8491-B con aislamiento preventivo" type="text" value="Acta médica certifica COVID-19 confirmado. Féretro metálico estanco de 1.2mm con faja judicial de sellado."/>
+<span class="text-[10px] text-outline">Anotaciones legibles y transferibles a la orden de exhumación o traslado.</span>
+</div>
+</div>
+<!-- Actions Bar -->
+<div class="pt-3 border-t border-outline-variant/50 flex flex-wrap items-center justify-between gap-3">
+<div class="flex items-center gap-2 text-body-sm text-outline">
+<span class="material-symbols-outlined text-[16px] text-primary">verified_user</span>
+<span>Validación de firma digital del Registro Civil habilitada.</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="h-[36px] px-3 bg-surface-container-lowest border border-outline-variant text-on-surface font-title-md text-body-sm rounded hover:bg-surface-container-low transition-colors active:scale-[0.99] flex items-center gap-1.5 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[16px]">print</span>
+                Emitir Acta / Constancia de Sepelio
+              </button>
+<button class="h-[36px] px-4 bg-primary text-surface-container-lowest font-title-md text-body-sm rounded hover:bg-secondary transition-colors active:scale-[0.99] flex items-center gap-2 shadow-sm font-semibold" type="submit">
+<span class="material-symbols-outlined text-[16px]">save</span>
+                Registrar Inhumación en Parcela
+              </button>
+</div>
+</div>
+</form>
+</section>
+<!-- ==================== HISTORICAL RECORD & SEARCH (BOTTOM REGION) ==================== -->
+<section class="bg-surface-container-lowest border border-outline-variant rounded-lg shadow-[0_1px_2px_0_rgba(15,23,42,0.04)] overflow-hidden">
+<!-- Tabbed Year Selector & Header Filters -->
+<div class="border-b border-outline-variant bg-surface-container-low/40 px-4 pt-3 pb-0 flex flex-wrap items-end justify-between gap-3">
+<!-- Year Tabs -->
+<div class="flex items-center gap-1">
+<button class="px-3 py-2 text-body-sm font-semibold border-b-2 border-primary text-primary bg-surface-container-lowest rounded-t flex items-center gap-1.5">
+<span>Recientes / 2026</span>
+<span class="px-1.5 py-0.2 bg-primary/10 text-primary text-[10px] rounded-full font-label-numeric">182</span>
+</button>
+<button class="px-3 py-2 text-body-sm text-on-surface-variant hover:text-on-surface rounded-t hover:bg-surface-container transition-colors">
+              2025
+            </button>
+<button class="px-3 py-2 text-body-sm text-on-surface-variant hover:text-on-surface rounded-t hover:bg-surface-container transition-colors">
+              2024
+            </button>
+<button class="px-3 py-2 text-body-sm text-[#7C3AED] font-semibold hover:bg-[#F5F3FF] rounded-t transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">coronavirus</span>
+              2021-2022 (Etapa COVID)
+            </button>
+<button class="px-3 py-2 text-body-sm text-on-surface-variant hover:text-on-surface rounded-t hover:bg-surface-container transition-colors">
+              Ver Archivo Completo
+            </button>
+</div>
+<!-- Total Metrics Counter -->
+<div class="flex items-center gap-3 pb-2 text-[12px] text-outline font-label-caps">
+<span>Inhumaciones Registradas: <strong class="text-on-surface font-label-numeric font-bold">14.280</strong></span>
+<span class="h-3 w-[1px] bg-outline-variant"></span>
+<span>Protocolo Bioseguro: <strong class="text-[#7C3AED] font-label-numeric font-bold">342</strong></span>
+</div>
+</div>
+<!-- Filter Sub-Toolbar -->
+<div class="p-3 bg-surface-container-lowest border-b border-outline-variant flex flex-wrap items-center justify-between gap-3">
+<div class="flex flex-wrap items-center gap-2 flex-1 max-w-2xl">
+<!-- Search bar -->
+<div class="relative flex-1 min-w-[260px]">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">search</span>
+<input class="w-full h-[34px] pl-8 pr-3 text-body-sm font-body-sm bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary/30 outline-none" placeholder="Filtrar por nombre de difunto, DNI o N° acta de defunción..." type="text"/>
+</div>
+<!-- Sanity Filter Quick Select -->
+<select class="h-[34px] px-2.5 text-body-sm bg-surface-container-lowest border border-outline-variant rounded text-on-surface-variant focus:border-secondary outline-none">
+<option value="all">Todos los Protocolos</option>
+<option selected="" value="covid">Solo Protocolo COVID-19</option>
+<option value="standard">Inhumación Estándar</option>
+<option value="judicial">Intervención Judicial / Morgue</option>
+</select>
+</div>
+<!-- Quick export & refresh tools -->
+<div class="flex items-center gap-1">
+<button class="h-[32px] px-2.5 bg-surface-container-lowest border border-outline-variant rounded text-body-sm text-on-surface-variant hover:bg-surface-container-low flex items-center gap-1" title="Exportar Libro en PDF Oficial">
+<span class="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+<span>Exportar Folio</span>
+</button>
+<button class="h-[32px] w-[32px] flex items-center justify-center bg-surface-container-lowest border border-outline-variant rounded text-on-surface-variant hover:bg-surface-container-low" title="Actualizar Datos">
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+</button>
+</div>
+</div>
+<!-- Institutional Data Grid -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-[#F8FAFC] border-b border-outline-variant text-[11px] font-label-caps uppercase text-outline tracking-wider select-none">
+<th class="py-2 px-3">Fecha Inhumación</th>
+<th class="py-2 px-3">Difunto / DNI</th>
+<th class="py-2 px-3">Parcela y Nivel</th>
+<th class="py-2 px-3">Empresa Fúnebre</th>
+<th class="py-2 px-3">Indicador Sanitario</th>
+<th class="py-2 px-3">Oficial de Registro</th>
+<th class="py-2 px-3 text-right">Acciones Registrales</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/40 text-body-md font-body-md">
+<!-- Row 1: Protocol COVID-19 -->
+<tr class="hover:bg-surface-container-low transition-colors h-[40px]">
+<td class="py-1 px-3 font-code-cadastral text-code-cadastral whitespace-nowrap text-on-surface">
+<div class="font-semibold">30/03/2026</div>
+<div class="text-[10px] text-outline">10:30 hs (Programada)</div>
+</td>
+<td class="py-1 px-3">
+<div class="font-semibold text-primary">Vázquez Donoso, Marcelo Ignacio</div>
+<div class="text-[11px] font-code-cadastral text-outline">DNI: 17.432.890 • Acta #8491-B</div>
+</td>
+<td class="py-1 px-3 whitespace-nowrap">
+<span class="font-code-cadastral text-code-cadastral font-bold text-on-surface bg-surface-container-low px-1.5 py-0.5 rounded border border-outline-variant/60">
+                    A-25-96
+                  </span>
+<span class="text-[11px] text-secondary font-medium ml-1">[Nivel 2]</span>
+</td>
+<td class="py-1 px-3 text-body-sm text-on-surface-variant">
+                  Servicios Sociales Chamical
+                </td>
+<td class="py-1 px-3 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-[#F5F3FF] text-[#5B21B6] border border-[#DDD6FE]">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">coronavirus</span>
+                    Protocolo COVID-19
+                  </span>
+</td>
+<td class="py-1 px-3 text-body-sm text-on-surface-variant whitespace-nowrap">
+                  Lic. R. Albarracín
+                </td>
+<td class="py-1 px-3 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1">
+<button class="w-7 h-7 flex items-center justify-center rounded text-outline hover:text-primary hover:bg-surface-container transition-colors" title="Imprimir Constancia de Sepelio">
+<span class="material-symbols-outlined text-[16px]">print</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded text-outline hover:text-secondary hover:bg-surface-container transition-colors" title="Ver Parcela en Catastro">
+<span class="material-symbols-outlined text-[16px]">domain</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Standard Burial -->
+<tr class="hover:bg-surface-container-low transition-colors h-[40px]">
+<td class="py-1 px-3 font-code-cadastral text-code-cadastral whitespace-nowrap text-on-surface">
+<div class="font-semibold">29/03/2026</div>
+<div class="text-[10px] text-outline">16:45 hs</div>
+</td>
+<td class="py-1 px-3">
+<div class="font-semibold text-on-surface">Benítez Argañaraz, María Elena</div>
+<div class="text-[11px] font-code-cadastral text-outline">DNI: 08.991.240 • Acta #8489-A</div>
+</td>
+<td class="py-1 px-3 whitespace-nowrap">
+<span class="font-code-cadastral text-code-cadastral font-bold text-on-surface bg-surface-container-low px-1.5 py-0.5 rounded border border-outline-variant/60">
+                    B-04-12
+                  </span>
+<span class="text-[11px] text-on-surface-variant font-medium ml-1">[Nivel 1]</span>
+</td>
+<td class="py-1 px-3 text-body-sm text-on-surface-variant">
+                  Cochería La Rioja Integral
+                </td>
+<td class="py-1 px-3 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+<span class="material-symbols-outlined text-[13px]">check_circle</span>
+                    Inhumación Estándar
+                  </span>
+</td>
+<td class="py-1 px-3 text-body-sm text-on-surface-variant whitespace-nowrap">
+                  Dra. M. Sotomayor
+                </td>
+<td class="py-1 px-3 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1">
+<button class="w-7 h-7 flex items-center justify-center rounded text-outline hover:text-primary hover:bg-surface-container transition-colors" title="Imprimir Constancia de Sepelio">
+<span class="material-symbols-outlined text-[16px]">print</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded text-outline hover:text-secondary hover:bg-surface-container transition-colors" title="Ver Parcela en Catastro">
+<span class="material-symbols-outlined text-[16px]">domain</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Standard Burial with Multiple Levels -->
+<tr class="hover:bg-surface-container-low transition-colors h-[40px]">
+<td class="py-1 px-3 font-code-cadastral text-code-cadastral whitespace-nowrap text-on-surface">
+<div class="font-semibold">27/03/2026</div>
+<div class="text-[10px] text-outline">11:15 hs</div>
+</td>
+<td class="py-1 px-3">
+<div class="font-semibold text-on-surface">Castillo Paredes, Guillermo Tomás</div>
+<div class="text-[11px] font-code-cadastral text-outline">DNI: 22.109.844 • Acta #8485-C</div>
+</td>
+<td class="py-1 px-3 whitespace-nowrap">
+<span class="font-code-cadastral text-code-cadastral font-bold text-on-surface bg-surface-container-low px-1.5 py-0.5 rounded border border-outline-variant/60">
+                    SEC-C/P-08
+                  </span>
+<span class="text-[11px] text-on-surface-variant font-medium ml-1">[Nivel 3]</span>
+</td>
+<td class="py-1 px-3 text-body-sm text-on-surface-variant">
+                  Empresa Fúnebre San Pedro
+                </td>
+<td class="py-1 px-3 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+<span class="material-symbols-outlined text-[13px]">check_circle</span>
+                    Inhumación Estándar
+                  </span>
+</td>
+<td class="py-1 px-3 text-body-sm text-on-surface-variant whitespace-nowrap">
+                  Lic. R. Albarracín
+                </td>
+<td class="py-1 px-3 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1">
+<button class="w-7 h-7 flex items-center justify-center rounded text-outline hover:text-primary hover:bg-surface-container transition-colors" title="Imprimir Constancia de Sepelio">
+<span class="material-symbols-outlined text-[16px]">print</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded text-outline hover:text-secondary hover:bg-surface-container transition-colors" title="Ver Parcela en Catastro">
+<span class="material-symbols-outlined text-[16px]">domain</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Protocol COVID-19 (Historical Entry) -->
+<tr class="hover:bg-surface-container-low transition-colors h-[40px] bg-purple-50/20">
+<td class="py-1 px-3 font-code-cadastral text-code-cadastral whitespace-nowrap text-on-surface">
+<div class="font-semibold">25/03/2026</div>
+<div class="text-[10px] text-outline">09:00 hs</div>
+</td>
+<td class="py-1 px-3">
+<div class="font-semibold text-primary">Navarro Ferreyra, Zulma Beatriz</div>
+<div class="text-[11px] font-code-cadastral text-outline">DNI: 12.349.501 • Acta #8479-B</div>
+</td>
+<td class="py-1 px-3 whitespace-nowrap">
+<span class="font-code-cadastral text-code-cadastral font-bold text-on-surface bg-surface-container-low px-1.5 py-0.5 rounded border border-outline-variant/60">
+                    A-19-14
+                  </span>
+<span class="text-[11px] text-secondary font-medium ml-1">[Nivel 1]</span>
+</td>
+<td class="py-1 px-3 text-body-sm text-on-surface-variant">
+                  Servicios Sociales Chamical
+                </td>
+<td class="py-1 px-3 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-[#F5F3FF] text-[#5B21B6] border border-[#DDD6FE]">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">coronavirus</span>
+                    Protocolo COVID-19
+                  </span>
+</td>
+<td class="py-1 px-3 text-body-sm text-on-surface-variant whitespace-nowrap">
+                  Oficial C. Bazán
+                </td>
+<td class="py-1 px-3 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1">
+<button class="w-7 h-7 flex items-center justify-center rounded text-outline hover:text-primary hover:bg-surface-container transition-colors" title="Imprimir Constancia de Sepelio">
+<span class="material-symbols-outlined text-[16px]">print</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded text-outline hover:text-secondary hover:bg-surface-container transition-colors" title="Ver Parcela en Catastro">
+<span class="material-symbols-outlined text-[16px]">domain</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: Protocol COVID-19 -->
+<tr class="hover:bg-surface-container-low transition-colors h-[40px] bg-purple-50/20">
+<td class="py-1 px-3 font-code-cadastral text-code-cadastral whitespace-nowrap text-on-surface">
+<div class="font-semibold">22/03/2026</div>
+<div class="text-[10px] text-outline">15:30 hs</div>
+</td>
+<td class="py-1 px-3">
+<div class="font-semibold text-primary">Montes Ortiz, Justo Pastor</div>
+<div class="text-[11px] font-code-cadastral text-outline">DNI: 07.822.115 • Acta #8470-B</div>
+</td>
+<td class="py-1 px-3 whitespace-nowrap">
+<span class="font-code-cadastral text-code-cadastral font-bold text-on-surface bg-surface-container-low px-1.5 py-0.5 rounded border border-outline-variant/60">
+                    A-08-02
+                  </span>
+<span class="text-[11px] text-secondary font-medium ml-1">[Nivel 2]</span>
+</td>
+<td class="py-1 px-3 text-body-sm text-on-surface-variant">
+                  Cochería La Rioja Integral
+                </td>
+<td class="py-1 px-3 whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-[#F5F3FF] text-[#5B21B6] border border-[#DDD6FE]">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">coronavirus</span>
+                    Protocolo COVID-19
+                  </span>
+</td>
+<td class="py-1 px-3 text-body-sm text-on-surface-variant whitespace-nowrap">
+                  Lic. R. Albarracín
+                </td>
+<td class="py-1 px-3 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1">
+<button class="w-7 h-7 flex items-center justify-center rounded text-outline hover:text-primary hover:bg-surface-container transition-colors" title="Imprimir Constancia de Sepelio">
+<span class="material-symbols-outlined text-[16px]">print</span>
+</button>
+<button class="w-7 h-7 flex items-center justify-center rounded text-outline hover:text-secondary hover:bg-surface-container transition-colors" title="Ver Parcela en Catastro">
+<span class="material-symbols-outlined text-[16px]">domain</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination and Legal Guarantee Footer -->
+<div class="p-3 bg-surface-container-low/50 border-t border-outline-variant flex flex-wrap items-center justify-between gap-3 text-body-sm">
+<div class="flex items-center gap-2 text-outline text-[12px]">
+<span>Mostrando registros <strong>1 - 5</strong> de <strong>182</strong> del período corriente</span>
+<span class="mx-1">•</span>
+<span class="text-emerald-800 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+              Firma Registral Hash SHA-256 Validada
+            </span>
+</div>
+<div class="flex items-center gap-1">
+<button class="h-7 px-2 border border-outline-variant rounded bg-surface-container-lowest text-outline text-[11px] disabled:opacity-50 cursor-not-allowed" disabled="">
+              Anterior
+            </button>
+<button class="h-7 w-7 border border-primary bg-primary text-surface-container-lowest rounded text-[11px] font-bold">
+              1
+            </button>
+<button class="h-7 w-7 border border-outline-variant bg-surface-container-lowest text-on-surface rounded text-[11px] hover:bg-surface-container-low">
+              2
+            </button>
+<button class="h-7 w-7 border border-outline-variant bg-surface-container-lowest text-on-surface rounded text-[11px] hover:bg-surface-container-low">
+              3
+            </button>
+<span class="px-1 text-outline">...</span>
+<button class="h-7 w-7 border border-outline-variant bg-surface-container-lowest text-on-surface rounded text-[11px] hover:bg-surface-container-low">
+              37
+            </button>
+<button class="h-7 px-2 border border-outline-variant rounded bg-surface-container-lowest text-on-surface text-[11px] hover:bg-surface-container-low">
+              Siguiente
+            </button>
+</div>
+</div>
+</section>
+</main>
+</div>
+</body></html>
