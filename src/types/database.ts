@@ -95,6 +95,7 @@ export interface CuotaSeguro {
   afiliado_id: string
   anio: number
   nro_cuota: number
+  mes?: number
   monto: number
   estado: EstadoCuota
   fecha_vencimiento?: string | null

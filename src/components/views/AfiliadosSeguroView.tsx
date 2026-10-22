@@ -1,10 +1,13 @@
 import React, { useState } from 'react'
 import { AfiliadoSeguro } from '../../types/database'
 import { formatCurrency } from '../../lib/formatters'
+import { DetalleCuotaModal } from '../modals/DetalleCuotaModal'
 
 interface AfiliadosSeguroViewProps {
   afiliados: (AfiliadoSeguro & { cuotasPagadas?: number[] })[]
   onCobrarCuota: (afiliado: AfiliadoSeguro, nroCuota: number) => void
+  onCobrarMultiplesCuotas?: (afiliado: AfiliadoSeguro, nrosCuotas: number[]) => void
+  onRevertirCuota?: (afiliadoId: string, nroCuota: number) => void
   onNuevoAfiliado: () => void
   onEditarAfiliado: (afiliado: AfiliadoSeguro) => void
   onEliminarAfiliado?: (id: string) => void
@@ -13,6 +16,8 @@ interface AfiliadosSeguroViewProps {
 export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
   afiliados,
   onCobrarCuota,
+  onCobrarMultiplesCuotas,
+  onRevertirCuota,
   onNuevoAfiliado,
   onEditarAfiliado,
   onEliminarAfiliado,
@@ -20,6 +25,35 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('')
   const [zoneFilter, setZoneFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'deuda' | 'aldia'>('all')
+
+  const [modalDetalleCuota, setModalDetalleCuota] = useState<{
+    isOpen: boolean
+    afiliado: AfiliadoSeguro | null
+    mes: number
+    detalle: any
+  }>({
+    isOpen: false,
+    afiliado: null,
+    mes: 1,
+    detalle: null,
+  })
+
+  const handleVerDetalleCuota = (afiliado: AfiliadoSeguro, mes: number) => {
+    const detalle = (afiliado.cuotasDetalle || []).find((c) => c.mes === mes || (c as any).nro_cuota === mes)
+    setModalDetalleCuota({
+      isOpen: true,
+      afiliado,
+      mes,
+      detalle: detalle
+        ? {
+            nroRecibo: detalle.nro_recibo,
+            fechaPago: detalle.fecha_pago,
+            metodoPago: detalle.metodo_pago,
+            monto: detalle.monto,
+          }
+        : null,
+    })
+  }
 
   const meses = [
     { num: 1, label: 'Ene' },
@@ -362,14 +396,16 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
 
                         if (isPagada) {
                           return (
-                            <div
+                            <button
                               key={m.num}
-                              className="h-8 rounded bg-emerald-600 text-white flex flex-col items-center justify-center text-[10px] font-bold shadow-xs select-none"
-                              title={`${m.label}: Pagada`}
+                              type="button"
+                              onClick={() => handleVerDetalleCuota(afiliado, m.num)}
+                              className="h-8 rounded bg-emerald-600 hover:bg-emerald-700 text-white flex flex-col items-center justify-center text-[10px] font-bold shadow-xs active:scale-95 transition-transform"
+                              title={`${m.label}: Pagada - Tocar para ver comprobante`}
                             >
                               <span className="text-[9px] leading-tight">{m.label}</span>
                               <span className="text-[10px] leading-none">✓</span>
-                            </div>
+                            </button>
                           )
                         }
 
@@ -379,7 +415,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                               key={m.num}
                               type="button"
                               onClick={() => onCobrarCuota(afiliado, m.num)}
-                              className="h-8 rounded bg-red-600 hover:bg-red-700 text-white flex flex-col items-center justify-center text-[10px] font-bold shadow-xs border border-red-300 animate-pulse"
+                              className="h-8 rounded bg-red-600 hover:bg-red-700 text-white flex flex-col items-center justify-center text-[10px] font-bold shadow-xs border border-red-300 animate-pulse active:scale-95"
                               title={`${m.label}: Vencida - Tocar para cobrar`}
                             >
                               <span className="text-[9px] leading-tight">{m.label}</span>
@@ -393,7 +429,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                             key={m.num}
                             type="button"
                             onClick={() => onCobrarCuota(afiliado, m.num)}
-                            className="h-8 rounded bg-surface border border-outline-variant text-outline hover:text-on-surface flex flex-col items-center justify-center text-[10px] font-medium"
+                            className="h-8 rounded bg-surface border border-outline-variant text-outline hover:text-on-surface hover:bg-surface-container flex flex-col items-center justify-center text-[10px] font-medium active:scale-95"
                             title={`${m.label}: Adelantar`}
                           >
                             <span className="text-[9px] leading-tight">{m.label}</span>
@@ -405,15 +441,27 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                   </div>
 
                   {/* Actions Row */}
-                  <div className="flex items-center justify-between pt-2 border-t border-outline-variant/40 mt-1 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onCobrarCuota(afiliado, siguienteCuotaCobrar)}
-                      className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 active:scale-[0.98] flex-1 justify-center"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">qr_code_2</span>
-                      <span>Cobrar Cuota {meses[siguienteCuotaCobrar - 1]?.label || ''}</span>
-                    </button>
+                  <div className="flex items-center justify-between pt-2 border-t border-outline-variant/40 mt-1 gap-2 flex-wrap">
+                    {mesesVencidos.length > 1 && onCobrarMultiplesCuotas ? (
+                      <button
+                        type="button"
+                        onClick={() => onCobrarMultiplesCuotas(afiliado, mesesVencidos)}
+                        className="h-8 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 active:scale-[0.98] flex-1 justify-center"
+                        title={`Cobrar ${mesesVencidos.length} meses vencidos acumulados`}
+                      >
+                        <span className="material-symbols-outlined text-[16px]">payments</span>
+                        <span>Cobrar Mora Total ({mesesVencidos.length} meses)</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => onCobrarCuota(afiliado, siguienteCuotaCobrar)}
+                        className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 active:scale-[0.98] flex-1 justify-center"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">qr_code_2</span>
+                        <span>Cobrar Cuota {meses[siguienteCuotaCobrar - 1]?.label || ''}</span>
+                      </button>
+                    )}
 
                     <div className="flex items-center gap-1">
                       <button
@@ -534,10 +582,11 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                               <button
                                 key={m.num}
                                 type="button"
-                                className="w-8 h-8 rounded-md bg-emerald-600 text-white flex flex-col items-center justify-center shadow-xs transition-transform hover:scale-105"
-                                title={`${m.label} 2026: Pagado (${formatCurrency(
+                                onClick={() => handleVerDetalleCuota(afiliado, m.num)}
+                                className="w-8 h-8 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white flex flex-col items-center justify-center shadow-xs transition-transform hover:scale-110 active:scale-95 cursor-pointer"
+                                title={`${m.label} 2026: Pagada (${formatCurrency(
                                   afiliado.monto_cuota_mensual
-                                )}) - Recibo #88${30 + m.num}`}
+                                )}) - Clic para ver recibo y comprobante`}
                               >
                                 <span className="text-[9px] leading-none font-bold">{m.num}</span>
                                 <span className="text-[10px] leading-none font-black">✓</span>
@@ -551,8 +600,8 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                                 key={m.num}
                                 type="button"
                                 onClick={() => onCobrarCuota(afiliado, m.num)}
-                                className="w-8 h-8 rounded-md bg-red-600 hover:bg-red-700 text-white flex flex-col items-center justify-center shadow-xs border-2 border-red-300 animate-pulse transition-transform hover:scale-110"
-                                title={`${m.label} 2026: VENCIDA - Hacer click para cobrar con QR`}
+                                className="w-8 h-8 rounded-md bg-red-600 hover:bg-red-700 text-white flex flex-col items-center justify-center shadow-xs border-2 border-red-300 animate-pulse transition-transform hover:scale-110 active:scale-95 cursor-pointer"
+                                title={`${m.label} 2026: VENCIDA - Clic para cobrar con QR`}
                               >
                                 <span className="text-[9px] leading-none font-bold">{m.num}</span>
                                 <span className="text-[10px] leading-none font-bold">!</span>
@@ -565,7 +614,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                               key={m.num}
                               type="button"
                               onClick={() => onCobrarCuota(afiliado, m.num)}
-                              className="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-400 hover:bg-slate-200 flex items-center justify-center text-[11px] font-code-cadastral transition-colors"
+                              className="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 text-slate-500 hover:bg-slate-200 hover:text-slate-900 flex items-center justify-center text-[11px] font-code-cadastral transition-all hover:scale-105 active:scale-95 cursor-pointer"
                               title={`${m.label} 2026: A vencer - Clic para adelantar cobro`}
                             >
                               {m.num}
@@ -596,16 +645,28 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                     {/* Col 6: Acciones Rápidas */}
                     <td className="px-4 py-3 align-middle text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => onCobrarCuota(afiliado, siguienteCuotaCobrar)}
-                          className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-title-md text-body-sm shadow-xs flex items-center gap-1 active:scale-[0.98]"
-                        >
-                          <span className="material-symbols-outlined text-sm" data-icon="qr_code_2">
-                            qr_code_2
-                          </span>
-                          <span>Cobrar</span>
-                        </button>
+                        {mesesVencidos.length > 1 && onCobrarMultiplesCuotas ? (
+                          <button
+                            type="button"
+                            onClick={() => onCobrarMultiplesCuotas(afiliado, mesesVencidos)}
+                            className="px-2.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-title-md text-xs shadow-xs flex items-center gap-1 active:scale-[0.98]"
+                            title={`Cobrar ${mesesVencidos.length} cuotas vencidas juntas (${formatCurrency(saldoDeuda)})`}
+                          >
+                            <span className="material-symbols-outlined text-xs">payments</span>
+                            <span>Mora ({mesesVencidos.length})</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => onCobrarCuota(afiliado, siguienteCuotaCobrar)}
+                            className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-title-md text-body-sm shadow-xs flex items-center gap-1 active:scale-[0.98]"
+                          >
+                            <span className="material-symbols-outlined text-sm" data-icon="qr_code_2">
+                              qr_code_2
+                            </span>
+                            <span>Cobrar</span>
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => onEditarAfiliado(afiliado)}
@@ -641,6 +702,16 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
           </table>
         </div>
       </div>
+
+      {/* Modal Detalle de Cuota Pagada / Comprobante */}
+      <DetalleCuotaModal
+        isOpen={modalDetalleCuota.isOpen}
+        onClose={() => setModalDetalleCuota((prev) => ({ ...prev, isOpen: false }))}
+        afiliado={modalDetalleCuota.afiliado}
+        mes={modalDetalleCuota.mes}
+        cuotaDetalle={modalDetalleCuota.detalle}
+        onRevertir={onRevertirCuota}
+      />
     </div>
   )
 }
