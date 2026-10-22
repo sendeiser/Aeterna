@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Parcela, Inhumacion } from '../../types/database'
 import { formatCurrency } from '../../lib/formatters'
 
@@ -24,6 +24,8 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   const [filterSector, setFilterSector] = useState<'todos' | 'A' | 'E' | 'SALINAS' | 'mora'>('todos')
   const [searchTerm, setSearchTerm] = useState('')
   const [mobileView, setMobileView] = useState<'lista' | 'formulario'>('lista')
+  const [pageSize, setPageSize] = useState<'todas' | 50 | 100>('todas')
+  const [currentPage, setCurrentPage] = useState(1)
   const [selectedParcelaId, setSelectedParcelaId] = useState<string | null>(
     parcelas.length > 0 ? parcelas[0].id : null
   )
@@ -136,6 +138,17 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
 
     return true
   })
+
+  // Reset de página al cambiar filtros
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filterSector, searchTerm, pageSize])
+
+  const totalPages = pageSize === 'todas' ? 1 : Math.ceil(filteredParcelas.length / pageSize)
+  const displayedParcelas =
+    pageSize === 'todas'
+      ? filteredParcelas
+      : filteredParcelas.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   // Selected Parcela Object
   const selectedParcela = parcelas.find((p) => p.id === selectedParcelaId) || filteredParcelas[0] || parcelas[0]
@@ -661,7 +674,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
 
           {/* MOBILE VIEW (< md): Responsive Interactive Cards */}
           <div className="md:hidden divide-y divide-outline-variant/40 p-2.5 space-y-3 max-h-[500px] overflow-y-auto custom-scroll">
-            {filteredParcelas.slice(0, 50).map((p) => {
+            {displayedParcelas.map((p) => {
               const isSelected = p.id === selectedParcela?.id
               const ocupados = p.espacios_ocupados || (p.estado === 'ocupada' || p.estado === 'en_mora' ? 1 : 0)
               const totalNiveles = p.capacidad_total || 3
@@ -796,20 +809,20 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
           </div>
 
           {/* DESKTOP VIEW (>= md): High Density Table */}
-          <div className="hidden md:block overflow-x-auto flex-1 max-h-[380px] custom-scroll">
+          <div className="hidden md:block overflow-x-auto flex-1 max-h-[460px] custom-scroll">
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-surface-container-low/70 border-b border-outline-variant text-label-caps font-label-caps text-outline uppercase sticky top-0 z-10">
-                  <th className="py-2 px-3">Nomenclatura</th>
-                  <th className="py-2 px-3">Titular Actual</th>
-                  <th className="py-2 px-3 text-center">Ocupación / Niveles</th>
-                  <th className="py-2 px-3">Estado</th>
-                  <th className="py-2 px-3 text-right">Saldo</th>
-                  <th className="py-2 px-2 text-center">Acción</th>
+              <thead className="sticky top-0 z-20 shadow-xs bg-surface-container">
+                <tr className="border-b border-outline-variant text-label-caps font-label-caps text-outline uppercase bg-surface-container">
+                  <th className="py-2.5 px-3 bg-surface-container">Nomenclatura</th>
+                  <th className="py-2.5 px-3 bg-surface-container">Titular Actual</th>
+                  <th className="py-2.5 px-3 bg-surface-container text-center">Ocupación / Niveles</th>
+                  <th className="py-2.5 px-3 bg-surface-container">Estado</th>
+                  <th className="py-2.5 px-3 bg-surface-container text-right">Saldo</th>
+                  <th className="py-2.5 px-2 bg-surface-container text-center">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/40 text-body-sm font-body-sm">
-                {filteredParcelas.slice(0, 100).map((p) => {
+                {displayedParcelas.map((p) => {
                   const isSelected = p.id === selectedParcela?.id
                   const ocupados =
                     p.espacios_ocupados || (p.estado === 'ocupada' || p.estado === 'en_mora' ? 1 : 0)
@@ -941,6 +954,83 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* Table Footer: Totals & Pagination Controls */}
+          <div className="p-2.5 bg-surface-container-low border-t border-outline-variant flex flex-wrap items-center justify-between gap-2 text-body-sm text-on-surface-variant">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-on-surface text-xs sm:text-sm">
+                {pageSize === 'todas'
+                  ? `Mostrando todas las ${filteredParcelas.length} parcelas`
+                  : `Mostrando ${(currentPage - 1) * (pageSize as number) + 1} - ${Math.min(
+                      currentPage * (pageSize as number),
+                      filteredParcelas.length
+                    )} de ${filteredParcelas.length} parcelas`}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-[11px] text-outline hidden sm:inline">Mostrar:</span>
+              <button
+                type="button"
+                onClick={() => setPageSize('todas')}
+                className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                  pageSize === 'todas'
+                    ? 'bg-primary text-on-primary shadow-xs'
+                    : 'bg-surface hover:bg-surface-container border border-outline-variant text-on-surface'
+                }`}
+              >
+                Todas ({filteredParcelas.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setPageSize(100)}
+                className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                  pageSize === 100
+                    ? 'bg-primary text-on-primary shadow-xs'
+                    : 'bg-surface hover:bg-surface-container border border-outline-variant text-on-surface'
+                }`}
+              >
+                100
+              </button>
+              <button
+                type="button"
+                onClick={() => setPageSize(50)}
+                className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                  pageSize === 50
+                    ? 'bg-primary text-on-primary shadow-xs'
+                    : 'bg-surface hover:bg-surface-container border border-outline-variant text-on-surface'
+                }`}
+              >
+                50
+              </button>
+
+              {pageSize !== 'todas' && totalPages > 1 && (
+                <div className="flex items-center gap-1 ml-2 border-l border-outline-variant pl-2">
+                  <button
+                    type="button"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className="p-1 rounded hover:bg-surface-container disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Página Anterior"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+                  </button>
+                  <span className="text-xs font-mono px-1">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    className="p-1 rounded hover:bg-surface-container disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Página Siguiente"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
