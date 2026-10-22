@@ -174,6 +174,57 @@ export function savePagoToStorage(pago: PagoRecibo) {
 // 3. MÉTODOS CRUD COMPLETOS EN SUPABASE (CLOUD DATABASE)
 // =========================================================================
 
+// CONFIGURACIÓN DE COBRO CRUD
+export async function fetchConfigSupabase(): Promise<ConfiguracionCobro | null> {
+  if (!isSupabaseConfigured) return null
+  try {
+    const { data, error } = await supabase
+      .from('configuracion_cobro')
+      .select('*')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (error || !data) return null
+    return {
+      id: data.id,
+      alias_cbu: data.alias_cbu,
+      cbu: data.cbu,
+      titular_cuenta: data.titular_cuenta,
+      banco: data.banco,
+      cuit: data.cuit,
+      mensaje_recibo: data.mensaje_recibo,
+      activo: data.activo,
+    }
+  } catch (err) {
+    console.warn('Error al consultar configuracion de Supabase:', err)
+    return null
+  }
+}
+
+export async function saveConfigSupabase(config: ConfiguracionCobro): Promise<boolean> {
+  if (!isSupabaseConfigured) return false
+  try {
+    const { error } = await supabase.from('configuracion_cobro').upsert(
+      {
+        alias_cbu: config.alias_cbu,
+        cbu: config.cbu,
+        titular_cuenta: config.titular_cuenta,
+        banco: config.banco,
+        cuit: config.cuit,
+        mensaje_recibo: config.mensaje_recibo,
+        activo: config.activo,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'alias_cbu' }
+    )
+    return !error
+  } catch (err) {
+    console.error('Error al guardar configuracion en Supabase:', err)
+    return false
+  }
+}
+
 // PARCELAS CRUD
 export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
   if (!isSupabaseConfigured) return null
@@ -386,9 +437,24 @@ export async function fetchAfiliadosSupabase(): Promise<any[] | null> {
     if (error || !data) return null
 
     return data.map((a: any) => {
-      const cuotasPagadas = (a.cuotas || [])
+      const rawCuotas = a.cuotas || []
+      const cuotasPagadas = rawCuotas
         .filter((c: any) => c.estado_cuota === 'pagada')
         .map((c: any) => c.mes)
+
+      const cuotasDetalle = rawCuotas.map((c: any) => ({
+        id: c.id,
+        afiliado_id: c.afiliado_id,
+        anio: c.anio,
+        nro_cuota: c.mes,
+        mes: c.mes,
+        monto: Number(c.monto) || 18000,
+        estado: c.estado_cuota,
+        estado_cuota: c.estado_cuota,
+        fecha_pago: c.fecha_pago,
+        metodo_pago: c.metodo_pago,
+        nro_recibo: c.nro_recibo,
+      }))
 
       return {
         id: a.id,
@@ -400,6 +466,7 @@ export async function fetchAfiliadosSupabase(): Promise<any[] | null> {
         estado: a.estado,
         fecha_alta: a.fecha_alta,
         cuotasPagadas: cuotasPagadas.length > 0 ? cuotasPagadas : a.estado === 'activo' ? [1, 2, 3] : [1],
+        cuotasDetalle,
       }
     })
   } catch (err) {
@@ -410,7 +477,7 @@ export async function fetchAfiliadosSupabase(): Promise<any[] | null> {
 export async function upsertAfiliadoSupabase(afiliado: any): Promise<boolean> {
   if (!isSupabaseConfigured) return false
   try {
-    const { error } = await supabase.from('afiliados_seguro').upsert(
+    const { data, error } = await supabase.from('afiliados_seguro').upsert(
       {
         numero_afiliado: afiliado.numero_afiliado,
         nombre_completo: afiliado.nombre_completo,
@@ -420,9 +487,149 @@ export async function upsertAfiliadoSupabase(afiliado: any): Promise<boolean> {
         estado: afiliado.estado,
       },
       { onConflict: 'numero_afiliado' }
-    )
+    ).select('id').maybeSingle()
+
+    if (error) return false
+
+    // Si es un afiliado nuevo, crear automáticamente sus 12 cuotas
+    const targetId = data?.id || afiliado.id
+    if (targetId && isUuid(targetId)) {
+      await crearCuotasAnualesSupabase(targetId, 2026, afiliado.monto_cuota_mensual || 18000)
+    }
+
+    return true
+  } catch (err) {
+    return false
+  }
+}
+
+function isUuid(id: string): boolean {
+  return typeof id === 'string' && id.length === 36 && id.includes('-')
+}
+
+export async function registrarPagoCuotaSupabase(
+  afiliadoId: string,
+  anio: number,
+  mes: number,
+  pagoData: { nroRecibo: string; metodoPago: string; monto: number }
+): Promise<boolean> {
+  if (!isSupabaseConfigured) return false
+  try {
+    // Si el ID no es UUID (ej. local 'afi-1'), intentar buscar el id real por numero_afiliado
+    let realAfiliadoId = afiliadoId
+    if (!isUuid(afiliadoId)) {
+      const num = parseInt(afiliadoId.replace(/\D/g, ''), 10)
+      if (num) {
+        const { data: afiRow } = await supabase
+          .from('afiliados_seguro')
+          .select('id')
+          .eq('numero_afiliado', num)
+          .maybeSingle()
+        if (afiRow?.id) realAfiliadoId = afiRow.id
+      }
+    }
+
+    const { data: existing } = await supabase
+      .from('cuotas_seguro')
+      .select('id')
+      .eq('afiliado_id', realAfiliadoId)
+      .eq('anio', anio)
+      .eq('mes', mes)
+      .maybeSingle()
+
+    if (existing) {
+      const { error } = await supabase
+        .from('cuotas_seguro')
+        .update({
+          estado_cuota: 'pagada',
+          fecha_pago: new Date().toISOString(),
+          metodo_pago: pagoData.metodoPago,
+          nro_recibo: pagoData.nroRecibo,
+          monto: pagoData.monto,
+        })
+        .eq('id', existing.id)
+      return !error
+    } else {
+      const { error } = await supabase.from('cuotas_seguro').insert({
+        afiliado_id: realAfiliadoId,
+        anio,
+        mes,
+        monto: pagoData.monto,
+        estado_cuota: 'pagada',
+        fecha_pago: new Date().toISOString(),
+        metodo_pago: pagoData.metodoPago,
+        nro_recibo: pagoData.nroRecibo,
+      })
+      return !error
+    }
+  } catch (err) {
+    console.error('Error registrando pago de cuota en Supabase:', err)
+    return false
+  }
+}
+
+export async function revertirPagoCuotaSupabase(
+  afiliadoId: string,
+  anio: number,
+  mes: number
+): Promise<boolean> {
+  if (!isSupabaseConfigured) return false
+  try {
+    let realAfiliadoId = afiliadoId
+    if (!isUuid(afiliadoId)) {
+      const num = parseInt(afiliadoId.replace(/\D/g, ''), 10)
+      if (num) {
+        const { data: afiRow } = await supabase
+          .from('afiliados_seguro')
+          .select('id')
+          .eq('numero_afiliado', num)
+          .maybeSingle()
+        if (afiRow?.id) realAfiliadoId = afiRow.id
+      }
+    }
+
+    const { error } = await supabase
+      .from('cuotas_seguro')
+      .update({
+        estado_cuota: 'pendiente',
+        fecha_pago: null,
+        metodo_pago: null,
+        nro_recibo: null,
+      })
+      .eq('afiliado_id', realAfiliadoId)
+      .eq('anio', anio)
+      .eq('mes', mes)
+
     return !error
   } catch (err) {
+    console.error('Error revirtiendo cuota en Supabase:', err)
+    return false
+  }
+}
+
+export async function crearCuotasAnualesSupabase(
+  afiliadoId: string,
+  anio: number,
+  monto: number
+): Promise<boolean> {
+  if (!isSupabaseConfigured) return false
+  try {
+    const cuotas = []
+    for (let m = 1; m <= 12; m++) {
+      cuotas.push({
+        afiliado_id: afiliadoId,
+        anio,
+        mes: m,
+        monto,
+        estado_cuota: 'pendiente',
+      })
+    }
+    const { error } = await supabase.from('cuotas_seguro').upsert(cuotas, {
+      onConflict: 'afiliado_id,anio,mes',
+    })
+    return !error
+  } catch (err) {
+    console.error('Error al crear cuotas anuales en Supabase:', err)
     return false
   }
 }
