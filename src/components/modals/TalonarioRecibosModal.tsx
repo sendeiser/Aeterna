@@ -229,7 +229,7 @@ export const TalonarioRecibosModal: React.FC<TalonarioRecibosModalProps> = ({
                   {hojaRecibos.map((rec, rIdx) => (
                     <div
                       key={rec.id || rIdx}
-                      className="border border-slate-800 p-0.5 rounded-none flex flex-col justify-between"
+                      className="border border-dashed border-slate-400 p-0 rounded-none flex flex-col justify-between overflow-hidden"
                       style={{ height: '68mm' }}
                     >
                       <ReciboSeguroFisico
