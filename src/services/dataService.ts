@@ -4,11 +4,11 @@ import seedData from '../data/initial_seed.json' with { type: 'json' }
 import { evaluarMoraParcela, evaluarMoraAfiliado } from '../lib/reglasNegocio'
 
 const STORAGE_KEYS = {
-  PARCELAS: 'aeterna_parcelas_v3',
-  INHUMACIONES: 'aeterna_inhumaciones_v3',
-  AFILIADOS: 'aeterna_afiliados_v3',
-  CONFIG: 'aeterna_config_v3',
-  PAGOS: 'aeterna_pagos_v3',
+  PARCELAS: 'aeterna_parcelas_v4',
+  INHUMACIONES: 'aeterna_inhumaciones_v4',
+  AFILIADOS: 'aeterna_afiliados_v4',
+  CONFIG: 'aeterna_config_v4',
+  PAGOS: 'aeterna_pagos_v4',
 }
 
 export interface PagoRecibo {
@@ -37,7 +37,9 @@ export function loadInitialData() {
     mensaje_recibo: 'Gracias por su pago. Parque & Sepelios Aeterna Chamical.',
     activo: true,
   }
-  const savedConfig = localStorage.getItem(STORAGE_KEYS.CONFIG)
+  const savedConfig = typeof localStorage !== 'undefined'
+    ? (localStorage.getItem(STORAGE_KEYS.CONFIG) || localStorage.getItem('aeterna_config_v3'))
+    : null
   if (savedConfig) {
     try {
       config = JSON.parse(savedConfig)
@@ -69,7 +71,7 @@ export function loadInitialData() {
         numero_parcela: p.numero,
         capacidad_total: 3,
         espacios_ocupados: p.estado === 'ocupada' || p.estado === 'en_mora' ? 1 : 0,
-        estado: (esStandby ? 'standby' : p.estado) as any,
+        estado: (p.estado === 'disponible' || !p.titular) ? 'disponible' : (esStandby ? 'standby' : p.estado) as any,
         saldo_mantenimiento: saldo,
         fecha_adquisicion: '2020-03-01',
         fecha_ultimo_pago: fechaPagoEst,
@@ -162,6 +164,7 @@ export function loadInitialData() {
         id: `afi-${idx + 1}`,
         numero_afiliado: a.numero_afiliado,
         nombre_completo: a.nombre_completo,
+        dni: (a as any).dni || null,
         direccion_cobro: a.direccion_cobro,
         zona_cobro: a.zona_cobro || 'Zona 1 - Centro',
         monto_cuota_mensual: a.monto_cuota_mensual || 18000,
@@ -196,7 +199,9 @@ export function loadInitialData() {
 
   // Pagos
   let pagos: PagoRecibo[] = []
-  const savedPagos = localStorage.getItem(STORAGE_KEYS.PAGOS)
+  const savedPagos = typeof localStorage !== 'undefined'
+    ? (localStorage.getItem(STORAGE_KEYS.PAGOS) || localStorage.getItem('aeterna_pagos_v3'))
+    : null
   if (savedPagos) {
     try {
       pagos = JSON.parse(savedPagos)
@@ -417,7 +422,21 @@ export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
           }
         : null
 
-      if (!titularObj && p.notas && p.notas.includes('Titular')) {
+      // 1. Prefer curated clean seed data for titular if available or if titular is unformatted/all-caps
+      const seedParc = seedData.parcelas.find((s: any) => s.nomenclatura === p.nomenclatura)
+      if (seedParc && seedParc.titular) {
+        if (!titularObj || /^[A-Z0-9\s]{6,}$/.test(titularObj.nombre_completo.replace(/[,.-]/g, '')) || (titularObj.nombre_completo.length > 25 && !titularObj.nombre_completo.includes(','))) {
+          titularObj = {
+            id: titularObj?.id || `tit-seed-${p.id}`,
+            nombre_completo: seedParc.titular,
+            dni: titularObj?.dni || null,
+            telefono: titularObj?.telefono || null,
+            direccion: seedParc.direccion || titularObj?.direccion || 'Chamical',
+            estado_titular: titularObj?.estado_titular || 'activo',
+            estado_vital: titularObj?.estado_vital || 'vivo',
+          }
+        }
+      } else if (!titularObj && p.notas && p.notas.includes('Titular')) {
         const match = p.notas.match(/Titular(?:\shistórico)?:\s*([^.]+)/i)
         const nombre = match ? match[1].trim() : null
         if (nombre) {
@@ -427,21 +446,6 @@ export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
             dni: null,
             telefono: null,
             direccion: 'Chamical',
-            estado_titular: 'activo',
-            estado_vital: 'vivo',
-          }
-        }
-      }
-
-      if (!titularObj) {
-        const seedParc = seedData.parcelas.find((s: any) => s.nomenclatura === p.nomenclatura)
-        if (seedParc && seedParc.titular) {
-          titularObj = {
-            id: `tit-seed-${p.id}`,
-            nombre_completo: seedParc.titular,
-            dni: null,
-            telefono: null,
-            direccion: seedParc.direccion || 'Chamical',
             estado_titular: 'activo',
             estado_vital: 'vivo',
           }
@@ -662,12 +666,19 @@ export async function fetchAfiliadosSupabase(): Promise<any[] | null> {
         nro_recibo: c.nro_recibo,
       }))
 
+      const seedAfi = seedData.afiliados.find((s: any) => s.numero_afiliado === a.numero_afiliado)
+      const nombreCompleto = seedAfi?.nombre_completo || a.nombre_completo
+      const direccionCobro = seedAfi?.direccion_cobro || a.direccion_cobro
+      const zonaCobro = seedAfi?.zona_cobro || a.zona_cobro || 'Zona 1 - Centro'
+      const dni = (seedAfi as any)?.dni || a.dni || null
+
       return {
         id: a.id,
         numero_afiliado: a.numero_afiliado,
-        nombre_completo: a.nombre_completo,
-        direccion_cobro: a.direccion_cobro,
-        zona_cobro: a.zona_cobro,
+        nombre_completo: nombreCompleto,
+        dni,
+        direccion_cobro: direccionCobro,
+        zona_cobro: zonaCobro,
         monto_cuota_mensual: Number(a.monto_cuota_mensual) || 18000,
         estado: a.estado,
         fecha_alta: a.fecha_alta,
