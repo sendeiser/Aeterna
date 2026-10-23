@@ -1,4 +1,4 @@
-export type EstadoParcela = 'disponible' | 'ocupada' | 'reservada' | 'en_mora' | 'baja'
+export type EstadoParcela = 'disponible' | 'ocupada' | 'reservada' | 'en_mora' | 'baja' | 'standby'
 export type EstadoTitular = 'activo' | 'inactivo' | 'fallecido' | 'baja'
 export type EstadoAfiliado = 'activo' | 'en_mora' | 'suspendido' | 'baja'
 export type EstadoCuota = 'pendiente' | 'pagada' | 'anulada'
@@ -26,6 +26,7 @@ export interface Titular {
   ciudad?: string
   provincia?: string
   estado_titular: EstadoTitular
+  estado_vital?: 'vivo' | 'fallecido'
   observaciones?: string | null
   created_at?: string
 }
@@ -49,6 +50,10 @@ export interface Parcela {
   estado: EstadoParcela
   saldo_mantenimiento: number
   fecha_adquisicion?: string | null
+  fecha_ultimo_pago?: string | null
+  ultima_cuota_pagada?: string | null
+  titular_anterior?: Titular | null
+  motivo_bloqueo?: string | null
   notas?: string | null
   titular?: Titular | null
   sector?: Sector | null
@@ -63,10 +68,9 @@ export interface Inhumacion {
   fecha_fallecimiento?: string | null
   fecha_inhumacion: string
   nivel_posicion: number
-  es_covid: boolean
-  causa_defuncion?: string | null
+  es_covid?: boolean
   empresa_funebrera?: string | null
-  responsable_contacto?: string | null
+  nombre_responsable?: string | null
   telefono_responsable?: string | null
   observaciones?: string | null
   parcela?: Parcela | null
@@ -88,6 +92,9 @@ export interface AfiliadoSeguro {
   cuotas?: CuotaSeguro[]
   cuotasPagadas: number[]
   cuotasDetalle?: CuotaSeguro[]
+  meses_mora?: number
+  fecha_ultimo_pago?: string | null
+  ultima_cuota_pagada?: string | null
 }
 
 export interface CuotaSeguro {
