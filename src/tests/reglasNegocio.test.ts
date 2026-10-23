@@ -53,14 +53,14 @@ describe('Reglas de Negocio y Stand-by', () => {
     const afiliado: AfiliadoSeguro = {
       id: 'a1',
       nombre_completo: 'Carlos Sosa',
-      numero_afiliado: 'AF-100',
+      numero_afiliado: 100,
       monto_cuota_mensual: 4500,
       estado: 'activo',
       fecha_alta: '2025-01-01',
       cuotasPagadas: [1, 2], // Pagó enero y febrero
       cuotasDetalle: [
-        { mes: 1, anio: 2026, estado: 'pagada', monto: 4500, fecha_pago: '2026-01-10', nro_recibo: 'REC-01' },
-        { mes: 2, anio: 2026, estado: 'pagada', monto: 4500, fecha_pago: '2026-02-12', nro_recibo: 'REC-02' }
+        { id: 'c1', afiliado_id: 'a1', nro_cuota: 1, mes: 1, anio: 2026, estado: 'pagada', monto: 4500, fecha_pago: '2026-01-10', nro_recibo: 'REC-01' },
+        { id: 'c2', afiliado_id: 'a1', nro_cuota: 2, mes: 2, anio: 2026, estado: 'pagada', monto: 4500, fecha_pago: '2026-02-12', nro_recibo: 'REC-02' }
       ]
     }
     // Si estamos en mes 6 (Junio), debe marzo, abril, mayo, junio = 4 meses de mora
@@ -74,7 +74,7 @@ describe('Reglas de Negocio y Stand-by', () => {
     const afiliado: AfiliadoSeguro = {
       id: 'a2',
       nombre_completo: 'Lucia Ramirez',
-      numero_afiliado: 'AF-101',
+      numero_afiliado: 101,
       monto_cuota_mensual: 4500,
       estado: 'activo',
       fecha_alta: '2025-01-01',

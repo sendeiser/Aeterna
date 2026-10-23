@@ -69,6 +69,7 @@ export interface Inhumacion {
   fecha_inhumacion: string
   nivel_posicion: number
   es_covid?: boolean
+  causa_defuncion?: string | null
   empresa_funebrera?: string | null
   nombre_responsable?: string | null
   telefono_responsable?: string | null

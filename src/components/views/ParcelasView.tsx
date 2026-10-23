@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Parcela, Inhumacion } from '../../types/database'
 import { formatCurrency } from '../../lib/formatters'
+import { reactivarParcelaStandby, liberarParcelaStandby } from '../../services/dataService'
 
 interface ParcelasViewProps {
   parcelas: Parcela[]
@@ -9,6 +10,8 @@ interface ParcelasViewProps {
   onSaveParcela: (parcela: Partial<Parcela>) => void
   onDeleteParcela?: (id: string) => void
   onNuevaInhumacionParaParcela?: (nomenclatura: string) => void
+  onReactivarParcela?: (parcela: Parcela) => void
+  onLiberarParcela?: (parcela: Parcela) => void
   isOnline: boolean
 }
 
@@ -19,9 +22,12 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   onSaveParcela,
   onDeleteParcela,
   onNuevaInhumacionParaParcela,
+  onReactivarParcela,
+  onLiberarParcela,
   isOnline,
 }) => {
-  const [filterSector, setFilterSector] = useState<'todos' | 'A' | 'E' | 'SALINAS' | 'mora'>('todos')
+  const [filterSector, setFilterSector] = useState<'todos' | 'A' | 'E' | 'SALINAS' | 'mora' | 'standby'>('todos')
+  const [filterTitularVital, setFilterTitularVital] = useState<'todos' | 'vivo' | 'fallecido'>('todos')
   const [searchTerm, setSearchTerm] = useState('')
   const [mobileView, setMobileView] = useState<'lista' | 'formulario'>('lista')
   const [pageSize, setPageSize] = useState<'todas' | 50 | 100>('todas')
@@ -40,8 +46,9 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
     titularDni: '20-18452981-4',
     titularTelefono: '3826 44-8921',
     titularDireccion: 'Av. San Martín 452, B° Centro, Chamical',
+    titularEstadoVital: 'vivo' as 'vivo' | 'fallecido',
     capacidad: 3,
-    estado: 'ocupada' as 'disponible' | 'ocupada' | 'en_mora' | 'baja',
+    estado: 'ocupada' as 'disponible' | 'ocupada' | 'en_mora' | 'baja' | 'standby',
     saldo: 36000,
     notas: 'Registro regularizado Catastro Chamical',
   })
@@ -58,6 +65,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
       titularDni: p.titular?.dni || '',
       titularTelefono: (p.titular?.telefono || '').replace('+54 9 ', ''),
       titularDireccion: p.titular?.direccion || '',
+      titularEstadoVital: p.titular?.estado_vital || (p.titular?.estado_titular === 'fallecido' ? 'fallecido' : 'vivo'),
       capacidad: p.capacidad_total || 3,
       estado: (p.estado === 'reservada' ? 'disponible' : p.estado) as any,
       saldo: p.saldo_mantenimiento || 0,
@@ -76,6 +84,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
       titularDni: '',
       titularTelefono: '',
       titularDireccion: 'Av. San Martín, Chamical',
+      titularEstadoVital: 'vivo',
       capacidad: 3,
       estado: 'disponible',
       saldo: 0,
@@ -109,7 +118,8 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
             dni: formData.titularDni || null,
             telefono: formData.titularTelefono ? `+54 9 ${formData.titularTelefono}` : null,
             direccion: formData.titularDireccion || null,
-            estado_titular: 'activo',
+            estado_titular: formData.titularEstadoVital === 'fallecido' ? 'fallecido' : 'activo',
+            estado_vital: formData.titularEstadoVital,
           }
         : undefined,
     })
@@ -117,14 +127,57 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
     alert(`Parcela ${nomenclatura} guardada con éxito en Catastro Municipal.`)
   }
 
+  // Acciones administrativas de stand-by
+  const handleReactivar = async (parcela: Parcela) => {
+    if (confirm(`¿Confirma reactivar la parcela ${parcela.nomenclatura} (${parcela.titular?.nombre_completo || 'Titular'}) tras regularizar el pago?`)) {
+      try {
+        const updated = await reactivarParcelaStandby(parcela.id)
+        onSaveParcela(updated)
+        if (onReactivarParcela) onReactivarParcela(updated)
+        alert(`Parcela ${parcela.nomenclatura} reactivada con éxito. Titularidad restablecida.`)
+      } catch (e: any) {
+        alert(`Error al reactivar: ${e.message}`)
+      }
+    }
+  }
+
+  const handleLiberar = async (parcela: Parcela) => {
+    if (
+      confirm(
+        `⚠️ ATENCIÓN: ¿Confirma dar de baja y liberar la titularidad de la parcela ${parcela.nomenclatura}?\n\nEl titular actual (${parcela.titular?.nombre_completo || 'Titular'}) será archivado al registro histórico y la parcela quedará Disponible para nueva asignación municipal.`
+      )
+    ) {
+      try {
+        const updated = await liberarParcelaStandby(
+          parcela.id,
+          'Caducidad administrativa municipal por mora superior a 3 años'
+        )
+        onSaveParcela(updated)
+        if (onLiberarParcela) onLiberarParcela(updated)
+        alert(`Parcela ${parcela.nomenclatura} liberada. Estado actual: Disponible.`)
+      } catch (e: any) {
+        alert(`Error al liberar: ${e.message}`)
+      }
+    }
+  }
+
   // Filtrado de parcelas
   const filteredParcelas = parcelas.filter((p) => {
     if (filterSector !== 'todos') {
       if (filterSector === 'mora') {
         if (p.estado !== 'en_mora' && (p.saldo_mantenimiento || 0) <= 0) return false
+      } else if (filterSector === 'standby') {
+        if (p.estado !== 'standby') return false
       } else {
         if (p.sector_id !== filterSector) return false
       }
+    }
+
+    if (filterTitularVital !== 'todos') {
+      if (!p.titular) return false
+      const esFallecido = p.titular.estado_vital === 'fallecido' || p.titular.estado_titular === 'fallecido'
+      if (filterTitularVital === 'fallecido' && !esFallecido) return false
+      if (filterTitularVital === 'vivo' && esFallecido) return false
     }
 
     if (searchTerm.trim()) {
@@ -142,7 +195,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   // Reset de página al cambiar filtros
   useEffect(() => {
     setCurrentPage(1)
-  }, [filterSector, searchTerm, pageSize])
+  }, [filterSector, filterTitularVital, searchTerm, pageSize])
 
   const totalPages = pageSize === 'todas' ? 1 : Math.ceil(filteredParcelas.length / pageSize)
   const displayedParcelas =
@@ -165,6 +218,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   const countSecE = parcelas.filter((p) => p.sector_id === 'E').length
   const countSalinas = parcelas.filter((p) => p.sector_id === 'SALINAS').length
   const countMora = parcelas.filter((p) => p.estado === 'en_mora' || (p.saldo_mantenimiento || 0) > 0).length
+  const countStandby = parcelas.filter((p) => p.estado === 'standby').length
 
   const previewNomenclatura = `${formData.sector}-${formData.manzana || '00'}-${formData.numero || '00'}`
 
@@ -306,6 +360,37 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                     >
                       location_on
                     </span>
+                  </div>
+                </div>
+
+                {/* Condición Vital del Titular */}
+                <div className="md:col-span-2 pt-1 flex items-center justify-between bg-surface-container-low p-2 rounded border border-outline-variant/60">
+                  <span className="text-body-sm font-medium text-on-surface">
+                    Condición Vital del Titular:
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <label className="inline-flex items-center gap-1.5 text-body-sm cursor-pointer text-on-surface">
+                      <input
+                        type="radio"
+                        name="titularVital"
+                        value="vivo"
+                        checked={formData.titularEstadoVital === 'vivo'}
+                        onChange={() => setFormData({ ...formData, titularEstadoVital: 'vivo' })}
+                        className="text-primary focus:ring-primary"
+                      />
+                      <span className="text-emerald-800 font-semibold text-xs">Vivo</span>
+                    </label>
+                    <label className="inline-flex items-center gap-1.5 text-body-sm cursor-pointer text-on-surface">
+                      <input
+                        type="radio"
+                        name="titularVital"
+                        value="fallecido"
+                        checked={formData.titularEstadoVital === 'fallecido'}
+                        onChange={() => setFormData({ ...formData, titularEstadoVital: 'fallecido' })}
+                        className="text-slate-700 focus:ring-slate-700"
+                      />
+                      <span className="text-slate-700 font-semibold text-xs">Fallecido</span>
+                    </label>
                   </div>
                 </div>
               </div>
@@ -624,6 +709,17 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               >
                 En Mora ({countMora})
               </button>
+              <button
+                type="button"
+                onClick={() => setFilterSector('standby')}
+                className={`px-3 py-1 rounded text-body-sm font-medium border whitespace-nowrap transition-colors shrink-0 ${
+                  filterSector === 'standby'
+                    ? 'border-rose-600 bg-rose-600 text-white font-semibold'
+                    : 'border-rose-300 bg-rose-50 text-rose-900 hover:bg-rose-100'
+                }`}
+              >
+                ⚠️ Stand-by (+3 años) ({countStandby})
+              </button>
             </div>
             {/* Quick Counter Metric */}
             <span className="text-body-sm font-code-cadastral text-outline shrink-0">
@@ -658,6 +754,50 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 <span>Limpiar</span>
               </button>
             )}
+          </div>
+
+          {/* Titular Vital Condition Filter */}
+          <div className="flex items-center gap-2 pt-1 border-t border-outline-variant/40 flex-wrap">
+            <span className="text-[11px] font-semibold text-outline uppercase tracking-wider">
+              Condición Titular:
+            </span>
+            <div className="flex items-center gap-1 bg-surface-container-low p-0.5 rounded border border-outline-variant">
+              <button
+                type="button"
+                onClick={() => setFilterTitularVital('todos')}
+                className={`px-2.5 py-0.5 rounded text-xs font-medium transition-colors ${
+                  filterTitularVital === 'todos'
+                    ? 'bg-primary text-white shadow-xs font-semibold'
+                    : 'text-on-surface hover:bg-surface-container'
+                }`}
+              >
+                Todos
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterTitularVital('vivo')}
+                className={`px-2.5 py-0.5 rounded text-xs font-medium flex items-center gap-1 transition-colors ${
+                  filterTitularVital === 'vivo'
+                    ? 'bg-emerald-600 text-white shadow-xs font-semibold'
+                    : 'text-emerald-800 hover:bg-emerald-50'
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span>Vivos</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterTitularVital('fallecido')}
+                className={`px-2.5 py-0.5 rounded text-xs font-medium flex items-center gap-1 transition-colors ${
+                  filterTitularVital === 'fallecido'
+                    ? 'bg-slate-700 text-white shadow-xs font-semibold'
+                    : 'text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                <span>Fallecidos</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -706,7 +846,9 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                     </div>
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${
-                        p.estado === 'ocupada'
+                        p.estado === 'standby'
+                          ? 'bg-rose-100 text-rose-800 border-rose-300'
+                          : p.estado === 'ocupada'
                           ? 'bg-blue-50 text-blue-900 border-blue-200'
                           : p.estado === 'en_mora'
                           ? 'bg-amber-50 text-amber-900 border-amber-200'
@@ -715,18 +857,39 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                           : 'bg-red-50 text-red-900 border-red-200'
                       }`}
                     >
-                      {p.estado === 'en_mora' ? 'En Mora' : p.estado.toUpperCase()}
+                      {p.estado === 'standby'
+                        ? '⚠️ Stand-by (+3 años)'
+                        : p.estado === 'en_mora'
+                        ? 'En Mora'
+                        : p.estado.toUpperCase()}
                     </span>
                   </div>
 
                   {/* Titular info */}
                   <div>
-                    <div className="font-semibold text-on-surface text-sm">
-                      {p.titular?.nombre_completo || '(Sin titular asignado)'}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold text-on-surface text-sm">
+                        {p.titular?.nombre_completo || '(Sin titular asignado)'}
+                      </span>
+                      {p.titular?.estado_vital === 'fallecido' || p.titular?.estado_titular === 'fallecido' ? (
+                        <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-300">
+                          Fallecido
+                        </span>
+                      ) : p.titular ? (
+                        <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          Vivo
+                        </span>
+                      ) : null}
                     </div>
                     <div className="text-[11px] font-code-cadastral text-outline">
                       {p.titular?.dni ? `DNI: ${p.titular.dni}` : 'Parcela Municipal / Sin DNI'}
                     </div>
+                    {p.estado === 'standby' && (
+                      <div className="text-[11px] text-rose-700 font-medium bg-rose-50 p-1.5 rounded border border-rose-200 mt-1">
+                        <span className="font-bold">⚠️ Pérdida de titularidad:</span> +3 años sin pago.<br />
+                        <span className="font-semibold text-on-surface">Última cuota pagada:</span> {p.ultima_cuota_pagada || (p.fecha_ultimo_pago ? `Abonada el ${p.fecha_ultimo_pago}` : 'Sin pagos registrados')}
+                      </div>
+                    )}
                   </div>
 
                   {/* Visual 3-level bars */}
@@ -764,28 +927,53 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                     </div>
 
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handleSelectParcela(p)
-                          setMobileView('formulario')
-                        }}
-                        className="h-8 px-2.5 rounded bg-surface-container hover:bg-surface-container-high text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant"
-                        title="Ver y editar ficha"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">edit</span>
-                        <span>Editar</span>
-                      </button>
+                      {p.estado === 'standby' ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleReactivar(p)}
+                            className="h-8 px-2.5 rounded bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold inline-flex items-center gap-1 shadow-xs"
+                            title="Reactivar Parcela tras regularización"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">restore</span>
+                            <span>Reactivar</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleLiberar(p)}
+                            className="h-8 px-2.5 rounded bg-rose-700 hover:bg-rose-800 text-white text-xs font-semibold inline-flex items-center gap-1 shadow-xs"
+                            title="Liberar Parcela y pasar a Disponible"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">lock_open</span>
+                            <span>Liberar</span>
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleSelectParcela(p)
+                              setMobileView('formulario')
+                            }}
+                            className="h-8 px-2.5 rounded bg-surface-container hover:bg-surface-container-high text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant"
+                            title="Ver y editar ficha"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">edit</span>
+                            <span>Editar</span>
+                          </button>
 
-                      <button
-                        type="button"
-                        onClick={() => onCobrarQR(p)}
-                        className="h-8 px-2.5 rounded bg-secondary hover:bg-primary text-white text-xs font-semibold inline-flex items-center gap-1 shadow-xs"
-                        title="Cobrar mantenimiento con QR"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">qr_code_2</span>
-                        <span>Cobrar</span>
-                      </button>
+                          <button
+                            type="button"
+                            onClick={() => onCobrarQR(p)}
+                            className="h-8 px-2.5 rounded bg-secondary hover:bg-primary text-white text-xs font-semibold inline-flex items-center gap-1 shadow-xs"
+                            title="Cobrar mantenimiento con QR"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">qr_code_2</span>
+                            <span>Cobrar</span>
+                          </button>
+                        </>
+                      )}
 
                       {onDeleteParcela && (
                         <button
@@ -854,12 +1042,28 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
 
                       {/* Titular */}
                       <td className="py-2.5 px-3">
-                        <div className="font-medium text-on-surface truncate max-w-[170px]">
-                          {p.titular?.nombre_completo || '(Sin titular asignado)'}
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium text-on-surface truncate max-w-[170px]">
+                            {p.titular?.nombre_completo || '(Sin titular asignado)'}
+                          </span>
+                          {p.titular?.estado_vital === 'fallecido' || p.titular?.estado_titular === 'fallecido' ? (
+                            <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-300">
+                              Fallecido
+                            </span>
+                          ) : p.titular ? (
+                            <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              Vivo
+                            </span>
+                          ) : null}
                         </div>
                         <div className="font-code-cadastral text-[11px] text-outline">
                           {p.titular?.dni ? `DNI: ${p.titular.dni}` : 'Parcela Municipal'}
                         </div>
+                        {p.estado === 'standby' && (
+                          <div className="text-[10px] text-rose-700 font-semibold mt-0.5">
+                            Últ. cuota: {p.ultima_cuota_pagada || (p.fecha_ultimo_pago ? p.fecha_ultimo_pago : 'S/D')}
+                          </div>
+                        )}
                       </td>
 
                       {/* Ocupación / Niveles with 3 bars */}
@@ -886,7 +1090,9 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                       <td className="py-2.5 px-3">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${
-                            p.estado === 'ocupada'
+                            p.estado === 'standby'
+                              ? 'bg-rose-100 text-rose-800 border-rose-300'
+                              : p.estado === 'ocupada'
                               ? 'bg-blue-50 text-blue-900 border-blue-200'
                               : p.estado === 'en_mora'
                               ? 'bg-amber-50 text-amber-900 border-amber-200'
@@ -895,7 +1101,15 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                               : 'bg-red-50 text-red-900 border-red-200'
                           }`}
                         >
-                          {p.estado === 'en_mora' ? 'En Mora' : p.estado === 'ocupada' ? 'Ocupada' : p.estado === 'disponible' ? 'Disponible' : 'Baja'}
+                          {p.estado === 'standby'
+                            ? '⚠️ Stand-by (+3 años)'
+                            : p.estado === 'en_mora'
+                            ? 'En Mora'
+                            : p.estado === 'ocupada'
+                            ? 'Ocupada'
+                            : p.estado === 'disponible'
+                            ? 'Disponible'
+                            : 'Baja'}
                         </span>
                       </td>
 
@@ -911,26 +1125,51 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                       {/* Acción */}
                       <td className="py-2.5 px-2 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => onCobrarQR(p)}
-                            title="Cobrar mantenimiento con QR"
-                            className="w-7 h-7 inline-flex items-center justify-center rounded hover:bg-surface-container text-primary"
-                          >
-                            <span className="material-symbols-outlined text-[18px]" data-icon="qr_code_2">
-                              qr_code_2
-                            </span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleSelectParcela(p)}
-                            title="Cargar y editar ficha"
-                            className="w-7 h-7 inline-flex items-center justify-center rounded hover:bg-surface-container text-outline"
-                          >
-                            <span className="material-symbols-outlined text-[18px]" data-icon="visibility">
-                              visibility
-                            </span>
-                          </button>
+                          {p.estado === 'standby' ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleReactivar(p)}
+                                title="Reactivar Parcela (Restablecer titularidad)"
+                                className="px-2 py-1 rounded text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-0.5 shadow-xs"
+                              >
+                                <span className="material-symbols-outlined text-[13px]">restore</span>
+                                <span>Reactivar</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleLiberar(p)}
+                                title="Liberar Parcela (Caducidad de titularidad y pase a Disponible)"
+                                className="px-2 py-1 rounded text-[11px] font-semibold bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-0.5 shadow-xs"
+                              >
+                                <span className="material-symbols-outlined text-[13px]">lock_open</span>
+                                <span>Liberar</span>
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => onCobrarQR(p)}
+                                title="Cobrar mantenimiento con QR"
+                                className="w-7 h-7 inline-flex items-center justify-center rounded hover:bg-surface-container text-primary"
+                              >
+                                <span className="material-symbols-outlined text-[18px]" data-icon="qr_code_2">
+                                  qr_code_2
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectParcela(p)}
+                                title="Cargar y editar ficha"
+                                className="w-7 h-7 inline-flex items-center justify-center rounded hover:bg-surface-container text-outline"
+                              >
+                                <span className="material-symbols-outlined text-[18px]" data-icon="visibility">
+                                  visibility
+                                </span>
+                              </button>
+                            </>
+                          )}
                           {onDeleteParcela && (
                             <button
                               type="button"
@@ -1069,6 +1308,57 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 <span className="sm:hidden">Nueva Inhumación</span>
               </button>
             </div>
+
+            {/* Alerta Destacada de Stand-by en Ficha Rápida */}
+            {selectedParcela.estado === 'standby' && (
+              <div className="mb-3.5 p-3 bg-rose-50 border border-rose-300 rounded-md text-rose-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-start gap-2.5">
+                  <span className="material-symbols-outlined text-rose-600 text-[24px] mt-0.5 shrink-0">
+                    warning
+                  </span>
+                  <div>
+                    <h4 className="text-body-md font-bold text-rose-900 flex items-center gap-2 flex-wrap">
+                      <span>Parcela en Stand-by por Deuda de Mantenimiento (+3 Años)</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-600 text-white uppercase tracking-wider">
+                        Titularidad Suspendida
+                      </span>
+                    </h4>
+                    <p className="text-body-sm text-rose-800 mt-0.5">
+                      Esta parcela ha entrado en suspensión preventiva tras acumular más de 3 años de mora en tasas de mantenimiento.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-rose-900 font-medium">
+                      <span className="bg-rose-100/80 px-2 py-0.5 rounded border border-rose-200">
+                        <strong>Última cuota pagada:</strong> {selectedParcela.ultima_cuota_pagada || (selectedParcela.fecha_ultimo_pago ? selectedParcela.fecha_ultimo_pago : 'Sin pagos registrados')}
+                      </span>
+                      {selectedParcela.saldo_mantenimiento && selectedParcela.saldo_mantenimiento > 0 ? (
+                        <span className="bg-rose-100/80 px-2 py-0.5 rounded border border-rose-200">
+                          <strong>Deuda estimada:</strong> ${selectedParcela.saldo_mantenimiento.toLocaleString('es-AR')}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                  <button
+                    type="button"
+                    onClick={() => handleReactivar(selectedParcela)}
+                    className="px-3 py-1.5 rounded text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 shadow-xs cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">restore</span>
+                    <span>Reactivar Parcela</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleLiberar(selectedParcela)}
+                    className="px-3 py-1.5 rounded text-xs font-semibold bg-rose-700 hover:bg-rose-800 text-white flex items-center gap-1 shadow-xs cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">lock_open</span>
+                    <span>Liberar Parcela</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* List of Deceased in this plot */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
