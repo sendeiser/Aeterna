@@ -710,6 +710,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 En Mora ({countMora})
               </button>
               <button
+                id="btn-filtro-sector-standby"
                 type="button"
                 onClick={() => setFilterSector('standby')}
                 className={`px-3 py-1 rounded text-body-sm font-medium border whitespace-nowrap transition-colors shrink-0 ${
@@ -763,6 +764,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
             </span>
             <div className="flex items-center gap-1 bg-surface-container-low p-0.5 rounded border border-outline-variant">
               <button
+                id="btn-filtro-vital-todos"
                 type="button"
                 onClick={() => setFilterTitularVital('todos')}
                 className={`px-2.5 py-0.5 rounded text-xs font-medium transition-colors ${
@@ -774,6 +776,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 Todos
               </button>
               <button
+                id="btn-filtro-vital-vivo"
                 type="button"
                 onClick={() => setFilterTitularVital('vivo')}
                 className={`px-2.5 py-0.5 rounded text-xs font-medium flex items-center gap-1 transition-colors ${
@@ -786,6 +789,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 <span>Vivos</span>
               </button>
               <button
+                id="btn-filtro-vital-fallecido"
                 type="button"
                 onClick={() => setFilterTitularVital('fallecido')}
                 className={`px-2.5 py-0.5 rounded text-xs font-medium flex items-center gap-1 transition-colors ${

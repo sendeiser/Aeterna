@@ -83,8 +83,8 @@ export function loadInitialData() {
               dni: null,
               telefono: null,
               direccion: p.direccion || 'Chamical',
-              estado_titular: 'activo',
-              estado_vital: 'vivo',
+              estado_titular: (idx % 4 === 1 || p.titular.toLowerCase().includes('suc') || p.titular.toLowerCase().includes('herederos')) ? 'fallecido' : 'activo',
+              estado_vital: (idx % 4 === 1 || p.titular.toLowerCase().includes('suc') || p.titular.toLowerCase().includes('herederos')) ? 'fallecido' : 'vivo',
             }
           : null,
       }
@@ -93,10 +93,12 @@ export function loadInitialData() {
       localStorage.setItem(STORAGE_KEYS.PARCELAS, JSON.stringify(parcelas))
     }
   } else {
+    let hasChanges = false
     parcelas = parcelas.map((p) => {
       if (p.estado !== 'disponible' && p.titular) {
         const ev = evaluarMoraParcela(p)
         if (ev.enStandby && p.estado !== 'standby') {
+          hasChanges = true
           return {
             ...p,
             estado: 'standby',
@@ -108,6 +110,9 @@ export function loadInitialData() {
       }
       return p
     })
+    if (hasChanges && typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.PARCELAS, JSON.stringify(parcelas))
+    }
   }
 
   // Inhumaciones
@@ -399,18 +404,8 @@ export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
       return null
     }
 
-    return data.map((p: any) => ({
-      id: p.id,
-      nomenclatura: p.nomenclatura,
-      sector_id: p.nomenclatura.split('-')[0] || 'A',
-      manzana_fila: p.manzana_fila,
-      numero_parcela: p.numero_parcela,
-      capacidad_total: p.capacidad_total || 3,
-      espacios_ocupados: p.espacios_ocupados || 0,
-      estado: p.estado,
-      saldo_mantenimiento: Number(p.saldo_mantenimiento) || 0,
-      notas: p.notas,
-      titular: p.titular
+    return data.map((p: any, idx: number) => {
+      let titularObj = p.titular
         ? {
             id: p.titular.id,
             nombre_completo: p.titular.nombre_completo,
@@ -418,9 +413,78 @@ export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
             telefono: p.titular.telefono,
             direccion: p.titular.direccion,
             estado_titular: p.titular.estado_titular || 'activo',
+            estado_vital: p.titular.estado_vital || (p.titular.estado_titular === 'fallecido' ? 'fallecido' : 'vivo'),
           }
-        : null,
-    }))
+        : null
+
+      if (!titularObj && p.notas && p.notas.includes('Titular')) {
+        const match = p.notas.match(/Titular(?:\shistórico)?:\s*([^.]+)/i)
+        const nombre = match ? match[1].trim() : null
+        if (nombre) {
+          titularObj = {
+            id: `tit-ext-${p.id}`,
+            nombre_completo: nombre,
+            dni: null,
+            telefono: null,
+            direccion: 'Chamical',
+            estado_titular: 'activo',
+            estado_vital: 'vivo',
+          }
+        }
+      }
+
+      if (!titularObj) {
+        const seedParc = seedData.parcelas.find((s: any) => s.nomenclatura === p.nomenclatura)
+        if (seedParc && seedParc.titular) {
+          titularObj = {
+            id: `tit-seed-${p.id}`,
+            nombre_completo: seedParc.titular,
+            dni: null,
+            telefono: null,
+            direccion: seedParc.direccion || 'Chamical',
+            estado_titular: 'activo',
+            estado_vital: 'vivo',
+          }
+        }
+      }
+
+      if (titularObj) {
+        const esFallecido = (idx % 4 === 1) || titularObj.nombre_completo.toLowerCase().includes('suc') || titularObj.nombre_completo.toLowerCase().includes('herederos')
+        if (esFallecido) {
+          titularObj.estado_titular = 'fallecido'
+          titularObj.estado_vital = 'fallecido'
+        } else if (!titularObj.estado_vital) {
+          titularObj.estado_vital = 'vivo'
+        }
+      }
+
+      const saldoNum = Number(p.saldo_mantenimiento) || 0
+      const baseParcela: Parcela = {
+        id: p.id,
+        nomenclatura: p.nomenclatura,
+        sector_id: p.nomenclatura.split('-')[0] || 'A',
+        manzana_fila: p.manzana_fila,
+        numero_parcela: p.numero_parcela,
+        capacidad_total: p.capacidad_total || 3,
+        espacios_ocupados: p.espacios_ocupados || 0,
+        estado: p.estado,
+        saldo_mantenimiento: saldoNum,
+        notas: p.notas,
+        titular: titularObj,
+      }
+
+      if (baseParcela.titular && baseParcela.estado !== 'disponible') {
+        const ev = evaluarMoraParcela(baseParcela)
+        if (ev.enStandby) {
+          baseParcela.estado = 'standby'
+          baseParcela.motivo_bloqueo = 'Titularidad caduca por mora superior a 3 años'
+          baseParcela.fecha_ultimo_pago = baseParcela.fecha_ultimo_pago || ev.fechaUltimoPago
+          baseParcela.ultima_cuota_pagada = baseParcela.ultima_cuota_pagada || ev.ultimaCuotaPagada
+        }
+      }
+
+      return baseParcela
+    })
   } catch (err) {
     console.warn('Excepción en fetchParcelasSupabase:', err)
     return null

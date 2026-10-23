@@ -42,23 +42,29 @@ export function evaluarMoraParcela(
 
   let aniosMora = 0
 
+  if (parcela.estado === 'standby') {
+    aniosMora = 3
+  }
+
+  if (parcela.saldo_mantenimiento >= 108000) {
+    aniosMora = Math.max(aniosMora, Math.floor(parcela.saldo_mantenimiento / 36000))
+  }
+
   if (parcela.fecha_ultimo_pago) {
     const ultimoPagoDate = new Date(parcela.fecha_ultimo_pago)
     const diffMs = refDate.getTime() - ultimoPagoDate.getTime()
     const diffYears = diffMs / (1000 * 60 * 60 * 24 * 365.25)
-    aniosMora = Math.max(0, Math.floor(diffYears))
-  } else if (parcela.fecha_adquisicion) {
+    aniosMora = Math.max(aniosMora, Math.floor(diffYears))
+  } else if (parcela.fecha_adquisicion && aniosMora === 0) {
     const adqDate = new Date(parcela.fecha_adquisicion)
     const diffMs = refDate.getTime() - adqDate.getTime()
     const diffYears = diffMs / (1000 * 60 * 60 * 24 * 365.25)
-    aniosMora = Math.max(0, Math.floor(diffYears))
-  } else if (parcela.saldo_mantenimiento > 0) {
-    // Estimación por saldo acumulado si no hay fecha exacta (canon ~36.000 / año o cuatrimestral)
-    // Deuda de más de 3 años de mantenimiento estándar (>= $108.000)
+    aniosMora = Math.max(aniosMora, Math.floor(diffYears))
+  } else if (parcela.saldo_mantenimiento > 0 && aniosMora === 0) {
     aniosMora = Math.floor(parcela.saldo_mantenimiento / 36000)
   }
 
-  const enStandby = aniosMora >= 3
+  const enStandby = aniosMora >= 3 || parcela.estado === 'standby'
 
   let ultimaCuotaPagada = parcela.ultima_cuota_pagada || ''
   if (!ultimaCuotaPagada) {
