@@ -56,3 +56,78 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     return false
   }
 }
+
+const UNIDADES = ['', 'un', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve']
+const DECENAS_10 = ['diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve']
+const DECENAS = ['', '', 'veinte', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa']
+const CENTENAS = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos']
+
+function convertirCentenas(n: number): string {
+  if (n === 0) return ''
+  if (n === 100) return 'cien'
+
+  let res = ''
+  const c = Math.floor(n / 100)
+  const d = Math.floor((n % 100) / 10)
+  const u = n % 10
+
+  if (c > 0) res += CENTENAS[c] + ' '
+
+  if (d === 1) {
+    res += DECENAS_10[u]
+  } else if (d === 2) {
+    if (u === 0) res += 'veinte'
+    else res += 'veinti' + UNIDADES[u]
+  } else if (d > 2) {
+    res += DECENAS[d]
+    if (u > 0) res += ' y ' + UNIDADES[u]
+  } else if (u > 0) {
+    res += UNIDADES[u]
+  }
+
+  return res.trim()
+}
+
+/**
+ * Convierte un importe en pesos a texto formal en español.
+ * Ejemplo: 18000 -> "Dieciocho Mil Pesos"
+ *          25500.50 -> "Veinticinco Mil Quinientos Pesos con 50/100"
+ */
+export function montoEnLetras(monto: number | null | undefined): string {
+  if (monto === null || monto === undefined || isNaN(monto) || monto === 0) {
+    return 'Cero Pesos'
+  }
+
+  const entero = Math.floor(Math.abs(monto))
+  const centavos = Math.round((Math.abs(monto) - entero) * 100)
+
+  let resultado = ''
+
+  if (entero === 0) {
+    resultado = 'cero'
+  } else if (entero < 1000) {
+    resultado = convertirCentenas(entero)
+  } else if (entero < 1000000) {
+    const miles = Math.floor(entero / 1000)
+    const resto = entero % 1000
+    const strMiles = miles === 1 ? 'mil' : convertirCentenas(miles) + ' mil'
+    resultado = `${strMiles} ${convertirCentenas(resto)}`.trim()
+  } else {
+    const millones = Math.floor(entero / 1000000)
+    const restoMillones = entero % 1000000
+    const miles = Math.floor(restoMillones / 1000)
+    const resto = restoMillones % 1000
+    const strMillones = millones === 1 ? 'un millón' : convertirCentenas(millones) + ' millones'
+    const strMiles = miles === 1 ? 'mil' : miles > 1 ? convertirCentenas(miles) + ' mil' : ''
+    resultado = `${strMillones} ${strMiles} ${convertirCentenas(resto)}`.trim()
+  }
+
+  // Capitalizar cada palabra importante
+  const palabras = resultado.split(' ').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
+  const base = `${palabras} Pesos`
+
+  if (centavos > 0) {
+    return `${base} con ${centavos.toString().padStart(2, '0')}/100`
+  }
+  return base
+}

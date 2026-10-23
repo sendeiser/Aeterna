@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { AfiliadoSeguro } from '../../types/database'
 import { formatCurrency } from '../../lib/formatters'
 import { DetalleCuotaModal } from '../modals/DetalleCuotaModal'
+import { TalonarioRecibosModal } from '../modals/TalonarioRecibosModal'
 import { evaluarMoraAfiliado } from '../../lib/reglasNegocio'
 
 interface AfiliadosSeguroViewProps {
@@ -28,6 +29,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('')
   const [zoneFilter, setZoneFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'deuda' | 'aldia' | 'standby'>('all')
+  const [isTalonarioModalOpen, setIsTalonarioModalOpen] = useState(false)
 
   const [modalDetalleCuota, setModalDetalleCuota] = useState<{
     isOpen: boolean
@@ -331,7 +333,17 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
         </div>
 
         {/* Export & New Record Actions */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto shrink-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto shrink-0 flex-wrap">
+          <button
+            id="btn-imprimir-talonario"
+            type="button"
+            onClick={() => setIsTalonarioModalOpen(true)}
+            className="h-9 px-3.5 rounded-lg border border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary font-semibold text-xs transition-colors active:scale-[0.99] flex items-center justify-center gap-2 shadow-xs w-full sm:w-auto cursor-pointer"
+            title="Imprimir talonario físico de 8 recibos por hoja A4 (Cementerio Parque San Nicolás)"
+          >
+            <span className="material-symbols-outlined text-[18px]">receipt_long</span>
+            <span>Talonario Físico (8 por Hoja A4)</span>
+          </button>
           <button
             type="button"
             onClick={() => window.print()}
@@ -340,8 +352,8 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             <span className="material-symbols-outlined text-[18px] text-primary" data-icon="print">
               print
             </span>
-            <span className="hidden sm:inline">Imprimir Planilla de Ruta para Cobrador</span>
-            <span className="sm:hidden">Imprimir Planilla de Ruta</span>
+            <span className="hidden sm:inline">Planilla de Ruta Cobrador</span>
+            <span className="sm:hidden">Planilla de Ruta</span>
           </button>
           <button
             type="button"
@@ -1023,6 +1035,13 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
         mes={modalDetalleCuota.mes}
         cuotaDetalle={modalDetalleCuota.detalle}
         onRevertir={onRevertirCuota}
+      />
+
+      {/* Modal Talonario Físico de 8 Recibos por Hoja A4 */}
+      <TalonarioRecibosModal
+        isOpen={isTalonarioModalOpen}
+        onClose={() => setIsTalonarioModalOpen(false)}
+        afiliados={afiliados}
       />
     </div>
   )

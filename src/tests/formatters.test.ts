@@ -1,11 +1,18 @@
 import { describe, it, expect } from 'vitest'
-import { formatCurrency, formatNomenclatura, isValidCBU } from '../lib/formatters'
+import { formatCurrency, formatNomenclatura, isValidCBU, montoEnLetras } from '../lib/formatters'
 
 describe('Formatters test', () => {
   it('formats Argentine pesos with dots for thousands and comma for decimals', () => {
     expect(formatCurrency(18000)).toBe('$ 18.000,00')
     expect(formatCurrency(470608.61)).toBe('$ 470.608,61')
     expect(formatCurrency(0)).toBe('$ 0,00')
+  })
+
+  it('formats amount in Spanish words correctly', () => {
+    expect(montoEnLetras(18000)).toBe('Dieciocho Mil Pesos')
+    expect(montoEnLetras(100000)).toBe('Cien Mil Pesos')
+    expect(montoEnLetras(25500.5)).toBe('Veinticinco Mil Quinientos Pesos con 50/100')
+    expect(montoEnLetras(0)).toBe('Cero Pesos')
   })
 
   it('formats nomenclatura standardized', () => {
