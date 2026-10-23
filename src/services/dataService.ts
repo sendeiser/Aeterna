@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { Parcela, Inhumacion, AfiliadoSeguro, ConfiguracionCobro } from '../types/database'
 import seedData from '../data/initial_seed.json' with { type: 'json' }
+import { evaluarMoraParcela, evaluarMoraAfiliado } from '../lib/reglasNegocio'
 
 const STORAGE_KEYS = {
   PARCELAS: 'aeterna_parcelas_v3',
@@ -45,41 +46,73 @@ export function loadInitialData() {
 
   // Parcelas
   let parcelas: Parcela[] = []
-  const savedParcelas = localStorage.getItem(STORAGE_KEYS.PARCELAS)
+  const savedParcelas = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.PARCELAS) : null
   if (savedParcelas) {
     try {
       parcelas = JSON.parse(savedParcelas)
     } catch (e) {}
   }
   if (!parcelas || parcelas.length === 0) {
-    parcelas = seedData.parcelas.map((p, idx) => ({
-      id: `parc-${idx + 1}`,
-      nomenclatura: p.nomenclatura,
-      sector_id: p.sector,
-      manzana_fila: p.manzana,
-      numero_parcela: p.numero,
-      capacidad_total: 3,
-      espacios_ocupados: p.estado === 'ocupada' || p.estado === 'en_mora' ? 1 : 0,
-      estado: p.estado as any,
-      saldo_mantenimiento: p.saldo_mantenimiento,
-      notas: `Registro inicial documentado.`,
-      titular: p.titular
-        ? {
-            id: `tit-${idx + 1}`,
-            nombre_completo: p.titular,
-            dni: null,
-            telefono: null,
-            direccion: p.direccion || 'Chamical',
-            estado_titular: 'activo',
+    parcelas = seedData.parcelas.map((p, idx) => {
+      const isEnMora = p.estado === 'en_mora'
+      const saldo = Number(p.saldo_mantenimiento) || 0
+      const esStandby = (saldo >= 108000 || (isEnMora && saldo >= 100000)) && !!p.titular
+      const aniosEst = Math.max(3, Math.floor(saldo / 36000))
+      const fechaPagoEst = esStandby ? `202${Math.max(0, 6 - aniosEst)}-04-15` : (saldo > 0 ? '2025-08-20' : '2026-01-10')
+      const ultimaCuotaEst = esStandby ? `Cuota Anual 202${Math.max(0, 5 - aniosEst)}` : (saldo > 0 ? 'Cuota 2025' : 'Cuota Anual 2026')
+
+      return {
+        id: `parc-${idx + 1}`,
+        nomenclatura: p.nomenclatura,
+        sector_id: p.sector,
+        manzana_fila: p.manzana,
+        numero_parcela: p.numero,
+        capacidad_total: 3,
+        espacios_ocupados: p.estado === 'ocupada' || p.estado === 'en_mora' ? 1 : 0,
+        estado: (esStandby ? 'standby' : p.estado) as any,
+        saldo_mantenimiento: saldo,
+        fecha_adquisicion: '2020-03-01',
+        fecha_ultimo_pago: fechaPagoEst,
+        ultima_cuota_pagada: ultimaCuotaEst,
+        motivo_bloqueo: esStandby ? 'Titularidad caduca por mora superior a 3 años' : null,
+        notas: `Registro inicial documentado.`,
+        titular: p.titular
+          ? {
+              id: `tit-${idx + 1}`,
+              nombre_completo: p.titular,
+              dni: null,
+              telefono: null,
+              direccion: p.direccion || 'Chamical',
+              estado_titular: 'activo',
+              estado_vital: 'vivo',
+            }
+          : null,
+      }
+    })
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.PARCELAS, JSON.stringify(parcelas))
+    }
+  } else {
+    parcelas = parcelas.map((p) => {
+      if (p.estado !== 'disponible' && p.titular) {
+        const ev = evaluarMoraParcela(p)
+        if (ev.enStandby && p.estado !== 'standby') {
+          return {
+            ...p,
+            estado: 'standby',
+            motivo_bloqueo: 'Titularidad caduca por mora superior a 3 años',
+            fecha_ultimo_pago: p.fecha_ultimo_pago || ev.fechaUltimoPago,
+            ultima_cuota_pagada: p.ultima_cuota_pagada || ev.ultimaCuotaPagada,
           }
-        : null,
-    }))
-    localStorage.setItem(STORAGE_KEYS.PARCELAS, JSON.stringify(parcelas))
+        }
+      }
+      return p
+    })
   }
 
   // Inhumaciones
   let inhumaciones: Inhumacion[] = []
-  const savedInhumaciones = localStorage.getItem(STORAGE_KEYS.INHUMACIONES)
+  const savedInhumaciones = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.INHUMACIONES) : null
   if (savedInhumaciones) {
     try {
       inhumaciones = JSON.parse(savedInhumaciones)
@@ -104,12 +137,14 @@ export function loadInitialData() {
         saldo_mantenimiento: 0,
       },
     }))
-    localStorage.setItem(STORAGE_KEYS.INHUMACIONES, JSON.stringify(inhumaciones))
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.INHUMACIONES, JSON.stringify(inhumaciones))
+    }
   }
 
   // Afiliados con matriz de cuotas (Ene-Dic)
   let afiliados: (AfiliadoSeguro & { cuotasPagadas: number[] })[] = []
-  const savedAfiliados = localStorage.getItem(STORAGE_KEYS.AFILIADOS)
+  const savedAfiliados = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.AFILIADOS) : null
   if (savedAfiliados) {
     try {
       afiliados = JSON.parse(savedAfiliados)
@@ -118,7 +153,7 @@ export function loadInitialData() {
   if (!afiliados || afiliados.length === 0) {
     afiliados = seedData.afiliados.map((a, idx) => {
       const cuotasPagadas = a.estado === 'activo' ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] : [1, 2]
-      return {
+      const baseAfi: AfiliadoSeguro = {
         id: `afi-${idx + 1}`,
         numero_afiliado: a.numero_afiliado,
         nombre_completo: a.nombre_completo,
@@ -129,8 +164,29 @@ export function loadInitialData() {
         fecha_alta: '2025-01-01',
         cuotasPagadas,
       }
+      const ev = evaluarMoraAfiliado(baseAfi)
+      return {
+        ...baseAfi,
+        meses_mora: ev.mesesMora,
+        fecha_ultimo_pago: ev.fechaUltimoPago,
+        ultima_cuota_pagada: ev.ultimaCuotaPagada,
+        estado: (ev.enStandby ? 'suspendido' : a.estado) as any,
+      }
     })
-    localStorage.setItem(STORAGE_KEYS.AFILIADOS, JSON.stringify(afiliados))
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.AFILIADOS, JSON.stringify(afiliados))
+    }
+  } else {
+    afiliados = afiliados.map((a) => {
+      const ev = evaluarMoraAfiliado(a)
+      return {
+        ...a,
+        meses_mora: ev.mesesMora,
+        fecha_ultimo_pago: a.fecha_ultimo_pago || ev.fechaUltimoPago,
+        ultima_cuota_pagada: a.ultima_cuota_pagada || ev.ultimaCuotaPagada,
+        estado: (ev.enStandby ? 'suspendido' : a.estado) as any,
+      }
+    })
   }
 
   // Pagos
@@ -153,7 +209,93 @@ export function saveConfigToStorage(config: ConfiguracionCobro) {
 }
 
 export function saveParcelasToStorage(parcelas: Parcela[]) {
-  localStorage.setItem(STORAGE_KEYS.PARCELAS, JSON.stringify(parcelas))
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(STORAGE_KEYS.PARCELAS, JSON.stringify(parcelas))
+  }
+}
+
+export function getStoredParcelas(): Parcela[] {
+  if (typeof localStorage === 'undefined') return []
+  const data = localStorage.getItem(STORAGE_KEYS.PARCELAS)
+  if (!data) return []
+  try {
+    return JSON.parse(data)
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Reactiva administrativamente una parcela en stand-by tras regularización o pago.
+ */
+export async function reactivarParcelaStandby(
+  parcelaId: string,
+  pagoData?: { montoAbonado?: number; nroRecibo?: string; periodo?: string }
+): Promise<Parcela> {
+  const parcelas = getStoredParcelas()
+  const idx = parcelas.findIndex((p) => p.id === parcelaId || p.nomenclatura === parcelaId)
+  if (idx === -1) throw new Error(`Parcela no encontrada: ${parcelaId}`)
+
+  const target = parcelas[idx]
+  const updated: Parcela = {
+    ...target,
+    estado: 'ocupada',
+    saldo_mantenimiento: 0,
+    motivo_bloqueo: null,
+    fecha_ultimo_pago: new Date().toISOString().slice(0, 10),
+    ultima_cuota_pagada: pagoData?.periodo || `Regularización física ${new Date().getFullYear()}`,
+  }
+
+  parcelas[idx] = updated
+  saveParcelasToStorage(parcelas)
+
+  if (isSupabaseConfigured) {
+    try {
+      await upsertParcelaSupabase(updated)
+    } catch (e) {
+      console.warn('Error al actualizar en Supabase:', e)
+    }
+  }
+
+  return updated
+}
+
+/**
+ * Libera formalmente una parcela en stand-by por pérdida automática de titularidad:
+ * Archiva al titular anterior, limpia la titularidad activa y deja la parcela en estado disponible.
+ */
+export async function liberarParcelaStandby(
+  parcelaId: string,
+  motivo: string = 'Caducidad administrativa municipal por mora superior a 3 años'
+): Promise<Parcela> {
+  const parcelas = getStoredParcelas()
+  const idx = parcelas.findIndex((p) => p.id === parcelaId || p.nomenclatura === parcelaId)
+  if (idx === -1) throw new Error(`Parcela no encontrada: ${parcelaId}`)
+
+  const target = parcelas[idx]
+  const updated: Parcela = {
+    ...target,
+    estado: 'disponible',
+    saldo_mantenimiento: 0,
+    motivo_bloqueo: motivo,
+    titular_anterior: target.titular || null,
+    titular: null,
+    titular_id: null,
+    espacios_ocupados: 0,
+  }
+
+  parcelas[idx] = updated
+  saveParcelasToStorage(parcelas)
+
+  if (isSupabaseConfigured) {
+    try {
+      await upsertParcelaSupabase(updated)
+    } catch (e) {
+      console.warn('Error al actualizar en Supabase:', e)
+    }
+  }
+
+  return updated
 }
 
 export function saveInhumacionesToStorage(inhumaciones: Inhumacion[]) {
