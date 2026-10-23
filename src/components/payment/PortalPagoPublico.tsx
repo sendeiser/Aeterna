@@ -42,8 +42,8 @@ export const PortalPagoPublico: React.FC<PortalPagoPublicoProps> = ({
       <header className="bg-primary text-white border-b border-primary-container px-4 py-3.5 shadow-sm sticky top-0 z-30">
         <div className="max-w-xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0">
-              <span className="material-symbols-outlined text-[20px]">domain</span>
+            <div className="w-10 h-10 rounded-full overflow-hidden shadow-sm ring-1 ring-amber-400/50 shrink-0 bg-slate-900">
+              <img src="/logo_aeterna.png" alt="Aeterna Parque" className="w-full h-full object-cover" />
             </div>
             <div>
               <span className="text-[10px] uppercase font-bold tracking-wider text-white/80 block leading-tight">

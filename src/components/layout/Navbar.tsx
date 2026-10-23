@@ -132,19 +132,21 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Institutional Logo & Header */}
           <div
             onClick={() => onSelectTab('dashboard')}
-            className="flex items-center gap-3 px-2 py-1 cursor-pointer"
+            className="flex items-center gap-3 px-2 py-1 cursor-pointer group"
           >
-            <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-on-primary shadow-sm flex-shrink-0">
-              <span className="material-symbols-outlined text-white text-[20px]" data-icon="domain">
-                domain
-              </span>
+            <div className="relative w-10 h-10 rounded-full overflow-hidden shadow-sm ring-1 ring-amber-400/40 flex-shrink-0 bg-slate-900 group-hover:scale-105 transition-transform">
+              <img
+                src="/logo_aeterna.png"
+                alt="Aeterna Parque San Nicolás"
+                className="w-full h-full object-cover"
+              />
             </div>
             <div className="flex flex-col overflow-hidden">
-              <span className="text-title-md font-title-md font-semibold text-primary tracking-tight truncate">
+              <span className="text-title-md font-title-md font-bold text-primary tracking-tight truncate">
                 Aeterna Parque
               </span>
-              <span className="text-body-sm font-body-sm text-outline truncate">
-                Registro & Sepelios
+              <span className="text-[11px] font-medium text-emerald-800 tracking-wide truncate">
+                Parque San Nicolás
               </span>
             </div>
           </div>
@@ -239,6 +241,11 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* ========================================================================= */}
       <header className="fixed top-0 right-0 left-0 lg:left-64 h-14 z-30 flex items-center justify-between px-3 sm:px-6 bg-surface-container-lowest border-b border-outline-variant shadow-sm print:hidden">
         <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 pr-2">
+          <img
+            src="/logo_aeterna.png"
+            alt="Aeterna"
+            className="w-8 h-8 rounded-full object-cover shadow-xs ring-1 ring-amber-400/40 lg:hidden shrink-0"
+          />
           <span className="text-sm sm:text-headline-sm font-headline-sm font-bold text-primary tracking-wide uppercase whitespace-nowrap">
             Aeterna
           </span>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Parcela, Inhumacion, EstadoTitular } from '../../types/database'
 import { formatCurrency } from '../../lib/formatters'
 import { reactivarParcelaStandby, liberarParcelaStandby } from '../../services/dataService'
+import { ParcelaForm } from '../forms/ParcelaForm'
 
 interface ParcelasViewProps {
   parcelas: Parcela[]
@@ -36,6 +37,9 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   const [selectedParcelaId, setSelectedParcelaId] = useState<string | null>(
     parcelas.length > 0 ? parcelas[0].id : null
   )
+
+  // Estado Modal de Edición de Parcela (Requerimiento explícito: editar a través de un modal)
+  const [modalEditParcela, setModalEditParcela] = useState<Parcela | null>(null)
 
   // Estado de edición en línea en la misma tabla
   const [editingRowId, setEditingRowId] = useState<string | null>(null)
@@ -656,9 +660,9 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                           <button
                             type="button"
                             id={`btn-editar-parcela-m-${p.id}`}
-                            onClick={() => startEditRow(p)}
-                            className="h-8 px-2.5 rounded bg-surface-container hover:bg-surface-container-high text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant"
-                            title="Editar en la misma tabla"
+                            onClick={() => setModalEditParcela(p)}
+                            className="h-8 px-2.5 rounded bg-surface-container hover:bg-surface-container-high text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant cursor-pointer"
+                            title="Editar Parcela en Modal"
                           >
                             <span className="material-symbols-outlined text-[15px]">edit</span>
                             <span>Editar</span>
@@ -973,9 +977,9 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                               <button
                                 type="button"
                                 id={`btn-editar-parcela-${p.id}`}
-                                onClick={() => startEditRow(p)}
-                                title="Modificar directamente en la tabla"
-                                className="h-7 px-2 rounded hover:bg-surface-container text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant/60"
+                                onClick={() => setModalEditParcela(p)}
+                                title="Editar Parcela en Modal"
+                                className="h-7 px-2 rounded hover:bg-surface-container text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant/60 cursor-pointer"
                               >
                                 <span className="material-symbols-outlined text-[15px]">edit</span>
                                 <span>Editar</span>
@@ -1124,21 +1128,33 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                   {selectedParcela.capacidad_total || 3} Ocupados)
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (onNuevaInhumacionParaParcela) {
-                    onNuevaInhumacionParaParcela(selectedParcela.nomenclatura)
-                  }
-                }}
-                className="h-8 px-3 rounded text-body-sm font-semibold bg-secondary hover:bg-primary text-white transition-colors flex items-center justify-center gap-1.5 shadow-xs shrink-0"
-              >
-                <span className="material-symbols-outlined text-[16px]" data-icon="add_circle">
-                  add_circle
-                </span>
-                <span className="hidden sm:inline">Registrar Nueva Inhumación en esta Parcela</span>
-                <span className="sm:hidden">Nueva Inhumación</span>
-              </button>
+              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                <button
+                  type="button"
+                  id={`btn-editar-ficha-rapida-${selectedParcela.id}`}
+                  onClick={() => setModalEditParcela(selectedParcela)}
+                  className="h-8 px-3 rounded text-body-sm font-semibold bg-surface-container hover:bg-surface-container-high text-primary border border-outline-variant transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                  title="Editar Parcela en Modal"
+                >
+                  <span className="material-symbols-outlined text-[16px]">edit</span>
+                  <span>Editar Parcela</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onNuevaInhumacionParaParcela) {
+                      onNuevaInhumacionParaParcela(selectedParcela.nomenclatura)
+                    }
+                  }}
+                  className="h-8 px-3 rounded text-body-sm font-semibold bg-secondary hover:bg-primary text-white transition-colors flex items-center justify-center gap-1.5 shadow-xs shrink-0 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[16px]" data-icon="add_circle">
+                    add_circle
+                  </span>
+                  <span className="hidden sm:inline">Registrar Nueva Inhumación</span>
+                  <span className="sm:hidden">Inhumación</span>
+                </button>
+              </div>
             </div>
 
             {/* Alerta Destacada de Stand-by en Ficha Rápida */}
@@ -1303,6 +1319,18 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
             </div>
           </div>
         )}
+
+      {/* Modal de Edición de Parcela (Requerimiento explícito: editar a través de un modal) */}
+      {modalEditParcela && (
+        <ParcelaForm
+          initialData={modalEditParcela}
+          onSave={(updated) => {
+            onSaveParcela(updated)
+            setModalEditParcela(null)
+          }}
+          onCancel={() => setModalEditParcela(null)}
+        />
+      )}
     </div>
   )
 }

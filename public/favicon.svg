@@ -1,29 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
-    <linearGradient id="aeternaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00236f" />
-      <stop offset="100%" stop-color="#0051d5" />
+    <linearGradient id="celestialGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a194f" />
+      <stop offset="100%" stop-color="#1e3a8a" />
     </linearGradient>
-    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="goldGlow" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#f59e0b" />
-      <stop offset="100%" stop-color="#fbbf24" />
+      <stop offset="50%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#34d399" />
     </linearGradient>
   </defs>
-  <!-- Background Rounded Shield / Icon Base -->
-  <rect width="64" height="64" rx="16" fill="url(#aeternaGrad)" />
-  <rect x="2" y="2" width="60" height="60" rx="14" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
-  
-  <!-- Stylized Classical Monument / Portal Emblem -->
-  <!-- Pediment / Roof Triangle -->
-  <polygon points="32,13 14,24 50,24" fill="url(#goldGrad)" />
-  <rect x="13" y="24" width="38" height="3" rx="1" fill="#ffffff" />
-  
-  <!-- Columns -->
-  <rect x="18" y="27" width="5" height="19" rx="1" fill="#ffffff" opacity="0.95" />
-  <rect x="29.5" y="27" width="5" height="19" rx="1" fill="#ffffff" opacity="0.95" />
-  <rect x="41" y="27" width="5" height="19" rx="1" fill="#ffffff" opacity="0.95" />
-  
-  <!-- Base / Steps -->
-  <rect x="13" y="46" width="38" height="3" rx="1" fill="#ffffff" />
-  <rect x="10" y="49" width="44" height="4" rx="1.5" fill="url(#goldGrad)" />
+
+  <!-- Base circular emblem -->
+  <circle cx="32" cy="32" r="30" fill="url(#celestialGrad)" />
+  <circle cx="32" cy="32" r="28.5" fill="none" stroke="url(#goldGlow)" stroke-width="1.8" />
+  <circle cx="32" cy="32" r="26.5" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="0.8" />
+
+  <!-- Sacred Tree of Life (Trunk & Branches) -->
+  <path d="M 32 46 C 30 42 30 36 32 32 C 34 29 36 27 38 24 M 32 32 C 29 28 26 26 23 24 M 32 36 C 35 34 39 33 42 34 M 32 38 C 29 36 25 35 22 36"
+        stroke="url(#goldGlow)" stroke-width="1.8" stroke-linecap="round" fill="none" />
+  <!-- Roots spreading gracefully into earth -->
+  <path d="M 32 46 C 30 49 26 51 22 51 M 32 46 C 34 49 38 51 42 51"
+        stroke="url(#goldGlow)" stroke-width="1.4" stroke-linecap="round" fill="none" />
+
+  <!-- Delicate Emerald Leaves -->
+  <circle cx="21" cy="22" r="2.2" fill="url(#leafGrad)" />
+  <circle cx="26" cy="19" r="2.0" fill="url(#leafGrad)" />
+  <circle cx="38" cy="18" r="2.2" fill="url(#leafGrad)" />
+  <circle cx="43" cy="22" r="2.0" fill="url(#leafGrad)" />
+  <circle cx="45" cy="30" r="1.8" fill="url(#leafGrad)" />
+  <circle cx="19" cy="30" r="1.8" fill="url(#leafGrad)" />
+  <circle cx="32" cy="15" r="2.4" fill="url(#goldGlow)" />
+
+  <!-- Dove of Peace Ascending in Grace (Pure White Silhouette) -->
+  <g fill="#ffffff">
+    <!-- Body and Head -->
+    <path d="M 29 27 C 27 25 28 22 30 21 C 31.5 20.5 33 21 34 22.5 C 34.5 23.5 34.5 25 33.5 27 Z" />
+    <path d="M 34 22 L 36.5 22.5 L 34 23.5 Z" fill="url(#goldGlow)" />
+    <!-- Wing Spread Upwards -->
+    <path d="M 30 25 C 27 21 26 15 30 13 C 32 15 33 19 32 24 Z" />
+    <path d="M 32 23 C 33 18 36 14 39 15 C 38 18 36 21 33 24 Z" opacity="0.9" />
+    <!-- Tail Feathers -->
+    <path d="M 29 27 C 26 29 23 31 22 33 C 24 32 27 30 29 28 Z" />
+  </g>
 </svg>
