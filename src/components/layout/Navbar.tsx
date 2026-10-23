@@ -8,10 +8,12 @@ interface NavbarProps {
   currentTab: TabType
   onSelectTab: (tab: TabType) => void
   onOpenSearch: () => void
-  onCobroRapidoQR: () => void
+  onCobroRapidoQR?: () => void
   onNuevoRegistro: () => void
   onCierreCaja: () => void
   isOnline: boolean
+  isCollapsed?: boolean
+  onToggleCollapse?: () => void
 }
 
 interface NotificationItem {
@@ -66,6 +68,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNuevoRegistro,
   onCierreCaja,
   isOnline,
+  isCollapsed = false,
+  onToggleCollapse,
 }) => {
   const [soporteOpen, setSoporteOpen] = useState(false)
   const [auditoriaOpen, setAuditoriaOpen] = useState(false)
@@ -127,44 +131,76 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* ========================================================================= */}
       {/* SIDEBAR INSTITUCIONAL (Stitch SideNavBar Verbatim)                         */}
       {/* ========================================================================= */}
-      <aside className="fixed left-0 top-0 bottom-0 h-screen w-64 hidden lg:flex flex-col justify-between p-4 z-40 bg-surface-container-lowest border-r border-outline-variant shadow-sm print:hidden">
-        <div className="flex flex-col gap-4">
-          {/* Institutional Logo & Header */}
-          <div
-            onClick={() => onSelectTab('dashboard')}
-            className="flex items-center gap-3 px-2 py-1 cursor-pointer group"
-          >
-            <div className="relative w-10 h-10 rounded-full overflow-hidden shadow-sm ring-1 ring-amber-400/40 flex-shrink-0 bg-slate-900 group-hover:scale-105 transition-transform">
-              <img
-                src="/logo_aeterna.png"
-                alt="Aeterna Parque San Nicolás"
-                className="w-full h-full object-cover"
-              />
+      <aside
+        className={`fixed left-0 top-0 bottom-0 h-screen ${
+          isCollapsed ? 'w-20 p-2.5' : 'w-64 p-4'
+        } transition-all duration-300 hidden lg:flex flex-col justify-between z-40 bg-surface-container-lowest border-r border-outline-variant shadow-sm print:hidden`}
+      >
+        <div className="flex flex-col gap-3">
+          {/* Institutional Logo & Header & Toggle Minimize Button */}
+          {isCollapsed ? (
+            <div className="flex flex-col items-center gap-2.5 py-1">
+              <div
+                onClick={() => onSelectTab('dashboard')}
+                className="relative w-10 h-10 rounded-full overflow-hidden shadow-sm ring-1 ring-amber-400/40 cursor-pointer bg-slate-900 hover:scale-105 transition-transform"
+                title="Aeterna Parque San Nicolás"
+              >
+                <img
+                  src="/logo_aeterna.png"
+                  alt="Aeterna Parque San Nicolás"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <button
+                type="button"
+                id="btn-toggle-sidebar"
+                onClick={onToggleCollapse}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-outline hover:text-primary hover:bg-surface-container transition-colors cursor-pointer"
+                title="Expandir barra lateral"
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  menu
+                </span>
+              </button>
             </div>
-            <div className="flex flex-col overflow-hidden">
-              <span className="text-title-md font-title-md font-bold text-primary tracking-tight truncate">
-                Aeterna Parque
-              </span>
-              <span className="text-[11px] font-medium text-emerald-800 tracking-wide truncate">
-                Parque San Nicolás
-              </span>
+          ) : (
+            <div className="flex items-center justify-between px-1 py-1">
+              <div
+                onClick={() => onSelectTab('dashboard')}
+                className="flex items-center gap-2.5 cursor-pointer group min-w-0 flex-1"
+              >
+                <div className="relative w-9 h-9 rounded-full overflow-hidden shadow-sm ring-1 ring-amber-400/40 flex-shrink-0 bg-slate-900 group-hover:scale-105 transition-transform">
+                  <img
+                    src="/logo_aeterna.png"
+                    alt="Aeterna Parque San Nicolás"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex flex-col overflow-hidden leading-tight">
+                  <span className="text-sm font-bold text-primary tracking-tight truncate">
+                    Aeterna Parque
+                  </span>
+                  <span className="text-[10px] font-medium text-emerald-800 tracking-wide truncate">
+                    Parque San Nicolás
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                id="btn-toggle-sidebar"
+                onClick={onToggleCollapse}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-outline hover:text-primary hover:bg-surface-container transition-colors shrink-0 cursor-pointer"
+                title="Minimizar barra lateral"
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  menu_open
+                </span>
+              </button>
             </div>
-          </div>
-
-          {/* Quick Action CTA */}
-          <button
-            type="button"
-            onClick={onCobroRapidoQR}
-            className="w-full h-9 bg-primary hover:bg-secondary text-on-primary rounded-lg flex items-center justify-center gap-2 px-3 text-body-md font-medium transition-colors shadow-sm active:scale-[0.99]"
-          >
-            <span className="material-symbols-outlined text-white text-[18px]" data-icon="qr_code_scanner">
-              qr_code_scanner
-            </span>
-            <span>Cobro Rápido QR</span>
-          </button>
+          )}
 
           {/* Main Navigation Links */}
-          <nav className="flex flex-col gap-1 mt-2">
+          <nav className="flex flex-col gap-1 mt-1">
             {navItems.map((item) => {
               const active = currentTab === item.id
               return (
@@ -172,20 +208,25 @@ export const Navbar: React.FC<NavbarProps> = ({
                   key={item.id}
                   type="button"
                   onClick={() => onSelectTab(item.id)}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors duration-150 ${
+                  title={isCollapsed ? item.label : undefined}
+                  className={`flex items-center ${
+                    isCollapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2 text-left'
+                  } rounded-lg transition-colors duration-150 cursor-pointer ${
                     active
-                      ? 'bg-surface-container text-primary font-semibold border-l-4 border-primary'
+                      ? isCollapsed
+                        ? 'bg-primary/10 text-primary font-semibold ring-1 ring-primary/30'
+                        : 'bg-surface-container text-primary font-semibold border-l-4 border-primary'
                       : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
                   }`}
                 >
                   <span
-                    className={`material-symbols-outlined ${active ? 'text-primary' : 'text-outline'}`}
+                    className={`material-symbols-outlined text-[20px] ${active ? 'text-primary' : 'text-outline'}`}
                     style={active ? { fontVariationSettings: "'FILL' 1" } : {}}
                     data-icon={item.icon}
                   >
                     {item.icon}
                   </span>
-                  <span className="text-body-md font-body-md">{item.label}</span>
+                  {!isCollapsed && <span className="text-body-md font-body-md truncate">{item.label}</span>}
                 </button>
               )
             })}
@@ -194,53 +235,101 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Navigation Footer */}
         <div className="flex flex-col gap-1 pt-3 border-t border-outline-variant">
-          <div className="flex items-center justify-between text-[11px] text-outline px-3 py-1">
-            <span>SISTEMA DE GESTIÓN v4.1</span>
-            <span className="inline-flex items-center gap-1 font-semibold text-emerald-700">
-              <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-600 animate-pulse' : 'bg-amber-500'}`}></span>
-              <span>{isOnline ? 'SUPABASE' : 'LOCAL'}</span>
-            </span>
-          </div>
-
-          <button
-            type="button"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low text-body-sm font-body-sm transition-colors duration-150 text-left w-full cursor-pointer"
-            onClick={() => setSoporteOpen(true)}
-          >
-            <span className="material-symbols-outlined text-[18px] text-primary" data-icon="support_agent">
-              support_agent
-            </span>
-            <span className="font-medium">Soporte Municipal</span>
-          </button>
-          <button
-            type="button"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low text-body-sm font-body-sm transition-colors duration-150 text-left w-full cursor-pointer"
-            onClick={() => setAuditoriaOpen(true)}
-          >
-            <span className="material-symbols-outlined text-[18px] text-slate-700" data-icon="shield">
-              shield
-            </span>
-            <span className="font-medium">Auditoría Fiscal & AFIP</span>
-          </button>
-
-          {/* System Operator Profile Snapshot (Stitch Verbatim) */}
-          <div className="mt-2 pt-2 px-2 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary font-semibold text-body-sm">
-              RC
+          {!isCollapsed && (
+            <div className="flex items-center justify-between text-[11px] text-outline px-3 py-1">
+              <span>SISTEMA DE GESTIÓN v4.1</span>
+              <span className="inline-flex items-center gap-1 font-semibold text-emerald-700">
+                <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-600 animate-pulse' : 'bg-amber-500'}`}></span>
+                <span>{isOnline ? 'SUPABASE' : 'LOCAL'}</span>
+              </span>
             </div>
-            <div className="flex flex-col overflow-hidden leading-tight">
-              <span className="text-body-sm font-medium text-on-surface truncate">Of. Registro Civil</span>
-              <span className="text-[11px] text-outline truncate">Chamical, La Rioja</span>
+          )}
+
+          {isCollapsed ? (
+            <div className="flex flex-col items-center gap-1.5">
+              <span
+                className={`w-2.5 h-2.5 rounded-full mb-1 ${isOnline ? 'bg-emerald-600 animate-pulse' : 'bg-amber-500'}`}
+                title={isOnline ? 'Conectado a Supabase' : 'Modo Local'}
+              ></span>
+              <button
+                type="button"
+                className="w-10 h-9 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low text-primary transition-colors cursor-pointer"
+                onClick={() => setSoporteOpen(true)}
+                title="Soporte Municipal"
+              >
+                <span className="material-symbols-outlined text-[20px]">support_agent</span>
+              </button>
+              <button
+                type="button"
+                className="w-10 h-9 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low text-slate-700 transition-colors cursor-pointer"
+                onClick={() => setAuditoriaOpen(true)}
+                title="Auditoría Fiscal & AFIP"
+              >
+                <span className="material-symbols-outlined text-[20px]">shield</span>
+              </button>
+              <div
+                className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary font-semibold text-xs mt-1"
+                title="Of. Registro Civil - Chamical"
+              >
+                RC
+              </div>
             </div>
-          </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low text-body-sm font-body-sm transition-colors duration-150 text-left w-full cursor-pointer"
+                onClick={() => setSoporteOpen(true)}
+              >
+                <span className="material-symbols-outlined text-[18px] text-primary" data-icon="support_agent">
+                  support_agent
+                </span>
+                <span className="font-medium">Soporte Municipal</span>
+              </button>
+              <button
+                type="button"
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low text-body-sm font-body-sm transition-colors duration-150 text-left w-full cursor-pointer"
+                onClick={() => setAuditoriaOpen(true)}
+              >
+                <span className="material-symbols-outlined text-[18px] text-slate-700" data-icon="shield">
+                  shield
+                </span>
+                <span className="font-medium">Auditoría Fiscal & AFIP</span>
+              </button>
+
+              {/* System Operator Profile Snapshot (Stitch Verbatim) */}
+              <div className="mt-2 pt-2 px-2 flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary font-semibold text-body-sm">
+                  RC
+                </div>
+                <div className="flex flex-col overflow-hidden leading-tight">
+                  <span className="text-body-sm font-medium text-on-surface truncate">Of. Registro Civil</span>
+                  <span className="text-[11px] text-outline truncate">Chamical, La Rioja</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </aside>
 
       {/* ========================================================================= */}
       {/* TOP NAVIGATION BAR (Stitch TopNavBar Verbatim)                             */}
       {/* ========================================================================= */}
-      <header className="fixed top-0 right-0 left-0 lg:left-64 h-14 z-30 flex items-center justify-between px-3 sm:px-6 bg-surface-container-lowest border-b border-outline-variant shadow-sm print:hidden">
+      <header className={`fixed top-0 right-0 left-0 ${isCollapsed ? 'lg:left-20' : 'lg:left-64'} transition-all duration-300 h-14 z-30 flex items-center justify-between px-3 sm:px-6 bg-surface-container-lowest border-b border-outline-variant shadow-sm print:hidden`}>
         <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 pr-2">
+          {/* Botón Minimizar / Expandir en Topbar para desktop */}
+          <button
+            type="button"
+            id="btn-topbar-toggle-sidebar"
+            onClick={onToggleCollapse}
+            className="hidden lg:flex w-8 h-8 items-center justify-center rounded-lg text-outline hover:text-primary hover:bg-surface-container transition-colors cursor-pointer mr-1"
+            title={isCollapsed ? 'Expandir barra lateral' : 'Minimizar barra lateral'}
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              {isCollapsed ? 'menu' : 'menu_open'}
+            </span>
+          </button>
+
           <img
             src="/logo_aeterna.png"
             alt="Aeterna"

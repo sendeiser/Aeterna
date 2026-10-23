@@ -42,6 +42,22 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('dashboard')
   const [searchOpen, setSearchOpen] = useState(false)
   const [cierreCajaOpen, setCierreCajaOpen] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('aeterna_sidebar_collapsed') === 'true'
+    }
+    return false
+  })
+
+  const handleToggleSidebar = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('aeterna_sidebar_collapsed', String(next))
+      }
+      return next
+    })
+  }
 
   // Detección de vista pública de pago por URL hash (#pago)
   const [isPublicPaymentView, setIsPublicPaymentView] = useState(() => {
@@ -698,6 +714,8 @@ export default function App() {
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
         onOpenSearch={() => setSearchOpen(true)}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={handleToggleSidebar}
         onCobroRapidoQR={() => handleCobrarParcela(parcelas[0] || ({} as any))}
         onNuevoRegistro={() => {
           if (currentTab === 'parcelas') {
@@ -719,7 +737,7 @@ export default function App() {
       />
 
       {/* Canvas Principal */}
-      <main className="lg:ml-64 pt-14 min-h-screen pb-20 lg:pb-8 bg-surface text-on-surface">
+      <main className={`${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} transition-all duration-300 pt-14 min-h-screen pb-20 lg:pb-8 bg-surface text-on-surface`}>
         <div className="px-2.5 py-4 sm:p-6 max-w-[1600px] w-full mx-auto space-y-6">
           {/* Encabezado Institucional Oficial para Impresión A4 de Reportes */}
           <div className="hidden print:block pb-4 mb-6 border-b-2 border-slate-900">

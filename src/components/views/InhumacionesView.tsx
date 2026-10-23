@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Inhumacion, Parcela } from '../../types/database'
 import { ActaInhumacionModal } from '../modals/ActaInhumacionModal'
+import { InhumacionForm } from '../forms/InhumacionForm'
 
 interface InhumacionesViewProps {
   inhumaciones: Inhumacion[]
@@ -32,68 +33,8 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
     folio: 148,
   })
 
-  // Estado de edición en línea en la misma tabla
-  const [editingRowId, setEditingRowId] = useState<string | null>(null)
-  const [editRowData, setEditRowData] = useState<{
-    id: string
-    nombre_difunto: string
-    fecha_inhumacion: string
-    parcela: string
-    nivel_posicion: number
-    es_covid: boolean
-    causa_defuncion: string
-    empresa_funebrera: string
-  } | null>(null)
-
-  const startEditRow = (inh: Inhumacion) => {
-    const parcNom = (typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : (inh.parcela || '')) || ''
-    setEditingRowId(inh.id)
-    setEditRowData({
-      id: inh.id,
-      nombre_difunto: inh.nombre_difunto || '',
-      fecha_inhumacion: inh.fecha_inhumacion?.slice(0, 10) || new Date().toISOString().slice(0, 10),
-      parcela: parcNom,
-      nivel_posicion: inh.nivel_posicion || 1,
-      es_covid: !!inh.es_covid,
-      causa_defuncion: inh.causa_defuncion || 'Causa Natural',
-      empresa_funebrera: inh.empresa_funebrera || '',
-    })
-  }
-
-  const cancelEditRow = () => {
-    setEditingRowId(null)
-    setEditRowData(null)
-  }
-
-  const saveEditRow = () => {
-    if (!editRowData) return
-    if (!editRowData.nombre_difunto.trim()) {
-      alert('Por favor ingrese el nombre del difunto.')
-      return
-    }
-
-    const updatedInh: Partial<Inhumacion> = {
-      id: editRowData.id,
-      nombre_difunto: editRowData.nombre_difunto.trim(),
-      fecha_inhumacion: editRowData.fecha_inhumacion,
-      nivel_posicion: Number(editRowData.nivel_posicion) || 1,
-      es_covid: editRowData.es_covid,
-      causa_defuncion: editRowData.causa_defuncion,
-      empresa_funebrera: editRowData.empresa_funebrera,
-      parcela: {
-        id: `parc-${Date.now()}`,
-        nomenclatura: editRowData.parcela,
-        capacidad_total: 3,
-        espacios_ocupados: Number(editRowData.nivel_posicion) || 1,
-        estado: 'ocupada',
-        saldo_mantenimiento: 0,
-      },
-    }
-
-    onRegistrarInhumacion(updatedInh)
-    setEditingRowId(null)
-    setEditRowData(null)
-  }
+  // Estado de edición mediante modal oficial
+  const [modalEditInhumacion, setModalEditInhumacion] = useState<Inhumacion | null>(null)
 
   // Filtrado
   const filtered = inhumaciones.filter((i) => {
@@ -308,107 +249,11 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
             <div className="p-4 text-center text-outline text-sm">No se encontraron actas de inhumación.</div>
           ) : (
             filtered.map((inh, index) => {
-              const isEditing = editingRowId === inh.id && editRowData
               const parcNom = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela
               const fechaInh = inh.fecha_inhumacion?.slice(0, 10) || '2026-03-30'
               const hora = inh.fecha_inhumacion?.includes('T')
                 ? `${inh.fecha_inhumacion.split('T')[1].slice(0, 5)} hs`
                 : '10:30 hs'
-
-              if (isEditing) {
-                return (
-                  <div
-                    key={inh.id}
-                    className="p-3 rounded-lg border-2 border-primary bg-primary/5 shadow-sm flex flex-col gap-2.5"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-code-cadastral font-bold text-primary text-sm">
-                        Editando Acta #84{90 + index}-B
-                      </span>
-                      <span className="text-[11px] font-semibold text-primary uppercase">
-                        Edición en Línea
-                      </span>
-                    </div>
-
-                    <div className="space-y-2 text-xs">
-                      <div>
-                        <label className="text-[10px] text-outline font-medium block mb-0.5">Nombre Difunto:</label>
-                        <input
-                          type="text"
-                          value={editRowData.nombre_difunto}
-                          onChange={(e) => setEditRowData({ ...editRowData, nombre_difunto: e.target.value })}
-                          className="w-full text-xs font-semibold px-2 py-1 rounded border border-primary bg-surface"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[10px] text-outline font-medium block mb-0.5">Fecha Inhumación:</label>
-                          <input
-                            type="date"
-                            value={editRowData.fecha_inhumacion}
-                            onChange={(e) => setEditRowData({ ...editRowData, fecha_inhumacion: e.target.value })}
-                            className="w-full text-xs px-2 py-1 rounded border border-outline-variant bg-surface font-code-cadastral"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] text-outline font-medium block mb-0.5">Parcela:</label>
-                          <input
-                            type="text"
-                            value={editRowData.parcela}
-                            onChange={(e) => setEditRowData({ ...editRowData, parcela: e.target.value })}
-                            className="w-full text-xs px-2 py-1 rounded border border-outline-variant bg-surface font-code-cadastral font-bold"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[10px] text-outline font-medium block mb-0.5">Nivel:</label>
-                          <select
-                            value={editRowData.nivel_posicion}
-                            onChange={(e) => setEditRowData({ ...editRowData, nivel_posicion: Number(e.target.value) })}
-                            className="w-full text-xs px-1.5 py-1 rounded border border-outline-variant bg-surface font-medium"
-                          >
-                            <option value={1}>Nivel 1</option>
-                            <option value={2}>Nivel 2</option>
-                            <option value={3}>Nivel 3</option>
-                          </select>
-                        </div>
-                        <div className="flex items-center pt-3">
-                          <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-[#5B21B6]">
-                            <input
-                              type="checkbox"
-                              checked={editRowData.es_covid}
-                              onChange={(e) => setEditRowData({ ...editRowData, es_covid: e.target.checked })}
-                              className="rounded text-[#7C3AED]"
-                            />
-                            COVID-19
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-outline-variant">
-                      <button
-                        type="button"
-                        onClick={cancelEditRow}
-                        className="px-3 py-1.5 rounded text-xs font-semibold bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant"
-                      >
-                        Cancelar ✕
-                      </button>
-                      <button
-                        type="button"
-                        onClick={saveEditRow}
-                        className="px-3 py-1.5 rounded text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 shadow-xs"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">check</span>
-                        <span>Guardar ✓</span>
-                      </button>
-                    </div>
-                  </div>
-                )
-              }
 
               return (
                 <div
@@ -466,9 +311,9 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                     <button
                       type="button"
                       id={`btn-editar-inhumacion-m-${inh.id}`}
-                      onClick={() => startEditRow(inh)}
-                      className="h-8 px-2.5 rounded bg-surface-container hover:bg-surface-container-high text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant"
-                      title="Editar en la misma tabla"
+                      onClick={() => setModalEditInhumacion(inh)}
+                      className="h-8 px-2.5 rounded bg-surface-container hover:bg-surface-container-high text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant cursor-pointer"
+                      title="Editar en formulario modal"
                     >
                       <span className="material-symbols-outlined text-[15px]">edit</span>
                       <span>Editar</span>
@@ -536,107 +381,11 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
             </thead>
             <tbody className="divide-y divide-outline-variant/40 text-body-md font-body-md">
               {filtered.map((inh, index) => {
-                const isEditing = editingRowId === inh.id && editRowData
                 const parcNom = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela
                 const fechaInh = inh.fecha_inhumacion?.slice(0, 10) || '2026-03-30'
                 const hora = inh.fecha_inhumacion?.includes('T')
                   ? `${inh.fecha_inhumacion.split('T')[1].slice(0, 5)} hs`
                   : '10:30 hs'
-
-                if (isEditing) {
-                  return (
-                    <tr key={inh.id} className="bg-primary/5 border-l-4 border-l-primary h-[52px]">
-                      {/* Fecha Inhumación Editable */}
-                      <td className="py-1 px-3 whitespace-nowrap">
-                        <input
-                          type="date"
-                          value={editRowData.fecha_inhumacion}
-                          onChange={(e) => setEditRowData({ ...editRowData, fecha_inhumacion: e.target.value })}
-                          className="text-xs px-2 py-1 rounded border border-primary bg-surface font-code-cadastral"
-                        />
-                      </td>
-
-                      {/* Difunto Editable */}
-                      <td className="py-1 px-3">
-                        <div className="space-y-1">
-                          <input
-                            type="text"
-                            value={editRowData.nombre_difunto}
-                            onChange={(e) => setEditRowData({ ...editRowData, nombre_difunto: e.target.value })}
-                            placeholder="Nombre del Difunto"
-                            className="w-full text-xs font-semibold px-2 py-1 rounded border border-primary bg-surface focus:outline-none"
-                          />
-                          <div className="flex items-center gap-3 text-[11px]">
-                            <label className="flex items-center gap-1 cursor-pointer select-none text-[#5B21B6] font-semibold">
-                              <input
-                                type="checkbox"
-                                checked={editRowData.es_covid}
-                                onChange={(e) => setEditRowData({ ...editRowData, es_covid: e.target.checked })}
-                                className="rounded text-[#7C3AED]"
-                              />
-                              COVID-19
-                            </label>
-                            <input
-                              type="text"
-                              value={editRowData.causa_defuncion}
-                              onChange={(e) => setEditRowData({ ...editRowData, causa_defuncion: e.target.value })}
-                              placeholder="Causa defunción"
-                              className="text-[11px] px-1.5 py-0.5 rounded border border-outline-variant bg-surface"
-                            />
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Parcela y Nivel Editable */}
-                      <td className="py-1 px-3 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            type="text"
-                            value={editRowData.parcela}
-                            onChange={(e) => setEditRowData({ ...editRowData, parcela: e.target.value })}
-                            placeholder="Parcela (ej: A-12-04)"
-                            className="w-24 text-xs font-code-cadastral font-bold px-2 py-1 rounded border border-outline-variant bg-surface"
-                          />
-                          <select
-                            value={editRowData.nivel_posicion}
-                            onChange={(e) => setEditRowData({ ...editRowData, nivel_posicion: Number(e.target.value) })}
-                            className="text-xs px-1.5 py-1 rounded border border-outline-variant bg-surface font-medium"
-                          >
-                            <option value={1}>Nivel 1</option>
-                            <option value={2}>Nivel 2</option>
-                            <option value={3}>Nivel 3</option>
-                          </select>
-                        </div>
-                      </td>
-
-                      {/* Acciones Guardar / Cancelar */}
-                      <td className="py-1 px-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            type="button"
-                            id={`btn-guardar-inhumacion-${inh.id}`}
-                            onClick={saveEditRow}
-                            className="px-2.5 py-1 rounded text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-0.5 shadow-xs cursor-pointer"
-                            title="Guardar cambios"
-                          >
-                            <span className="material-symbols-outlined text-[14px]">check</span>
-                            <span>Guardar</span>
-                          </button>
-                          <button
-                            type="button"
-                            id={`btn-cancelar-inhumacion-${inh.id}`}
-                            onClick={cancelEditRow}
-                            className="px-2.5 py-1 rounded text-[11px] font-semibold bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant flex items-center gap-0.5 cursor-pointer"
-                            title="Cancelar edición"
-                          >
-                            <span className="material-symbols-outlined text-[14px]">close</span>
-                            <span>Cancelar</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                }
 
                 return (
                   <tr key={inh.id} className="hover:bg-surface-container-low transition-colors h-[40px]">
@@ -672,9 +421,9 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                         <button
                           type="button"
                           id={`btn-editar-inhumacion-${inh.id}`}
-                          onClick={() => startEditRow(inh)}
+                          onClick={() => setModalEditInhumacion(inh)}
                           className="h-7 px-2 rounded hover:bg-surface-container text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant/60 cursor-pointer"
-                          title="Editar en la misma tabla"
+                          title="Editar en formulario modal"
                         >
                           <span className="material-symbols-outlined text-[14px]">edit</span>
                           <span>Editar</span>
@@ -737,6 +486,23 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
           inhumacion={actaModal.inhumacion}
           folioNumber={actaModal.folio}
         />
+      )}
+
+      {/* Modal de Edición de Inhumación (Requerimiento explícito: editar mediante modales) */}
+      {modalEditInhumacion && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <InhumacionForm
+              parcelasDisponibles={parcelasDisponibles}
+              initialData={modalEditInhumacion}
+              onSave={(updated) => {
+                onRegistrarInhumacion(updated)
+                setModalEditInhumacion(null)
+              }}
+              onCancel={() => setModalEditInhumacion(null)}
+            />
+          </div>
+        </div>
       )}
     </div>
   )

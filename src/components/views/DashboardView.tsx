@@ -27,7 +27,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onVerParcelasMora,
   onOpenSearch,
 }) => {
-  const [tableTab, setTableTab] = useState<'todos' | 'mora' | 'inhumaciones' | 'cobranzas'>('todos')
+  type DashboardTab = 'todos' | 'parcelas' | 'afiliados' | 'inhumaciones' | 'mora'
+  const [tableTab, setTableTab] = useState<DashboardTab>('todos')
   const [searchTerm, setSearchTerm] = useState('')
 
   const parcelasOcupadas = parcelas.filter((p) => p.estado === 'ocupada' || p.estado === 'en_mora').length
@@ -39,21 +40,53 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const totalDeudaMora = parcelasEnMora.reduce((acc, p) => acc + (p.saldo_mantenimiento || 0), 0)
   const afiliadosActivos = afiliados.filter((a) => a.estado === 'activo').length
 
-  // Filtrado de la tabla según pestañas y búsqueda
-  const displayedParcelas = parcelas
-    .filter((p) => {
-      if (tableTab === 'mora' && (p.saldo_mantenimiento || 0) <= 0 && p.estado !== 'en_mora') return false
-      if (searchTerm.trim()) {
-        const q = searchTerm.toLowerCase()
-        return (
-          p.nomenclatura.toLowerCase().includes(q) ||
-          (p.titular?.nombre_completo || '').toLowerCase().includes(q) ||
-          (p.titular?.direccion || '').toLowerCase().includes(q)
-        )
-      }
-      return true
-    })
-    .slice(0, 15)
+  // Filtrado de datos según búsqueda y tab activa
+  const q = searchTerm.trim().toLowerCase()
+
+  const displayedParcelas = parcelas.filter((p) => {
+    if (!q) return true
+    return (
+      p.nomenclatura.toLowerCase().includes(q) ||
+      (p.titular?.nombre_completo || '').toLowerCase().includes(q) ||
+      (p.titular?.dni || '').toLowerCase().includes(q) ||
+      (p.titular?.direccion || '').toLowerCase().includes(q) ||
+      (p.sector_id || '').toLowerCase().includes(q)
+    )
+  })
+
+  const displayedAfiliados = afiliados.filter((a) => {
+    if (!q) return true
+    return (
+      a.numero_afiliado.toString().includes(q) ||
+      a.nombre_completo.toLowerCase().includes(q) ||
+      (a.dni || '').toLowerCase().includes(q) ||
+      (a.zona_cobro || '').toLowerCase().includes(q) ||
+      (a.direccion_cobro || '').toLowerCase().includes(q)
+    )
+  })
+
+  const displayedInhumaciones = inhumaciones.filter((i) => {
+    if (!q) return true
+    const parcNom = (typeof i.parcela === 'object' ? i.parcela?.nomenclatura : i.parcela) || ''
+    return (
+      i.nombre_difunto.toLowerCase().includes(q) ||
+      (i.dni_difunto || '').toLowerCase().includes(q) ||
+      parcNom.toLowerCase().includes(q) ||
+      (i.causa_defuncion || '').toLowerCase().includes(q) ||
+      (i.empresa_funebrera || '').toLowerCase().includes(q)
+    )
+  })
+
+  const displayedMora = parcelasEnMora.filter((p) => {
+    if (!q) return true
+    return (
+      p.nomenclatura.toLowerCase().includes(q) ||
+      (p.titular?.nombre_completo || '').toLowerCase().includes(q) ||
+      (p.titular?.dni || '').toLowerCase().includes(q)
+    )
+  })
+
+  const totalCount = parcelas.length + afiliados.length + inhumaciones.length
 
   return (
     <div className="space-y-6">
@@ -98,45 +131,74 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {/* Quick Filters Bar & Context Counters */}
           <div className="pt-1 border-t border-surface-container-high/60 w-full overflow-hidden">
-            <div className="flex items-center gap-1.5 overflow-x-auto custom-scroll pb-1 w-full">
-              <span className="text-label-caps font-label-caps text-outline uppercase tracking-wider text-[10px] shrink-0 mr-1">
+            <div className="flex items-center gap-2 overflow-x-auto custom-scroll pb-1 w-full">
+              <span className="text-label-caps font-label-caps text-outline uppercase tracking-wider text-[11px] shrink-0 mr-1 font-bold">
                 Filtros:
               </span>
               <button
                 type="button"
+                id="filter-btn-todos"
                 onClick={() => setTableTab('todos')}
-                className={`px-2.5 py-1 rounded-full text-body-sm font-semibold transition-colors flex items-center gap-1 shrink-0 ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
                   tableTab === 'todos'
-                    ? 'bg-primary-container text-on-primary shadow-xs'
+                    ? 'bg-primary text-white shadow-sm ring-1 ring-primary'
                     : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-primary'
                 }`}
               >
-                <span className="material-symbols-outlined text-[14px]">apps</span>
-                <span>Todos ({parcelas.length + afiliados.length + inhumaciones.length})</span>
+                <span className="material-symbols-outlined text-[16px]">apps</span>
+                <span>Todos ({totalCount})</span>
               </button>
               <button
                 type="button"
-                onClick={() => setTableTab('todos')}
-                className="px-2.5 py-1 rounded-full text-body-sm font-medium bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors flex items-center gap-1 shrink-0"
+                id="filter-btn-parcelas"
+                onClick={() => setTableTab('parcelas')}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                  tableTab === 'parcelas'
+                    ? 'bg-primary text-white shadow-sm ring-1 ring-primary'
+                    : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-primary'
+                }`}
               >
-                <span className="material-symbols-outlined text-[14px]">grid_goldenratio</span>
+                <span className="material-symbols-outlined text-[16px]">grid_goldenratio</span>
                 <span>Parcelas ({parcelas.length})</span>
               </button>
               <button
                 type="button"
-                onClick={() => setTableTab('cobranzas')}
-                className="px-2.5 py-1 rounded-full text-body-sm font-medium bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors flex items-center gap-1 shrink-0"
+                id="filter-btn-afiliados"
+                onClick={() => setTableTab('afiliados')}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                  tableTab === 'afiliados'
+                    ? 'bg-primary text-white shadow-sm ring-1 ring-primary'
+                    : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-primary'
+                }`}
               >
-                <span className="material-symbols-outlined text-[14px]">badge</span>
+                <span className="material-symbols-outlined text-[16px]">badge</span>
                 <span>Afiliados ({afiliados.length})</span>
               </button>
               <button
                 type="button"
+                id="filter-btn-inhumaciones"
                 onClick={() => setTableTab('inhumaciones')}
-                className="px-2.5 py-1 rounded-full text-body-sm font-medium bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors flex items-center gap-1 shrink-0"
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                  tableTab === 'inhumaciones'
+                    ? 'bg-primary text-white shadow-sm ring-1 ring-primary'
+                    : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-primary'
+                }`}
               >
-                <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                <span className="material-symbols-outlined text-[16px]">calendar_today</span>
                 <span>Inhumaciones ({inhumaciones.length})</span>
+              </button>
+              <button
+                type="button"
+                id="filter-btn-mora"
+                onClick={() => setTableTab('mora')}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                  tableTab === 'mora'
+                    ? 'bg-amber-600 text-white shadow-sm ring-1 ring-amber-700'
+                    : 'bg-amber-50 text-amber-900 border border-amber-200/60 hover:bg-amber-100'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">warning</span>
+                <span>En Mora ({parcelasEnMora.length})</span>
               </button>
             </div>
           </div>
@@ -323,136 +385,344 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="p-3 sm:p-4 border-b border-outline-variant/70 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface-container-low/30">
           <div>
             <h2 className="font-headline-md text-base sm:text-headline-md text-primary tracking-tight font-bold">
-              Actividad y Búsqueda Rápida
+              {tableTab === 'todos' && 'Actividad Global y Registros Unificados'}
+              {tableTab === 'parcelas' && 'Padrón de Parcelas'}
+              {tableTab === 'afiliados' && 'Nómina de Afiliados al Plan Seguro'}
+              {tableTab === 'inhumaciones' && 'Libro Digital de Inhumaciones'}
+              {tableTab === 'mora' && 'Titulares y Parcelas con Mantenimiento en Mora'}
             </h2>
             <p className="font-body-sm text-xs sm:text-body-sm text-on-surface-variant">
-              Libro parcelario digital y nómina unificada de cobros vigentes
+              {tableTab === 'todos' && 'Listado consolidado de parcelas, afiliados e inhumaciones registradas'}
+              {tableTab === 'parcelas' && 'Nomenclaturas, titulares y estados catastrales vigentes'}
+              {tableTab === 'afiliados' && 'Padrón de seguro social, zonas de cobranza y estado de cuenta'}
+              {tableTab === 'inhumaciones' && 'Actas de sepelio y protocolos sanitarios registrados'}
+              {tableTab === 'mora' && 'Cuentas con saldo adeudado para cobro inmediato o intimación'}
             </p>
           </div>
-          {/* Dense Tabs Control - Scrollable on mobile */}
+
+          {/* Dense Tabs Control */}
           <div className="flex items-center bg-surface-container-low p-1 rounded-lg border border-outline-variant/60 overflow-x-auto custom-scroll w-full md:w-auto">
             <button
               type="button"
               onClick={() => setTableTab('todos')}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-body-sm whitespace-nowrap transition-colors shrink-0 ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-body-sm whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
                 tableTab === 'todos'
                   ? 'font-semibold bg-surface-container-lowest text-primary shadow-xs'
                   : 'font-medium text-on-surface-variant hover:text-primary'
               }`}
             >
-              Todos los movimientos
+              Todos ({totalCount})
             </button>
             <button
               type="button"
-              onClick={() => setTableTab('mora')}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-body-sm whitespace-nowrap transition-colors shrink-0 ${
-                tableTab === 'mora'
-                  ? 'font-semibold bg-surface-container-lowest text-amber-800 shadow-xs'
+              onClick={() => setTableTab('parcelas')}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-body-sm whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
+                tableTab === 'parcelas'
+                  ? 'font-semibold bg-surface-container-lowest text-primary shadow-xs'
                   : 'font-medium text-on-surface-variant hover:text-primary'
               }`}
             >
-              Mantenimiento en mora
+              Parcelas ({parcelas.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setTableTab('afiliados')}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-body-sm whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
+                tableTab === 'afiliados'
+                  ? 'font-semibold bg-surface-container-lowest text-primary shadow-xs'
+                  : 'font-medium text-on-surface-variant hover:text-primary'
+              }`}
+            >
+              Afiliados ({afiliados.length})
             </button>
             <button
               type="button"
               onClick={() => setTableTab('inhumaciones')}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-body-sm whitespace-nowrap transition-colors shrink-0 ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-body-sm whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
                 tableTab === 'inhumaciones'
                   ? 'font-semibold bg-surface-container-lowest text-primary shadow-xs'
                   : 'font-medium text-on-surface-variant hover:text-primary'
               }`}
             >
-              Inhumaciones recientes
+              Inhumaciones ({inhumaciones.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setTableTab('mora')}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-body-sm whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
+                tableTab === 'mora'
+                  ? 'font-semibold bg-surface-container-lowest text-amber-800 shadow-xs'
+                  : 'font-medium text-on-surface-variant hover:text-primary'
+              }`}
+            >
+              En Mora ({parcelasEnMora.length})
             </button>
           </div>
         </div>
 
-        {/* MOBILE VIEW (< md): Responsive Interactive Cards */}
-        <div className="md:hidden divide-y divide-outline-variant/40 p-2.5 space-y-2.5">
-          {displayedParcelas.length === 0 ? (
-            <div className="p-4 text-center text-outline text-sm">No se encontraron registros.</div>
-          ) : (
-            displayedParcelas.map((p) => (
-              <div
-                key={p.id}
-                className="bg-surface-container-low/40 rounded-lg p-3 border border-outline-variant/60 flex flex-col gap-2 hover:border-secondary/40 transition-all shadow-xs"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-code-cadastral font-bold text-primary text-sm bg-surface-container-lowest px-2 py-0.5 rounded border border-outline-variant">
-                      {p.nomenclatura}
-                    </span>
-                    <span className="text-[11px] text-outline font-medium">
-                      Sec. {p.sector_id === 'SALINAS' ? 'Salinas' : p.sector_id} • Fila {p.manzana_fila || '0'}
-                    </span>
-                  </div>
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${
-                      p.estado === 'ocupada'
-                        ? 'bg-blue-50 text-blue-900 border-blue-200'
-                        : p.estado === 'en_mora'
-                        ? 'bg-amber-50 text-amber-900 border-amber-200'
-                        : p.estado === 'disponible'
-                        ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
-                        : 'bg-red-50 text-red-900 border-red-200'
-                    }`}
-                  >
-                    {p.estado === 'en_mora' ? 'En Mora' : p.estado.toUpperCase()}
-                  </span>
-                </div>
-
-                <div>
-                  <div className="font-semibold text-on-surface text-sm">
-                    {p.titular?.nombre_completo || '(Sin titular asignado)'}
-                  </div>
-                  <div className="text-[11px] font-code-cadastral text-outline">
-                    {p.titular?.dni ? `DNI: ${p.titular.dni}` : p.titular?.direccion || 'Chamical, La Rioja'}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-outline-variant/40 mt-1">
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-outline block">
-                      Saldo Mantenimiento
-                    </span>
+        {/* ================================================================= */}
+        {/* MOBILE VIEW (< md): Responsive Interactive Cards                   */}
+        {/* ================================================================= */}
+        <div className="md:hidden divide-y divide-outline-variant/40 p-2.5 space-y-2.5 max-h-[600px] overflow-y-auto custom-scroll">
+          {/* TAB PARCELAS O MORA */}
+          {(tableTab === 'parcelas' || tableTab === 'mora') && (
+            (tableTab === 'parcelas' ? displayedParcelas : displayedMora).length === 0 ? (
+              <div className="p-4 text-center text-outline text-sm">No se encontraron parcelas.</div>
+            ) : (
+              (tableTab === 'parcelas' ? displayedParcelas : displayedMora).slice(0, 20).map((p) => (
+                <div
+                  key={p.id}
+                  className="bg-surface-container-low/40 rounded-lg p-3 border border-outline-variant/60 flex flex-col gap-2 hover:border-secondary/40 transition-all shadow-xs"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-code-cadastral font-bold text-primary text-sm bg-surface-container-lowest px-2 py-0.5 rounded border border-outline-variant">
+                        {p.nomenclatura}
+                      </span>
+                      <span className="text-[11px] text-outline font-medium">
+                        Sec. {p.sector_id === 'SALINAS' ? 'Salinas' : p.sector_id} • Fila {p.manzana_fila || '0'}
+                      </span>
+                    </div>
                     <span
-                      className={`font-code-cadastral font-bold text-sm ${
-                        (p.saldo_mantenimiento || 0) > 0 ? 'text-error' : 'text-emerald-800'
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                        p.estado === 'ocupada'
+                          ? 'bg-blue-50 text-blue-900 border-blue-200'
+                          : p.estado === 'en_mora'
+                          ? 'bg-amber-50 text-amber-900 border-amber-200'
+                          : p.estado === 'disponible'
+                          ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                          : 'bg-red-50 text-red-900 border-red-200'
                       }`}
                     >
-                      {formatCurrency(p.saldo_mantenimiento || 0)}
+                      {p.estado === 'en_mora' ? 'En Mora' : p.estado.toUpperCase()}
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => onCobrarQR(p)}
-                    className="h-8 px-3 rounded-md bg-secondary hover:bg-primary text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs active:scale-[0.98]"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">qr_code_2</span>
-                    <span>Cobrar QR</span>
-                  </button>
+
+                  <div>
+                    <div className="font-semibold text-on-surface text-sm">
+                      {p.titular?.nombre_completo || '(Sin titular asignado)'}
+                    </div>
+                    <div className="text-[11px] font-code-cadastral text-outline">
+                      {p.titular?.dni ? `DNI: ${p.titular.dni}` : p.titular?.direccion || 'Chamical, La Rioja'}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-outline-variant/40 mt-1">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-outline block">
+                        Saldo Mantenimiento
+                      </span>
+                      <span
+                        className={`font-code-cadastral font-bold text-sm ${
+                          (p.saldo_mantenimiento || 0) > 0 ? 'text-error' : 'text-emerald-800'
+                        }`}
+                      >
+                        {formatCurrency(p.saldo_mantenimiento || 0)}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onCobrarQR(p)}
+                      className="h-8 px-3 rounded-md bg-secondary hover:bg-primary text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs active:scale-[0.98] cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">qr_code_2</span>
+                      <span>Cobrar QR</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))
+              ))
+            )
+          )}
+
+          {/* TAB AFILIADOS */}
+          {tableTab === 'afiliados' && (
+            displayedAfiliados.length === 0 ? (
+              <div className="p-4 text-center text-outline text-sm">No se encontraron afiliados.</div>
+            ) : (
+              displayedAfiliados.slice(0, 20).map((a) => (
+                <div
+                  key={a.id}
+                  className="bg-surface-container-low/40 rounded-lg p-3 border border-outline-variant/60 flex flex-col gap-2 hover:border-secondary/40 transition-all shadow-xs"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-code-cadastral font-bold text-primary text-sm bg-surface-container-lowest px-2 py-0.5 rounded border border-outline-variant">
+                        N° {a.numero_afiliado}
+                      </span>
+                      <span className="text-[11px] text-outline font-medium">
+                        {a.zona_cobro || 'Zona 1'} • {a.cobrador_asignado || 'Cobrador Oficial'}
+                      </span>
+                    </div>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                        a.estado === 'activo'
+                          ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                          : 'bg-amber-50 text-amber-900 border-amber-200'
+                      }`}
+                    >
+                      {a.estado.toUpperCase()}
+                    </span>
+                  </div>
+
+                  <div>
+                    <div className="font-semibold text-on-surface text-sm">
+                      {a.nombre_completo}
+                    </div>
+                    <div className="text-[11px] font-code-cadastral text-outline">
+                      {a.dni ? `DNI: ${a.dni}` : ''} • {a.direccion_cobro || 'Chamical'}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-outline-variant/40 mt-1">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-outline block">Cuota Mensual</span>
+                      <span className="font-code-cadastral font-bold text-sm text-primary">
+                        {formatCurrency(a.monto_cuota_mensual || 8000)}
+                      </span>
+                    </div>
+                    <span className="text-xs text-outline font-medium">Plan Seguro</span>
+                  </div>
+                </div>
+              ))
+            )
+          )}
+
+          {/* TAB INHUMACIONES */}
+          {tableTab === 'inhumaciones' && (
+            displayedInhumaciones.length === 0 ? (
+              <div className="p-4 text-center text-outline text-sm">No se encontraron inhumaciones.</div>
+            ) : (
+              displayedInhumaciones.slice(0, 20).map((i) => {
+                const parcNom = typeof i.parcela === 'object' ? i.parcela?.nomenclatura : i.parcela
+                return (
+                  <div
+                    key={i.id}
+                    className="bg-surface-container-low/40 rounded-lg p-3 border border-outline-variant/60 flex flex-col gap-2 hover:border-secondary/40 transition-all shadow-xs"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-code-cadastral font-bold text-primary text-sm bg-surface-container-lowest px-2 py-0.5 rounded border border-outline-variant">
+                          {parcNom || 'A-25-96'}
+                        </span>
+                        <span className="text-[11px] text-secondary font-medium">
+                          Nivel {i.nivel_posicion || 1}
+                        </span>
+                      </div>
+                      {i.es_covid ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-[#F5F3FF] text-[#5B21B6] border border-[#DDD6FE]">
+                          COVID-19
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          Estándar
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <div className="font-semibold text-on-surface text-sm">
+                        {i.nombre_difunto}
+                      </div>
+                      <div className="text-[11px] font-code-cadastral text-outline">
+                        {i.dni_difunto ? `DNI: ${i.dni_difunto} • ` : ''}Fecha: {i.fecha_inhumacion?.slice(0, 10)}
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-outline pt-1 border-t border-outline-variant/30 flex justify-between">
+                      <span>{i.empresa_funebrera || 'Servicios Chamical'}</span>
+                      <span className="font-medium text-primary">{i.causa_defuncion || 'Causa Natural'}</span>
+                    </div>
+                  </div>
+                )
+              })
+            )
+          )}
+
+          {/* TAB TODOS (Feed Consolidado) */}
+          {tableTab === 'todos' && (
+            <div className="space-y-2">
+              {displayedParcelas.slice(0, 8).map((p) => (
+                <div
+                  key={`p-${p.id}`}
+                  className="bg-surface-container-low/40 rounded-lg p-3 border border-outline-variant/60 flex flex-col gap-1.5"
+                >
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-900 border border-blue-200">
+                      PARCELA
+                    </span>
+                    <span className="font-code-cadastral font-bold text-primary">{p.nomenclatura}</span>
+                  </div>
+                  <div className="text-sm font-semibold text-on-surface">{p.titular?.nombre_completo || 'Sin titular'}</div>
+                  <div className="flex items-center justify-between text-xs pt-1 border-t border-outline-variant/40">
+                    <span className="text-outline">Saldo: {formatCurrency(p.saldo_mantenimiento || 0)}</span>
+                    <button
+                      type="button"
+                      onClick={() => onCobrarQR(p)}
+                      className="px-2 py-1 rounded bg-secondary text-white text-xs font-semibold cursor-pointer"
+                    >
+                      Cobrar QR
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {displayedAfiliados.slice(0, 4).map((a) => (
+                <div
+                  key={`a-${a.id}`}
+                  className="bg-surface-container-low/40 rounded-lg p-3 border border-outline-variant/60 flex flex-col gap-1.5"
+                >
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-900 border border-purple-200">
+                      AFILIADO
+                    </span>
+                    <span className="font-code-cadastral font-bold text-primary">N° {a.numero_afiliado}</span>
+                  </div>
+                  <div className="text-sm font-semibold text-on-surface">{a.nombre_completo}</div>
+                  <div className="flex items-center justify-between text-xs pt-1 border-t border-outline-variant/40">
+                    <span className="text-outline">{a.zona_cobro || 'Zona 1'}</span>
+                    <span className="font-code-cadastral font-bold text-primary">{formatCurrency(a.monto_cuota_mensual || 8000)}/mes</span>
+                  </div>
+                </div>
+              ))}
+              {displayedInhumaciones.slice(0, 4).map((i) => (
+                <div
+                  key={`i-${i.id}`}
+                  className="bg-surface-container-low/40 rounded-lg p-3 border border-outline-variant/60 flex flex-col gap-1.5"
+                >
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
+                      INHUMACIÓN
+                    </span>
+                    <span className="text-[11px] font-code-cadastral text-outline">{i.fecha_inhumacion?.slice(0, 10)}</span>
+                  </div>
+                  <div className="text-sm font-semibold text-on-surface">{i.nombre_difunto}</div>
+                  <div className="text-xs text-outline">
+                    Fosa: {(typeof i.parcela === 'object' ? i.parcela?.nomenclatura : i.parcela) || 'A-25-96'} [Nivel {i.nivel_posicion || 1}]
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
-        {/* DESKTOP VIEW (>= md): High Density Table */}
+        {/* ================================================================= */}
+        {/* DESKTOP VIEW (>= md): High Density Institutional Table             */}
+        {/* ================================================================= */}
         <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-[#F8FAFC] border-b border-outline-variant text-[11px] font-label-caps text-on-surface-variant uppercase tracking-wider h-8 select-none">
-                <th className="px-4 py-2 w-28 text-left font-semibold">Nomenclatura</th>
-                <th className="px-4 py-2 min-w-[240px] font-semibold">Titular / Difunto</th>
-                <th className="px-4 py-2 w-32 font-semibold">Ubicación</th>
-                <th className="px-4 py-2 w-32 font-semibold">Estado</th>
-                <th className="px-4 py-2 w-32 text-right font-semibold">Monto / Saldo</th>
-                <th className="px-4 py-2 w-36 text-center font-semibold">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-outline-variant/40 font-body-md text-on-surface">
-              {displayedParcelas.map((p) => {
-                return (
+          {/* TAB PARCELAS O MORA */}
+          {(tableTab === 'parcelas' || tableTab === 'mora') && (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#F8FAFC] border-b border-outline-variant text-[11px] font-label-caps text-on-surface-variant uppercase tracking-wider h-8 select-none">
+                  <th className="px-4 py-2 w-28 text-left font-semibold">Nomenclatura</th>
+                  <th className="px-4 py-2 min-w-[240px] font-semibold">Titular / DNI</th>
+                  <th className="px-4 py-2 w-32 font-semibold">Ubicación</th>
+                  <th className="px-4 py-2 w-32 font-semibold">Estado</th>
+                  <th className="px-4 py-2 w-32 text-right font-semibold">Monto / Saldo</th>
+                  <th className="px-4 py-2 w-36 text-center font-semibold">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/40 font-body-md text-on-surface">
+                {(tableTab === 'parcelas' ? displayedParcelas : displayedMora).slice(0, 25).map((p) => (
                   <tr key={p.id} className="hover:bg-surface-container-low/60 transition-colors h-[42px]">
                     <td className="px-4 py-2 align-middle">
                       <span className="font-code-cadastral text-code-cadastral font-bold text-primary">
@@ -494,17 +764,248 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <button
                         type="button"
                         onClick={() => onCobrarQR(p)}
-                        className="px-2.5 py-1 rounded-md bg-secondary hover:bg-primary text-white font-title-md text-body-sm shadow-xs inline-flex items-center gap-1 active:scale-[0.98]"
+                        className="px-2.5 py-1 rounded-md bg-secondary hover:bg-primary text-white font-title-md text-body-sm shadow-xs inline-flex items-center gap-1 active:scale-[0.98] cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-sm">qr_code_2</span>
                         <span>Cobrar QR</span>
                       </button>
                     </td>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {/* TAB AFILIADOS */}
+          {tableTab === 'afiliados' && (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#F8FAFC] border-b border-outline-variant text-[11px] font-label-caps text-on-surface-variant uppercase tracking-wider h-8 select-none">
+                  <th className="px-4 py-2 w-28 text-left font-semibold">N° Afiliado</th>
+                  <th className="px-4 py-2 min-w-[240px] font-semibold">Afiliado Titular / DNI</th>
+                  <th className="px-4 py-2 w-44 font-semibold">Zona / Domicilio</th>
+                  <th className="px-4 py-2 w-32 font-semibold">Estado</th>
+                  <th className="px-4 py-2 w-32 text-right font-semibold">Cuota Mensual</th>
+                  <th className="px-4 py-2 w-36 text-center font-semibold">Cobrador</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/40 font-body-md text-on-surface">
+                {displayedAfiliados.slice(0, 25).map((a) => (
+                  <tr key={a.id} className="hover:bg-surface-container-low/60 transition-colors h-[42px]">
+                    <td className="px-4 py-2 align-middle">
+                      <span className="font-code-cadastral text-code-cadastral font-bold text-primary">
+                        N° {a.numero_afiliado}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 align-middle">
+                      <div className="font-semibold text-on-surface">{a.nombre_completo}</div>
+                      <div className="text-[11px] font-code-cadastral text-outline">
+                        {a.dni ? `DNI: ${a.dni}` : 'Sin DNI'}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2 align-middle text-body-sm text-on-surface-variant">
+                      <div className="font-medium">{a.zona_cobro || 'Zona 1'}</div>
+                      <div className="text-[11px] text-outline truncate max-w-[180px]">{a.direccion_cobro || 'Chamical'}</div>
+                    </td>
+                    <td className="px-4 py-2 align-middle">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${
+                          a.estado === 'activo'
+                            ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                            : 'bg-amber-50 text-amber-900 border-amber-200'
+                        }`}
+                      >
+                        {a.estado.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 align-middle text-right font-code-cadastral font-bold text-body-md text-primary">
+                      {formatCurrency(a.monto_cuota_mensual || 8000)}
+                    </td>
+                    <td className="px-4 py-2 align-middle text-center text-xs text-on-surface-variant">
+                      {a.cobrador_asignado || 'Cobrador Oficial'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {/* TAB INHUMACIONES */}
+          {tableTab === 'inhumaciones' && (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#F8FAFC] border-b border-outline-variant text-[11px] font-label-caps text-on-surface-variant uppercase tracking-wider h-8 select-none">
+                  <th className="px-4 py-2 w-32 text-left font-semibold">Fecha Sepelio</th>
+                  <th className="px-4 py-2 min-w-[240px] font-semibold">Difunto / DNI</th>
+                  <th className="px-4 py-2 w-36 font-semibold">Parcela y Nivel</th>
+                  <th className="px-4 py-2 w-32 font-semibold">Protocolo</th>
+                  <th className="px-4 py-2 w-48 font-semibold">Causa Defunción</th>
+                  <th className="px-4 py-2 w-36 text-center font-semibold">Empresa Fúnebre</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/40 font-body-md text-on-surface">
+                {displayedInhumaciones.slice(0, 25).map((i) => {
+                  const parcNom = typeof i.parcela === 'object' ? i.parcela?.nomenclatura : i.parcela
+                  return (
+                    <tr key={i.id} className="hover:bg-surface-container-low/60 transition-colors h-[42px]">
+                      <td className="px-4 py-2 align-middle font-code-cadastral font-semibold text-xs text-on-surface">
+                        {i.fecha_inhumacion?.slice(0, 10)}
+                      </td>
+                      <td className="px-4 py-2 align-middle">
+                        <div className="font-semibold text-on-surface">{i.nombre_difunto}</div>
+                        <div className="text-[11px] font-code-cadastral text-outline">
+                          {i.dni_difunto ? `DNI: ${i.dni_difunto}` : 'Acta Sepelio'}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 align-middle">
+                        <span className="font-code-cadastral font-bold text-primary bg-surface-container-low px-1.5 py-0.5 rounded border border-outline-variant/60">
+                          {parcNom || 'A-25-96'}
+                        </span>
+                        <span className="text-[11px] text-secondary font-medium ml-1">
+                          [Nivel {i.nivel_posicion || 1}]
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 align-middle">
+                        {i.es_covid ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-[#F5F3FF] text-[#5B21B6] border border-[#DDD6FE]">
+                            COVID-19
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            Estándar
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 align-middle text-body-sm text-outline truncate max-w-[200px]">
+                        {i.causa_defuncion || 'Causa Natural'}
+                      </td>
+                      <td className="px-4 py-2 align-middle text-center text-xs text-on-surface-variant truncate max-w-[140px]">
+                        {i.empresa_funebrera || 'Servicios Sociales'}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+
+          {/* TAB TODOS (Consolidado) */}
+          {tableTab === 'todos' && (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#F8FAFC] border-b border-outline-variant text-[11px] font-label-caps text-on-surface-variant uppercase tracking-wider h-8 select-none">
+                  <th className="px-4 py-2 w-28 text-left font-semibold">Módulo</th>
+                  <th className="px-4 py-2 w-32 font-semibold">Identificador</th>
+                  <th className="px-4 py-2 min-w-[240px] font-semibold">Nombre / Titular / Difunto</th>
+                  <th className="px-4 py-2 w-36 font-semibold">Detalle / Ubicación</th>
+                  <th className="px-4 py-2 w-32 font-semibold">Estado</th>
+                  <th className="px-4 py-2 w-32 text-right font-semibold">Monto / Fecha</th>
+                  <th className="px-4 py-2 w-32 text-center font-semibold">Acción</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/40 font-body-md text-on-surface">
+                {displayedParcelas.slice(0, 10).map((p) => (
+                  <tr key={`p-${p.id}`} className="hover:bg-surface-container-low/60 transition-colors h-[40px]">
+                    <td className="px-4 py-2 align-middle">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-900 border border-blue-200">
+                        PARCELA
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 align-middle font-code-cadastral font-bold text-primary">
+                      {p.nomenclatura}
+                    </td>
+                    <td className="px-4 py-2 align-middle">
+                      <div className="font-semibold text-on-surface">{p.titular?.nombre_completo || 'Sin titular'}</div>
+                      <div className="text-[10px] text-outline">{p.titular?.dni ? `DNI: ${p.titular.dni}` : ''}</div>
+                    </td>
+                    <td className="px-4 py-2 align-middle text-body-sm text-outline">
+                      Sec. {p.sector_id} • Fila {p.manzana_fila || '0'}
+                    </td>
+                    <td className="px-4 py-2 align-middle">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-container border border-outline-variant">
+                        {p.estado}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 align-middle text-right font-code-cadastral font-bold text-xs">
+                      {formatCurrency(p.saldo_mantenimiento || 0)}
+                    </td>
+                    <td className="px-4 py-2 align-middle text-center">
+                      <button
+                        type="button"
+                        onClick={() => onCobrarQR(p)}
+                        className="px-2 py-0.5 rounded bg-secondary hover:bg-primary text-white text-[11px] font-semibold cursor-pointer"
+                      >
+                        Cobrar QR
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {displayedAfiliados.slice(0, 5).map((a) => (
+                  <tr key={`a-${a.id}`} className="hover:bg-surface-container-low/60 transition-colors h-[40px]">
+                    <td className="px-4 py-2 align-middle">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-900 border border-purple-200">
+                        AFILIADO
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 align-middle font-code-cadastral font-bold text-primary">
+                      N° {a.numero_afiliado}
+                    </td>
+                    <td className="px-4 py-2 align-middle">
+                      <div className="font-semibold text-on-surface">{a.nombre_completo}</div>
+                      <div className="text-[10px] text-outline">{a.dni ? `DNI: ${a.dni}` : ''}</div>
+                    </td>
+                    <td className="px-4 py-2 align-middle text-body-sm text-outline">
+                      {a.zona_cobro || 'Zona 1'}
+                    </td>
+                    <td className="px-4 py-2 align-middle">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        {a.estado}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 align-middle text-right font-code-cadastral font-bold text-xs text-primary">
+                      {formatCurrency(a.monto_cuota_mensual || 8000)}/m
+                    </td>
+                    <td className="px-4 py-2 align-middle text-center">
+                      <span className="text-[11px] text-outline font-medium">Plan Seguro</span>
+                    </td>
+                  </tr>
+                ))}
+                {displayedInhumaciones.slice(0, 5).map((i) => {
+                  const parcNom = typeof i.parcela === 'object' ? i.parcela?.nomenclatura : i.parcela
+                  return (
+                    <tr key={`i-${i.id}`} className="hover:bg-surface-container-low/60 transition-colors h-[40px]">
+                      <td className="px-4 py-2 align-middle">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
+                          INHUMACIÓN
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 align-middle font-code-cadastral font-bold text-primary">
+                        {parcNom || 'A-25-96'}
+                      </td>
+                      <td className="px-4 py-2 align-middle">
+                        <div className="font-semibold text-on-surface">{i.nombre_difunto}</div>
+                        <div className="text-[10px] text-outline">{i.causa_defuncion || 'Causa Natural'}</div>
+                      </td>
+                      <td className="px-4 py-2 align-middle text-body-sm text-outline">
+                        Nivel {i.nivel_posicion || 1}
+                      </td>
+                      <td className="px-4 py-2 align-middle">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-container border border-outline-variant">
+                          {i.es_covid ? 'COVID-19' : 'Estándar'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 align-middle text-right font-code-cadastral text-xs text-outline">
+                        {i.fecha_inhumacion?.slice(0, 10)}
+                      </td>
+                      <td className="px-4 py-2 align-middle text-center">
+                        <span className="text-[11px] text-outline font-medium">Acta Digital</span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       </section>
     </div>

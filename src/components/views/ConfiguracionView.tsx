@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { ConfiguracionCobro } from '../../types/database'
 import { QRCodeSVG } from 'qrcode.react'
-import { syncDataToSupabase } from '../../services/dataService'
-import { isSupabaseConfigured } from '../../lib/supabase'
 import { generateBCRAEMVCoQR } from '../../lib/qrHelper'
 
 interface ConfiguracionViewProps {
@@ -19,10 +17,6 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({ config, on
   const [mensaje, setMensaje] = useState(config.mensaje_recibo)
   const [guardado, setGuardado] = useState(false)
 
-  // Supabase Sync state
-  const [syncStatus, setSyncStatus] = useState<string>('')
-  const [isSyncing, setIsSyncing] = useState(false)
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSave({
@@ -36,19 +30,6 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({ config, on
     })
     setGuardado(true)
     setTimeout(() => setGuardado(false), 2500)
-  }
-
-  const handleSyncSupabase = async () => {
-    setIsSyncing(true)
-    setSyncStatus('Iniciando sincronización...')
-    try {
-      await syncDataToSupabase((msg) => setSyncStatus(msg))
-      setSyncStatus('¡Todos los datos (397 parcelas, 116 COVID, 6 afiliados) han sido sincronizados!')
-    } catch (err: any) {
-      setSyncStatus(`Error: ${err.message || 'No se pudo conectar a Supabase'}`)
-    } finally {
-      setIsSyncing(false)
-    }
   }
 
   const previewQR = useMemo(() => {
@@ -81,75 +62,6 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({ config, on
           <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
           <span>Interoperable BCRA</span>
         </div>
-      </div>
-
-      {/* Tarjeta de Conexión Supabase */}
-      <div className="bg-surface-container-lowest border border-outline-variant p-5 rounded-xl shadow-sm space-y-3">
-        <div className="flex items-center justify-between pb-3 border-b border-outline-variant/60">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-mono font-bold text-xs">
-              ⚡
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-primary">Conexión con Base de Datos Supabase</h3>
-              <p className="text-[11px] text-on-surface-variant">
-                Proyecto: <span className="font-mono font-bold text-primary">xftwykrxumzxaqhosbvt</span> · Región sa-east-1
-              </p>
-            </div>
-          </div>
-          <span
-            className={`px-2.5 py-1 rounded-full text-xs font-semibold border flex items-center gap-1.5 ${
-              isSupabaseConfigured
-                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                : 'bg-amber-50 text-amber-900 border-amber-200'
-            }`}
-          >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                isSupabaseConfigured ? 'bg-emerald-600 animate-pulse' : 'bg-amber-500'
-              }`}
-            ></span>
-            <span>{isSupabaseConfigured ? 'Supabase Conectado' : 'Modo Almacenamiento Local (Persistente)'}</span>
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-          <div className="p-3 rounded-lg bg-surface-container-low border border-outline-variant/50 space-y-1">
-            <span className="text-[10px] uppercase font-bold text-outline">URL del Proyecto:</span>
-            <div className="font-mono font-bold text-primary truncate">
-              https://xftwykrxumzxaqhosbvt.supabase.co
-            </div>
-          </div>
-          <div className="p-3 rounded-lg bg-surface-container-low border border-outline-variant/50 space-y-1">
-            <span className="text-[10px] uppercase font-bold text-outline">MCP Supabase Server:</span>
-            <div className="font-mono text-emerald-800 font-semibold truncate">
-              Configurado en ~/.gemini/antigravity/mcp_config.json
-            </div>
-          </div>
-        </div>
-
-        <div className="pt-2 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[11px] text-outline">
-            {isSupabaseConfigured
-              ? 'La aplicación lee y escribe directamente en PostgreSQL en la nube.'
-              : 'Puedes usar el sistema al 100% en modo local sin perder datos, y sincronizar cuando desees.'}
-          </p>
-          <button
-            type="button"
-            onClick={handleSyncSupabase}
-            disabled={isSyncing}
-            className="px-4 h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-          >
-            <span className="material-symbols-outlined text-[16px]">sync</span>
-            <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar Parcelas a Supabase'}</span>
-          </button>
-        </div>
-
-        {syncStatus && (
-          <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-medium">
-            {syncStatus}
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

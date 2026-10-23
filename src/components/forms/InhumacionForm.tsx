@@ -14,12 +14,23 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
   onSave,
   onCancel,
 }) => {
-  const [parcelaId, setParcelaId] = useState(initialData?.parcela_id || parcelasDisponibles[0]?.id || '')
+  // Resolver parcela inicial o existente
+  const existingParcNom = typeof initialData?.parcela === 'object'
+    ? initialData?.parcela?.nomenclatura
+    : (typeof initialData?.parcela === 'string' ? initialData.parcela : '')
+
+  const initialMatchedParcela = parcelasDisponibles.find(
+    (p) => p.id === initialData?.parcela_id || (existingParcNom && p.nomenclatura === existingParcNom)
+  )
+
+  const [parcelaId, setParcelaId] = useState(
+    initialMatchedParcela?.id || initialData?.parcela_id || parcelasDisponibles[0]?.id || ''
+  )
   const [nombreDifunto, setNombreDifunto] = useState(initialData?.nombre_difunto || '')
   const [dniDifunto, setDniDifunto] = useState(initialData?.dni_difunto || '')
   const [fechaFallecimiento, setFechaFallecimiento] = useState(initialData?.fecha_fallecimiento || '')
   const [fechaInhumacion, setFechaInhumacion] = useState(
-    initialData?.fecha_inhumacion || new Date().toISOString().split('T')[0]
+    initialData?.fecha_inhumacion?.slice(0, 10) || new Date().toISOString().split('T')[0]
   )
   const [nivelPosicion, setNivelPosicion] = useState(initialData?.nivel_posicion || 1)
   const [esCovid, setEsCovid] = useState(initialData?.es_covid || false)
@@ -31,21 +42,37 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
 
   const parcelaSeleccionada = parcelasDisponibles.find((p) => p.id === parcelaId)
 
+  // Opciones combinadas para que no se pierda la parcela asignada actualmente
+  const parcelasOptions = [...parcelasDisponibles]
+  if (
+    existingParcNom &&
+    !parcelasOptions.some((p) => p.nomenclatura === existingParcNom || p.id === parcelaId)
+  ) {
+    parcelasOptions.unshift({
+      id: parcelaId || `parc-custom-${Date.now()}`,
+      nomenclatura: existingParcNom,
+      capacidad_total: 3,
+      espacios_ocupados: nivelPosicion,
+      estado: 'ocupada',
+      saldo_mantenimiento: 0,
+    } as Parcela)
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSave({
       id: initialData?.id || `inh-${Date.now()}`,
       parcela_id: parcelaId,
-      nombre_difunto: nombreDifunto,
-      dni_difunto: dniDifunto,
+      nombre_difunto: nombreDifunto.trim(),
+      dni_difunto: dniDifunto.trim(),
       fecha_fallecimiento: fechaFallecimiento || null,
       fecha_inhumacion: fechaInhumacion,
       nivel_posicion: Number(nivelPosicion),
       es_covid: esCovid,
-      causa_defuncion: causaDefuncion,
-      empresa_funebrera: empresaFunebrera,
-      observaciones,
-      parcela: parcelaSeleccionada || null,
+      causa_defuncion: causaDefuncion.trim() || 'Causa Natural',
+      empresa_funebrera: empresaFunebrera.trim() || 'Servicios Sociales Chamical',
+      observaciones: observaciones.trim() || null,
+      parcela: parcelaSeleccionada || (typeof initialData?.parcela === 'object' ? initialData.parcela : null),
     })
   }
 
@@ -85,7 +112,7 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
             className="w-full h-9 px-2 text-xs font-mono font-bold text-primary bg-white border border-outline-variant rounded-md focus:border-secondary focus:outline-none"
             required
           >
-            {parcelasDisponibles.map((p) => (
+            {parcelasOptions.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.nomenclatura} - {p.titular?.nombre_completo || 'Sin titular'} ({p.espacios_ocupados}/{p.capacidad_total} niveles)
               </option>
@@ -178,6 +205,17 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
           </div>
         </div>
 
+        <div>
+          <label className="text-xs font-semibold text-on-surface block mb-1">Observaciones / Notas Sanitarias</label>
+          <textarea
+            value={observaciones}
+            onChange={(e) => setObservaciones(e.target.value)}
+            rows={2}
+            placeholder="Anotaciones adicionales sobre el sepelio, ataúd especial, etc."
+            className="w-full p-2.5 text-xs bg-white border border-outline-variant rounded-md focus:border-secondary focus:outline-none resize-none"
+          />
+        </div>
+
         <div className="p-3 bg-surface-container-low rounded-lg border border-outline-variant/60 flex items-center justify-between">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -207,7 +245,7 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
           className="h-9 px-5 rounded-lg bg-primary hover:bg-secondary text-white font-semibold text-xs transition-colors flex items-center gap-1.5 shadow-sm active:scale-[0.99]"
         >
           <span className="material-symbols-outlined text-[18px]">save</span>
-          <span>Asentar Inhumación</span>
+          <span>{initialData ? 'Guardar Cambios' : 'Asentar Inhumación'}</span>
         </button>
       </div>
     </form>
