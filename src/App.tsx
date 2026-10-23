@@ -479,12 +479,17 @@ export default function App() {
 
   // Guardar Parcela (CRUD: Create / Update)
   const handleSaveParcela = async (datos: Partial<Parcela>) => {
-    let parcelaTarget: Parcela
+    let parcelaTarget: Parcela | null = null
 
     if (datos.id) {
-      parcelaTarget = { ...editingParcela, ...datos } as Parcela
       setParcelas((prev) =>
-        prev.map((p) => (p.id === datos.id ? parcelaTarget : p))
+        prev.map((p) => {
+          if (p.id === datos.id) {
+            parcelaTarget = { ...p, ...(editingParcela || {}), ...datos } as Parcela
+            return parcelaTarget
+          }
+          return p
+        })
       )
     } else {
       parcelaTarget = {
@@ -500,26 +505,32 @@ export default function App() {
         notas: datos.notas || '',
         titular: datos.titular || null,
       }
-      setParcelas((prev) => [parcelaTarget, ...prev])
+      setParcelas((prev) => [parcelaTarget!, ...prev])
     }
 
     setFormParcelaOpen(false)
     setEditingParcela(null)
 
     // Supabase Cloud Sync
-    if (isSupabaseConfigured) {
+    if (isSupabaseConfigured && parcelaTarget) {
       await upsertParcelaSupabase(parcelaTarget)
     }
   }
 
-  // Guardar Inhumación (CRUD: Create)
+  // Guardar Inhumación (CRUD: Create / Update)
   const handleSaveInhumacion = async (datos: Partial<Inhumacion>) => {
-    let inhumacionTarget: Inhumacion
+    let inhumacionTarget: Inhumacion | null = null
 
-    if (editingInhumacion) {
-      inhumacionTarget = { ...editingInhumacion, ...datos } as Inhumacion
+    if (datos.id || editingInhumacion) {
+      const targetId = datos.id || editingInhumacion?.id
       setInhumaciones((prev) =>
-        prev.map((i) => (i.id === editingInhumacion.id ? inhumacionTarget : i))
+        prev.map((i) => {
+          if (i.id === targetId) {
+            inhumacionTarget = { ...i, ...(editingInhumacion || {}), ...datos } as Inhumacion
+            return inhumacionTarget
+          }
+          return i
+        })
       )
     } else {
       inhumacionTarget = {
@@ -533,7 +544,7 @@ export default function App() {
         empresa_funebrera: datos.empresa_funebrera || 'Aeterna Sepelios',
         parcela: datos.parcela as any,
       }
-      setInhumaciones((prev) => [inhumacionTarget, ...prev])
+      setInhumaciones((prev) => [inhumacionTarget!, ...prev])
 
       // Actualizar ocupación de parcela
       if (datos.parcela?.nomenclatura) {
@@ -556,23 +567,30 @@ export default function App() {
     setEditingInhumacion(null)
 
     // Supabase Cloud Sync
-    if (isSupabaseConfigured) {
+    if (isSupabaseConfigured && inhumacionTarget) {
       await insertInhumacionSupabase(inhumacionTarget)
     }
   }
 
   // Guardar Afiliado (CRUD: Create / Update)
   const handleSaveAfiliado = async (datos: Partial<AfiliadoSeguro>) => {
-    let afiliadoTarget: any
+    let afiliadoTarget: any = null
 
-    if (editingAfiliado) {
-      afiliadoTarget = {
-        ...editingAfiliado,
-        ...datos,
-        cuotasPagadas: (editingAfiliado as any).cuotasPagadas || [1, 2],
-      }
+    if (datos.id || editingAfiliado) {
+      const targetId = datos.id || editingAfiliado?.id
       setAfiliados((prev) => {
-        const updated = prev.map((a) => (a.id === editingAfiliado.id ? afiliadoTarget : a))
+        const updated = prev.map((a) => {
+          if (a.id === targetId) {
+            afiliadoTarget = {
+              ...a,
+              ...(editingAfiliado || {}),
+              ...datos,
+              cuotasPagadas: a.cuotasPagadas || (editingAfiliado as any)?.cuotasPagadas || [1, 2],
+            }
+            return afiliadoTarget
+          }
+          return a
+        })
         saveAfiliadosToStorage(updated)
         return updated
       })
@@ -599,7 +617,7 @@ export default function App() {
     setEditingAfiliado(null)
 
     // Supabase Cloud Sync
-    if (isSupabaseConfigured) {
+    if (isSupabaseConfigured && afiliadoTarget) {
       await upsertAfiliadoSupabase(afiliadoTarget)
     }
   }
@@ -712,7 +730,7 @@ export default function App() {
                 </span>
                 <h1 className="text-xl font-black text-slate-950 uppercase tracking-tight">
                   {currentTab === 'dashboard' && 'REPORTE CONSOLIDADO DE GESTIÓN Y RECAUDACIÓN'}
-                  {currentTab === 'parcelas' && 'PADRÓN GENERAL DE CATASTRO Y DERECHO DE PARCELAS'}
+                  {currentTab === 'parcelas' && 'PADRÓN GENERAL Y REGISTRO DE PARCELAS'}
                   {currentTab === 'inhumaciones' && 'LIBRO OFICIAL DE INHUMACIONES Y REGISTRO DE DIFUNTOS'}
                   {currentTab === 'seguro' && 'PADRÓN DE AFILIADOS Y ESTADO DE COBRANZA PLAN SEGURO INTEGRAL'}
                   {currentTab === 'configuracion' && 'CONSTANCIA DE PARÁMETROS Y ARANCELES MUNICIPALES'}
@@ -766,6 +784,10 @@ export default function App() {
               onCobrarQR={handleCobrarParcela}
               onSaveParcela={handleSaveParcela}
               onDeleteParcela={handleDeleteParcela}
+              onNuevaParcela={() => {
+                setEditingParcela(null)
+                setFormParcelaOpen(true)
+              }}
               onNuevaInhumacionParaParcela={(nom) => {
                 setEditingInhumacion({
                   id: '',
@@ -775,7 +797,7 @@ export default function App() {
                   nivel_posicion: 2,
                   es_covid: false,
                 } as any)
-                setCurrentTab('inhumaciones')
+                setFormInhumacionOpen(true)
               }}
               isOnline={isSupabaseConfigured}
             />
@@ -787,6 +809,10 @@ export default function App() {
               parcelasDisponibles={parcelas}
               onRegistrarInhumacion={handleSaveInhumacion}
               onEliminarInhumacion={handleDeleteInhumacion}
+              onNuevaInhumacion={() => {
+                setEditingInhumacion(null)
+                setFormInhumacionOpen(true)
+              }}
               onVerParcela={(nom) => {
                 setCurrentTab('parcelas')
               }}
@@ -807,6 +833,7 @@ export default function App() {
                 setEditingAfiliado(a)
                 setFormAfiliadoOpen(true)
               }}
+              onSaveAfiliado={handleSaveAfiliado}
               onEliminarAfiliado={handleDeleteAfiliado}
             />
           )}

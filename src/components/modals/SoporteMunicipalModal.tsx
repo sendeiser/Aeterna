@@ -104,7 +104,7 @@ export const SoporteMunicipalModal: React.FC<SoporteMunicipalModalProps> = ({
                 +54 9 3826 401234
               </p>
               <span className="text-[11px] text-outline block">
-                Consultas catastrales y reclamos
+                Consultas de parcelas y reclamos
               </span>
             </div>
           </div>
@@ -230,7 +230,7 @@ export const SoporteMunicipalModal: React.FC<SoporteMunicipalModalProps> = ({
         {/* Footer */}
         <div className="p-3 bg-surface-container-low border-t border-outline-variant flex items-center justify-between text-[11px] text-outline">
           <span>Municipalidad de Chamical · Gestión Parques & Cementerios</span>
-          <span>Versión Catastral 4.1</span>
+          <span>Versión de Gestión 4.1</span>
         </div>
       </div>
     </div>

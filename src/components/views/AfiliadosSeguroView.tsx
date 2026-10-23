@@ -11,6 +11,7 @@ interface AfiliadosSeguroViewProps {
   onRevertirCuota?: (afiliadoId: string, nroCuota: number) => void
   onNuevoAfiliado: () => void
   onEditarAfiliado: (afiliado: AfiliadoSeguro) => void
+  onSaveAfiliado?: (afiliado: Partial<AfiliadoSeguro>) => void
   onEliminarAfiliado?: (id: string) => void
 }
 
@@ -21,6 +22,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
   onRevertirCuota,
   onNuevoAfiliado,
   onEditarAfiliado,
+  onSaveAfiliado,
   onEliminarAfiliado,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -38,6 +40,65 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
     mes: 1,
     detalle: null,
   })
+
+  // Estado de edición en línea en la misma tabla
+  const [editingRowId, setEditingRowId] = useState<string | null>(null)
+  const [editRowData, setEditRowData] = useState<{
+    id: string
+    nombre_completo: string
+    dni: string
+    direccion_cobro: string
+    zona_cobro: string
+    monto_cuota_mensual: number
+    estado: string
+  } | null>(null)
+
+  const startEditRow = (afiliado: AfiliadoSeguro) => {
+    setEditingRowId(afiliado.id)
+    setEditRowData({
+      id: afiliado.id,
+      nombre_completo: afiliado.nombre_completo,
+      dni: afiliado.dni || '',
+      direccion_cobro: afiliado.direccion_cobro || '',
+      zona_cobro: afiliado.zona_cobro || '',
+      monto_cuota_mensual: afiliado.monto_cuota_mensual || 0,
+      estado: afiliado.estado || 'activo',
+    })
+  }
+
+  const cancelEditRow = () => {
+    setEditingRowId(null)
+    setEditRowData(null)
+  }
+
+  const saveEditRow = () => {
+    if (!editRowData) return
+    if (!editRowData.nombre_completo.trim()) {
+      alert('Por favor ingrese el nombre del afiliado.')
+      return
+    }
+
+    const original = afiliados.find((a) => a.id === editRowData.id)
+    if (!original) return
+
+    const updated: AfiliadoSeguro = {
+      ...original,
+      nombre_completo: editRowData.nombre_completo.trim(),
+      dni: editRowData.dni.trim(),
+      direccion_cobro: editRowData.direccion_cobro.trim(),
+      zona_cobro: editRowData.zona_cobro.trim(),
+      monto_cuota_mensual: Number(editRowData.monto_cuota_mensual) || 0,
+      estado: editRowData.estado as any,
+    }
+
+    if (onSaveAfiliado) {
+      onSaveAfiliado(updated)
+    } else {
+      onEditarAfiliado(updated)
+    }
+    setEditingRowId(null)
+    setEditRowData(null)
+  }
 
   const handleVerDetalleCuota = (afiliado: AfiliadoSeguro, mes: number) => {
     const detalle = (afiliado.cuotasDetalle || []).find((c) => c.mes === mes || (c as any).nro_cuota === mes)
@@ -347,6 +408,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             <div className="p-4 text-center text-outline text-sm">No se encontraron afiliados.</div>
           ) : (
             filtered.map((afiliado) => {
+              const isEditing = editingRowId === afiliado.id && editRowData
               const cuotasPagadas: number[] =
                 afiliado.cuotasPagadas ||
                 (afiliado.estado === 'activo'
@@ -357,6 +419,92 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
               const saldoDeuda = mesesVencidos.length * afiliado.monto_cuota_mensual
               const siguienteCuotaCobrar =
                 [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].find((m) => !cuotasPagadas.includes(m)) || 1
+
+              if (isEditing) {
+                return (
+                  <div
+                    key={afiliado.id}
+                    className="p-3.5 rounded-lg border-2 border-primary bg-primary/5 flex flex-col gap-2.5 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-code-cadastral font-bold text-primary text-sm">
+                        Editando Afiliado #{afiliado.numero_afiliado}
+                      </span>
+                      <span className="text-[11px] font-semibold text-primary uppercase">
+                        Edición en Línea
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 text-xs">
+                      <div>
+                        <label className="text-[10px] text-outline font-medium block mb-0.5">Nombre Completo:</label>
+                        <input
+                          type="text"
+                          value={editRowData.nombre_completo}
+                          onChange={(e) => setEditRowData({ ...editRowData, nombre_completo: e.target.value })}
+                          className="w-full text-xs font-semibold px-2 py-1 rounded border border-primary bg-surface"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] text-outline font-medium block mb-0.5">DNI:</label>
+                          <input
+                            type="text"
+                            value={editRowData.dni}
+                            onChange={(e) => setEditRowData({ ...editRowData, dni: e.target.value })}
+                            className="w-full text-xs px-2 py-1 rounded border border-outline-variant bg-surface font-code-cadastral"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-outline font-medium block mb-0.5">Cuota Mensual ($):</label>
+                          <input
+                            type="number"
+                            value={editRowData.monto_cuota_mensual}
+                            onChange={(e) => setEditRowData({ ...editRowData, monto_cuota_mensual: Number(e.target.value) })}
+                            className="w-full text-xs px-2 py-1 rounded border border-outline-variant bg-surface font-code-cadastral font-bold text-right"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-outline font-medium block mb-0.5">Zona de Cobro:</label>
+                        <input
+                          type="text"
+                          value={editRowData.zona_cobro}
+                          onChange={(e) => setEditRowData({ ...editRowData, zona_cobro: e.target.value })}
+                          className="w-full text-xs px-2 py-1 rounded border border-outline-variant bg-surface"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-outline font-medium block mb-0.5">Domicilio de Cobro:</label>
+                        <input
+                          type="text"
+                          value={editRowData.direccion_cobro}
+                          onChange={(e) => setEditRowData({ ...editRowData, direccion_cobro: e.target.value })}
+                          className="w-full text-xs px-2 py-1 rounded border border-outline-variant bg-surface"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-outline-variant">
+                      <button
+                        type="button"
+                        onClick={cancelEditRow}
+                        className="px-3 py-1.5 rounded text-xs font-semibold bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant"
+                      >
+                        Cancelar ✕
+                      </button>
+                      <button
+                        type="button"
+                        onClick={saveEditRow}
+                        className="px-3 py-1.5 rounded text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 shadow-xs"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">check</span>
+                        <span>Guardar ✓</span>
+                      </button>
+                    </div>
+                  </div>
+                )
+              }
 
               return (
                 <div
@@ -505,11 +653,13 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
-                        onClick={() => onEditarAfiliado(afiliado)}
-                        className="h-8 w-8 rounded-lg border border-outline-variant hover:bg-surface-container-low text-on-surface-variant flex items-center justify-center"
-                        title="Editar Afiliado"
+                        id={`btn-editar-afiliado-m-${afiliado.id}`}
+                        onClick={() => startEditRow(afiliado)}
+                        className="h-8 px-2.5 rounded-lg border border-outline-variant hover:bg-surface-container-low text-primary flex items-center gap-1 text-xs font-semibold"
+                        title="Editar en la misma tabla"
                       >
                         <span className="material-symbols-outlined text-[16px]">edit</span>
+                        <span>Editar</span>
                       </button>
                       {onEliminarAfiliado && (
                         <button
@@ -550,6 +700,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             </thead>
             <tbody className="divide-y divide-outline-variant/40 font-body-md text-on-surface">
               {filtered.map((afiliado) => {
+                const isEditing = editingRowId === afiliado.id && editRowData
                 const cuotasPagadas: number[] =
                   afiliado.cuotasPagadas ||
                   (afiliado.estado === 'activo'
@@ -560,6 +711,106 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                 const saldoDeuda = mesesVencidos.length * afiliado.monto_cuota_mensual
                 const siguienteCuotaCobrar =
                   [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].find((m) => !cuotasPagadas.includes(m)) || 1
+
+                if (isEditing) {
+                  return (
+                    <tr key={afiliado.id} className="bg-primary/5 border-l-4 border-l-primary">
+                      {/* Col 1: N° Afiliado */}
+                      <td className="px-4 py-3 align-middle">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded bg-surface-container text-primary font-code-cadastral text-code-cadastral font-bold border border-outline-variant">
+                          #{afiliado.numero_afiliado}
+                        </span>
+                      </td>
+
+                      {/* Col 2: Info Afiliado Editable */}
+                      <td className="px-4 py-3 align-middle">
+                        <div className="space-y-1 max-w-[320px]">
+                          <input
+                            type="text"
+                            value={editRowData.nombre_completo}
+                            onChange={(e) => setEditRowData({ ...editRowData, nombre_completo: e.target.value })}
+                            placeholder="Nombre Completo"
+                            className="w-full text-xs font-semibold px-2 py-1 rounded border border-primary bg-surface focus:outline-none"
+                          />
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <input
+                              type="text"
+                              value={editRowData.dni}
+                              onChange={(e) => setEditRowData({ ...editRowData, dni: e.target.value })}
+                              placeholder="DNI"
+                              className="text-xs px-1.5 py-0.5 rounded border border-outline-variant bg-surface font-code-cadastral"
+                            />
+                            <input
+                              type="text"
+                              value={editRowData.zona_cobro}
+                              onChange={(e) => setEditRowData({ ...editRowData, zona_cobro: e.target.value })}
+                              placeholder="Zona de cobro"
+                              className="text-xs px-1.5 py-0.5 rounded border border-outline-variant bg-surface"
+                            />
+                          </div>
+                          <input
+                            type="text"
+                            value={editRowData.direccion_cobro}
+                            onChange={(e) => setEditRowData({ ...editRowData, direccion_cobro: e.target.value })}
+                            placeholder="Domicilio"
+                            className="w-full text-[11px] px-1.5 py-0.5 rounded border border-outline-variant bg-surface"
+                          />
+                        </div>
+                      </td>
+
+                      {/* Col 3: Cuota Mensual Editable */}
+                      <td className="px-4 py-3 align-middle">
+                        <div className="flex items-center gap-0.5">
+                          <span className="text-xs text-outline">$</span>
+                          <input
+                            type="number"
+                            value={editRowData.monto_cuota_mensual}
+                            onChange={(e) => setEditRowData({ ...editRowData, monto_cuota_mensual: Number(e.target.value) })}
+                            className="w-20 text-xs text-right font-code-cadastral font-bold px-1.5 py-1 rounded border border-outline-variant bg-surface"
+                          />
+                        </div>
+                      </td>
+
+                      {/* Col 4: Estado Matriz */}
+                      <td className="px-4 py-3 align-middle text-center">
+                        <span className="text-xs text-outline italic">Edición en línea activa</span>
+                      </td>
+
+                      {/* Col 5: Saldo */}
+                      <td className="px-4 py-3 align-middle text-right">
+                        <div className="font-code-cadastral font-bold text-xs text-on-surface">
+                          {formatCurrency(saldoDeuda)}
+                        </div>
+                      </td>
+
+                      {/* Col 6: Botones Guardar / Cancelar */}
+                      <td className="px-4 py-3 align-middle text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            id={`btn-guardar-afiliado-${afiliado.id}`}
+                            onClick={saveEditRow}
+                            className="px-2.5 py-1 rounded text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-0.5 shadow-xs cursor-pointer"
+                            title="Guardar cambios"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">check</span>
+                            <span>Guardar</span>
+                          </button>
+                          <button
+                            type="button"
+                            id={`btn-cancelar-afiliado-${afiliado.id}`}
+                            onClick={cancelEditRow}
+                            className="px-2.5 py-1 rounded text-[11px] font-semibold bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant flex items-center gap-0.5 cursor-pointer"
+                            title="Cancelar edición"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">close</span>
+                            <span>Cancelar</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                }
 
                 return (
                   <tr key={afiliado.id} className="hover:bg-surface-container-low/60 transition-colors">
@@ -696,6 +947,16 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                     {/* Col 6: Acciones Rápidas */}
                     <td className="px-4 py-3 align-middle text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          id={`btn-editar-afiliado-${afiliado.id}`}
+                          onClick={() => startEditRow(afiliado)}
+                          className="h-7 px-2 rounded hover:bg-surface-container text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant/60 cursor-pointer"
+                          title="Editar en la misma tabla"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">edit</span>
+                          <span>Editar</span>
+                        </button>
                         {mesesVencidos.length > 1 && onCobrarMultiplesCuotas ? (
                           <button
                             type="button"
@@ -722,7 +983,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                           type="button"
                           onClick={() => onEditarAfiliado(afiliado)}
                           className="p-1.5 rounded-lg border border-outline-variant hover:bg-surface-container-low text-on-surface-variant transition-colors"
-                          title="Editar Afiliado y Grupo Familiar"
+                          title="Ficha completa y Grupo Familiar"
                         >
                           <span className="material-symbols-outlined text-base" data-icon="family_restroom">
                             family_restroom

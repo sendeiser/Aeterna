@@ -193,7 +193,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Navigation Footer */}
         <div className="flex flex-col gap-1 pt-3 border-t border-outline-variant">
           <div className="flex items-center justify-between text-[11px] text-outline px-3 py-1">
-            <span>SISTEMA CATASTRAL v4.1</span>
+            <span>SISTEMA DE GESTIÓN v4.1</span>
             <span className="inline-flex items-center gap-1 font-semibold text-emerald-700">
               <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-600 animate-pulse' : 'bg-amber-500'}`}></span>
               <span>{isOnline ? 'SUPABASE' : 'LOCAL'}</span>

@@ -150,13 +150,13 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({ initialData, onSave, o
           </div>
         </fieldset>
 
-        {/* Ubicación Catastral */}
+        {/* Ubicación de Parcela */}
         <fieldset className="border border-outline-variant/70 rounded p-3 bg-surface/50">
           <legend className="text-label-caps font-label-caps text-outline uppercase px-1.5 font-semibold flex items-center gap-1">
             <span className="material-symbols-outlined text-[14px]" data-icon="grid_4x4">
               grid_4x4
             </span>
-            <span>Ubicación Catastral y Nomenclatura</span>
+            <span>Ubicación de Parcela y Coordenadas</span>
           </legend>
           <div className="space-y-3 mt-1">
             <div>

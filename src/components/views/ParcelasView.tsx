@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Parcela, Inhumacion } from '../../types/database'
+import { Parcela, Inhumacion, EstadoTitular } from '../../types/database'
 import { formatCurrency } from '../../lib/formatters'
 import { reactivarParcelaStandby, liberarParcelaStandby } from '../../services/dataService'
 
@@ -12,6 +12,7 @@ interface ParcelasViewProps {
   onNuevaInhumacionParaParcela?: (nomenclatura: string) => void
   onReactivarParcela?: (parcela: Parcela) => void
   onLiberarParcela?: (parcela: Parcela) => void
+  onNuevaParcela?: () => void
   isOnline: boolean
 }
 
@@ -24,107 +25,98 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   onNuevaInhumacionParaParcela,
   onReactivarParcela,
   onLiberarParcela,
+  onNuevaParcela,
   isOnline,
 }) => {
   const [filterSector, setFilterSector] = useState<'todos' | 'A' | 'E' | 'SALINAS' | 'mora' | 'standby'>('todos')
   const [filterTitularVital, setFilterTitularVital] = useState<'todos' | 'vivo' | 'fallecido'>('todos')
   const [searchTerm, setSearchTerm] = useState('')
-  const [mobileView, setMobileView] = useState<'lista' | 'formulario'>('lista')
   const [pageSize, setPageSize] = useState<'todas' | 50 | 100>('todas')
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedParcelaId, setSelectedParcelaId] = useState<string | null>(
     parcelas.length > 0 ? parcelas[0].id : null
   )
 
-  // Form State
-  const [formData, setFormData] = useState({
-    id: '',
-    sector: 'A',
-    manzana: '25',
-    numero: '96',
-    titularNombre: 'Fernández, Héctor Osvaldo',
-    titularDni: '20-18452981-4',
-    titularTelefono: '3826 44-8921',
-    titularDireccion: 'Av. San Martín 452, B° Centro, Chamical',
-    titularEstadoVital: 'vivo' as 'vivo' | 'fallecido',
-    capacidad: 3,
-    estado: 'ocupada' as 'disponible' | 'ocupada' | 'en_mora' | 'baja' | 'standby',
-    saldo: 36000,
-    notas: 'Registro regularizado Parcelas Chamical',
-  })
+  // Estado de edición en línea en la misma tabla
+  const [editingRowId, setEditingRowId] = useState<string | null>(null)
+  const [editRowData, setEditRowData] = useState<{
+    id: string
+    nomenclatura: string
+    sector_id: string
+    manzana_fila: string
+    numero_parcela: string
+    titularNombre: string
+    titularDni: string
+    titularTelefono: string
+    titularDireccion: string
+    titularEstadoVital: 'vivo' | 'fallecido'
+    capacidad_total: number
+    estado: 'disponible' | 'ocupada' | 'en_mora' | 'baja' | 'standby'
+    saldo_mantenimiento: number
+    notas: string
+  } | null>(null)
 
-  // Cargar parcela seleccionada en el formulario
   const handleSelectParcela = (p: Parcela) => {
     setSelectedParcelaId(p.id)
-    setFormData({
+  }
+
+  const startEditRow = (p: Parcela) => {
+    setEditingRowId(p.id)
+    setSelectedParcelaId(p.id)
+    setEditRowData({
       id: p.id,
-      sector: p.sector_id || 'A',
-      manzana: p.manzana_fila || '',
-      numero: p.numero_parcela ? String(p.numero_parcela) : '',
+      nomenclatura: p.nomenclatura,
+      sector_id: p.sector_id || 'A',
+      manzana_fila: p.manzana_fila || '',
+      numero_parcela: String(p.numero_parcela || ''),
       titularNombre: p.titular?.nombre_completo || '',
       titularDni: p.titular?.dni || '',
       titularTelefono: (p.titular?.telefono || '').replace('+54 9 ', ''),
       titularDireccion: p.titular?.direccion || '',
       titularEstadoVital: p.titular?.estado_vital || (p.titular?.estado_titular === 'fallecido' ? 'fallecido' : 'vivo'),
-      capacidad: p.capacidad_total || 3,
-      estado: (p.estado === 'reservada' ? 'disponible' : p.estado) as any,
-      saldo: p.saldo_mantenimiento || 0,
+      capacidad_total: p.capacidad_total || 3,
+      estado: p.estado as any,
+      saldo_mantenimiento: p.saldo_mantenimiento || 0,
       notas: p.notas || '',
     })
   }
 
-  const handleResetForm = () => {
-    setSelectedParcelaId(null)
-    setFormData({
-      id: '',
-      sector: 'A',
-      manzana: '01',
-      numero: '01',
-      titularNombre: '',
-      titularDni: '',
-      titularTelefono: '',
-      titularDireccion: 'Av. San Martín, Chamical',
-      titularEstadoVital: 'vivo',
-      capacidad: 3,
-      estado: 'disponible',
-      saldo: 0,
-      notas: '',
-    })
+  const cancelEditRow = () => {
+    setEditingRowId(null)
+    setEditRowData(null)
   }
 
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.manzana || !formData.numero) {
-      alert('Por favor complete sector, manzana y número de parcela.')
-      return
+  const saveEditRow = () => {
+    if (!editRowData) return
+
+    const updatedTitular = editRowData.titularNombre.trim()
+      ? {
+          id: `tit-${Date.now()}`,
+          nombre_completo: editRowData.titularNombre.trim(),
+          dni: editRowData.titularDni.trim() || null,
+          telefono: editRowData.titularTelefono.trim() ? `+54 9 ${editRowData.titularTelefono.trim()}` : null,
+          direccion: editRowData.titularDireccion.trim() || null,
+          estado_titular: (editRowData.titularEstadoVital === 'fallecido' ? 'fallecido' : 'activo') as EstadoTitular,
+          estado_vital: editRowData.titularEstadoVital,
+        }
+      : undefined
+
+    const updatedParcela: Partial<Parcela> = {
+      id: editRowData.id,
+      nomenclatura: editRowData.nomenclatura,
+      sector_id: editRowData.sector_id,
+      manzana_fila: editRowData.manzana_fila,
+      numero_parcela: editRowData.numero_parcela,
+      capacidad_total: Number(editRowData.capacidad_total) || 3,
+      estado: editRowData.estado,
+      saldo_mantenimiento: Number(editRowData.saldo_mantenimiento) || 0,
+      notas: editRowData.notas,
+      titular: updatedTitular,
     }
 
-    const nomenclatura = `${formData.sector}-${formData.manzana}-${formData.numero}`
-    onSaveParcela({
-      id: formData.id || undefined,
-      nomenclatura,
-      sector_id: formData.sector,
-      manzana_fila: formData.manzana,
-      numero_parcela: String(formData.numero),
-      capacidad_total: formData.capacidad,
-      espacios_ocupados: formData.estado === 'ocupada' || formData.estado === 'en_mora' ? 1 : 0,
-      estado: formData.estado as any,
-      saldo_mantenimiento: formData.saldo,
-      notas: formData.notas,
-      titular: formData.titularNombre
-        ? {
-            id: `tit-${Date.now()}`,
-            nombre_completo: formData.titularNombre,
-            dni: formData.titularDni || null,
-            telefono: formData.titularTelefono ? `+54 9 ${formData.titularTelefono}` : null,
-            direccion: formData.titularDireccion || null,
-            estado_titular: formData.titularEstadoVital === 'fallecido' ? 'fallecido' : 'activo',
-            estado_vital: formData.titularEstadoVital,
-          }
-        : undefined,
-    })
-
-    alert(`Parcela ${nomenclatura} guardada con éxito en Registro Municipal de Parcelas.`)
+    onSaveParcela(updatedParcela)
+    setEditingRowId(null)
+    setEditRowData(null)
   }
 
   // Acciones administrativas de stand-by
@@ -220,437 +212,33 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   const countMora = parcelas.filter((p) => p.estado === 'en_mora' || (p.saldo_mantenimiento || 0) > 0).length
   const countStandby = parcelas.filter((p) => p.estado === 'standby').length
 
-  const previewNomenclatura = `${formData.sector}-${formData.manzana || '00'}-${formData.numero || '00'}`
-
   return (
-    <div className="grid grid-cols-12 gap-4">
-      {/* Mobile Switcher Banner (<lg) */}
-      <div className="col-span-12 lg:hidden flex items-center bg-surface-container-low p-1 rounded-lg border border-outline-variant shadow-xs">
-        <button
-          type="button"
-          onClick={() => setMobileView('lista')}
-          className={`flex-1 py-2 text-xs font-semibold rounded-md transition-colors flex items-center justify-center gap-1.5 ${
-            mobileView === 'lista'
-              ? 'bg-primary text-on-primary shadow-xs'
-              : 'text-on-surface-variant hover:text-primary'
-          }`}
-        >
-          <span className="material-symbols-outlined text-[16px]">list_alt</span>
-          <span>Padrón Parcelas ({filteredParcelas.length})</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setMobileView('formulario')}
-          className={`flex-1 py-2 text-xs font-semibold rounded-md transition-colors flex items-center justify-center gap-1.5 ${
-            mobileView === 'formulario'
-              ? 'bg-primary text-on-primary shadow-xs'
-              : 'text-on-surface-variant hover:text-primary'
-          }`}
-        >
-          <span className="material-symbols-outlined text-[16px]">{formData.id ? 'edit_note' : 'add_circle'}</span>
-          <span>{formData.id ? 'Ficha / Editar' : 'Nueva Parcela'}</span>
-        </button>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* LEFT COLUMN: Formulario de Carga Ágil de Parcela (Cols 5 en Stitch)       */}
-      {/* ========================================================================= */}
-      <section className={`col-span-12 lg:col-span-5 flex-col gap-3 ${mobileView === 'formulario' ? 'flex' : 'hidden lg:flex'}`}>
-        <div className="bg-surface-container-lowest rounded border border-outline-variant p-4 shadow-sm flex flex-col justify-between">
-          {/* Card Header with Supabase Live Sync Indicator */}
-          <div className="flex items-center justify-between pb-3 border-b border-outline-variant">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-[20px]" data-icon="edit_note">
-                edit_note
-              </span>
-              <h2 className="text-headline-sm font-headline-sm text-on-surface font-semibold">
-                {formData.id ? 'Edición de Parcela Catastral' : 'Registro / Nueva Parcela'}
-              </h2>
-            </div>
-            {/* Supabase Synced Badge */}
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-medium tracking-wide">
-              <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-emerald-500'}`}></span>
-              <span>{isOnline ? 'Supabase Conectado' : 'Almacenamiento Local'}</span>
+    <div className="w-full space-y-4">
+      {/* Search & Filter Toolbar */}
+      <div className="bg-surface-container-lowest rounded border border-outline-variant p-3 shadow-sm flex flex-col gap-2.5">
+        {/* Header de Toolbar: Título + Botón Nueva Parcela */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-outline-variant/60">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-[22px]">domain</span>
+            <div>
+              <h2 className="text-headline-sm font-semibold text-on-surface">Padrón de Parcelas</h2>
+              <p className="text-body-sm text-on-surface-variant">
+                Gestión de parcelas, titulares y asignaciones de fosa
+              </p>
             </div>
           </div>
-
-          {/* Form Body */}
-          <form onSubmit={handleFormSubmit} className="space-y-3.5 mt-3">
-            {/* SECCIÓN: GRUPO TITULAR */}
-            <fieldset className="border border-outline-variant/70 rounded p-3 bg-surface/50">
-              <legend className="text-label-caps font-label-caps text-outline uppercase px-1.5 font-semibold flex items-center gap-1">
-                <span className="material-symbols-outlined text-[14px]" data-icon="person">
-                  person
-                </span>
-                <span>Datos del Titular Responsable</span>
-              </legend>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 mt-1">
-                {/* Nombre y Apellido con autocompletado */}
-                <div className="md:col-span-2">
-                  <label className="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1">
-                    Nombre y Apellido del Titular <span className="text-error">*</span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="input-titular"
-                      type="text"
-                      value={formData.titularNombre}
-                      onChange={(e) => setFormData({ ...formData, titularNombre: e.target.value })}
-                      placeholder="Buscar por apellido o ingresar nuevo..."
-                      className="w-full h-9 px-3 pr-8 text-body-md bg-white border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none"
-                    />
-                    <span
-                      className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]"
-                      data-icon="person_search"
-                    >
-                      person_search
-                    </span>
-                  </div>
-                </div>
-
-                {/* DNI / CUIT */}
-                <div>
-                  <label className="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1">
-                    DNI / CUIT <span className="text-error">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.titularDni}
-                    onChange={(e) => setFormData({ ...formData, titularDni: e.target.value })}
-                    placeholder="20-18452981-4"
-                    className="w-full h-9 px-3 font-code-cadastral text-code-cadastral bg-white border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none"
-                  />
-                </div>
-
-                {/* Teléfono / WhatsApp con prefijo +54 9 */}
-                <div>
-                  <label className="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1">
-                    Teléfono / WhatsApp
-                  </label>
-                  <div className="flex">
-                    <span className="inline-flex items-center px-2.5 h-9 rounded-l border border-r-0 border-outline-variant bg-surface-container-low text-body-sm font-code-cadastral text-outline select-none whitespace-nowrap flex-shrink-0">
-                      +54 9
-                    </span>
-                    <input
-                      type="tel"
-                      value={formData.titularTelefono}
-                      onChange={(e) => setFormData({ ...formData, titularTelefono: e.target.value })}
-                      placeholder="3826 44-8921"
-                      className="w-full h-9 px-3 text-body-md bg-white border border-outline-variant rounded-r focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Domicilio en Chamical */}
-                <div className="md:col-span-2">
-                  <label className="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1">
-                    Domicilio en Chamical / Localidad
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={formData.titularDireccion}
-                      onChange={(e) => setFormData({ ...formData, titularDireccion: e.target.value })}
-                      placeholder="Av. San Martín 452, B° Centro, Chamical"
-                      className="w-full h-9 pl-8 pr-3 text-body-md bg-white border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none"
-                    />
-                    <span
-                      className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]"
-                      data-icon="location_on"
-                    >
-                      location_on
-                    </span>
-                  </div>
-                </div>
-
-                {/* Condición Vital del Titular */}
-                <div className="md:col-span-2 pt-1 flex items-center justify-between bg-surface-container-low p-2 rounded border border-outline-variant/60">
-                  <span className="text-body-sm font-medium text-on-surface">
-                    Condición Vital del Titular:
-                  </span>
-                  <div className="flex items-center gap-3">
-                    <label className="inline-flex items-center gap-1.5 text-body-sm cursor-pointer text-on-surface">
-                      <input
-                        type="radio"
-                        name="titularVital"
-                        value="vivo"
-                        checked={formData.titularEstadoVital === 'vivo'}
-                        onChange={() => setFormData({ ...formData, titularEstadoVital: 'vivo' })}
-                        className="text-primary focus:ring-primary"
-                      />
-                      <span className="text-emerald-800 font-semibold text-xs">Vivo</span>
-                    </label>
-                    <label className="inline-flex items-center gap-1.5 text-body-sm cursor-pointer text-on-surface">
-                      <input
-                        type="radio"
-                        name="titularVital"
-                        value="fallecido"
-                        checked={formData.titularEstadoVital === 'fallecido'}
-                        onChange={() => setFormData({ ...formData, titularEstadoVital: 'fallecido' })}
-                        className="text-slate-700 focus:ring-slate-700"
-                      />
-                      <span className="text-slate-700 font-semibold text-xs">Fallecido</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </fieldset>
-
-            {/* SECCIÓN: GRUPO PARCELA Y CATASTRO */}
-            <fieldset className="border border-outline-variant/70 rounded p-3 bg-surface/50">
-              <legend className="text-label-caps font-label-caps text-outline uppercase px-1.5 font-semibold flex items-center gap-1">
-                <span className="material-symbols-outlined text-[14px]" data-icon="grid_4x4">
-                  grid_4x4
-                </span>
-                <span>Catastro y Fosa (schema.sql)</span>
-              </legend>
-              <div className="space-y-3 mt-1">
-                {/* Selector desplegable de Sector */}
-                <div>
-                  <label className="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1">
-                    Sector del Parque <span className="text-error">*</span>
-                  </label>
-                  <select
-                    id="select-sector"
-                    value={formData.sector}
-                    onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
-                    className="w-full h-9 px-3 text-body-md bg-white border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none"
-                  >
-                    <option value="A">Sector A (Tradicional)</option>
-                    <option value="E">Sector E (Parque Central)</option>
-                    <option value="SALINAS">Sector Salinas (Panteón)</option>
-                  </select>
-                </div>
-
-                {/* Fila/Manzana + Parcela + Nomenclatura Preview */}
-                <div className="grid grid-cols-12 gap-2.5 items-end">
-                  <div className="col-span-3">
-                    <label className="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1">
-                      Fila / Manz.
-                    </label>
-                    <input
-                      id="input-fila"
-                      type="text"
-                      value={formData.manzana}
-                      onChange={(e) => setFormData({ ...formData, manzana: e.target.value })}
-                      placeholder="25"
-                      className="w-full h-9 px-3 font-code-cadastral text-code-cadastral text-center bg-white border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none"
-                    />
-                  </div>
-                  <div className="col-span-3">
-                    <label className="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1">
-                      N° Parcela
-                    </label>
-                    <input
-                      id="input-parcela"
-                      type="text"
-                      value={formData.numero}
-                      onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
-                      placeholder="96"
-                      className="w-full h-9 px-3 font-code-cadastral text-code-cadastral text-center bg-white border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none"
-                    />
-                  </div>
-                  {/* Dynamic Nomenclature Box (Stitch Verbatim) */}
-                  <div className="col-span-6 bg-surface-container border border-primary/20 rounded p-1.5 flex flex-col justify-center items-center h-9">
-                    <span className="text-[10px] text-primary uppercase font-bold tracking-wider leading-none">
-                      Parcela Oficial
-                    </span>
-                    <span
-                      id="preview-nomenclatura"
-                      className="font-code-cadastral text-[14px] font-bold text-primary tracking-wide"
-                    >
-                      {previewNomenclatura}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Capacidad Total de la Fosa (Segmented Control Stitch Verbatim) */}
-                <div>
-                  <label className="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1.5">
-                    Capacidad Total de la Fosa (Niveles Superpuestos)
-                  </label>
-                  <div className="grid grid-cols-3 gap-1.5 p-1 bg-surface-container-high rounded border border-outline-variant">
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, capacidad: 1 })}
-                      className={`flex items-center justify-center py-1.5 px-2 rounded cursor-pointer transition-all text-body-sm ${
-                        formData.capacidad === 1
-                          ? 'bg-white text-primary font-semibold shadow-sm'
-                          : 'text-on-surface-variant hover:text-on-surface'
-                      }`}
-                    >
-                      <span>1 Nivel</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, capacidad: 2 })}
-                      className={`flex items-center justify-center py-1.5 px-2 rounded cursor-pointer transition-all text-body-sm ${
-                        formData.capacidad === 2
-                          ? 'bg-white text-primary font-semibold shadow-sm'
-                          : 'text-on-surface-variant hover:text-on-surface'
-                      }`}
-                    >
-                      <span>2 Niveles</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, capacidad: 3 })}
-                      className={`flex items-center justify-center py-1.5 px-2 rounded cursor-pointer transition-all text-body-sm ${
-                        formData.capacidad === 3
-                          ? 'bg-white text-primary font-semibold shadow-sm'
-                          : 'text-on-surface-variant hover:text-on-surface'
-                      }`}
-                    >
-                      <span className="truncate">3 Niv. (Familiar)</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </fieldset>
-
-            {/* SECCIÓN: ESTADO DE LA PARCELA & SALDO */}
-            <fieldset className="border border-outline-variant/70 rounded p-3 bg-surface/50">
-              <legend className="text-label-caps font-label-caps text-outline uppercase px-1.5 font-semibold flex items-center gap-1">
-                <span className="material-symbols-outlined text-[14px]" data-icon="flag">
-                  flag
-                </span>
-                <span>Estado Administrativo & Aranceles</span>
-              </legend>
-              {/* Badges de Estado Seleccionables */}
-              <div className="mb-3">
-                <label className="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1.5">
-                  Estado Operativo Actual
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, estado: 'disponible' })}
-                    className={`py-1 px-2 rounded text-body-sm font-medium transition-all text-center ${
-                      formData.estado === 'disponible'
-                        ? 'border-2 border-emerald-600 bg-emerald-600 text-white shadow-sm font-semibold'
-                        : 'border border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:border-secondary'
-                    }`}
-                  >
-                    Disponible
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, estado: 'ocupada' })}
-                    className={`py-1 px-2 rounded text-body-sm font-medium transition-all text-center ${
-                      formData.estado === 'ocupada'
-                        ? 'border-2 border-primary bg-primary text-on-primary shadow-sm font-semibold'
-                        : 'border border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:border-secondary'
-                    }`}
-                  >
-                    Ocupada
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, estado: 'en_mora' })}
-                    className={`py-1 px-2 rounded text-body-sm font-medium transition-all text-center ${
-                      formData.estado === 'en_mora'
-                        ? 'border-2 border-amber-600 bg-amber-600 text-white shadow-sm font-semibold'
-                        : 'border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
-                    }`}
-                  >
-                    En Mora
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, estado: 'baja' })}
-                    className={`py-1 px-2 rounded text-body-sm font-medium transition-all text-center ${
-                      formData.estado === 'baja'
-                        ? 'border-2 border-red-600 bg-red-600 text-white shadow-sm font-semibold'
-                        : 'border border-red-300 bg-red-50 text-red-800 hover:bg-red-100'
-                    }`}
-                  >
-                    Baja / Litigio
-                  </button>
-                </div>
-              </div>
-
-              {/* Saldo de Mantenimiento ($ ARS) */}
-              <div>
-                <label className="block text-body-sm font-body-sm font-medium text-on-surface-variant mb-1">
-                  Saldo de Mantenimiento Cuatrimestral ($ ARS)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-code-cadastral text-outline font-semibold">
-                    $
-                  </span>
-                  <input
-                    type="number"
-                    value={formData.saldo}
-                    onChange={(e) => setFormData({ ...formData, saldo: parseFloat(e.target.value) || 0 })}
-                    className="w-full h-9 pl-7 pr-20 font-code-cadastral text-headline-sm font-semibold text-primary bg-white border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none"
-                  />
-                  <span
-                    className={`absolute right-3 top-1/2 -translate-y-1/2 text-body-sm px-1.5 py-0.5 rounded border ${
-                      formData.saldo <= 0
-                        ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                        : 'text-amber-700 bg-amber-50 border-amber-200'
-                    }`}
-                  >
-                    {formData.saldo <= 0 ? 'Al día' : 'En Mora'}
-                  </span>
-                </div>
-              </div>
-            </fieldset>
-
-            {/* Bottom Actions Buttons */}
-            <div className="pt-2 flex items-center justify-between border-t border-outline-variant">
-              {formData.id && onDeleteParcela ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (
-                      confirm(
-                        `¿Confirma eliminar o dar de baja la parcela ${formData.sector}-${formData.manzana}-${formData.numero}?`
-                      )
-                    ) {
-                      onDeleteParcela(formData.id)
-                      handleResetForm()
-                    }
-                  }}
-                  className="h-9 px-3 rounded text-body-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors flex items-center gap-1"
-                >
-                  <span className="material-symbols-outlined text-[16px]" data-icon="delete">
-                    delete
-                  </span>
-                  <span>Dar de Baja</span>
-                </button>
-              ) : (
-                <div></div>
-              )}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleResetForm}
-                  className="h-9 px-4 rounded text-body-md font-medium bg-surface-container-lowest border border-outline-variant text-on-surface hover:bg-surface-container-low transition-colors active:scale-[0.99]"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="h-9 px-5 rounded text-body-md font-semibold bg-primary hover:bg-secondary text-on-primary transition-colors flex items-center gap-1.5 shadow-sm active:scale-[0.99]"
-                >
-                  <span className="material-symbols-outlined text-[18px]" data-icon="save">
-                    save
-                  </span>
-                  <span>{formData.id ? 'Actualizar Parcela' : 'Guardar Parcela'}</span>
-                </button>
-              </div>
-            </div>
-          </form>
+          {onNuevaParcela && (
+            <button
+              id="btn-nueva-parcela"
+              type="button"
+              onClick={onNuevaParcela}
+              className="h-8 px-3.5 bg-primary text-on-primary hover:bg-primary/90 font-semibold text-xs rounded-lg flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px]">add_circle</span>
+              <span>Nueva Parcela</span>
+            </button>
+          )}
         </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* RIGHT COLUMN: Listado y Catastro con Vista Rápida (Cols 7 en Stitch)      */}
-      {/* ========================================================================= */}
-      <section className={`col-span-12 lg:col-span-7 flex-col gap-3 ${mobileView === 'lista' ? 'flex' : 'hidden lg:flex'}`}>
-        {/* Search & Filter Toolbar */}
-        <div className="bg-surface-container-lowest rounded border border-outline-variant p-3 shadow-sm flex flex-col gap-2.5">
           {/* Filter Tabs / Sector Chips - Scrollable on mobile */}
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-1 overflow-x-auto custom-scroll pb-1 w-full sm:w-auto">
@@ -809,7 +397,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
         <div className="bg-surface-container-lowest rounded border border-outline-variant shadow-sm flex flex-col overflow-hidden">
           <div className="px-3 py-2 bg-surface-container-low border-b border-outline-variant flex items-center justify-between">
             <span className="text-label-caps font-label-caps text-outline uppercase font-semibold">
-              Listado Catastral Dinámico
+              Listado de Parcelas Dinámico
             </span>
             <span className="text-[11px] text-outline">
               {filteredParcelas.length} parcelas listadas
@@ -820,8 +408,119 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
           <div className="md:hidden divide-y divide-outline-variant/40 p-2.5 space-y-3 max-h-[500px] overflow-y-auto custom-scroll">
             {displayedParcelas.map((p) => {
               const isSelected = p.id === selectedParcela?.id
+              const isEditing = editingRowId === p.id && editRowData
               const ocupados = p.espacios_ocupados || (p.estado === 'ocupada' || p.estado === 'en_mora' ? 1 : 0)
               const totalNiveles = p.capacidad_total || 3
+
+              if (isEditing) {
+                return (
+                  <div
+                    key={p.id}
+                    className="p-3 rounded-lg border-2 border-primary bg-primary/5 shadow-sm flex flex-col gap-2.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-code-cadastral font-bold text-primary text-base">
+                        {p.nomenclatura}
+                      </span>
+                      <span className="text-[11px] font-semibold text-primary uppercase">
+                        Edición en Línea
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 text-xs">
+                      <div>
+                        <label className="text-[10px] text-outline font-medium block mb-0.5">Nombre Titular:</label>
+                        <input
+                          type="text"
+                          value={editRowData.titularNombre}
+                          onChange={(e) => setEditRowData({ ...editRowData, titularNombre: e.target.value })}
+                          placeholder="Nombre del Titular"
+                          className="w-full text-xs font-semibold px-2 py-1 rounded border border-primary bg-surface"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] text-outline font-medium block mb-0.5">DNI:</label>
+                          <input
+                            type="text"
+                            value={editRowData.titularDni}
+                            onChange={(e) => setEditRowData({ ...editRowData, titularDni: e.target.value })}
+                            placeholder="DNI Titular"
+                            className="w-full text-xs px-2 py-1 rounded border border-outline-variant bg-surface font-code-cadastral"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-outline font-medium block mb-0.5">Condición Vital:</label>
+                          <select
+                            value={editRowData.titularEstadoVital}
+                            onChange={(e) => setEditRowData({ ...editRowData, titularEstadoVital: e.target.value as any })}
+                            className="w-full text-xs px-1.5 py-1 rounded border border-outline-variant bg-surface font-medium"
+                          >
+                            <option value="vivo">Vivo</option>
+                            <option value="fallecido">Fallecido</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-[10px] text-outline font-medium block mb-0.5">Capacidad:</label>
+                          <select
+                            value={editRowData.capacidad_total}
+                            onChange={(e) => setEditRowData({ ...editRowData, capacidad_total: Number(e.target.value) })}
+                            className="w-full text-xs px-1 py-1 rounded border border-outline-variant bg-surface font-medium"
+                          >
+                            <option value={1}>1 nivel</option>
+                            <option value={2}>2 niveles</option>
+                            <option value={3}>3 niveles</option>
+                            <option value={4}>4 niveles</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-outline font-medium block mb-0.5">Estado:</label>
+                          <select
+                            value={editRowData.estado}
+                            onChange={(e) => setEditRowData({ ...editRowData, estado: e.target.value as any })}
+                            className="w-full text-xs px-1 py-1 rounded border border-outline-variant bg-surface font-semibold"
+                          >
+                            <option value="disponible">Disponible</option>
+                            <option value="ocupada">Ocupada</option>
+                            <option value="en_mora">En Mora</option>
+                            <option value="standby">Stand-by</option>
+                            <option value="baja">Baja</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-outline font-medium block mb-0.5">Saldo ($):</label>
+                          <input
+                            type="number"
+                            value={editRowData.saldo_mantenimiento}
+                            onChange={(e) => setEditRowData({ ...editRowData, saldo_mantenimiento: Number(e.target.value) })}
+                            className="w-full text-xs px-1 py-1 rounded border border-outline-variant bg-surface font-code-cadastral text-right"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-outline-variant">
+                      <button
+                        type="button"
+                        onClick={cancelEditRow}
+                        className="px-3 py-1.5 rounded text-xs font-semibold bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant"
+                      >
+                        Cancelar ✕
+                      </button>
+                      <button
+                        type="button"
+                        onClick={saveEditRow}
+                        className="px-3 py-1.5 rounded text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 shadow-xs"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">check</span>
+                        <span>Guardar ✓</span>
+                      </button>
+                    </div>
+                  </div>
+                )
+              }
 
               return (
                 <div
@@ -956,12 +655,10 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                         <>
                           <button
                             type="button"
-                            onClick={() => {
-                              handleSelectParcela(p)
-                              setMobileView('formulario')
-                            }}
+                            id={`btn-editar-parcela-m-${p.id}`}
+                            onClick={() => startEditRow(p)}
                             className="h-8 px-2.5 rounded bg-surface-container hover:bg-surface-container-high text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant"
-                            title="Ver y editar ficha"
+                            title="Editar en la misma tabla"
                           >
                             <span className="material-symbols-outlined text-[15px]">edit</span>
                             <span>Editar</span>
@@ -1016,9 +713,130 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               <tbody className="divide-y divide-outline-variant/40 text-body-sm font-body-sm">
                 {displayedParcelas.map((p) => {
                   const isSelected = p.id === selectedParcela?.id
+                  const isEditing = editingRowId === p.id && editRowData
                   const ocupados =
                     p.espacios_ocupados || (p.estado === 'ocupada' || p.estado === 'en_mora' ? 1 : 0)
                   const totalNiveles = p.capacidad_total || 3
+
+                  if (isEditing) {
+                    return (
+                      <tr
+                        key={p.id}
+                        className="bg-primary/5 border-l-4 border-l-primary"
+                      >
+                        {/* Nomenclatura */}
+                        <td className="py-2.5 px-3">
+                          <span className="font-code-cadastral text-code-cadastral font-bold block text-primary">
+                            {p.nomenclatura}
+                          </span>
+                          <span className="text-[11px] text-outline">
+                            Sec. {p.sector_id === 'SALINAS' ? 'Salinas (Panteón)' : p.sector_id === 'A' ? 'Tradicional' : 'Parque Central'}
+                          </span>
+                        </td>
+
+                        {/* Titular Editable */}
+                        <td className="py-2 px-3">
+                          <div className="space-y-1 max-w-[220px]">
+                            <input
+                              type="text"
+                              value={editRowData.titularNombre}
+                              onChange={(e) => setEditRowData({ ...editRowData, titularNombre: e.target.value })}
+                              placeholder="Nombre Titular"
+                              className="w-full text-xs font-semibold px-2 py-1 rounded border border-primary bg-surface focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="text"
+                                value={editRowData.titularDni}
+                                onChange={(e) => setEditRowData({ ...editRowData, titularDni: e.target.value })}
+                                placeholder="DNI"
+                                className="w-24 text-[11px] px-1.5 py-0.5 rounded border border-outline-variant bg-surface font-code-cadastral"
+                              />
+                              <select
+                                value={editRowData.titularEstadoVital}
+                                onChange={(e) => setEditRowData({ ...editRowData, titularEstadoVital: e.target.value as any })}
+                                className="text-[11px] px-1 py-0.5 rounded border border-outline-variant bg-surface font-medium"
+                              >
+                                <option value="vivo">Vivo</option>
+                                <option value="fallecido">Fallecido</option>
+                              </select>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Capacidad Editable */}
+                        <td className="py-2 px-3 text-center">
+                          <div className="inline-flex flex-col items-center">
+                            <span className="text-[10px] text-outline mb-0.5">Capacidad</span>
+                            <select
+                              value={editRowData.capacidad_total}
+                              onChange={(e) => setEditRowData({ ...editRowData, capacidad_total: Number(e.target.value) })}
+                              className="text-xs px-1.5 py-0.5 rounded border border-outline-variant bg-surface font-medium"
+                            >
+                              <option value={1}>1 Nivel</option>
+                              <option value={2}>2 Niveles</option>
+                              <option value={3}>3 Niveles</option>
+                              <option value={4}>4 Niveles</option>
+                            </select>
+                          </div>
+                        </td>
+
+                        {/* Estado Editable */}
+                        <td className="py-2 px-3">
+                          <select
+                            value={editRowData.estado}
+                            onChange={(e) => setEditRowData({ ...editRowData, estado: e.target.value as any })}
+                            className="text-xs px-2 py-1 rounded border border-outline-variant bg-surface font-semibold"
+                          >
+                            <option value="disponible">Disponible</option>
+                            <option value="ocupada">Ocupada</option>
+                            <option value="en_mora">En Mora</option>
+                            <option value="standby">Stand-by</option>
+                            <option value="baja">Baja</option>
+                          </select>
+                        </td>
+
+                        {/* Saldo Editable */}
+                        <td className="py-2 px-3 text-right">
+                          <div className="inline-flex items-center justify-end gap-1">
+                            <span className="text-xs text-outline">$</span>
+                            <input
+                              type="number"
+                              value={editRowData.saldo_mantenimiento}
+                              onChange={(e) => setEditRowData({ ...editRowData, saldo_mantenimiento: Number(e.target.value) })}
+                              className="w-20 text-xs text-right px-1.5 py-1 rounded border border-outline-variant bg-surface font-code-cadastral font-semibold"
+                            />
+                          </div>
+                        </td>
+
+                        {/* Acciones Guardar / Cancelar */}
+                        <td className="py-2.5 px-2 text-center" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              type="button"
+                              id={`btn-guardar-parcela-${p.id}`}
+                              onClick={saveEditRow}
+                              title="Guardar cambios en línea"
+                              className="px-2 py-1 rounded text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-0.5 shadow-xs cursor-pointer"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">check</span>
+                              <span>Guardar</span>
+                            </button>
+                            <button
+                              type="button"
+                              id={`btn-cancelar-parcela-${p.id}`}
+                              onClick={cancelEditRow}
+                              title="Cancelar edición"
+                              className="px-2 py-1 rounded text-[11px] font-semibold bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant flex items-center gap-0.5 cursor-pointer"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">close</span>
+                              <span>Cancelar</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  }
 
                   return (
                     <tr
@@ -1154,6 +972,16 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                             <>
                               <button
                                 type="button"
+                                id={`btn-editar-parcela-${p.id}`}
+                                onClick={() => startEditRow(p)}
+                                title="Modificar directamente en la tabla"
+                                className="h-7 px-2 rounded hover:bg-surface-container text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant/60"
+                              >
+                                <span className="material-symbols-outlined text-[15px]">edit</span>
+                                <span>Editar</span>
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => onCobrarQR(p)}
                                 title="Cobrar mantenimiento con QR"
                                 className="w-7 h-7 inline-flex items-center justify-center rounded hover:bg-surface-container text-primary"
@@ -1165,7 +993,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                               <button
                                 type="button"
                                 onClick={() => handleSelectParcela(p)}
-                                title="Cargar y editar ficha"
+                                title="Ver detalle de difuntos"
                                 className="w-7 h-7 inline-flex items-center justify-center rounded hover:bg-surface-container text-outline"
                               >
                                 <span className="material-symbols-outlined text-[18px]" data-icon="visibility">
@@ -1475,7 +1303,6 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
             </div>
           </div>
         )}
-      </section>
     </div>
   )
 }

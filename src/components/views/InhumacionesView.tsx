@@ -8,6 +8,7 @@ interface InhumacionesViewProps {
   onRegistrarInhumacion: (datos: Partial<Inhumacion>) => void
   onEliminarInhumacion?: (id: string) => void
   onVerParcela?: (nomenclatura: string) => void
+  onNuevaInhumacion?: () => void
 }
 
 export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
@@ -16,6 +17,7 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
   onRegistrarInhumacion,
   onEliminarInhumacion,
   onVerParcela,
+  onNuevaInhumacion,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterProtocol, setFilterProtocol] = useState<'all' | 'covid' | 'standard' | 'judicial'>('all')
@@ -30,51 +32,67 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
     folio: 148,
   })
 
-  // Form State
-  const [formParcela, setFormParcela] = useState('A-25-96')
-  const [formDifunto, setFormDifunto] = useState('Vázquez Donoso, Marcelo Ignacio')
-  const [formDni, setFormDni] = useState('17.432.890')
-  const [formFechaDefuncion, setFormFechaDefuncion] = useState('2026-03-28')
-  const [formFechaInhumacion, setFormFechaInhumacion] = useState('2026-03-30T10:30')
-  const [formNivel, setFormNivel] = useState(2)
-  const [formEsCovid, setFormEsCovid] = useState(true)
-  const [formFunebrera, setFormFunebrera] = useState('Servicios Sociales Chamical - Mat. Fun. 104-A')
-  const [formNotas, setFormNotas] = useState(
-    'Acta médica certifica COVID-19 confirmado. Féretro metálico estanco de 1.2mm con faja judicial de sellado.'
-  )
+  // Estado de edición en línea en la misma tabla
+  const [editingRowId, setEditingRowId] = useState<string | null>(null)
+  const [editRowData, setEditRowData] = useState<{
+    id: string
+    nombre_difunto: string
+    fecha_inhumacion: string
+    parcela: string
+    nivel_posicion: number
+    es_covid: boolean
+    causa_defuncion: string
+    empresa_funebrera: string
+  } | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formDifunto.trim()) {
-      alert('Por favor ingrese el nombre completo del difunto.')
+  const startEditRow = (inh: Inhumacion) => {
+    const parcNom = (typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : (inh.parcela || '')) || ''
+    setEditingRowId(inh.id)
+    setEditRowData({
+      id: inh.id,
+      nombre_difunto: inh.nombre_difunto || '',
+      fecha_inhumacion: inh.fecha_inhumacion?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+      parcela: parcNom,
+      nivel_posicion: inh.nivel_posicion || 1,
+      es_covid: !!inh.es_covid,
+      causa_defuncion: inh.causa_defuncion || 'Causa Natural',
+      empresa_funebrera: inh.empresa_funebrera || '',
+    })
+  }
+
+  const cancelEditRow = () => {
+    setEditingRowId(null)
+    setEditRowData(null)
+  }
+
+  const saveEditRow = () => {
+    if (!editRowData) return
+    if (!editRowData.nombre_difunto.trim()) {
+      alert('Por favor ingrese el nombre del difunto.')
       return
     }
 
-    const nuevaInh: Partial<Inhumacion> = {
-      nombre_difunto: formDifunto,
-      fecha_fallecimiento: formFechaDefuncion,
-      fecha_inhumacion: formFechaInhumacion,
-      nivel_posicion: formNivel,
-      es_covid: formEsCovid,
-      causa_defuncion: formEsCovid ? 'COVID-19 / Falla Multiorgánica' : 'Paro Cardiorrespiratorio',
-      empresa_funebrera: formFunebrera,
+    const updatedInh: Partial<Inhumacion> = {
+      id: editRowData.id,
+      nombre_difunto: editRowData.nombre_difunto.trim(),
+      fecha_inhumacion: editRowData.fecha_inhumacion,
+      nivel_posicion: Number(editRowData.nivel_posicion) || 1,
+      es_covid: editRowData.es_covid,
+      causa_defuncion: editRowData.causa_defuncion,
+      empresa_funebrera: editRowData.empresa_funebrera,
       parcela: {
         id: `parc-${Date.now()}`,
-        nomenclatura: formParcela,
+        nomenclatura: editRowData.parcela,
         capacidad_total: 3,
-        espacios_ocupados: formNivel,
+        espacios_ocupados: Number(editRowData.nivel_posicion) || 1,
         estado: 'ocupada',
         saldo_mantenimiento: 0,
       },
     }
 
-    onRegistrarInhumacion(nuevaInh)
-    alert(`Inhumación de ${formDifunto} registrada con éxito en el Libro Digital Oficial.`)
-    setActaModal({
-      isOpen: true,
-      inhumacion: nuevaInh as Inhumacion,
-      folio: inhumaciones.length + 148,
-    })
+    onRegistrarInhumacion(updatedInh)
+    setEditingRowId(null)
+    setEditRowData(null)
   }
 
   // Filtrado
@@ -132,324 +150,31 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
       </div>
 
       {/* ===================================================================== */}
-      {/* REGISTRATION CARD (Stitch Verbatim)                                   */}
+      {/* HEADER BAR CON BOTÓN MODAL PARA NUEVA INHUMACIÓN                     */}
       {/* ===================================================================== */}
-      <section className="bg-surface-container-lowest border border-outline-variant rounded-lg p-5 shadow-[0_1px_2px_0_rgba(15,23,42,0.04)]">
-        {/* Header of Form */}
-        <div className="flex items-start justify-between pb-4 mb-4 border-b border-outline-variant/50">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-primary/10 text-primary flex items-center justify-center">
-              <span
-                className="material-symbols-outlined text-[20px]"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                note_add
-              </span>
-            </div>
-            <div>
-              <h2 className="text-headline-sm font-headline-sm text-on-surface font-bold tracking-tight">
-                Registro de Nueva Inhumación en Fosa / Parcela
-              </h2>
-              <p className="text-body-sm font-body-sm text-on-surface-variant">
-                Completar los recaudos de defunción conforme a Ley Sanitaria 4.120 y Ordenanza Funeraria Municipal.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-label-caps font-label-caps text-outline uppercase bg-surface-container-low px-2 py-1 rounded">
-              Expediente: #INH-2026-0891
-            </span>
-          </div>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-surface-container-lowest border border-outline-variant rounded-lg p-4 shadow-[0_1px_2px_0_rgba(15,23,42,0.04)]">
+        <div>
+          <h2 className="text-headline-sm font-headline-sm text-on-surface font-bold tracking-tight flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-[24px]">history_edu</span>
+            <span>Libro Digital de Inhumaciones y Actas</span>
+          </h2>
+          <p className="text-body-sm text-outline mt-0.5">
+            Registro oficial y legajo histórico de defunciones e inhumaciones en parcelas municipales.
+          </p>
         </div>
 
-        {/* Form Layout aligned with schema.sql */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Row 1: Parcela, Difunto, DNI */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            {/* Parcela Destino con autocompletado y validación */}
-            <div className="md:col-span-4 flex flex-col gap-1">
-              <label className="text-label-caps font-label-caps text-on-surface flex items-center justify-between">
-                <span>
-                  Parcela Destino (Predictivo Catastral) <span className="text-error">*</span>
-                </span>
-                <span className="text-emerald-700 font-code-cadastral text-[11px] font-bold flex items-center gap-0.5">
-                  <span className="material-symbols-outlined text-[13px]">check_circle</span> DISPONIBLE
-                </span>
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={formParcela}
-                  onChange={(e) => setFormParcela(e.target.value)}
-                  className="w-full h-[36px] px-3 font-code-cadastral text-code-cadastral bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none uppercase font-semibold text-primary"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (onVerParcela) onVerParcela(formParcela)
-                  }}
-                  title="Seleccionar en plano de parcelas"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-2 text-[11px] font-label-caps bg-surface-container-low text-primary rounded hover:bg-surface-container flex items-center gap-1 border border-outline-variant/60"
-                >
-                  <span className="material-symbols-outlined text-[14px]">map</span> Plano
-                </button>
-              </div>
-              <p className="text-[11px] text-emerald-800 bg-emerald-50 px-2 py-1 rounded border border-emerald-200 mt-0.5">
-                Capacidad: <strong>Nivel {formNivel} libre</strong> de 3 niveles en fosa común/familiar.
-              </p>
-            </div>
-
-            {/* Nombre Completo del Difunto */}
-            <div className="md:col-span-5 flex flex-col gap-1">
-              <label className="text-label-caps font-label-caps text-on-surface">
-                Nombre Completo del Difunto (nombre_difunto) <span className="text-error">*</span>
-              </label>
-              <input
-                type="text"
-                value={formDifunto}
-                onChange={(e) => setFormDifunto(e.target.value)}
-                placeholder="Ej. Gómez Miranda, Roberto Carlos"
-                className="w-full h-[36px] px-3 text-body-md font-body-md bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-on-surface"
-              />
-              <span className="text-[10px] text-outline">Identidad cotejada con acta RENAPER / Registro Civil.</span>
-            </div>
-
-            {/* DNI del Fallecido */}
-            <div className="md:col-span-3 flex flex-col gap-1">
-              <label className="text-label-caps font-label-caps text-on-surface">
-                DNI del Fallecido <span className="text-error">*</span>
-              </label>
-              <input
-                type="text"
-                value={formDni}
-                onChange={(e) => setFormDni(e.target.value)}
-                placeholder="Ej. 17.432.890"
-                className="w-full h-[36px] px-3 font-code-cadastral text-code-cadastral bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-on-surface"
-              />
-              <span className="text-[10px] text-outline">Cédula de Identidad / Matrícula</span>
-            </div>
-          </div>
-
-          {/* Row 2: Fechas, Nivel en Fosa */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            {/* Fecha de Defunción */}
-            <div className="md:col-span-3 flex flex-col gap-1">
-              <label className="text-label-caps font-label-caps text-on-surface">
-                Fecha de Defunción <span className="text-error">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={formFechaDefuncion}
-                  onChange={(e) => setFormFechaDefuncion(e.target.value)}
-                  className="w-full h-[36px] px-3 text-body-md font-body-md bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-on-surface"
-                />
-              </div>
-            </div>
-
-            {/* Fecha y Hora de Inhumación */}
-            <div className="md:col-span-4 flex flex-col gap-1">
-              <label className="text-label-caps font-label-caps text-on-surface">
-                Fecha y Hora de Inhumación (fecha_inhumacion) <span className="text-error">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="datetime-local"
-                  value={formFechaInhumacion}
-                  onChange={(e) => setFormFechaInhumacion(e.target.value)}
-                  className="w-full h-[36px] px-3 text-body-md font-body-md bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-on-surface"
-                />
-              </div>
-            </div>
-
-            {/* Selector de Nivel Ocupado en la Fosa (Stitch Verbatim) */}
-            <div className="md:col-span-5 flex flex-col gap-1">
-              <label className="text-label-caps font-label-caps text-on-surface">
-                Nivel Asignado en Fosa / Panteón <span className="text-error">*</span>
-              </label>
-              <div className="grid grid-cols-3 gap-1.5 h-[36px]">
-                <button
-                  type="button"
-                  onClick={() => setFormNivel(1)}
-                  className={`rounded flex items-center justify-center px-1 text-[11px] font-medium transition-all ${
-                    formNivel === 1
-                      ? 'border-2 border-primary bg-primary/5 text-primary font-semibold shadow-xs'
-                      : 'border border-outline-variant bg-surface-container-lowest text-on-surface hover:bg-surface-container-low'
-                  }`}
-                >
-                  <span>Nivel 1 (Base)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormNivel(2)}
-                  className={`rounded flex items-center justify-center px-1 text-[11px] font-semibold transition-all ${
-                    formNivel === 2
-                      ? 'border-2 border-primary bg-primary/5 text-primary shadow-xs'
-                      : 'border border-outline-variant bg-surface-container-lowest text-on-surface hover:bg-surface-container-low'
-                  }`}
-                >
-                  <span className="flex items-center gap-1">
-                    <span
-                      className="material-symbols-outlined text-[13px]"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
-                      check_box
-                    </span>
-                    <span>Niv. 2 (Libre)</span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormNivel(3)}
-                  className={`rounded flex items-center justify-center px-1 text-[11px] font-medium transition-all ${
-                    formNivel === 3
-                      ? 'border-2 border-primary bg-primary/5 text-primary font-semibold shadow-xs'
-                      : 'border border-outline-variant bg-surface-container-lowest text-on-surface hover:bg-surface-container-low'
-                  }`}
-                >
-                  <span>Niv. 3 (Superior)</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Row 3: Biosecurity Banner & COVID Switch (Prominent Violet Badge Stitch Verbatim) */}
-          <div className="p-3 bg-[#F5F3FF] border-2 border-[#7C3AED] rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded bg-[#7C3AED] text-white flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span
-                  className="material-symbols-outlined text-[20px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  biotech
-                </span>
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold tracking-wider px-2 py-0.5 rounded bg-[#7C3AED] text-white uppercase font-label-caps">
-                    Alerta Sanitaria Biosegura
-                  </span>
-                  <label
-                    htmlFor="check-covid"
-                    className="text-body-md font-bold text-[#5B21B6] cursor-pointer select-none"
-                  >
-                    [X] Fallecido por COVID-19 / Protocolo Especial Sanitario (es_covid)
-                  </label>
-                </div>
-                <p className="text-body-sm text-[#5B21B6] mt-0.5">
-                  Obligatoriedad: Féretro herméticamente sellado de fábrica con soldadura de plomo/cinc, desinfección
-                  Nivel IV y no apertura de tapa mortuoria.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <input
-                id="check-covid"
-                type="checkbox"
-                checked={formEsCovid}
-                onChange={(e) => setFormEsCovid(e.target.checked)}
-                className="w-5 h-5 rounded text-[#7C3AED] border-[#7C3AED] focus:ring-[#7C3AED] focus:ring-offset-0 cursor-pointer"
-              />
-              <label htmlFor="check-covid" className="text-label-caps font-label-caps text-[#5B21B6] font-semibold cursor-pointer">
-                Protocolo Activado
-              </label>
-            </div>
-          </div>
-
-          {/* Row 4: Empresa Fúnebre y Notas Sanitarias */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            {/* Empresa Fúnebre Interviniente */}
-            <div className="md:col-span-5 flex flex-col gap-1">
-              <label className="text-label-caps font-label-caps text-on-surface">
-                Empresa Fúnebre Interviniente <span className="text-error">*</span>
-              </label>
-              <input
-                type="text"
-                list="empresas-funebreras-list"
-                value={formFunebrera}
-                onChange={(e) => setFormFunebrera(e.target.value)}
-                placeholder="Ingrese nombre de la empresa fúnebre..."
-                className="w-full h-[36px] px-3 text-body-md font-body-md bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-on-surface"
-              />
-              <datalist id="empresas-funebreras-list">
-                <option value="Servicios Sociales Chamical - Mat. Fun. 104-A" />
-                <option value="Cochería La Rioja Integral - Mat. Fun. 042-C" />
-                <option value="Empresa Fúnebre San Pedro - Mat. Fun. 018-B" />
-                <option value="Aeterna Sepelios" />
-                <option value="Traslado de Oficio Municipal de Salud" />
-              </datalist>
-              <span className="text-[10px] text-outline">
-                Ingrese libremente el nombre o seleccione una sugerencia frecuente.
-              </span>
-            </div>
-
-            {/* Notas Sanitarias / Disposiciones Funerarias */}
-            <div className="md:col-span-7 flex flex-col gap-1">
-              <label className="text-label-caps font-label-caps text-on-surface">
-                Notas Sanitarias / Disposiciones Funerarias
-              </label>
-              <input
-                type="text"
-                value={formNotas}
-                onChange={(e) => setFormNotas(e.target.value)}
-                placeholder="Ej. Certificado de defunción N° 8491-B con aislamiento preventivo"
-                className="w-full h-[36px] px-3 text-body-md font-body-md bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-on-surface"
-              />
-              <span className="text-[10px] text-outline">
-                Anotaciones legibles y transferibles a la orden de exhumación o traslado.
-              </span>
-            </div>
-          </div>
-
-          {/* Actions Bar */}
-          <div className="pt-3 border-t border-outline-variant/50 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-body-sm text-outline">
-              <span className="material-symbols-outlined text-[16px] text-primary">verified_user</span>
-              <span>Validación de firma digital del Registro Civil habilitada.</span>
-            </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-              <button
-                type="button"
-                onClick={() => {
-                  setActaModal({
-                    isOpen: true,
-                    inhumacion: {
-                      id: 'demo',
-                      nombre_difunto: formDifunto,
-                      fecha_fallecimiento: formFechaDefuncion,
-                      fecha_inhumacion: formFechaInhumacion,
-                      nivel_posicion: formNivel,
-                      es_covid: formEsCovid,
-                      causa_defuncion: formEsCovid ? 'COVID-19' : 'Causa Natural',
-                      empresa_funebrera: formFunebrera,
-                      parcela: {
-                        id: 'demo-p',
-                        nomenclatura: formParcela,
-                        capacidad_total: 3,
-                        espacios_ocupados: formNivel,
-                        estado: 'ocupada',
-                        saldo_mantenimiento: 0,
-                      },
-                    } as Inhumacion,
-                    folio: 148,
-                  })
-                }}
-                className="h-[36px] px-3 bg-surface-container-lowest border border-outline-variant text-on-surface font-title-md text-body-sm rounded hover:bg-surface-container-low transition-colors active:scale-[0.99] flex items-center justify-center gap-1.5 shadow-sm w-full sm:w-auto"
-              >
-                <span className="material-symbols-outlined text-[16px]">print</span>
-                <span>Emitir Acta / Constancia de Sepelio</span>
-              </button>
-              <button
-                type="submit"
-                className="h-[36px] px-4 bg-primary text-surface-container-lowest font-title-md text-body-sm rounded hover:bg-secondary transition-colors active:scale-[0.99] flex items-center justify-center gap-2 shadow-sm font-semibold w-full sm:w-auto"
-              >
-                <span className="material-symbols-outlined text-[16px]">save</span>
-                <span>Registrar Inhumación en Parcela</span>
-              </button>
-            </div>
-          </div>
-        </form>
-      </section>
+        {onNuevaInhumacion && (
+          <button
+            type="button"
+            id="btn-nueva-inhumacion"
+            onClick={onNuevaInhumacion}
+            className="h-[38px] px-4 rounded bg-primary hover:bg-secondary text-white text-body-sm font-semibold inline-flex items-center justify-center gap-1.5 shadow-sm transition-colors shrink-0 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">add_circle</span>
+            <span>+ Nueva Inhumación</span>
+          </button>
+        )}
+      </div>
 
       {/* ===================================================================== */}
       {/* HISTORICAL RECORD & SEARCH (Bottom Region Stitch Verbatim)             */}
@@ -583,11 +308,107 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
             <div className="p-4 text-center text-outline text-sm">No se encontraron actas de inhumación.</div>
           ) : (
             filtered.map((inh, index) => {
+              const isEditing = editingRowId === inh.id && editRowData
               const parcNom = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela
               const fechaInh = inh.fecha_inhumacion?.slice(0, 10) || '2026-03-30'
               const hora = inh.fecha_inhumacion?.includes('T')
                 ? `${inh.fecha_inhumacion.split('T')[1].slice(0, 5)} hs`
                 : '10:30 hs'
+
+              if (isEditing) {
+                return (
+                  <div
+                    key={inh.id}
+                    className="p-3 rounded-lg border-2 border-primary bg-primary/5 shadow-sm flex flex-col gap-2.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-code-cadastral font-bold text-primary text-sm">
+                        Editando Acta #84{90 + index}-B
+                      </span>
+                      <span className="text-[11px] font-semibold text-primary uppercase">
+                        Edición en Línea
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 text-xs">
+                      <div>
+                        <label className="text-[10px] text-outline font-medium block mb-0.5">Nombre Difunto:</label>
+                        <input
+                          type="text"
+                          value={editRowData.nombre_difunto}
+                          onChange={(e) => setEditRowData({ ...editRowData, nombre_difunto: e.target.value })}
+                          className="w-full text-xs font-semibold px-2 py-1 rounded border border-primary bg-surface"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] text-outline font-medium block mb-0.5">Fecha Inhumación:</label>
+                          <input
+                            type="date"
+                            value={editRowData.fecha_inhumacion}
+                            onChange={(e) => setEditRowData({ ...editRowData, fecha_inhumacion: e.target.value })}
+                            className="w-full text-xs px-2 py-1 rounded border border-outline-variant bg-surface font-code-cadastral"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-outline font-medium block mb-0.5">Parcela:</label>
+                          <input
+                            type="text"
+                            value={editRowData.parcela}
+                            onChange={(e) => setEditRowData({ ...editRowData, parcela: e.target.value })}
+                            className="w-full text-xs px-2 py-1 rounded border border-outline-variant bg-surface font-code-cadastral font-bold"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] text-outline font-medium block mb-0.5">Nivel:</label>
+                          <select
+                            value={editRowData.nivel_posicion}
+                            onChange={(e) => setEditRowData({ ...editRowData, nivel_posicion: Number(e.target.value) })}
+                            className="w-full text-xs px-1.5 py-1 rounded border border-outline-variant bg-surface font-medium"
+                          >
+                            <option value={1}>Nivel 1</option>
+                            <option value={2}>Nivel 2</option>
+                            <option value={3}>Nivel 3</option>
+                          </select>
+                        </div>
+                        <div className="flex items-center pt-3">
+                          <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-[#5B21B6]">
+                            <input
+                              type="checkbox"
+                              checked={editRowData.es_covid}
+                              onChange={(e) => setEditRowData({ ...editRowData, es_covid: e.target.checked })}
+                              className="rounded text-[#7C3AED]"
+                            />
+                            COVID-19
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-outline-variant">
+                      <button
+                        type="button"
+                        onClick={cancelEditRow}
+                        className="px-3 py-1.5 rounded text-xs font-semibold bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant"
+                      >
+                        Cancelar ✕
+                      </button>
+                      <button
+                        type="button"
+                        onClick={saveEditRow}
+                        className="px-3 py-1.5 rounded text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 shadow-xs"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">check</span>
+                        <span>Guardar ✓</span>
+                      </button>
+                    </div>
+                  </div>
+                )
+              }
 
               return (
                 <div
@@ -642,6 +463,17 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
 
                   {/* Card Actions */}
                   <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-outline-variant/40 mt-0.5">
+                    <button
+                      type="button"
+                      id={`btn-editar-inhumacion-m-${inh.id}`}
+                      onClick={() => startEditRow(inh)}
+                      className="h-8 px-2.5 rounded bg-surface-container hover:bg-surface-container-high text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant"
+                      title="Editar en la misma tabla"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">edit</span>
+                      <span>Editar</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => {
@@ -704,11 +536,107 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
             </thead>
             <tbody className="divide-y divide-outline-variant/40 text-body-md font-body-md">
               {filtered.map((inh, index) => {
+                const isEditing = editingRowId === inh.id && editRowData
                 const parcNom = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela
                 const fechaInh = inh.fecha_inhumacion?.slice(0, 10) || '2026-03-30'
                 const hora = inh.fecha_inhumacion?.includes('T')
                   ? `${inh.fecha_inhumacion.split('T')[1].slice(0, 5)} hs`
                   : '10:30 hs'
+
+                if (isEditing) {
+                  return (
+                    <tr key={inh.id} className="bg-primary/5 border-l-4 border-l-primary h-[52px]">
+                      {/* Fecha Inhumación Editable */}
+                      <td className="py-1 px-3 whitespace-nowrap">
+                        <input
+                          type="date"
+                          value={editRowData.fecha_inhumacion}
+                          onChange={(e) => setEditRowData({ ...editRowData, fecha_inhumacion: e.target.value })}
+                          className="text-xs px-2 py-1 rounded border border-primary bg-surface font-code-cadastral"
+                        />
+                      </td>
+
+                      {/* Difunto Editable */}
+                      <td className="py-1 px-3">
+                        <div className="space-y-1">
+                          <input
+                            type="text"
+                            value={editRowData.nombre_difunto}
+                            onChange={(e) => setEditRowData({ ...editRowData, nombre_difunto: e.target.value })}
+                            placeholder="Nombre del Difunto"
+                            className="w-full text-xs font-semibold px-2 py-1 rounded border border-primary bg-surface focus:outline-none"
+                          />
+                          <div className="flex items-center gap-3 text-[11px]">
+                            <label className="flex items-center gap-1 cursor-pointer select-none text-[#5B21B6] font-semibold">
+                              <input
+                                type="checkbox"
+                                checked={editRowData.es_covid}
+                                onChange={(e) => setEditRowData({ ...editRowData, es_covid: e.target.checked })}
+                                className="rounded text-[#7C3AED]"
+                              />
+                              COVID-19
+                            </label>
+                            <input
+                              type="text"
+                              value={editRowData.causa_defuncion}
+                              onChange={(e) => setEditRowData({ ...editRowData, causa_defuncion: e.target.value })}
+                              placeholder="Causa defunción"
+                              className="text-[11px] px-1.5 py-0.5 rounded border border-outline-variant bg-surface"
+                            />
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Parcela y Nivel Editable */}
+                      <td className="py-1 px-3 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            value={editRowData.parcela}
+                            onChange={(e) => setEditRowData({ ...editRowData, parcela: e.target.value })}
+                            placeholder="Parcela (ej: A-12-04)"
+                            className="w-24 text-xs font-code-cadastral font-bold px-2 py-1 rounded border border-outline-variant bg-surface"
+                          />
+                          <select
+                            value={editRowData.nivel_posicion}
+                            onChange={(e) => setEditRowData({ ...editRowData, nivel_posicion: Number(e.target.value) })}
+                            className="text-xs px-1.5 py-1 rounded border border-outline-variant bg-surface font-medium"
+                          >
+                            <option value={1}>Nivel 1</option>
+                            <option value={2}>Nivel 2</option>
+                            <option value={3}>Nivel 3</option>
+                          </select>
+                        </div>
+                      </td>
+
+                      {/* Acciones Guardar / Cancelar */}
+                      <td className="py-1 px-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            id={`btn-guardar-inhumacion-${inh.id}`}
+                            onClick={saveEditRow}
+                            className="px-2.5 py-1 rounded text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-0.5 shadow-xs cursor-pointer"
+                            title="Guardar cambios"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">check</span>
+                            <span>Guardar</span>
+                          </button>
+                          <button
+                            type="button"
+                            id={`btn-cancelar-inhumacion-${inh.id}`}
+                            onClick={cancelEditRow}
+                            className="px-2.5 py-1 rounded text-[11px] font-semibold bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant flex items-center gap-0.5 cursor-pointer"
+                            title="Cancelar edición"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">close</span>
+                            <span>Cancelar</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                }
 
                 return (
                   <tr key={inh.id} className="hover:bg-surface-container-low transition-colors h-[40px]">
@@ -738,11 +666,19 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                       </span>
                     </td>
 
-
-
                     {/* Acciones */}
                     <td className="py-1 px-3 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          id={`btn-editar-inhumacion-${inh.id}`}
+                          onClick={() => startEditRow(inh)}
+                          className="h-7 px-2 rounded hover:bg-surface-container text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant/60 cursor-pointer"
+                          title="Editar en la misma tabla"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">edit</span>
+                          <span>Editar</span>
+                        </button>
                         <button
                           type="button"
                           onClick={() => {
