@@ -52,7 +52,7 @@ export const ReciboSeguroFisico: React.FC<ReciboSeguroFisicoProps> = ({
     <div
       className={`relative bg-white border border-slate-900 rounded-none text-slate-900 font-sans shadow-none overflow-hidden flex flex-col justify-between select-none ${
         isA4Grid
-          ? 'p-2.5 sm:p-3 w-full h-[66mm] box-border'
+          ? 'p-2 w-full h-[66mm] box-border'
           : 'p-6 w-full max-w-xl mx-auto min-h-[280px] shadow-sm'
       } ${className}`}
       style={{
@@ -62,9 +62,9 @@ export const ReciboSeguroFisico: React.FC<ReciboSeguroFisicoProps> = ({
       }}
     >
       {/* Marca de Agua Central de Palomas de Alta Fidelidad */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden pt-5">
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden pt-4">
         <PalomasWatermark
-          className={isA4Grid ? 'w-[80%] max-h-[76%]' : 'w-[88%] max-h-[80%]'}
+          className={isA4Grid ? 'w-[78%] max-h-[74%]' : 'w-[88%] max-h-[80%]'}
           opacity="opacity-90"
         />
       </div>
@@ -72,14 +72,14 @@ export const ReciboSeguroFisico: React.FC<ReciboSeguroFisicoProps> = ({
       {/* Contenido Por Encima de la Marca de Agua (z-10) */}
       <div className="relative z-10 flex flex-col justify-between h-full">
         {/* Encabezado Idéntico al Documento Escaneado Oficial */}
-        <div className="text-center pt-0.5 pb-2">
+        <div className="text-center pt-0.5 pb-1">
           <h2
             className={`font-serif font-black tracking-wide uppercase leading-none ${
-              isA4Grid ? 'text-[15px] sm:text-[16px]' : 'text-[20px] sm:text-[22px]'
+              isA4Grid ? 'text-[13px] sm:text-[14px]' : 'text-[20px] sm:text-[22px]'
             }`}
             style={{
               color: '#22338A',
-              letterSpacing: '0.04em',
+              letterSpacing: '0.03em',
               textShadow: '0 0.5px 1px rgba(34, 51, 138, 0.25)',
               printColorAdjust: 'exact',
               WebkitPrintColorAdjust: 'exact',
@@ -88,8 +88,8 @@ export const ReciboSeguroFisico: React.FC<ReciboSeguroFisicoProps> = ({
             CEMENTERIO PARQUE SAN NICOLÁS
           </h2>
           <h3
-            className={`font-sans font-bold tracking-[0.16em] uppercase text-slate-900 mt-1 leading-none ${
-              isA4Grid ? 'text-[9.5px] sm:text-[10.5px]' : 'text-[12px] sm:text-[13px]'
+            className={`font-sans font-bold tracking-[0.14em] uppercase text-slate-900 mt-0.5 leading-none ${
+              isA4Grid ? 'text-[8.5px] sm:text-[9.5px]' : 'text-[12px] sm:text-[13px]'
             }`}
           >
             SEGURO PLAN INTEGRAL FAMILIAR
@@ -98,8 +98,8 @@ export const ReciboSeguroFisico: React.FC<ReciboSeguroFisicoProps> = ({
 
         {/* Campos Punteados Tradicionales con Tipografía Nítida */}
         <div
-          className={`space-y-2 sm:space-y-3 leading-tight font-medium my-auto ${
-            isA4Grid ? 'text-[11.5px] sm:text-[12px]' : 'text-[13.5px] sm:text-[14px]'
+          className={`leading-snug font-medium my-auto ${
+            isA4Grid ? 'space-y-1.5 text-[10.5px] sm:text-[11px]' : 'space-y-2 sm:space-y-3 text-[13.5px] sm:text-[14px]'
           }`}
         >
           {/* Fila 1: Recibí de */}

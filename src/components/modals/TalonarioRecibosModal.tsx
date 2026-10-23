@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { AfiliadoSeguro } from '../../types/database'
 import { ReciboSeguroFisico } from '../recibos/ReciboSeguroFisico'
 import { montoEnLetras, formatCurrency } from '../../lib/formatters'
@@ -82,13 +83,14 @@ export const TalonarioRecibosModal: React.FC<TalonarioRecibosModalProps> = ({
     window.print()
   }
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 print:p-0 print:static print:bg-transparent"
+      data-printable-modal="true"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden border border-outline-variant flex flex-col print:border-none print:shadow-none print:max-w-none print:w-full print:max-h-none print:m-0 print:p-0"
+        className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden border border-outline-variant flex flex-col print:border-none print:shadow-none print:max-w-none print:w-full print:max-h-none print:m-0 print:p-0 print:overflow-visible print:static"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header (Oculto en Impresión) */}
@@ -217,10 +219,11 @@ export const TalonarioRecibosModal: React.FC<TalonarioRecibosModalProps> = ({
             return (
               <div
                 key={hojaIdx}
-                className="talonario-a4-page bg-white shadow-md mx-auto mb-6 print:mb-0 print:shadow-none p-4 print:p-2 border border-slate-300 print:border-none"
+                className="talonario-a4-page bg-white shadow-md mx-auto mb-6 print:mb-0 print:shadow-none p-4 print:p-0 border border-slate-300 print:border-none"
                 style={{
-                  width: '210mm',
-                  minHeight: '297mm',
+                  width: '100%',
+                  maxWidth: '196mm',
+                  maxHeight: '276mm',
                   boxSizing: 'border-box',
                 }}
               >
@@ -230,7 +233,7 @@ export const TalonarioRecibosModal: React.FC<TalonarioRecibosModalProps> = ({
                     <div
                       key={rec.id || rIdx}
                       className="border border-dashed border-slate-400 p-0 rounded-none flex flex-col justify-between overflow-hidden"
-                      style={{ height: '68mm' }}
+                      style={{ height: '66mm', boxSizing: 'border-box' }}
                     >
                       <ReciboSeguroFisico
                         variante="a4-grid"
@@ -264,6 +267,7 @@ export const TalonarioRecibosModal: React.FC<TalonarioRecibosModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

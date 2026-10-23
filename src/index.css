@@ -104,7 +104,8 @@
     display: none !important;
   }
 
-  /* Si un modal oficial está abierto para impresión, ocultar la aplicación de fondo */
+  /* Si un modal oficial está abierto para impresión, ocultar la aplicación de fondo (#root) */
+  body:has([data-printable-modal="true"]) #root,
   body:has([data-printable-modal="true"]) main {
     display: none !important;
   }
@@ -188,6 +189,11 @@
     print-color-adjust: exact;
   }
 
+  @page {
+    size: A4 portrait;
+    margin: 4mm;
+  }
+
   /* Formato de Ticket Térmico de 80mm */
   .thermal-receipt-mode {
     width: 80mm !important;
@@ -205,16 +211,18 @@
 
   /* Formato de Talonario A4 (8 Recibos Físicos en Cuadrícula 2x4) */
   .talonario-a4-page {
-    width: 210mm !important;
-    max-width: 210mm !important;
-    height: 297mm !important;
-    max-height: 297mm !important;
+    width: 100% !important;
+    max-width: 196mm !important;
+    height: 278mm !important;
+    max-height: 278mm !important;
     margin: 0 auto !important;
-    padding: 6mm !important;
+    padding: 0 !important;
     box-sizing: border-box !important;
     page-break-after: always !important;
     break-after: page !important;
     page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    overflow: hidden !important;
   }
 
   .talonario-a4-page:last-child {
