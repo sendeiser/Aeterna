@@ -368,7 +368,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                   {/* Dynamic Nomenclature Box (Stitch Verbatim) */}
                   <div className="col-span-6 bg-surface-container border border-primary/20 rounded p-1.5 flex flex-col justify-center items-center h-9">
                     <span className="text-[10px] text-primary uppercase font-bold tracking-wider leading-none">
-                      Nomenclatura Oficial
+                      Parcela Oficial
                     </span>
                     <span
                       id="preview-nomenclatura"
@@ -644,7 +644,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Filtrar por nomenclatura (ej. A-25), apellido titular o DNI..."
+                placeholder="Filtrar por parcela (ej. A-25), apellido titular o DNI..."
                 className="w-full h-9 pl-9 pr-3 text-body-md bg-surface-container-low border border-outline-variant rounded focus:border-secondary focus:bg-white focus:outline-none"
               />
             </div>
@@ -813,7 +813,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 z-20 shadow-xs bg-surface-container">
                 <tr className="border-b border-outline-variant text-label-caps font-label-caps text-outline uppercase bg-surface-container">
-                  <th className="py-2.5 px-3 bg-surface-container">Nomenclatura</th>
+                  <th className="py-2.5 px-3 bg-surface-container">Parcela</th>
                   <th className="py-2.5 px-3 bg-surface-container">Titular Actual</th>
                   <th className="py-2.5 px-3 bg-surface-container text-center">Ocupación / Niveles</th>
                   <th className="py-2.5 px-3 bg-surface-container">Estado</th>

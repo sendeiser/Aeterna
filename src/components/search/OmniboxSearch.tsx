@@ -97,7 +97,7 @@ export const OmniboxSearch: React.FC<OmniboxSearchProps> = ({
               setSelectedIndex(0)
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Buscar por titular, nomenclatura (A-25-96), difunto o afiliado..."
+            placeholder="Buscar por titular, parcela (A-25-96), difunto o afiliado..."
             className="w-full bg-transparent text-sm sm:text-base text-on-surface placeholder:text-outline focus:outline-none"
           />
           {query && (

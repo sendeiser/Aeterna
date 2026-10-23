@@ -27,7 +27,7 @@ describe('Search test', () => {
     { type: 'afiliado', id: '4', title: 'Moreno Luciana', subtitle: 'Loma Blanca 161', badge: 'Afiliado #1' }
   ]
 
-  it('filters by nomenclatura case-insensitively', () => {
+  it('filters by parcela identifier case-insensitively', () => {
     const results = filterSearch(sampleItems, 'a-25')
     expect(results).toHaveLength(1)
     expect(results[0].title).toBe('A-25-96')
