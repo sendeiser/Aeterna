@@ -363,26 +363,23 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
               <label className="text-label-caps font-label-caps text-on-surface">
                 Empresa Fúnebre Interviniente <span className="text-error">*</span>
               </label>
-              <select
+              <input
+                type="text"
+                list="empresas-funebreras-list"
                 value={formFunebrera}
                 onChange={(e) => setFormFunebrera(e.target.value)}
+                placeholder="Ingrese nombre de la empresa fúnebre..."
                 className="w-full h-[36px] px-3 text-body-md font-body-md bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-on-surface"
-              >
-                <option value="Servicios Sociales Chamical - Mat. Fun. 104-A">
-                  Servicios Sociales Chamical - Mat. Fun. 104-A
-                </option>
-                <option value="Cochería La Rioja Integral - Mat. Fun. 042-C">
-                  Cochería La Rioja Integral - Mat. Fun. 042-C
-                </option>
-                <option value="Empresa Fúnebre San Pedro - Mat. Fun. 018-B">
-                  Empresa Fúnebre San Pedro - Mat. Fun. 018-B
-                </option>
-                <option value="Traslado de Oficio Municipal de Salud">
-                  Traslado de Oficio Municipal de Salud
-                </option>
-              </select>
+              />
+              <datalist id="empresas-funebreras-list">
+                <option value="Servicios Sociales Chamical - Mat. Fun. 104-A" />
+                <option value="Cochería La Rioja Integral - Mat. Fun. 042-C" />
+                <option value="Empresa Fúnebre San Pedro - Mat. Fun. 018-B" />
+                <option value="Aeterna Sepelios" />
+                <option value="Traslado de Oficio Municipal de Salud" />
+              </datalist>
               <span className="text-[10px] text-outline">
-                Vehículo fúnebre habilitado con cabina estanca de desinfección.
+                Ingrese libremente el nombre o seleccione una sugerencia frecuente.
               </span>
             </div>
 
@@ -702,9 +699,6 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                 <th className="py-2 px-3">Fecha Inhumación</th>
                 <th className="py-2 px-3">Difunto / DNI</th>
                 <th className="py-2 px-3">Parcela y Nivel</th>
-                <th className="py-2 px-3">Empresa Fúnebre</th>
-                <th className="py-2 px-3">Indicador Sanitario</th>
-                <th className="py-2 px-3">Oficial de Registro</th>
                 <th className="py-2 px-3 text-right">Acciones Registrales</th>
               </tr>
             </thead>
@@ -744,35 +738,7 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                       </span>
                     </td>
 
-                    {/* Empresa Fúnebre */}
-                    <td className="py-1 px-3 text-body-sm text-on-surface-variant">
-                      {inh.empresa_funebrera || 'Servicios Sociales Chamical'}
-                    </td>
 
-                    {/* Indicador Sanitario (Violet COVID vs Emerald Standard) */}
-                    <td className="py-1 px-3 whitespace-nowrap">
-                      {inh.es_covid ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-[#F5F3FF] text-[#5B21B6] border border-[#DDD6FE]">
-                          <span
-                            className="material-symbols-outlined text-[13px]"
-                            style={{ fontVariationSettings: "'FILL' 1" }}
-                          >
-                            coronavirus
-                          </span>
-                          <span>Protocolo COVID-19</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                          <span className="material-symbols-outlined text-[13px]">check_circle</span>
-                          <span>Inhumación Estándar</span>
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Oficial de Registro */}
-                    <td className="py-1 px-3 text-body-sm text-on-surface-variant whitespace-nowrap">
-                      Lic. R. Albarracín
-                    </td>
 
                     {/* Acciones */}
                     <td className="py-1 px-3 text-right whitespace-nowrap">
