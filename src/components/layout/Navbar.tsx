@@ -108,7 +108,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const navItems = [
     { id: 'dashboard' as TabType, label: 'Dashboard', icon: 'dashboard' },
-    { id: 'parcelas' as TabType, label: 'Parcelas & Catastro', icon: 'domain' },
+    { id: 'parcelas' as TabType, label: 'Parcelas', icon: 'domain' },
     { id: 'inhumaciones' as TabType, label: 'Inhumaciones', icon: 'calendar_month' },
     { id: 'seguro' as TabType, label: 'Plan Seguro Integral', icon: 'security' },
     { id: 'configuracion' as TabType, label: 'Configuración', icon: 'settings' },
@@ -116,7 +116,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const moduleSubtitles: Record<TabType, string> = {
     dashboard: 'Dashboard Operativo & Resumen General',
-    parcelas: 'Módulo de Catastro Parcelario',
+    parcelas: 'Módulo de Gestión de Parcelas',
     inhumaciones: 'Libro Digital de Inhumaciones',
     seguro: 'Padrón de Plan Seguro Integral',
     configuracion: 'Configuración CBU / Alias de Tesorería',

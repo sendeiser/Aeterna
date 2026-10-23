@@ -141,7 +141,7 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({ config, on
             className="px-4 h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-[16px]">sync</span>
-            <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar Catastro a Supabase'}</span>
+            <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar Parcelas a Supabase'}</span>
           </button>
         </div>
 

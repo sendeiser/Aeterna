@@ -7,7 +7,7 @@ interface InhumacionesViewProps {
   parcelasDisponibles: Parcela[]
   onRegistrarInhumacion: (datos: Partial<Inhumacion>) => void
   onEliminarInhumacion?: (id: string) => void
-  onVerParcelaEnCatastro?: (nomenclatura: string) => void
+  onVerParcela?: (nomenclatura: string) => void
 }
 
 export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
@@ -15,7 +15,7 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
   parcelasDisponibles,
   onRegistrarInhumacion,
   onEliminarInhumacion,
-  onVerParcelaEnCatastro,
+  onVerParcela,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterProtocol, setFilterProtocol] = useState<'all' | 'covid' | 'standard' | 'judicial'>('all')
@@ -186,9 +186,9 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    if (onVerParcelaEnCatastro) onVerParcelaEnCatastro(formParcela)
+                    if (onVerParcela) onVerParcela(formParcela)
                   }}
-                  title="Seleccionar en plano catastral"
+                  title="Seleccionar en plano de parcelas"
                   className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-2 text-[11px] font-label-caps bg-surface-container-low text-primary rounded hover:bg-surface-container flex items-center gap-1 border border-outline-variant/60"
                 >
                   <span className="material-symbols-outlined text-[14px]">map</span> Plano
@@ -660,14 +660,14 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        if (onVerParcelaEnCatastro && parcNom) {
-                          onVerParcelaEnCatastro(parcNom)
+                        if (onVerParcela && parcNom) {
+                          onVerParcela(parcNom)
                         }
                       }}
                       className="h-8 px-2.5 rounded bg-surface-container hover:bg-surface-container-high text-secondary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant"
                     >
                       <span className="material-symbols-outlined text-[15px]">domain</span>
-                      <span>Catastro</span>
+                      <span>Parcela</span>
                     </button>
 
                     {onEliminarInhumacion && (
@@ -760,12 +760,12 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            if (onVerParcelaEnCatastro && parcNom) {
-                              onVerParcelaEnCatastro(parcNom)
+                            if (onVerParcela && parcNom) {
+                              onVerParcela(parcNom)
                             }
                           }}
                           className="w-7 h-7 flex items-center justify-center rounded text-outline hover:text-secondary hover:bg-surface-container transition-colors"
-                          title="Ver Parcela en Catastro"
+                          title="Ver Parcela"
                         >
                           <span className="material-symbols-outlined text-[16px]">domain</span>
                         </button>

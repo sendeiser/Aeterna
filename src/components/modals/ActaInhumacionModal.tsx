@@ -132,7 +132,7 @@ export const ActaInhumacionModal: React.FC<ActaInhumacionModalProps> = ({
           <div className="p-4 rounded-lg bg-surface-container-low border border-outline-variant/60 text-xs text-on-surface-variant leading-relaxed">
             Se deja constancia en la presente acta que el sepelio ha sido efectuado conforme a las disposiciones
             sanitarias y registrales vigentes del Municipio de Chamical. Los datos de la parcela y derechos de
-            ocupación correspondientes quedan asentados de forma indeleble en el sistema de Catastro Mortuorio.
+            ocupación correspondientes quedan asentados de forma indeleble en el sistema de Registro Mortuorio.
           </div>
 
           {/* Signatures */}
@@ -140,7 +140,7 @@ export const ActaInhumacionModal: React.FC<ActaInhumacionModalProps> = ({
             <div className="space-y-1">
               <div className="w-36 mx-auto border-b border-outline-variant pb-7"></div>
               <div className="font-bold text-on-surface">Lic. R. Albarracín</div>
-              <div className="text-[10px] text-outline">Oficial Mayor de Catastro</div>
+              <div className="text-[10px] text-outline">Oficial Mayor de Registro</div>
             </div>
             <div className="space-y-1">
               <div className="w-36 mx-auto border-b border-outline-variant pb-7"></div>

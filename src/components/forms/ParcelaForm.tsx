@@ -64,10 +64,10 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({ initialData, onSave, o
             </div>
             <div>
               <h3 className="text-headline-sm font-headline-sm font-semibold text-primary">
-                {initialData ? 'Edición de Parcela Catastral' : 'Registro de Nueva Parcela'}
+                {initialData ? 'Edición de Parcela' : 'Registro de Nueva Parcela'}
               </h3>
               <p className="text-body-sm font-body-sm text-on-surface-variant">
-                Catastro Oficial Parque Municipal · Chamical, La Rioja
+                Registro Oficial Parque Municipal · Chamical, La Rioja
               </p>
             </div>
           </div>

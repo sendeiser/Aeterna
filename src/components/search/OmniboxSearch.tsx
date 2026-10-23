@@ -176,7 +176,7 @@ export const OmniboxSearch: React.FC<OmniboxSearchProps> = ({
         {/* Footer shortcuts */}
         <div className="p-2.5 bg-surface-container-low border-t border-outline-variant text-[11px] text-outline flex items-center justify-between px-4">
           <span>Usa ↑ ↓ para navegar y Enter para seleccionar</span>
-          <span className="hidden sm:inline font-mono">Chamical · Aeterna Catastro</span>
+          <span className="hidden sm:inline font-mono">Chamical · Aeterna Parque</span>
         </div>
       </div>
     </div>

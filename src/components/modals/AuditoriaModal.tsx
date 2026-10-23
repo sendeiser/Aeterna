@@ -55,9 +55,9 @@ export const AuditoriaModal: React.FC<AuditoriaModalProps> = ({
       {
         id: 'AUD-8840',
         timestamp: new Date().toLocaleDateString('es-AR') + ' 15:48:22',
-        operador: 'Supervisor Catastral · Chamical',
+        operador: 'Supervisor de Parcelas · Chamical',
         modulo: 'catastro',
-        accion: 'ALTA_PARCELA_CATASTRO',
+        accion: 'ALTA_PARCELA',
         detalle: `Actualización de parcela en padrón general (${parcelasCount} parcelas sincronizadas)`,
         ip: '192.168.1.10 (Obras Públicas)',
         estado: 'verificado',
@@ -193,7 +193,7 @@ export const AuditoriaModal: React.FC<AuditoriaModalProps> = ({
             >
               <option value="todos">Todos los módulos</option>
               <option value="cobranzas">Cobranzas QR / Caja</option>
-              <option value="catastro">Catastro Parcelario</option>
+              <option value="catastro">Gestión de Parcelas</option>
               <option value="inhumaciones">Inhumaciones</option>
               <option value="seguro">Seguro Sepelio</option>
               <option value="sistema">Sistema</option>

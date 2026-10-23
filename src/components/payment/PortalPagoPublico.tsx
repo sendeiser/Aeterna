@@ -87,7 +87,7 @@ export const PortalPagoPublico: React.FC<PortalPagoPublicoProps> = ({
 
           <div className="space-y-1">
             <span className="text-xs font-medium text-slate-500 block">Concepto a Cancelar:</span>
-            <p className="text-sm font-semibold text-slate-800">{concepto || 'Servicios Generales de Catastro'}</p>
+            <p className="text-sm font-semibold text-slate-800">{concepto || 'Servicios Generales de Parcelas'}</p>
           </div>
 
           <div className="pt-3 border-t border-slate-100 flex items-baseline justify-between">
@@ -244,7 +244,7 @@ export const PortalPagoPublico: React.FC<PortalPagoPublicoProps> = ({
       <footer className="text-center py-4 text-xs text-slate-500 border-t border-slate-200 mt-6 bg-white">
         <div className="max-w-xl mx-auto px-4 space-y-1">
           <p className="font-semibold text-slate-700">
-            Municipalidad de Chamical · Dirección de Rentas & Catastro
+            Municipalidad de Chamical · Dirección de Rentas & Cementerio Parque
           </p>
           <p className="text-[11px] text-slate-400">
             Aeterna Parque Memorial y Seguro de Sepelio · Mesa de Ayuda: (03826) 44-8900

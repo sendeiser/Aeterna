@@ -50,7 +50,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
     capacidad: 3,
     estado: 'ocupada' as 'disponible' | 'ocupada' | 'en_mora' | 'baja' | 'standby',
     saldo: 36000,
-    notas: 'Registro regularizado Catastro Chamical',
+    notas: 'Registro regularizado Parcelas Chamical',
   })
 
   // Cargar parcela seleccionada en el formulario
@@ -124,7 +124,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
         : undefined,
     })
 
-    alert(`Parcela ${nomenclatura} guardada con éxito en Catastro Municipal.`)
+    alert(`Parcela ${nomenclatura} guardada con éxito en Registro Municipal de Parcelas.`)
   }
 
   // Acciones administrativas de stand-by

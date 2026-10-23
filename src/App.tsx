@@ -787,7 +787,7 @@ export default function App() {
               parcelasDisponibles={parcelas}
               onRegistrarInhumacion={handleSaveInhumacion}
               onEliminarInhumacion={handleDeleteInhumacion}
-              onVerParcelaEnCatastro={(nom) => {
+              onVerParcela={(nom) => {
                 setCurrentTab('parcelas')
               }}
             />

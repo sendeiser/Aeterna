@@ -104,7 +104,7 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
   }
 
   const handleWhatsApp = () => {
-    const msg = `*COMPROBANTE OFICIAL - AETERNA PARQUE*\nRecibo: ${reciboNro}\nTitular: ${titularNombre}\nIdentificador: ${identificador}\nConcepto: ${concepto}\nMonto: ${formatCurrency(monto)}\nMétodo: ${metodo === 'transferencia_qr' ? 'Transferencia QR Interoperable' : 'Efectivo en Caja'}\nOficina Central de Catastro & Sepelios · Chamical, La Rioja`
+    const msg = `*COMPROBANTE OFICIAL - AETERNA PARQUE*\nRecibo: ${reciboNro}\nTitular: ${titularNombre}\nIdentificador: ${identificador}\nConcepto: ${concepto}\nMonto: ${formatCurrency(monto)}\nMétodo: ${metodo === 'transferencia_qr' ? 'Transferencia QR Interoperable' : 'Efectivo en Caja'}\nOficina Central de Gestión & Sepelios · Chamical, La Rioja`
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
@@ -446,7 +446,7 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
                 MUNICIPALIDAD DE CHAMICAL · PROVINCIA DE LA RIOJA
               </span>
               <h1 className="text-lg font-bold uppercase text-slate-900 tracking-tight">
-                DIRECCIÓN DE RENTAS Y CATASTRO PARCELARIO
+                DIRECCIÓN DE RENTAS Y CEMENTERIO PARQUE
               </h1>
               <div className="text-[10px] font-mono text-slate-600">
                 Aeterna Parque Municipal · Comprobante Oficial de Ingreso · AFIP RG 1415
@@ -482,7 +482,7 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
                   <span className="font-semibold text-on-surface">{titularNombre}</span>
                 </div>
                 <div className="flex justify-between items-center text-on-surface-variant">
-                  <span>Catastro / Referencia:</span>
+                  <span>Parcela / Referencia:</span>
                   <span className="font-code-cadastral font-bold text-primary">{identificador}</span>
                 </div>
                 <div className="flex justify-between items-center text-on-surface-variant">
@@ -576,7 +576,7 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
                       <span className="font-bold">{titularNombre}</span>
                     </div>
                     <div>
-                      <span className="text-slate-500 block text-[10px]">Catastro / Ref:</span>
+                      <span className="text-slate-500 block text-[10px]">Parcela / Ref:</span>
                       <span className="font-mono font-bold">{identificador}</span>
                     </div>
                     <div>
