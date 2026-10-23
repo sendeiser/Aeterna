@@ -634,12 +634,23 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                     </div>
 
                     <div className="flex items-center gap-1.5 flex-wrap">
+                      <button
+                        type="button"
+                        id={`btn-editar-parcela-m-${p.id}`}
+                        onClick={() => setModalEditParcela(p)}
+                        className="h-8 px-2.5 rounded bg-surface-container hover:bg-surface-container-high text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant cursor-pointer"
+                        title="Editar Parcela en Modal"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">edit</span>
+                        <span>Editar</span>
+                      </button>
+
                       {p.estado === 'standby' ? (
                         <>
                           <button
                             type="button"
                             onClick={() => handleReactivar(p)}
-                            className="h-8 px-2.5 rounded bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold inline-flex items-center gap-1 shadow-xs"
+                            className="h-8 px-2.5 rounded bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold inline-flex items-center gap-1 shadow-xs cursor-pointer"
                             title="Reactivar Parcela tras regularización"
                           >
                             <span className="material-symbols-outlined text-[15px]">restore</span>
@@ -648,7 +659,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                           <button
                             type="button"
                             onClick={() => handleLiberar(p)}
-                            className="h-8 px-2.5 rounded bg-rose-700 hover:bg-rose-800 text-white text-xs font-semibold inline-flex items-center gap-1 shadow-xs"
+                            className="h-8 px-2.5 rounded bg-rose-700 hover:bg-rose-800 text-white text-xs font-semibold inline-flex items-center gap-1 shadow-xs cursor-pointer"
                             title="Liberar Parcela y pasar a Disponible"
                           >
                             <span className="material-symbols-outlined text-[15px]">lock_open</span>
@@ -659,19 +670,8 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                         <>
                           <button
                             type="button"
-                            id={`btn-editar-parcela-m-${p.id}`}
-                            onClick={() => setModalEditParcela(p)}
-                            className="h-8 px-2.5 rounded bg-surface-container hover:bg-surface-container-high text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant cursor-pointer"
-                            title="Editar Parcela en Modal"
-                          >
-                            <span className="material-symbols-outlined text-[15px]">edit</span>
-                            <span>Editar</span>
-                          </button>
-
-                          <button
-                            type="button"
                             onClick={() => onCobrarQR(p)}
-                            className="h-8 px-2.5 rounded bg-secondary hover:bg-primary text-white text-xs font-semibold inline-flex items-center gap-1 shadow-xs"
+                            className="h-8 px-2.5 rounded bg-secondary hover:bg-primary text-white text-xs font-semibold inline-flex items-center gap-1 shadow-xs cursor-pointer"
                             title="Cobrar mantenimiento con QR"
                           >
                             <span className="material-symbols-outlined text-[15px]">qr_code_2</span>
@@ -951,13 +951,24 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                       {/* Acción */}
                       <td className="py-2.5 px-2 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-center gap-1">
+                          <button
+                            type="button"
+                            id={`btn-editar-parcela-${p.id}`}
+                            onClick={() => setModalEditParcela(p)}
+                            title="Editar Parcela en Modal"
+                            className="h-7 px-2 rounded hover:bg-surface-container text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant/60 cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">edit</span>
+                            <span>Editar</span>
+                          </button>
+
                           {p.estado === 'standby' ? (
                             <>
                               <button
                                 type="button"
                                 onClick={() => handleReactivar(p)}
                                 title="Reactivar Parcela (Restablecer titularidad)"
-                                className="px-2 py-1 rounded text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-0.5 shadow-xs"
+                                className="px-2 py-1 rounded text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-0.5 shadow-xs cursor-pointer"
                               >
                                 <span className="material-symbols-outlined text-[13px]">restore</span>
                                 <span>Reactivar</span>
@@ -966,7 +977,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                                 type="button"
                                 onClick={() => handleLiberar(p)}
                                 title="Liberar Parcela (Caducidad de titularidad y pase a Disponible)"
-                                className="px-2 py-1 rounded text-[11px] font-semibold bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-0.5 shadow-xs"
+                                className="px-2 py-1 rounded text-[11px] font-semibold bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-0.5 shadow-xs cursor-pointer"
                               >
                                 <span className="material-symbols-outlined text-[13px]">lock_open</span>
                                 <span>Liberar</span>
@@ -976,36 +987,26 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                             <>
                               <button
                                 type="button"
-                                id={`btn-editar-parcela-${p.id}`}
-                                onClick={() => setModalEditParcela(p)}
-                                title="Editar Parcela en Modal"
-                                className="h-7 px-2 rounded hover:bg-surface-container text-primary text-xs font-semibold inline-flex items-center gap-1 border border-outline-variant/60 cursor-pointer"
-                              >
-                                <span className="material-symbols-outlined text-[15px]">edit</span>
-                                <span>Editar</span>
-                              </button>
-                              <button
-                                type="button"
                                 onClick={() => onCobrarQR(p)}
                                 title="Cobrar mantenimiento con QR"
-                                className="w-7 h-7 inline-flex items-center justify-center rounded hover:bg-surface-container text-primary"
+                                className="w-7 h-7 inline-flex items-center justify-center rounded hover:bg-surface-container text-primary cursor-pointer"
                               >
                                 <span className="material-symbols-outlined text-[18px]" data-icon="qr_code_2">
                                   qr_code_2
                                 </span>
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => handleSelectParcela(p)}
-                                title="Ver detalle de difuntos"
-                                className="w-7 h-7 inline-flex items-center justify-center rounded hover:bg-surface-container text-outline"
-                              >
-                                <span className="material-symbols-outlined text-[18px]" data-icon="visibility">
-                                  visibility
-                                </span>
-                              </button>
                             </>
                           )}
+                          <button
+                            type="button"
+                            onClick={() => handleSelectParcela(p)}
+                            title="Ver detalle de difuntos"
+                            className="w-7 h-7 inline-flex items-center justify-center rounded hover:bg-surface-container text-outline cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[18px]" data-icon="visibility">
+                              visibility
+                            </span>
+                          </button>
                           {onDeleteParcela && (
                             <button
                               type="button"
@@ -1188,6 +1189,16 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                  <button
+                    type="button"
+                    id={`btn-editar-standby-ficha-${selectedParcela.id}`}
+                    onClick={() => setModalEditParcela(selectedParcela)}
+                    className="px-3 py-1.5 rounded text-xs font-semibold bg-white hover:bg-surface-container text-primary border border-outline-variant flex items-center gap-1 shadow-xs cursor-pointer"
+                    title="Editar Parcela en Modal"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">edit</span>
+                    <span>Editar Parcela</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => handleReactivar(selectedParcela)}
