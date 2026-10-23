@@ -249,12 +249,77 @@ export const DetalleCuotaModal: React.FC<DetalleCuotaModalProps> = ({
               <span className="text-[9px] text-slate-500">Mesa de Entrada / Operador</span>
             </div>
             <div className="text-center text-[9px] text-slate-500 max-w-[160px]">
-              CAE AFIP RG 1415/03 · Exento según Código Tributario Municipal
+              ORIGINAL: CONTRIBUYENTE · CAE AFIP RG 1415/03
             </div>
             <div className="text-center w-40">
               <div className="border-b border-slate-900 pb-1 mb-1 font-mono">____________________</div>
               <span className="font-bold block text-[11px]">Firma del Afiliado Titular</span>
               <span className="text-[9px] text-slate-500">Conformidad de Pago</span>
+            </div>
+          </div>
+
+          {/* Línea de corte punteada y Duplicado para Administración */}
+          <div className="hidden print:block pt-6">
+            <div className="flex items-center justify-center my-4 py-1 border-t-2 border-dashed border-slate-700 text-[10px] text-slate-500 font-mono">
+              ✂️ ------------------ CORTE PARA ARCHIVO MUNICIPAL ------------------ ✂️
+            </div>
+
+            <div className="p-4 border-2 border-slate-800 rounded bg-white text-slate-900 space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-300 pb-2">
+                <div>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-slate-600 block">
+                    MUNICIPALIDAD DEL DEPARTAMENTO GENERAL BELGRANO · LA RIOJA
+                  </span>
+                  <h3 className="text-sm font-black uppercase text-slate-900">
+                    RECIBO OFICIAL DE COBRANZA · PLAN SEGURO INTEGRAL
+                  </h3>
+                  <span className="text-[10px] text-slate-600 font-bold">
+                    DUPLICADO: TALÓN PARA ADMINISTRACIÓN Y TESORERÍA MUNICIPAL
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[9px] text-slate-500 uppercase block font-semibold">N° Recibo</span>
+                  <span className="font-mono font-bold text-sm text-slate-900">{nroRecibo}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs py-1">
+                <div>
+                  <span className="text-slate-500 block text-[10px]">Afiliado:</span>
+                  <span className="font-bold">{afiliado.nombre_completo} (#{afiliado.numero_afiliado})</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px]">DNI:</span>
+                  <span className="font-mono">{afiliado.dni || 'S/D'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px]">Concepto:</span>
+                  <span>Cuota {mes.toString().padStart(2, '0')} · {mesNombre} {anio}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px]">Monto Cancelado:</span>
+                  <span className="font-bold font-mono text-emerald-800">{formatCurrency(monto)} ARS</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px]">Fecha Registro:</span>
+                  <span className="font-mono">{fechaPagoFormateada}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[10px]">Medio de Pago:</span>
+                  <span>{cuotaDetalle?.metodoPago === 'efectivo' ? 'Efectivo en Domicilio' : 'Transferencia QR'}</span>
+                </div>
+              </div>
+
+              <div className="flex items-end justify-between pt-6 border-t border-slate-300 text-xs">
+                <div className="text-center w-36">
+                  <div className="border-b border-slate-700 pb-1 mb-1 font-mono">____________________</div>
+                  <span className="font-bold block text-[10px]">Firma y Sello de Caja</span>
+                </div>
+                <div className="text-center w-36">
+                  <div className="border-b border-slate-700 pb-1 mb-1 font-mono">____________________</div>
+                  <span className="font-bold block text-[10px]">Firma del Afiliado</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -274,7 +339,7 @@ export const DetalleCuotaModal: React.FC<DetalleCuotaModalProps> = ({
             className="h-10 px-5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold shadow-md flex items-center gap-2 transition-transform active:scale-[0.98]"
           >
             <span className="material-symbols-outlined text-[18px]">print</span>
-            <span>Imprimir Recibo Oficial</span>
+            <span>Imprimir Recibo Físico Oficial (Doble Talón)</span>
           </button>
         </div>
       </div>

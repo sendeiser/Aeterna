@@ -533,7 +533,7 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
                 </div>
               </div>
 
-              {/* Bloque de Firmas para Impresión */}
+              {/* Bloque de Firmas para Impresión (Original Contribuyente) */}
               <div className="hidden print:grid grid-cols-2 gap-8 pt-6 mt-4 border-t border-slate-300 text-center text-xs">
                 <div className="border-t border-slate-700 pt-1">
                   <span className="font-semibold block text-slate-900">Firma y Sello de Caja</span>
@@ -541,7 +541,74 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
                 </div>
                 <div className="border-t border-slate-700 pt-1">
                   <span className="font-semibold block text-slate-900">Firma del Contribuyente</span>
-                  <span className="text-[10px] text-slate-500">Constancia de Liquidación</span>
+                  <span className="text-[10px] text-slate-500">ORIGINAL: CONTRIBUYENTE</span>
+                </div>
+              </div>
+
+              {/* Duplicado para Administración Municipal en Impresión */}
+              <div className="hidden print:block pt-6">
+                <div className="flex items-center justify-center my-4 py-1 border-t-2 border-dashed border-slate-700 text-[10px] text-slate-500 font-mono">
+                  ✂️ ------------------ CORTE PARA ARCHIVO MUNICIPAL ------------------ ✂️
+                </div>
+
+                <div className="p-4 border-2 border-slate-800 rounded bg-white text-slate-900 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-300 pb-2">
+                    <div>
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-slate-600 block">
+                        MUNICIPALIDAD DE CHAMICAL · DIRECCIÓN DE RENTAS
+                      </span>
+                      <h3 className="text-sm font-black uppercase text-slate-900">
+                        COMPROBANTE OFICIAL DE INGRESO
+                      </h3>
+                      <span className="text-[10px] text-slate-600 font-bold">
+                        DUPLICADO: TALÓN PARA ADMINISTRACIÓN Y TESORERÍA MUNICIPAL
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[9px] text-slate-500 uppercase block font-semibold">N° Recibo</span>
+                      <span className="font-mono font-bold text-sm text-slate-900">{reciboNro}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs py-1">
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">Titular:</span>
+                      <span className="font-bold">{titularNombre}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">Catastro / Ref:</span>
+                      <span className="font-mono font-bold">{identificador}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">Concepto:</span>
+                      <span>{concepto}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">Total Cancelado:</span>
+                      <span className="font-bold font-mono text-emerald-800">{formatCurrency(monto)} ARS</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">Fecha y Hora:</span>
+                      <span className="font-mono">
+                        {new Date().toLocaleDateString('es-AR')} {new Date().toLocaleTimeString('es-AR').slice(0, 5)} hs
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">Forma de Pago:</span>
+                      <span>{metodo === 'transferencia_qr' ? 'Transf. QR Interoperable' : 'Efectivo en Caja'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-end justify-between pt-6 border-t border-slate-300 text-xs">
+                    <div className="text-center w-36">
+                      <div className="border-b border-slate-700 pb-1 mb-1 font-mono">____________________</div>
+                      <span className="font-bold block text-[10px]">Firma y Sello de Caja</span>
+                    </div>
+                    <div className="text-center w-36">
+                      <div className="border-b border-slate-700 pb-1 mb-1 font-mono">____________________</div>
+                      <span className="font-bold block text-[10px]">Firma del Contribuyente</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -550,29 +617,29 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
           {/* Botones de Salida (Ocultos al imprimir) */}
           <div className="p-4 bg-surface-container-low border-t border-outline-variant space-y-2 print:hidden">
             <div className="text-label-caps font-label-caps uppercase text-outline font-semibold mb-1">
-              Formatos de Impresión y Entrega
+              Recibos Físicos Oficiales y Entrega
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setPrintFormat('thermal')
-                setTimeout(() => window.print(), 80)
-              }}
-              className="w-full h-9 bg-surface-container-lowest hover:bg-surface-container border border-outline-variant text-primary font-title-md text-body-sm font-semibold rounded-lg flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.99] cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[17px] text-primary">receipt_long</span>
-              <span>Imprimir Ticket Térmico 80mm</span>
-            </button>
             <button
               type="button"
               onClick={() => {
                 setPrintFormat('a4')
                 setTimeout(() => window.print(), 80)
               }}
+              className="w-full h-10 bg-primary hover:bg-primary/90 text-white font-title-md text-body-sm font-semibold rounded-lg flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.99] cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px]">print</span>
+              <span>Imprimir Recibo Físico Oficial (Doble Talón)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPrintFormat('thermal')
+                setTimeout(() => window.print(), 80)
+              }}
               className="w-full h-9 bg-surface-container-lowest hover:bg-surface-container border border-outline-variant text-on-surface font-title-md text-body-sm font-semibold rounded-lg flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.99] cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[17px] text-outline">description</span>
-              <span>Imprimir Factura / Recibo A4</span>
+              <span className="material-symbols-outlined text-[17px] text-outline">receipt_long</span>
+              <span>Imprimir Ticket Térmico 80mm</span>
             </button>
             <button
               type="button"
