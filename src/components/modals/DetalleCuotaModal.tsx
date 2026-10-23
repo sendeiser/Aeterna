@@ -78,7 +78,7 @@ export const DetalleCuotaModal: React.FC<DetalleCuotaModalProps> = ({
                 Comprobante Oficial de Cobranza
               </span>
               <h2 className="text-title-lg font-title-lg font-bold">
-                Seguro de Sepelio Chamical
+                Plan Seguro Integral Chamical
               </h2>
             </div>
           </div>
@@ -97,7 +97,7 @@ export const DetalleCuotaModal: React.FC<DetalleCuotaModalProps> = ({
             MUNICIPALIDAD DEL DEPARTAMENTO GENERAL BELGRANO · LA RIOJA
           </span>
           <h2 className="text-xl font-black text-slate-950 uppercase tracking-tight">
-            RECIBO OFICIAL DE COBRANZA · SEGURO DE SEPELIO
+            RECIBO OFICIAL DE COBRANZA · PLAN SEGURO INTEGRAL
           </h2>
           <p className="text-xs text-slate-600 font-medium">
             Cementerio Parque Municipal Aeterna · Constancia Legal de Pago de Cuota Social

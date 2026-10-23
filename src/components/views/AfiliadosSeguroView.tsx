@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { AfiliadoSeguro } from '../../types/database'
 import { formatCurrency } from '../../lib/formatters'
 import { DetalleCuotaModal } from '../modals/DetalleCuotaModal'
+import { evaluarMoraAfiliado } from '../../lib/reglasNegocio'
 
 interface AfiliadosSeguroViewProps {
   afiliados: (AfiliadoSeguro & { cuotasPagadas?: number[] })[]
@@ -24,7 +25,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [zoneFilter, setZoneFilter] = useState<string>('all')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'deuda' | 'aldia'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'deuda' | 'aldia' | 'standby'>('all')
 
   const [modalDetalleCuota, setModalDetalleCuota] = useState<{
     isOpen: boolean
@@ -75,6 +76,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
   const mesActual = 3 // Marzo
   const afiliadosAlDia = afiliados.filter((a) => a.estado === 'activo').length
   const afiliadosDeuda = totalAfiliados - afiliadosAlDia
+  const afiliadosStandby = afiliados.filter((a) => evaluarMoraAfiliado(a, mesActual, 2026).enStandby).length
 
   // Filtrado
   const filtered = afiliados.filter((a) => {
@@ -83,6 +85,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
     }
     if (statusFilter === 'deuda' && a.estado === 'activo') return false
     if (statusFilter === 'aldia' && a.estado !== 'activo') return false
+    if (statusFilter === 'standby' && !evaluarMoraAfiliado(a, mesActual, 2026).enStandby) return false
 
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase()
@@ -103,7 +106,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-headline-lg font-headline-lg text-primary tracking-tight">
-            Padrón General de Afiliados al Seguro de Sepelio
+            Padrón General de Afiliados al Plan Seguro Integral
           </h1>
           <p className="text-body-md font-body-md text-on-surface-variant mt-0.5">
             Gestión de Cobranzas, Cuotas Anuales y Hojas de Ruta de Cobradores de Calle · Chamical.
@@ -145,6 +148,20 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
               </span>
               <span className="text-body-sm font-body-sm text-amber-600">
                 ({Math.round((afiliadosDeuda / (totalAfiliados || 1)) * 100)}%)
+              </span>
+            </div>
+          </div>
+
+          <div className="px-3.5 py-1.5 rounded-lg bg-rose-50 border border-rose-200">
+            <span className="text-label-caps font-label-caps text-rose-800 block">
+              STAND-BY (+3 MESES)
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-headline-md font-code-cadastral text-rose-700 font-bold">
+                {afiliadosStandby}
+              </span>
+              <span className="text-body-sm font-body-sm text-rose-600">
+                ({Math.round((afiliadosStandby / (totalAfiliados || 1)) * 100)}%)
               </span>
             </div>
           </div>
@@ -238,6 +255,17 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             >
               Al Día ({afiliadosAlDia})
             </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('standby')}
+              className={`px-2.5 py-1 rounded-md transition-colors ${
+                statusFilter === 'standby'
+                  ? 'bg-rose-600 shadow-xs font-semibold text-white'
+                  : 'text-rose-800 hover:text-rose-950 hover:bg-rose-50'
+              }`}
+            >
+              Stand-by ({afiliadosStandby})
+            </button>
           </div>
         </div>
 
@@ -324,6 +352,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                 (afiliado.estado === 'activo'
                   ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
                   : [1, 2])
+              const moraInfo = evaluarMoraAfiliado(afiliado, mesActual, 2026)
               const mesesVencidos = [1, 2, 3].filter((m) => !cuotasPagadas.includes(m))
               const saldoDeuda = mesesVencidos.length * afiliado.monto_cuota_mensual
               const siguienteCuotaCobrar =
@@ -344,7 +373,11 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                         {afiliado.zona_cobro || 'Zona 1'}
                       </span>
                     </div>
-                    {saldoDeuda > 0 ? (
+                    {moraInfo.enStandby ? (
+                      <span className="inline-flex items-center text-[10px] font-bold text-rose-800 bg-rose-100 px-2 py-0.5 rounded border border-rose-300 shrink-0">
+                        ⚠️ Stand-by (+3 meses)
+                      </span>
+                    ) : saldoDeuda > 0 ? (
                       <span className="inline-flex items-center text-[10px] font-bold text-red-800 bg-red-100 px-2 py-0.5 rounded border border-red-200 shrink-0">
                         {mesesVencidos.length} mora
                       </span>
@@ -367,6 +400,11 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                       <span>•</span>
                       <span className="truncate">{afiliado.direccion_cobro || 'Chamical, La Rioja'}</span>
                     </div>
+                    {moraInfo.enStandby && (
+                      <div className="text-[11px] text-rose-900 font-semibold bg-rose-50 px-2.5 py-1 rounded border border-rose-200 mt-1">
+                        ⚠️ Plan suspendido (+3 meses de mora) · <strong>Última cuota pagada:</strong> {moraInfo.ultimaCuotaPagada}
+                      </div>
+                    )}
                   </div>
 
                   {/* Cuota Base & Saldo */}
@@ -517,6 +555,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                   (afiliado.estado === 'activo'
                     ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
                     : [1, 2])
+                const moraInfo = evaluarMoraAfiliado(afiliado, mesActual, 2026)
                 const mesesVencidos = [1, 2, 3].filter((m) => !cuotasPagadas.includes(m))
                 const saldoDeuda = mesesVencidos.length * afiliado.monto_cuota_mensual
                 const siguienteCuotaCobrar =
@@ -551,14 +590,25 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                           <span>{afiliado.direccion_cobro || 'Chamical, La Rioja'}</span>
                         </span>
                       </div>
-                      <div className="mt-1">
+                      <div className="mt-1 flex items-center gap-2 flex-wrap">
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-secondary bg-secondary-fixed/50 px-1.5 py-0.2 rounded">
                           <span className="material-symbols-outlined text-xs" data-icon="two_wheeler">
                             two_wheeler
                           </span>
                           <span>{afiliado.zona_cobro || 'Zona 1 - Ruta 1 / B° Tiro'}</span>
                         </span>
+                        {moraInfo.enStandby && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-rose-100 text-rose-900 border border-rose-300">
+                            <span className="material-symbols-outlined text-[12px]">warning</span>
+                            <span>Stand-by (+3 meses)</span>
+                          </span>
+                        )}
                       </div>
+                      {moraInfo.enStandby && (
+                        <div className="text-[11px] text-rose-800 font-semibold mt-1">
+                          Últ. cuota: <strong>{moraInfo.ultimaCuotaPagada}</strong>
+                        </div>
+                      )}
                     </td>
 
                     {/* Col 3: Cuota Mensual */}

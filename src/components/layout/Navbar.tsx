@@ -34,7 +34,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   },
   {
     id: 'notif-2',
-    title: 'Cobranza Seguro Sepelio',
+    title: 'Cobranza Plan Seguro Integral',
     message: 'Se detectaron 4 afiliados con cuotas pendientes en Zona 1. Listos para cobro por QR.',
     time: 'Hace 25 min',
     type: 'warning',
@@ -110,7 +110,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'dashboard' as TabType, label: 'Dashboard', icon: 'dashboard' },
     { id: 'parcelas' as TabType, label: 'Parcelas & Catastro', icon: 'domain' },
     { id: 'inhumaciones' as TabType, label: 'Inhumaciones', icon: 'calendar_month' },
-    { id: 'seguro' as TabType, label: 'Seguro de Sepelio', icon: 'security' },
+    { id: 'seguro' as TabType, label: 'Plan Seguro Integral', icon: 'security' },
     { id: 'configuracion' as TabType, label: 'Configuración', icon: 'settings' },
   ]
 
@@ -118,7 +118,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     dashboard: 'Dashboard Operativo & Resumen General',
     parcelas: 'Módulo de Catastro Parcelario',
     inhumaciones: 'Libro Digital de Inhumaciones',
-    seguro: 'Padrón de Seguro de Sepelio',
+    seguro: 'Padrón de Plan Seguro Integral',
     configuracion: 'Configuración CBU / Alias de Tesorería',
   }
 

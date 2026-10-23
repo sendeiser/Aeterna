@@ -261,7 +261,7 @@ export default function App() {
         nroCuota - 1
       ] || `Mes ${nroCuota}`
     const monto = afiliado.monto_cuota_mensual || 18000
-    const concepto = `Seguro Sepelio - Cuota ${mesNombre} 2026 (#${afiliado.numero_afiliado})`
+    const concepto = `Plan Seguro Integral - Cuota ${mesNombre} 2026 (#${afiliado.numero_afiliado})`
     const nroRecibo = `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`
 
     setQrModal({
@@ -353,7 +353,7 @@ export default function App() {
     const nombresStr = nrosCuotas.map((n) => mesesNombres[n - 1]).join(', ')
     const valorUnitario = afiliado.monto_cuota_mensual || 18000
     const montoTotal = valorUnitario * nrosCuotas.length
-    const concepto = `Seguro Sepelio - Mora Total (${nombresStr} 2026) (#${afiliado.numero_afiliado})`
+    const concepto = `Plan Seguro Integral - Mora Total (${nombresStr} 2026) (#${afiliado.numero_afiliado})`
     const nroRecibo = `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`
 
     setQrModal({
@@ -714,7 +714,7 @@ export default function App() {
                   {currentTab === 'dashboard' && 'REPORTE CONSOLIDADO DE GESTIÓN Y RECAUDACIÓN'}
                   {currentTab === 'parcelas' && 'PADRÓN GENERAL DE CATASTRO Y DERECHO DE PARCELAS'}
                   {currentTab === 'inhumaciones' && 'LIBRO OFICIAL DE INHUMACIONES Y REGISTRO DE DIFUNTOS'}
-                  {currentTab === 'seguro' && 'PADRÓN DE AFILIADOS Y ESTADO DE COBRANZA SEGURO DE SEPELIO'}
+                  {currentTab === 'seguro' && 'PADRÓN DE AFILIADOS Y ESTADO DE COBRANZA PLAN SEGURO INTEGRAL'}
                   {currentTab === 'configuracion' && 'CONSTANCIA DE PARÁMETROS Y ARANCELES MUNICIPALES'}
                 </h1>
                 <p className="text-xs text-slate-600 font-medium">
