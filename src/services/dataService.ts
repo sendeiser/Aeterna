@@ -691,22 +691,54 @@ export async function fetchAfiliadosSupabase(): Promise<any[] | null> {
   }
 }
 
+export function normalizarEstadoAfiliado(estado: any): 'activo' | 'en_mora' | 'suspendido' | 'baja' {
+  const est = String(estado || '').toLowerCase().trim()
+  if (est === 'en_mora' || est === 'mora' || est === 'deuda') {
+    return 'en_mora'
+  }
+  if (est === 'suspendido' || est === 'standby' || est === 'inactivo') {
+    return 'suspendido'
+  }
+  if (est === 'baja' || est === 'cancelado') {
+    return 'baja'
+  }
+  return 'activo'
+}
+
 export async function upsertAfiliadoSupabase(afiliado: any): Promise<boolean> {
   if (!isSupabaseConfigured) return false
   try {
-    const { data, error } = await supabase.from('afiliados_seguro').upsert(
-      {
-        numero_afiliado: afiliado.numero_afiliado,
-        nombre_completo: afiliado.nombre_completo,
-        direccion_cobro: afiliado.direccion_cobro,
-        zona_cobro: afiliado.zona_cobro,
-        monto_cuota_mensual: afiliado.monto_cuota_mensual || 18000,
-        estado: afiliado.estado,
-      },
-      { onConflict: 'numero_afiliado' }
-    ).select('id').maybeSingle()
+    const rawNum =
+      typeof afiliado.numero_afiliado === 'number'
+        ? Math.round(afiliado.numero_afiliado)
+        : parseInt(String(afiliado.numero_afiliado || '').replace(/\D/g, ''), 10)
 
-    if (error) return false
+    if (!rawNum || isNaN(rawNum)) {
+      console.warn('upsertAfiliadoSupabase: numero_afiliado inválido, se omite upsert', afiliado)
+      return false
+    }
+
+    const estadoNormalizado = normalizarEstadoAfiliado(afiliado.estado)
+
+    const payload = {
+      numero_afiliado: rawNum,
+      nombre_completo: String(afiliado.nombre_completo || 'Afiliado').trim(),
+      direccion_cobro: String(afiliado.direccion_cobro || 'Chamical, La Rioja').trim(),
+      zona_cobro: String(afiliado.zona_cobro || 'Zona 1 - Centro').trim(),
+      monto_cuota_mensual: Number(afiliado.monto_cuota_mensual) || 18000,
+      estado: estadoNormalizado,
+    }
+
+    const { data, error } = await supabase
+      .from('afiliados_seguro')
+      .upsert(payload, { onConflict: 'numero_afiliado' })
+      .select('id')
+      .maybeSingle()
+
+    if (error) {
+      console.error('Error en upsertAfiliadoSupabase:', error.message, error.details)
+      return false
+    }
 
     // Si es un afiliado nuevo, crear automáticamente sus 12 cuotas
     const targetId = data?.id || afiliado.id
@@ -716,6 +748,7 @@ export async function upsertAfiliadoSupabase(afiliado: any): Promise<boolean> {
 
     return true
   } catch (err) {
+    console.error('Excepción en upsertAfiliadoSupabase:', err)
     return false
   }
 }
@@ -982,7 +1015,7 @@ export async function syncDataToSupabase(onProgress?: (msg: string) => void) {
         direccion_cobro: a.direccion_cobro,
         monto_cuota_mensual: a.monto_cuota_mensual || 18000,
         zona_cobro: a.zona_cobro || 'Zona 1',
-        estado: a.estado,
+        estado: normalizarEstadoAfiliado(a.estado),
       }, { onConflict: 'numero_afiliado' })
       .select('id')
       .single()

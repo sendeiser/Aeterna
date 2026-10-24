@@ -130,8 +130,9 @@ export const AfiliadoForm: React.FC<AfiliadoFormProps> = ({ initialData, onSave,
             className="w-full h-9 px-2 text-xs font-semibold bg-white border border-outline-variant rounded-md focus:border-secondary focus:outline-none"
           >
             <option value="activo">Al Día (Activo)</option>
-            <option value="mora">Con Deuda (Mora)</option>
+            <option value="en_mora">Con Deuda (Mora)</option>
             <option value="suspendido">Suspendido</option>
+            <option value="baja">Baja</option>
           </select>
         </div>
       </div>

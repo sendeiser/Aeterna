@@ -4227,7 +4227,7 @@
       "direccion_cobro": "Calle 9 de Julio 384",
       "zona_cobro": "Zona 1 - Ruta 1 / B° Tiro",
       "monto_cuota_mensual": 18000.0,
-      "estado": "mora"
+      "estado": "en_mora"
     },
     {
       "numero_afiliado": 12,
@@ -4254,7 +4254,7 @@
       "direccion_cobro": "Calle Facundo Quiroga 115",
       "zona_cobro": "Zona 3 - Centro Chamical",
       "monto_cuota_mensual": 18000.0,
-      "estado": "mora"
+      "estado": "en_mora"
     },
     {
       "numero_afiliado": 45,

@@ -501,7 +501,7 @@ export default function App() {
             cuotasDetalle: currentDetalles.filter(
               (c) => c.mes !== nroCuota && (c as any).nro_cuota !== nroCuota
             ),
-            estado: alDia ? 'activo' : 'inactivo',
+            estado: alDia ? 'activo' : 'en_mora',
           }
           return updatedAfiliado
         }
@@ -616,40 +616,39 @@ export default function App() {
 
   // Guardar Afiliado (CRUD: Create / Update)
   const handleSaveAfiliado = async (datos: Partial<AfiliadoSeguro>) => {
-    let afiliadoTarget: any = null
+    let afiliadoTarget: AfiliadoSeguro | null = null
 
-    if (datos.id || editingAfiliado) {
-      const targetId = datos.id || editingAfiliado?.id
+    const targetId = editingAfiliado?.id || datos.id
+    const isExisting = Boolean(targetId && afiliados.some((a) => a.id === targetId))
+
+    if (isExisting) {
+      const existing = afiliados.find((a) => a.id === targetId)!
+      afiliadoTarget = {
+        ...existing,
+        ...(editingAfiliado || {}),
+        ...datos,
+        cuotasPagadas: existing?.cuotasPagadas || (editingAfiliado as any)?.cuotasPagadas || [1, 2],
+      }
       setAfiliados((prev) => {
-        const updated = prev.map((a) => {
-          if (a.id === targetId) {
-            afiliadoTarget = {
-              ...a,
-              ...(editingAfiliado || {}),
-              ...datos,
-              cuotasPagadas: a.cuotasPagadas || (editingAfiliado as any)?.cuotasPagadas || [1, 2],
-            }
-            return afiliadoTarget
-          }
-          return a
-        })
+        const updated = prev.map((a) => (a.id === targetId ? afiliadoTarget! : a))
         saveAfiliadosToStorage(updated)
         return updated
       })
     } else {
+      const maxNum = afiliados.reduce((max, a) => Math.max(max, Number(a.numero_afiliado) || 0), 0)
       afiliadoTarget = {
-        id: `afi-${Date.now()}`,
-        numero_afiliado: datos.numero_afiliado || afiliados.length + 1,
+        id: datos.id || `afi-${Date.now()}`,
+        numero_afiliado: Number(datos.numero_afiliado) || maxNum + 1,
         nombre_completo: datos.nombre_completo || 'Nuevo Afiliado',
         direccion_cobro: datos.direccion_cobro || 'Chamical',
         zona_cobro: datos.zona_cobro || 'Zona 1 - Centro',
-        monto_cuota_mensual: datos.monto_cuota_mensual || 18000,
-        estado: datos.estado || 'activo',
+        monto_cuota_mensual: Number(datos.monto_cuota_mensual) || 18000,
+        estado: (datos.estado as any) || 'activo',
         fecha_alta: new Date().toISOString().slice(0, 10),
         cuotasPagadas: [1, 2, 3],
       }
       setAfiliados((prev) => {
-        const updated = [afiliadoTarget, ...prev]
+        const updated = [afiliadoTarget!, ...prev]
         saveAfiliadosToStorage(updated)
         return updated
       })
