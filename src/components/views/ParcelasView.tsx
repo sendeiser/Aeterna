@@ -412,7 +412,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
 
           {/* MOBILE VIEW (< md): Responsive Interactive Cards */}
           <div className="md:hidden divide-y divide-outline-variant/40 p-2.5 space-y-3 max-h-[500px] overflow-y-auto custom-scroll">
-            {displayedParcelas.map((p) => {
+            {displayedParcelas.map((p, index) => {
               const isSelected = p.id === selectedParcela?.id
               const isEditing = editingRowId === p.id && editRowData
               const ocupados = p.espacios_ocupados || (p.estado === 'ocupada' || p.estado === 'en_mora' ? 1 : 0)
@@ -528,14 +528,18 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 )
               }
 
+              const isEven = index % 2 === 0
+
               return (
                 <div
                   key={p.id}
                   onClick={() => handleSelectParcela(p)}
                   className={`p-3 rounded-lg border transition-all cursor-pointer flex flex-col gap-2.5 ${
                     isSelected
-                      ? 'bg-primary/5 border-primary shadow-xs'
-                      : 'bg-surface-container-low/40 border-outline-variant/70 hover:border-secondary/50'
+                      ? 'bg-primary/10 border-primary shadow-xs ring-1 ring-primary/40'
+                      : isEven
+                      ? 'bg-white border-slate-200/90 shadow-xs hover:border-primary/50'
+                      : 'bg-[#eaf0f6] border-slate-200/90 shadow-xs hover:border-primary/50'
                   }`}
                 >
                   {/* Card Header: Nomenclatura, Sector, Estado */}
@@ -706,18 +710,18 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
           {/* DESKTOP VIEW (>= md): High Density Table */}
           <div className="hidden md:block overflow-x-auto flex-1 max-h-[460px] custom-scroll">
             <table className="w-full text-left border-collapse">
-              <thead className="sticky top-0 z-20 shadow-xs bg-surface-container">
-                <tr className="border-b border-outline-variant text-label-caps font-label-caps text-outline uppercase bg-surface-container">
-                  <th className="py-2.5 px-3 bg-surface-container">Parcela</th>
-                  <th className="py-2.5 px-3 bg-surface-container">Titular Actual</th>
-                  <th className="py-2.5 px-3 bg-surface-container text-center">Ocupación / Niveles</th>
-                  <th className="py-2.5 px-3 bg-surface-container">Estado</th>
-                  <th className="py-2.5 px-3 bg-surface-container text-right">Saldo</th>
-                  <th className="py-2.5 px-2 bg-surface-container text-center">Acción</th>
+              <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
+                <tr className="text-label-caps font-label-caps text-slate-700 uppercase bg-slate-100">
+                  <th className="py-2.5 px-3 bg-slate-100">Parcela</th>
+                  <th className="py-2.5 px-3 bg-slate-100">Titular Actual</th>
+                  <th className="py-2.5 px-3 bg-slate-100 text-center">Ocupación / Niveles</th>
+                  <th className="py-2.5 px-3 bg-slate-100">Estado</th>
+                  <th className="py-2.5 px-3 bg-slate-100 text-right">Saldo</th>
+                  <th className="py-2.5 px-2 bg-slate-100 text-center">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/40 text-body-sm font-body-sm">
-                {displayedParcelas.map((p) => {
+                {displayedParcelas.map((p, index) => {
                   const isSelected = p.id === selectedParcela?.id
                   const isEditing = editingRowId === p.id && editRowData
                   const ocupados =
@@ -844,14 +848,18 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                     )
                   }
 
+                  const isEven = index % 2 === 0
+
                   return (
                     <tr
                       key={p.id}
                       onClick={() => handleSelectParcela(p)}
-                      className={`transition-colors cursor-pointer ${
+                      className={`transition-colors cursor-pointer border-b border-slate-200/80 ${
                         isSelected
-                          ? 'bg-primary/5 hover:bg-primary/10 border-l-4 border-l-primary'
-                          : 'hover:bg-surface-container-low'
+                          ? 'bg-primary/10 hover:bg-primary/15 border-l-4 border-l-primary font-medium'
+                          : isEven
+                          ? 'bg-white hover:bg-blue-50/80'
+                          : 'bg-[#eaf0f6] hover:bg-blue-50/80'
                       }`}
                     >
                       {/* Nomenclatura */}

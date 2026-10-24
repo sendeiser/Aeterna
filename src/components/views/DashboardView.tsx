@@ -711,19 +711,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* TAB PARCELAS O MORA */}
           {(tableTab === 'parcelas' || tableTab === 'mora') && (
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#F8FAFC] border-b border-outline-variant text-[11px] font-label-caps text-on-surface-variant uppercase tracking-wider h-8 select-none">
-                  <th className="px-4 py-2 w-28 text-left font-semibold">Nomenclatura</th>
-                  <th className="px-4 py-2 min-w-[240px] font-semibold">Titular / DNI</th>
-                  <th className="px-4 py-2 w-32 font-semibold">Ubicación</th>
-                  <th className="px-4 py-2 w-32 font-semibold">Estado</th>
-                  <th className="px-4 py-2 w-32 text-right font-semibold">Monto / Saldo</th>
-                  <th className="px-4 py-2 w-36 text-center font-semibold">Acciones</th>
+              <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
+                <tr className="bg-slate-100 text-[11px] font-label-caps text-slate-700 uppercase tracking-wider h-8 select-none">
+                  <th className="px-4 py-2 w-28 text-left font-semibold bg-slate-100">Nomenclatura</th>
+                  <th className="px-4 py-2 min-w-[240px] font-semibold bg-slate-100">Titular / DNI</th>
+                  <th className="px-4 py-2 w-32 font-semibold bg-slate-100">Ubicación</th>
+                  <th className="px-4 py-2 w-32 font-semibold bg-slate-100">Estado</th>
+                  <th className="px-4 py-2 w-32 text-right font-semibold bg-slate-100">Monto / Saldo</th>
+                  <th className="px-4 py-2 w-36 text-center font-semibold bg-slate-100">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/40 font-body-md text-on-surface">
-                {(tableTab === 'parcelas' ? displayedParcelas : displayedMora).slice(0, 25).map((p) => (
-                  <tr key={p.id} className="hover:bg-surface-container-low/60 transition-colors h-[42px]">
+                {(tableTab === 'parcelas' ? displayedParcelas : displayedMora).slice(0, 25).map((p, index) => (
+                  <tr
+                    key={p.id}
+                    className={`transition-colors h-[42px] border-b border-slate-200/80 ${
+                      index % 2 === 0 ? 'bg-white hover:bg-blue-50/80' : 'bg-[#eaf0f6] hover:bg-blue-50/80'
+                    }`}
+                  >
                     <td className="px-4 py-2 align-middle">
                       <span className="font-code-cadastral text-code-cadastral font-bold text-primary">
                         {p.nomenclatura}
@@ -779,19 +784,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* TAB AFILIADOS */}
           {tableTab === 'afiliados' && (
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#F8FAFC] border-b border-outline-variant text-[11px] font-label-caps text-on-surface-variant uppercase tracking-wider h-8 select-none">
-                  <th className="px-4 py-2 w-28 text-left font-semibold">N° Afiliado</th>
-                  <th className="px-4 py-2 min-w-[240px] font-semibold">Afiliado Titular / DNI</th>
-                  <th className="px-4 py-2 w-44 font-semibold">Zona / Domicilio</th>
-                  <th className="px-4 py-2 w-32 font-semibold">Estado</th>
-                  <th className="px-4 py-2 w-32 text-right font-semibold">Cuota Mensual</th>
-                  <th className="px-4 py-2 w-36 text-center font-semibold">Cobrador</th>
+              <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
+                <tr className="bg-slate-100 text-[11px] font-label-caps text-slate-700 uppercase tracking-wider h-8 select-none">
+                  <th className="px-4 py-2 w-28 text-left font-semibold bg-slate-100">N° Afiliado</th>
+                  <th className="px-4 py-2 min-w-[240px] font-semibold bg-slate-100">Afiliado Titular / DNI</th>
+                  <th className="px-4 py-2 w-44 font-semibold bg-slate-100">Zona / Domicilio</th>
+                  <th className="px-4 py-2 w-32 font-semibold bg-slate-100">Estado</th>
+                  <th className="px-4 py-2 w-32 text-right font-semibold bg-slate-100">Cuota Mensual</th>
+                  <th className="px-4 py-2 w-36 text-center font-semibold bg-slate-100">Cobrador</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/40 font-body-md text-on-surface">
-                {displayedAfiliados.slice(0, 25).map((a) => (
-                  <tr key={a.id} className="hover:bg-surface-container-low/60 transition-colors h-[42px]">
+                {displayedAfiliados.slice(0, 25).map((a, index) => (
+                  <tr
+                    key={a.id}
+                    className={`transition-colors h-[42px] border-b border-slate-200/80 ${
+                      index % 2 === 0 ? 'bg-white hover:bg-blue-50/80' : 'bg-[#eaf0f6] hover:bg-blue-50/80'
+                    }`}
+                  >
                     <td className="px-4 py-2 align-middle">
                       <span className="font-code-cadastral text-code-cadastral font-bold text-primary">
                         N° {a.numero_afiliado}
@@ -833,21 +843,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* TAB INHUMACIONES */}
           {tableTab === 'inhumaciones' && (
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#F8FAFC] border-b border-outline-variant text-[11px] font-label-caps text-on-surface-variant uppercase tracking-wider h-8 select-none">
-                  <th className="px-4 py-2 w-32 text-left font-semibold">Fecha Sepelio</th>
-                  <th className="px-4 py-2 min-w-[240px] font-semibold">Difunto / DNI</th>
-                  <th className="px-4 py-2 w-36 font-semibold">Parcela y Nivel</th>
-                  <th className="px-4 py-2 w-32 font-semibold">Protocolo</th>
-                  <th className="px-4 py-2 w-48 font-semibold">Causa Defunción</th>
-                  <th className="px-4 py-2 w-36 text-center font-semibold">Empresa Fúnebre</th>
+              <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
+                <tr className="bg-slate-100 text-[11px] font-label-caps text-slate-700 uppercase tracking-wider h-8 select-none">
+                  <th className="px-4 py-2 w-32 text-left font-semibold bg-slate-100">Fecha Sepelio</th>
+                  <th className="px-4 py-2 min-w-[240px] font-semibold bg-slate-100">Difunto / DNI</th>
+                  <th className="px-4 py-2 w-36 font-semibold bg-slate-100">Parcela y Nivel</th>
+                  <th className="px-4 py-2 w-32 font-semibold bg-slate-100">Protocolo</th>
+                  <th className="px-4 py-2 w-48 font-semibold bg-slate-100">Causa Defunción</th>
+                  <th className="px-4 py-2 w-36 text-center font-semibold bg-slate-100">Empresa Fúnebre</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/40 font-body-md text-on-surface">
-                {displayedInhumaciones.slice(0, 25).map((i) => {
+                {displayedInhumaciones.slice(0, 25).map((i, index) => {
                   const parcNom = typeof i.parcela === 'object' ? i.parcela?.nomenclatura : i.parcela
                   return (
-                    <tr key={i.id} className="hover:bg-surface-container-low/60 transition-colors h-[42px]">
+                    <tr
+                      key={i.id}
+                      className={`transition-colors h-[42px] border-b border-slate-200/80 ${
+                        index % 2 === 0 ? 'bg-white hover:bg-blue-50/80' : 'bg-[#eaf0f6] hover:bg-blue-50/80'
+                      }`}
+                    >
                       <td className="px-4 py-2 align-middle font-code-cadastral font-semibold text-xs text-on-surface">
                         {i.fecha_inhumacion?.slice(0, 10)}
                       </td>
@@ -892,20 +907,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* TAB TODOS (Consolidado) */}
           {tableTab === 'todos' && (
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#F8FAFC] border-b border-outline-variant text-[11px] font-label-caps text-on-surface-variant uppercase tracking-wider h-8 select-none">
-                  <th className="px-4 py-2 w-28 text-left font-semibold">Módulo</th>
-                  <th className="px-4 py-2 w-32 font-semibold">Identificador</th>
-                  <th className="px-4 py-2 min-w-[240px] font-semibold">Nombre / Titular / Difunto</th>
-                  <th className="px-4 py-2 w-36 font-semibold">Detalle / Ubicación</th>
-                  <th className="px-4 py-2 w-32 font-semibold">Estado</th>
-                  <th className="px-4 py-2 w-32 text-right font-semibold">Monto / Fecha</th>
-                  <th className="px-4 py-2 w-32 text-center font-semibold">Acción</th>
+              <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
+                <tr className="bg-slate-100 text-[11px] font-label-caps text-slate-700 uppercase tracking-wider h-8 select-none">
+                  <th className="px-4 py-2 w-28 text-left font-semibold bg-slate-100">Módulo</th>
+                  <th className="px-4 py-2 w-32 font-semibold bg-slate-100">Identificador</th>
+                  <th className="px-4 py-2 min-w-[240px] font-semibold bg-slate-100">Nombre / Titular / Difunto</th>
+                  <th className="px-4 py-2 w-36 font-semibold bg-slate-100">Detalle / Ubicación</th>
+                  <th className="px-4 py-2 w-32 font-semibold bg-slate-100">Estado</th>
+                  <th className="px-4 py-2 w-32 text-right font-semibold bg-slate-100">Monto / Fecha</th>
+                  <th className="px-4 py-2 w-32 text-center font-semibold bg-slate-100">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/40 font-body-md text-on-surface">
-                {displayedParcelas.slice(0, 10).map((p) => (
-                  <tr key={`p-${p.id}`} className="hover:bg-surface-container-low/60 transition-colors h-[40px]">
+                {displayedParcelas.slice(0, 10).map((p, index) => (
+                  <tr
+                    key={`p-${p.id}`}
+                    className={`transition-colors h-[40px] border-b border-slate-200/80 ${
+                      index % 2 === 0 ? 'bg-white hover:bg-blue-50/80' : 'bg-[#eaf0f6] hover:bg-blue-50/80'
+                    }`}
+                  >
                     <td className="px-4 py-2 align-middle">
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-900 border border-blue-200">
                         PARCELA
@@ -940,8 +960,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </td>
                   </tr>
                 ))}
-                {displayedAfiliados.slice(0, 5).map((a) => (
-                  <tr key={`a-${a.id}`} className="hover:bg-surface-container-low/60 transition-colors h-[40px]">
+                {displayedAfiliados.slice(0, 5).map((a, index) => (
+                  <tr
+                    key={`a-${a.id}`}
+                    className={`transition-colors h-[40px] border-b border-slate-200/80 ${
+                      index % 2 === 0 ? 'bg-white hover:bg-blue-50/80' : 'bg-[#eaf0f6] hover:bg-blue-50/80'
+                    }`}
+                  >
                     <td className="px-4 py-2 align-middle">
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-900 border border-purple-200">
                         AFILIADO
@@ -970,10 +995,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </td>
                   </tr>
                 ))}
-                {displayedInhumaciones.slice(0, 5).map((i) => {
+                {displayedInhumaciones.slice(0, 5).map((i, index) => {
                   const parcNom = typeof i.parcela === 'object' ? i.parcela?.nomenclatura : i.parcela
                   return (
-                    <tr key={`i-${i.id}`} className="hover:bg-surface-container-low/60 transition-colors h-[40px]">
+                    <tr
+                      key={`i-${i.id}`}
+                      className={`transition-colors h-[40px] border-b border-slate-200/80 ${
+                        index % 2 === 0 ? 'bg-white hover:bg-blue-50/80' : 'bg-[#eaf0f6] hover:bg-blue-50/80'
+                      }`}
+                    >
                       <td className="px-4 py-2 align-middle">
                         <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
                           INHUMACIÓN

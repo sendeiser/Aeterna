@@ -255,13 +255,17 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                 ? `${inh.fecha_inhumacion.split('T')[1].slice(0, 5)} hs`
                 : '10:30 hs'
 
+              const isEven = index % 2 === 0
+
               return (
                 <div
                   key={inh.id}
-                  className={`p-3 rounded-lg border flex flex-col gap-2.5 ${
+                  className={`p-3 rounded-lg border flex flex-col gap-2.5 shadow-xs ${
                     inh.es_covid
-                      ? 'bg-[#F5F3FF]/40 border-[#DDD6FE]'
-                      : 'bg-surface-container-low/40 border-outline-variant/70'
+                      ? 'bg-[#F5F3FF] border-[#DDD6FE]'
+                      : isEven
+                      ? 'bg-white border-slate-200/90'
+                      : 'bg-[#eaf0f6] border-slate-200/90'
                   }`}
                 >
                   {/* Card Header: Fecha, Hora, Protocolo Badge */}
@@ -371,12 +375,12 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
         {/* DESKTOP VIEW (>= md): Institutional Data Grid */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-[#F8FAFC] border-b border-outline-variant text-[11px] font-label-caps uppercase text-outline tracking-wider select-none">
-                <th className="py-2 px-3">Fecha Inhumación</th>
-                <th className="py-2 px-3">Difunto / DNI</th>
-                <th className="py-2 px-3">Parcela y Nivel</th>
-                <th className="py-2 px-3 text-right">Acciones Registrales</th>
+            <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
+              <tr className="bg-slate-100 text-[11px] font-label-caps uppercase text-slate-700 tracking-wider select-none">
+                <th className="py-2.5 px-3 bg-slate-100">Fecha Inhumación</th>
+                <th className="py-2.5 px-3 bg-slate-100">Difunto / DNI</th>
+                <th className="py-2.5 px-3 bg-slate-100">Parcela y Nivel</th>
+                <th className="py-2.5 px-3 bg-slate-100 text-right">Acciones Registrales</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/40 text-body-md font-body-md">
@@ -387,8 +391,14 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                   ? `${inh.fecha_inhumacion.split('T')[1].slice(0, 5)} hs`
                   : '10:30 hs'
 
+                const isEven = index % 2 === 0
                 return (
-                  <tr key={inh.id} className="hover:bg-surface-container-low transition-colors h-[40px]">
+                  <tr
+                    key={inh.id}
+                    className={`transition-colors h-[42px] border-b border-slate-200/80 ${
+                      isEven ? 'bg-white hover:bg-blue-50/80' : 'bg-[#eaf0f6] hover:bg-blue-50/80'
+                    }`}
+                  >
                     {/* Fecha */}
                     <td className="py-1 px-3 font-code-cadastral text-code-cadastral whitespace-nowrap text-on-surface">
                       <div className="font-semibold">{fechaInh}</div>

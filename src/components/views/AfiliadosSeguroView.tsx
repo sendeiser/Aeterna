@@ -419,7 +419,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
           {filtered.length === 0 ? (
             <div className="p-4 text-center text-outline text-sm">No se encontraron afiliados.</div>
           ) : (
-            filtered.map((afiliado) => {
+            filtered.map((afiliado, index) => {
               const isEditing = editingRowId === afiliado.id && editRowData
               const cuotasPagadas: number[] =
                 afiliado.cuotasPagadas ||
@@ -518,10 +518,16 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                 )
               }
 
+              const isEven = index % 2 === 0
+
               return (
                 <div
                   key={afiliado.id}
-                  className="p-3.5 rounded-lg border border-outline-variant/70 bg-surface-container-low/40 flex flex-col gap-3 shadow-xs"
+                  className={`p-3.5 rounded-lg border flex flex-col gap-3 shadow-xs ${
+                    isEven
+                      ? 'bg-white border-slate-200/90'
+                      : 'bg-[#eaf0f6] border-slate-200/90'
+                  }`}
                 >
                   {/* Card Header: N° Afiliado, Estado, Zona */}
                   <div className="flex items-start justify-between gap-2">
@@ -698,20 +704,20 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
         {/* DESKTOP VIEW (>= md): Ledger Table with 12-Month Matrix */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b border-outline-variant text-[11px] font-label-caps text-on-surface-variant uppercase tracking-wider h-8 select-none">
-                <th className="px-4 py-2 w-28 text-left font-semibold">N° Afiliado</th>
-                <th className="px-4 py-2 min-w-[280px] font-semibold">Afiliado / Titular & Domicilio</th>
-                <th className="px-4 py-2 w-32 font-semibold">Cuota Base</th>
-                <th className="px-4 py-2 min-w-[500px] text-center font-semibold">
+            <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
+              <tr className="bg-slate-100 text-[11px] font-label-caps text-slate-700 uppercase tracking-wider h-8 select-none">
+                <th className="px-4 py-2 w-28 text-left font-semibold bg-slate-100">N° Afiliado</th>
+                <th className="px-4 py-2 min-w-[280px] font-semibold bg-slate-100">Afiliado / Titular & Domicilio</th>
+                <th className="px-4 py-2 w-32 font-semibold bg-slate-100">Cuota Base</th>
+                <th className="px-4 py-2 min-w-[500px] text-center font-semibold bg-slate-100">
                   <span>Estado Cuotas 2026 (Ene · Feb · Mar · Abr · May · Jun · Jul · Ago · Sep · Oct · Nov · Dic)</span>
                 </th>
-                <th className="px-4 py-2 w-32 text-right font-semibold">Saldo Deuda</th>
-                <th className="px-4 py-2 w-44 text-right font-semibold">Acciones Rápidas</th>
+                <th className="px-4 py-2 w-32 text-right font-semibold bg-slate-100">Saldo Deuda</th>
+                <th className="px-4 py-2 w-44 text-right font-semibold bg-slate-100">Acciones Rápidas</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/40 font-body-md text-on-surface">
-              {filtered.map((afiliado) => {
+              {filtered.map((afiliado, index) => {
                 const isEditing = editingRowId === afiliado.id && editRowData
                 const cuotasPagadas: number[] =
                   afiliado.cuotasPagadas ||
@@ -824,8 +830,14 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                   )
                 }
 
+                const isEven = index % 2 === 0
                 return (
-                  <tr key={afiliado.id} className="hover:bg-surface-container-low/60 transition-colors">
+                  <tr
+                    key={afiliado.id}
+                    className={`transition-colors border-b border-slate-200/80 ${
+                      isEven ? 'bg-white hover:bg-blue-50/80' : 'bg-[#eaf0f6] hover:bg-blue-50/80'
+                    }`}
+                  >
                     {/* Col 1: N° Afiliado */}
                     <td className="px-4 py-3 align-middle">
                       <span className="inline-flex items-center px-2 py-0.5 rounded bg-surface-container text-primary font-code-cadastral text-code-cadastral font-bold border border-outline-variant">
