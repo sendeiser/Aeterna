@@ -338,18 +338,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* ========================================================================= */}
       <header className={`fixed top-0 right-0 left-0 ${isCollapsed ? 'lg:left-20' : 'lg:left-64'} transition-all duration-300 h-14 z-30 flex items-center justify-between px-3 sm:px-6 bg-surface-container-lowest border-b border-outline-variant shadow-sm print:hidden`}>
         <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 pr-2">
-          {/* Botón Minimizar / Expandir en Topbar para desktop */}
-          <button
-            type="button"
-            id="btn-topbar-toggle-sidebar"
-            onClick={onToggleCollapse}
-            className="hidden lg:flex w-8 h-8 items-center justify-center rounded-lg text-outline hover:text-primary hover:bg-surface-container transition-colors cursor-pointer mr-1"
-            title={isCollapsed ? 'Expandir barra lateral' : 'Minimizar barra lateral'}
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              {isCollapsed ? 'menu' : 'menu_open'}
-            </span>
-          </button>
 
           <img
             src="/logo_aeterna.png"

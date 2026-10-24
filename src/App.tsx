@@ -770,39 +770,39 @@ export default function App() {
 
       {/* Canvas Principal */}
       <main className={`${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} transition-all duration-300 pt-14 min-h-screen pb-20 lg:pb-8 bg-surface text-on-surface`}>
-        <div className="px-2.5 py-4 sm:p-6 max-w-[1600px] w-full mx-auto space-y-6">
-          {/* Encabezado Institucional Oficial para Impresión A4 de Reportes */}
-          <div className="hidden print:block pb-4 mb-6 border-b-2 border-slate-900">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-700 block">
-                  MUNICIPALIDAD DEL DEPARTAMENTO GENERAL BELGRANO · LA RIOJA
-                </span>
-                <h1 className="text-xl font-black text-slate-950 uppercase tracking-tight">
-                  {currentTab === 'dashboard' && 'REPORTE CONSOLIDADO DE GESTIÓN Y RECAUDACIÓN'}
-                  {currentTab === 'parcelas' && 'PADRÓN GENERAL Y REGISTRO DE PARCELAS'}
-                  {currentTab === 'inhumaciones' && 'LIBRO OFICIAL DE INHUMACIONES Y REGISTRO DE DIFUNTOS'}
-                  {currentTab === 'seguro' && 'PADRÓN DE AFILIADOS Y ESTADO DE COBRANZA PLAN SEGURO INTEGRAL'}
-                  {currentTab === 'configuracion' && 'CONSTANCIA DE PARÁMETROS Y ARANCELES MUNICIPALES'}
-                </h1>
-                <p className="text-xs text-slate-600 font-medium">
-                  Cementerio Parque Municipal Aeterna · Sistema de Gestión y Fiscalización Mortuoria
-                </p>
-              </div>
-              <div className="text-right text-xs space-y-0.5">
-                <span className="block font-bold text-slate-900">
-                  Fecha: {new Date().toLocaleDateString('es-AR')}
-                </span>
-                <span className="block text-slate-600">
-                  Hora: {new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} hs
-                </span>
-                <span className="inline-block mt-1 px-2.5 py-0.5 rounded bg-slate-100 border border-slate-300 text-[10px] font-mono font-bold">
-                  EXPEDIENTE OFICIAL DE REGISTRO
-                </span>
-              </div>
+        {/* Encabezado Institucional Oficial para Impresión A4 de Reportes */}
+        <div className="hidden print:block px-6 pt-4 pb-4 mb-4 border-b-2 border-slate-900 max-w-[1600px] mx-auto">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-700 block">
+                MUNICIPALIDAD DEL DEPARTAMENTO GENERAL BELGRANO · LA RIOJA
+              </span>
+              <h1 className="text-xl font-black text-slate-950 uppercase tracking-tight">
+                {currentTab === 'dashboard' && 'REPORTE CONSOLIDADO DE GESTIÓN Y RECAUDACIÓN'}
+                {currentTab === 'parcelas' && 'PADRÓN GENERAL Y REGISTRO DE PARCELAS'}
+                {currentTab === 'inhumaciones' && 'LIBRO OFICIAL DE INHUMACIONES Y REGISTRO DE DIFUNTOS'}
+                {currentTab === 'seguro' && 'PADRÓN DE AFILIADOS Y ESTADO DE COBRANZA PLAN SEGURO INTEGRAL'}
+                {currentTab === 'configuracion' && 'CONSTANCIA DE PARÁMETROS Y ARANCELES MUNICIPALES'}
+              </h1>
+              <p className="text-xs text-slate-600 font-medium">
+                Cementerio Parque Municipal Aeterna · Sistema de Gestión y Fiscalización Mortuoria
+              </p>
+            </div>
+            <div className="text-right text-xs space-y-0.5">
+              <span className="block font-bold text-slate-900">
+                Fecha: {new Date().toLocaleDateString('es-AR')}
+              </span>
+              <span className="block text-slate-600">
+                Hora: {new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} hs
+              </span>
+              <span className="inline-block mt-1 px-2.5 py-0.5 rounded bg-slate-100 border border-slate-300 text-[10px] font-mono font-bold">
+                EXPEDIENTE OFICIAL DE REGISTRO
+              </span>
             </div>
           </div>
+        </div>
 
+        <div className="px-2 sm:px-4 pt-1.5 sm:pt-2.5 pb-6 max-w-[1600px] w-full mx-auto space-y-3 sm:space-y-4">
           {currentTab === 'dashboard' && (
             <DashboardView
               parcelas={parcelas}
