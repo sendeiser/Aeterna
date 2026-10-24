@@ -217,17 +217,17 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   const countStandby = parcelas.filter((p) => p.estado === 'standby').length
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-2 sm:space-y-4">
       {/* Search & Filter Toolbar */}
-      <div className="bg-surface-container-lowest rounded border border-outline-variant p-3 shadow-sm flex flex-col gap-2.5">
+      <div className="bg-surface-container-lowest rounded border border-outline-variant p-2 sm:p-3 shadow-sm flex flex-col gap-1.5 sm:gap-2.5">
         {/* Header de Toolbar: Título + Botón Nueva Parcela */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-outline-variant/60">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[22px]">domain</span>
-            <div>
-              <h2 className="text-headline-sm font-semibold text-on-surface">Padrón de Parcelas</h2>
-              <p className="text-body-sm text-on-surface-variant">
-                Gestión de parcelas, titulares y asignaciones de fosa
+        <div className="flex items-center justify-between gap-2 pb-1.5 sm:pb-2 border-b border-outline-variant/60">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <span className="material-symbols-outlined text-primary text-[18px] sm:text-[22px] shrink-0">domain</span>
+            <div className="min-w-0">
+              <h2 className="text-sm sm:text-headline-sm font-semibold text-on-surface leading-tight truncate">Padrón de Parcelas</h2>
+              <p className="text-[10px] sm:text-body-sm text-on-surface-variant truncate">
+                Gestión de parcelas, titulares y fosas
               </p>
             </div>
           </div>
@@ -236,166 +236,168 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               id="btn-nueva-parcela"
               type="button"
               onClick={onNuevaParcela}
-              className="h-8 px-3.5 bg-primary text-on-primary hover:bg-primary/90 font-semibold text-xs rounded-lg flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+              className="h-7 sm:h-8 px-2.5 sm:px-3.5 bg-primary text-on-primary hover:bg-primary/90 font-semibold text-[11px] sm:text-xs rounded-lg flex items-center gap-1 shadow-sm transition-colors cursor-pointer shrink-0"
             >
-              <span className="material-symbols-outlined text-[16px]">add_circle</span>
-              <span>Nueva Parcela</span>
+              <span className="material-symbols-outlined text-[14px] sm:text-[16px]">add_circle</span>
+              <span className="hidden xs:inline sm:inline">Nueva Parcela</span>
+              <span className="xs:hidden sm:hidden">Nueva</span>
             </button>
           )}
         </div>
-          {/* Filter Tabs / Sector Chips - Scrollable on mobile */}
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-1 overflow-x-auto custom-scroll pb-1 w-full sm:w-auto">
-              <button
-                type="button"
-                onClick={() => setFilterSector('todos')}
-                className={`px-3 py-1 rounded text-body-sm font-semibold whitespace-nowrap transition-colors shrink-0 ${
-                  filterSector === 'todos'
-                    ? 'bg-primary text-on-primary shadow-xs'
-                    : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
-                }`}
-              >
-                Todos ({parcelas.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilterSector('A')}
-                className={`px-3 py-1 rounded text-body-sm font-medium whitespace-nowrap transition-colors shrink-0 ${
-                  filterSector === 'A'
-                    ? 'bg-primary text-on-primary shadow-xs font-semibold'
-                    : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
-                }`}
-              >
-                Sector A ({countSecA})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilterSector('E')}
-                className={`px-3 py-1 rounded text-body-sm font-medium whitespace-nowrap transition-colors shrink-0 ${
-                  filterSector === 'E'
-                    ? 'bg-primary text-on-primary shadow-xs font-semibold'
-                    : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
-                }`}
-              >
-                Sector E ({countSecE})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilterSector('SALINAS')}
-                className={`px-3 py-1 rounded text-body-sm font-medium whitespace-nowrap transition-colors shrink-0 ${
-                  filterSector === 'SALINAS'
-                    ? 'bg-primary text-on-primary shadow-xs font-semibold'
-                    : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
-                }`}
-              >
-                Salinas ({countSalinas})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilterSector('mora')}
-                className={`px-3 py-1 rounded text-body-sm font-medium border whitespace-nowrap transition-colors shrink-0 ${
-                  filterSector === 'mora'
-                    ? 'border-amber-600 bg-amber-600 text-white font-semibold'
-                    : 'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100'
-                }`}
-              >
-                En Mora ({countMora})
-              </button>
-              <button
-                id="btn-filtro-sector-standby"
-                type="button"
-                onClick={() => setFilterSector('standby')}
-                className={`px-3 py-1 rounded text-body-sm font-medium border whitespace-nowrap transition-colors shrink-0 ${
-                  filterSector === 'standby'
-                    ? 'border-rose-600 bg-rose-600 text-white font-semibold'
-                    : 'border-rose-300 bg-rose-50 text-rose-900 hover:bg-rose-100'
-                }`}
-              >
-                ⚠️ Stand-by (+3 años) ({countStandby})
-              </button>
-            </div>
-            {/* Quick Counter Metric */}
-            <span className="text-body-sm font-code-cadastral text-outline shrink-0">
-              Total reg: {filteredParcelas.length} parcelas
-            </span>
-          </div>
 
-          {/* Quick Search Cadastral Input */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <span
-                className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline"
-                data-icon="search"
-              >
-                search
-              </span>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Filtrar por parcela (ej. A-25), apellido titular o DNI..."
-                className="w-full h-9 pl-9 pr-3 text-body-md bg-surface-container-low border border-outline-variant rounded focus:border-secondary focus:bg-white focus:outline-none"
-              />
-            </div>
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => setSearchTerm('')}
-                className="h-9 px-3 rounded border border-outline-variant bg-surface text-on-surface hover:bg-surface-container flex items-center gap-1 text-body-sm font-medium shrink-0"
-              >
-                <span className="material-symbols-outlined text-[16px]">close</span>
-                <span>Limpiar</span>
-              </button>
-            )}
+        {/* Filter Tabs / Sector Chips - Scrollable on mobile */}
+        <div className="flex items-center justify-between flex-wrap gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1 overflow-x-auto custom-scroll pb-0.5 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setFilterSector('todos')}
+              className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded text-[11px] sm:text-body-sm font-semibold whitespace-nowrap transition-colors shrink-0 ${
+                filterSector === 'todos'
+                  ? 'bg-primary text-on-primary shadow-xs'
+                  : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
+              }`}
+            >
+              Todos ({parcelas.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterSector('A')}
+              className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded text-[11px] sm:text-body-sm font-medium whitespace-nowrap transition-colors shrink-0 ${
+                filterSector === 'A'
+                  ? 'bg-primary text-on-primary shadow-xs font-semibold'
+                  : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
+              }`}
+            >
+              Sector A ({countSecA})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterSector('E')}
+              className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded text-[11px] sm:text-body-sm font-medium whitespace-nowrap transition-colors shrink-0 ${
+                filterSector === 'E'
+                  ? 'bg-primary text-on-primary shadow-xs font-semibold'
+                  : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
+              }`}
+            >
+              Sector E ({countSecE})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterSector('SALINAS')}
+              className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded text-[11px] sm:text-body-sm font-medium whitespace-nowrap transition-colors shrink-0 ${
+                filterSector === 'SALINAS'
+                  ? 'bg-primary text-on-primary shadow-xs font-semibold'
+                  : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
+              }`}
+            >
+              Salinas ({countSalinas})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterSector('mora')}
+              className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded text-[11px] sm:text-body-sm font-medium border whitespace-nowrap transition-colors shrink-0 ${
+                filterSector === 'mora'
+                  ? 'border-amber-600 bg-amber-600 text-white font-semibold'
+                  : 'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100'
+              }`}
+            >
+              En Mora ({countMora})
+            </button>
+            <button
+              id="btn-filtro-sector-standby"
+              type="button"
+              onClick={() => setFilterSector('standby')}
+              className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded text-[11px] sm:text-body-sm font-medium border whitespace-nowrap transition-colors shrink-0 ${
+                filterSector === 'standby'
+                  ? 'border-rose-600 bg-rose-600 text-white font-semibold'
+                  : 'border-rose-300 bg-rose-50 text-rose-900 hover:bg-rose-100'
+              }`}
+            >
+              ⚠️ Stand-by ({countStandby})
+            </button>
           </div>
+          {/* Quick Counter Metric */}
+          <span className="text-[10px] sm:text-body-sm font-code-cadastral text-outline shrink-0 hidden sm:inline">
+            Total reg: {filteredParcelas.length} parcelas
+          </span>
+        </div>
 
-          {/* Titular Vital Condition Filter */}
-          <div className="flex items-center gap-2 pt-1 border-t border-outline-variant/40 flex-wrap">
-            <span className="text-[11px] font-semibold text-outline uppercase tracking-wider">
-              Condición Titular:
+        {/* Quick Search Cadastral Input */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="relative flex-1">
+            <span
+              className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px] sm:text-[20px]"
+              data-icon="search"
+            >
+              search
             </span>
-            <div className="flex items-center gap-1 bg-surface-container-low p-0.5 rounded border border-outline-variant">
-              <button
-                id="btn-filtro-vital-todos"
-                type="button"
-                onClick={() => setFilterTitularVital('todos')}
-                className={`px-2.5 py-0.5 rounded text-xs font-medium transition-colors ${
-                  filterTitularVital === 'todos'
-                    ? 'bg-primary text-white shadow-xs font-semibold'
-                    : 'text-on-surface hover:bg-surface-container'
-                }`}
-              >
-                Todos
-              </button>
-              <button
-                id="btn-filtro-vital-vivo"
-                type="button"
-                onClick={() => setFilterTitularVital('vivo')}
-                className={`px-2.5 py-0.5 rounded text-xs font-medium flex items-center gap-1 transition-colors ${
-                  filterTitularVital === 'vivo'
-                    ? 'bg-emerald-600 text-white shadow-xs font-semibold'
-                    : 'text-emerald-800 hover:bg-emerald-50'
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                <span>Vivos</span>
-              </button>
-              <button
-                id="btn-filtro-vital-fallecido"
-                type="button"
-                onClick={() => setFilterTitularVital('fallecido')}
-                className={`px-2.5 py-0.5 rounded text-xs font-medium flex items-center gap-1 transition-colors ${
-                  filterTitularVital === 'fallecido'
-                    ? 'bg-slate-700 text-white shadow-xs font-semibold'
-                    : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                <span>Fallecidos</span>
-              </button>
-            </div>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Filtrar por parcela (ej. A-25), apellido titular o DNI..."
+              className="w-full h-8 sm:h-9 pl-8 sm:pl-9 pr-3 text-xs sm:text-body-md bg-surface-container-low border border-outline-variant rounded focus:border-secondary focus:bg-white focus:outline-none"
+            />
+          </div>
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="h-8 sm:h-9 px-2 sm:px-3 rounded border border-outline-variant bg-surface text-on-surface hover:bg-surface-container flex items-center gap-1 text-[11px] sm:text-body-sm font-medium shrink-0"
+            >
+              <span className="material-symbols-outlined text-[14px] sm:text-[16px]">close</span>
+              <span>Limpiar</span>
+            </button>
+          )}
+        </div>
+
+        {/* Titular Vital Condition Filter */}
+        <div className="flex items-center gap-1.5 sm:gap-2 pt-1 border-t border-outline-variant/40 flex-wrap">
+          <span className="text-[9px] sm:text-[11px] font-semibold text-outline uppercase tracking-wider">
+            Condición:
+          </span>
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-surface-container-low p-0.5 rounded border border-outline-variant">
+            <button
+              id="btn-filtro-vital-todos"
+              type="button"
+              onClick={() => setFilterTitularVital('todos')}
+              className={`px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded text-[10px] sm:text-xs font-medium transition-colors ${
+                filterTitularVital === 'todos'
+                  ? 'bg-primary text-white shadow-xs font-semibold'
+                  : 'text-on-surface hover:bg-surface-container'
+              }`}
+            >
+              Todos
+            </button>
+            <button
+              id="btn-filtro-vital-vivo"
+              type="button"
+              onClick={() => setFilterTitularVital('vivo')}
+              className={`px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded text-[10px] sm:text-xs font-medium flex items-center gap-1 transition-colors ${
+                filterTitularVital === 'vivo'
+                  ? 'bg-emerald-600 text-white shadow-xs font-semibold'
+                  : 'text-emerald-800 hover:bg-emerald-50'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span>Vivos</span>
+            </button>
+            <button
+              id="btn-filtro-vital-fallecido"
+              type="button"
+              onClick={() => setFilterTitularVital('fallecido')}
+              className={`px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded text-[10px] sm:text-xs font-medium flex items-center gap-1 transition-colors ${
+                filterTitularVital === 'fallecido'
+                  ? 'bg-slate-700 text-white shadow-xs font-semibold'
+                  : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+              <span>Fallecidos</span>
+            </button>
           </div>
         </div>
+      </div>
 
         {/* Parcel List / Interactive Data Grid & Mobile Cards */}
         <div className="bg-surface-container-lowest rounded border border-outline-variant shadow-sm flex flex-col overflow-hidden">
@@ -999,8 +1001,8 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                           )}
                           <button
                             type="button"
-                            onClick={() => handleSelectParcela(p)}
-                            title="Ver detalle de difuntos"
+                            onClick={() => setModalEditParcela(p)}
+                            title="Ver y editar detalles de parcela"
                             className="w-7 h-7 inline-flex items-center justify-center rounded hover:bg-surface-container text-outline cursor-pointer"
                           >
                             <span className="material-symbols-outlined text-[18px]" data-icon="visibility">
@@ -1109,227 +1111,6 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
             </div>
           </div>
         </div>
-
-        {/* ========================================================================= */}
-        {/* FICHA RÁPIDA INFERIOR (Stitch Verbatim: Detalle de parcela y difuntos)    */}
-        {/* ========================================================================= */}
-        {selectedParcela && (
-          <div className="bg-surface-container-lowest rounded border border-outline-variant p-3.5 shadow-sm">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pb-2.5 mb-2.5 border-b border-outline-variant">
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <span className="material-symbols-outlined text-primary text-[18px]" data-icon="inventory_2">
-                  inventory_2
-                </span>
-                <h3 className="text-title-md font-title-md text-on-surface font-semibold">
-                  Ficha Rápida: Parcela{' '}
-                  <span className="font-code-cadastral text-primary">{selectedParcela.nomenclatura}</span>
-                </h3>
-                <span className="text-body-sm text-outline">
-                  ({selectedParcela.espacios_ocupados || (selectedParcela.estado === 'ocupada' ? 1 : 0)}/
-                  {selectedParcela.capacidad_total || 3} Ocupados)
-                </span>
-              </div>
-              <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                <button
-                  type="button"
-                  id={`btn-editar-ficha-rapida-${selectedParcela.id}`}
-                  onClick={() => setModalEditParcela(selectedParcela)}
-                  className="h-8 px-3 rounded text-body-sm font-semibold bg-surface-container hover:bg-surface-container-high text-primary border border-outline-variant transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-                  title="Editar Parcela en Modal"
-                >
-                  <span className="material-symbols-outlined text-[16px]">edit</span>
-                  <span>Editar Parcela</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (onNuevaInhumacionParaParcela) {
-                      onNuevaInhumacionParaParcela(selectedParcela.nomenclatura)
-                    }
-                  }}
-                  className="h-8 px-3 rounded text-body-sm font-semibold bg-secondary hover:bg-primary text-white transition-colors flex items-center justify-center gap-1.5 shadow-xs shrink-0 cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[16px]" data-icon="add_circle">
-                    add_circle
-                  </span>
-                  <span className="hidden sm:inline">Registrar Nueva Inhumación</span>
-                  <span className="sm:hidden">Inhumación</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Alerta Destacada de Stand-by en Ficha Rápida */}
-            {selectedParcela.estado === 'standby' && (
-              <div className="mb-3.5 p-3 bg-rose-50 border border-rose-300 rounded-md text-rose-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
-                <div className="flex items-start gap-2.5">
-                  <span className="material-symbols-outlined text-rose-600 text-[24px] mt-0.5 shrink-0">
-                    warning
-                  </span>
-                  <div>
-                    <h4 className="text-body-md font-bold text-rose-900 flex items-center gap-2 flex-wrap">
-                      <span>Parcela en Stand-by por Deuda de Mantenimiento (+3 Años)</span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-600 text-white uppercase tracking-wider">
-                        Titularidad Suspendida
-                      </span>
-                    </h4>
-                    <p className="text-body-sm text-rose-800 mt-0.5">
-                      Esta parcela ha entrado en suspensión preventiva tras acumular más de 3 años de mora en tasas de mantenimiento.
-                    </p>
-                    <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-rose-900 font-medium">
-                      <span className="bg-rose-100/80 px-2 py-0.5 rounded border border-rose-200">
-                        <strong>Última cuota pagada:</strong> {selectedParcela.ultima_cuota_pagada || (selectedParcela.fecha_ultimo_pago ? selectedParcela.fecha_ultimo_pago : 'Sin pagos registrados')}
-                      </span>
-                      {selectedParcela.saldo_mantenimiento && selectedParcela.saldo_mantenimiento > 0 ? (
-                        <span className="bg-rose-100/80 px-2 py-0.5 rounded border border-rose-200">
-                          <strong>Deuda estimada:</strong> ${selectedParcela.saldo_mantenimiento.toLocaleString('es-AR')}
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                  <button
-                    type="button"
-                    id={`btn-editar-standby-ficha-${selectedParcela.id}`}
-                    onClick={() => setModalEditParcela(selectedParcela)}
-                    className="px-3 py-1.5 rounded text-xs font-semibold bg-white hover:bg-surface-container text-primary border border-outline-variant flex items-center gap-1 shadow-xs cursor-pointer"
-                    title="Editar Parcela en Modal"
-                  >
-                    <span className="material-symbols-outlined text-[15px]">edit</span>
-                    <span>Editar Parcela</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleReactivar(selectedParcela)}
-                    className="px-3 py-1.5 rounded text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 shadow-xs cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[15px]">restore</span>
-                    <span>Reactivar Parcela</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleLiberar(selectedParcela)}
-                    className="px-3 py-1.5 rounded text-xs font-semibold bg-rose-700 hover:bg-rose-800 text-white flex items-center gap-1 shadow-xs cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[15px]">lock_open</span>
-                    <span>Liberar Parcela</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* List of Deceased in this plot */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-              {difuntosEnParcela.length > 0 ? (
-                difuntosEnParcela.map((dif, idx) => (
-                  <div
-                    key={dif.id}
-                    className="p-2.5 rounded border border-outline-variant/80 bg-surface flex items-start justify-between"
-                  >
-                    <div className="flex items-start gap-2.5">
-                      <div className="w-7 h-7 rounded bg-surface-container text-primary font-bold flex items-center justify-center font-code-cadastral text-[12px] flex-shrink-0">
-                        N{dif.nivel_posicion || idx + 1}
-                      </div>
-                      <div>
-                        <h4 className="text-body-md font-semibold text-on-surface">{dif.nombre_difunto}</h4>
-                        <div className="flex items-center gap-2 text-body-sm text-outline mt-0.5">
-                          <span className="flex items-center gap-0.5">
-                            <span className="material-symbols-outlined text-[14px]" data-icon="event">
-                              event
-                            </span>
-                            <span>Inhumado: {dif.fecha_inhumacion?.slice(0, 10)}</span>
-                          </span>
-                          <span>•</span>
-                          <span className="font-code-cadastral text-[11px]">{dif.causa_defuncion || 'Causa Natural'}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <span
-                      className={`text-[11px] font-medium px-1.5 py-0.5 rounded border ${
-                        dif.es_covid
-                          ? 'text-[#5B21B6] bg-[#F5F3FF] border-[#DDD6FE]'
-                          : 'text-emerald-800 bg-emerald-50 border-emerald-200'
-                      }`}
-                    >
-                      {dif.es_covid ? 'COVID-19' : 'Regular'}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                /* Fallback Stitch Mock Data si no hay difunto registrado para ver la estructura */
-                <>
-                  <div className="p-2.5 rounded border border-outline-variant/80 bg-surface flex items-start justify-between">
-                    <div className="flex items-start gap-2.5">
-                      <div className="w-7 h-7 rounded bg-surface-container text-primary font-bold flex items-center justify-center font-code-cadastral text-[12px] flex-shrink-0">
-                        N1
-                      </div>
-                      <div>
-                        <h4 className="text-body-md font-semibold text-on-surface">
-                          {selectedParcela.titular?.nombre_completo || 'Fernández Morales, Ernesto'}
-                        </h4>
-                        <div className="flex items-center gap-2 text-body-sm text-outline mt-0.5">
-                          <span className="flex items-center gap-0.5">
-                            <span className="material-symbols-outlined text-[14px]" data-icon="event">
-                              event
-                            </span>
-                            <span>Inhumado: 14/06/1998</span>
-                          </span>
-                          <span>•</span>
-                          <span className="font-code-cadastral text-[11px]">Acta #451-B</span>
-                        </div>
-                      </div>
-                    </div>
-                    <span className="text-[11px] font-medium text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                      Regular
-                    </span>
-                  </div>
-
-                  <div className="p-2.5 rounded border border-outline-variant/80 bg-surface flex items-start justify-between">
-                    <div className="flex items-start gap-2.5">
-                      <div className="w-7 h-7 rounded bg-surface-container text-primary font-bold flex items-center justify-center font-code-cadastral text-[12px] flex-shrink-0">
-                        N2
-                      </div>
-                      <div>
-                        <h4 className="text-body-md font-semibold text-on-surface">
-                          Morales de Fernández, Carmen Rosa
-                        </h4>
-                        <div className="flex items-center gap-2 text-body-sm text-outline mt-0.5">
-                          <span className="flex items-center gap-0.5">
-                            <span className="material-symbols-outlined text-[14px]" data-icon="event">
-                              event
-                            </span>
-                            <span>Inhumado: 09/11/2017</span>
-                          </span>
-                          <span>•</span>
-                          <span className="font-code-cadastral text-[11px]">Acta #882-C</span>
-                        </div>
-                      </div>
-                    </div>
-                    <span className="text-[11px] font-medium text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                      Regular
-                    </span>
-                  </div>
-                </>
-              )}
-
-              {/* Nivel 3 (Disponible) Stitch Card */}
-              <div className="md:col-span-2 p-2 rounded border border-dashed border-outline-variant bg-surface-bright flex items-center justify-between text-body-sm text-outline">
-                <div className="flex items-center gap-2">
-                  <span className="w-7 h-7 rounded border border-dashed border-outline-variant flex items-center justify-center font-code-cadastral text-[12px] font-medium text-outline">
-                    N3
-                  </span>
-                  <span className="font-medium text-on-surface-variant">
-                    Nivel Superior Disponible para futura asignación familiar
-                  </span>
-                </div>
-                <span className="font-code-cadastral text-[12px] text-primary font-semibold">
-                  Espacio Apto
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
 
       {/* Modal de Edición de Parcela (Requerimiento explícito: editar a través de un modal) */}
       {modalEditParcela && (

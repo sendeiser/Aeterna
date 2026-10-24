@@ -17,6 +17,47 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({ config, on
   const [mensaje, setMensaje] = useState(config.mensaje_recibo)
   const [guardado, setGuardado] = useState(false)
 
+  // Single-User Admin Credentials State
+  const [adminUsername, setAdminUsername] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('aeterna_admin_credentials')
+      if (stored) {
+        try {
+          return JSON.parse(stored).username || 'admin'
+        } catch (e) {}
+      }
+    }
+    return 'admin'
+  })
+  const [adminPassword, setAdminPassword] = useState('')
+  const [credGuardado, setCredGuardado] = useState(false)
+
+  const handleSaveCredentials = () => {
+    if (!adminUsername.trim()) {
+      alert('El nombre de usuario no puede estar vacío.')
+      return
+    }
+    const currentStored = typeof window !== 'undefined' ? localStorage.getItem('aeterna_admin_credentials') : null
+    let currentPass = 'admin'
+    if (currentStored) {
+      try {
+        currentPass = JSON.parse(currentStored).password || 'admin'
+      } catch (e) {}
+    }
+    const finalPass = adminPassword.trim() ? adminPassword.trim() : currentPass
+    const newCreds = {
+      username: adminUsername.trim(),
+      password: finalPass,
+      updatedAt: new Date().toISOString(),
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('aeterna_admin_credentials', JSON.stringify(newCreds))
+    }
+    setAdminPassword('')
+    setCredGuardado(true)
+    setTimeout(() => setCredGuardado(false), 2500)
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSave({
@@ -203,6 +244,69 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({ config, on
             <div className="text-[11px] text-outline mt-1">CBU:</div>
             <div className="font-mono text-[10px] text-on-surface-variant truncate">{cbu}</div>
           </div>
+        </div>
+      </div>
+
+      {/* Sección Seguridad de Usuario Único */}
+      <div className="bg-surface-container-lowest border border-outline-variant p-5 sm:p-6 rounded-xl shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-outline-variant pb-3">
+          <div className="flex items-center gap-2.5">
+            <span className="material-symbols-outlined text-primary text-[22px]">admin_panel_settings</span>
+            <div>
+              <h3 className="text-base font-bold text-on-surface">Credenciales del Usuario Administrador</h3>
+              <p className="text-xs text-on-surface-variant">Acceso único protegido para la gestión oficial del cementerio y seguros.</p>
+            </div>
+          </div>
+          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+            Usuario Activo: <strong className="font-mono">{adminUsername}</strong>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-bold text-on-surface uppercase block mb-1">
+              Nombre de Usuario
+            </label>
+            <input
+              type="text"
+              id="cfg-admin-username"
+              value={adminUsername}
+              onChange={(e) => setAdminUsername(e.target.value)}
+              className="w-full h-9 px-3 text-sm bg-white border border-outline-variant rounded-lg focus:border-secondary focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-on-surface uppercase block mb-1">
+              Nueva Contraseña
+            </label>
+            <input
+              type="password"
+              id="cfg-admin-password"
+              value={adminPassword}
+              onChange={(e) => setAdminPassword(e.target.value)}
+              placeholder="Dejar en blanco para mantener la actual"
+              className="w-full h-9 px-3 text-sm bg-white border border-outline-variant rounded-lg focus:border-secondary focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-2">
+          {credGuardado ? (
+            <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200 animate-in fade-in">
+              ✓ Credenciales actualizadas correctamente
+            </span>
+          ) : (
+            <span className="text-[11px] text-outline">Por defecto: usuario <strong>admin</strong> / clave <strong>admin</strong></span>
+          )}
+          <button
+            type="button"
+            id="btn-guardar-credenciales"
+            onClick={handleSaveCredentials}
+            className="px-4 h-8 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-[0.99]"
+          >
+            <span className="material-symbols-outlined text-[16px]">lock_reset</span>
+            <span>Actualizar Credenciales</span>
+          </button>
         </div>
       </div>
     </div>

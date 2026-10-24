@@ -12,6 +12,7 @@ import { AfiliadosSeguroView } from './components/views/AfiliadosSeguroView'
 import { ConfiguracionView } from './components/views/ConfiguracionView'
 import { CierreCajaModal } from './components/modals/CierreCajaModal'
 import { PortalPagoPublico } from './components/payment/PortalPagoPublico'
+import { LoginView } from './components/auth/LoginView'
 import { Parcela, Inhumacion, AfiliadoSeguro, ConfiguracionCobro } from './types/database'
 import { isSupabaseConfigured } from './lib/supabase'
 import {
@@ -39,6 +40,30 @@ import {
 } from './services/dataService'
 
 export default function App() {
+  // Single-User Authentication state
+  const [currentUser, setCurrentUser] = useState<{ username: string; name: string; role: string } | null>(() => {
+    if (typeof window !== 'undefined') {
+      const savedLocal = localStorage.getItem('aeterna_auth_session')
+      const savedSession = sessionStorage.getItem('aeterna_auth_session')
+      const raw = savedLocal || savedSession
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw)
+          if (parsed && parsed.user) return parsed.user
+        } catch (e) {}
+      }
+    }
+    return null
+  })
+
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('aeterna_auth_session')
+      sessionStorage.removeItem('aeterna_auth_session')
+    }
+    setCurrentUser(null)
+  }
+
   const [currentTab, setCurrentTab] = useState<TabType>('dashboard')
   const [searchOpen, setSearchOpen] = useState(false)
   const [cierreCajaOpen, setCierreCajaOpen] = useState(false)
@@ -707,6 +732,11 @@ export default function App() {
     )
   }
 
+  // Si no hay usuario autenticado, presentar pantalla de login de usuario único
+  if (!currentUser) {
+    return <LoginView onLoginSuccess={(user) => setCurrentUser(user)} />
+  }
+
   return (
     <div className="h-full min-h-screen bg-surface text-on-surface antialiased font-sans flex flex-col">
       {/* Navegación Stitch SideBar & TopBar */}
@@ -734,6 +764,8 @@ export default function App() {
         }}
         onCierreCaja={() => setCierreCajaOpen(true)}
         isOnline={isSupabaseConfigured}
+        currentUser={currentUser}
+        onLogout={handleLogout}
       />
 
       {/* Canvas Principal */}

@@ -14,6 +14,8 @@ interface NavbarProps {
   isOnline: boolean
   isCollapsed?: boolean
   onToggleCollapse?: () => void
+  currentUser?: { username: string; name: string; role: string } | null
+  onLogout?: () => void
 }
 
 interface NotificationItem {
@@ -70,6 +72,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   isOnline,
   isCollapsed = false,
   onToggleCollapse,
+  currentUser,
+  onLogout,
 }) => {
   const [soporteOpen, setSoporteOpen] = useState(false)
   const [auditoriaOpen, setAuditoriaOpen] = useState(false)
@@ -268,10 +272,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="material-symbols-outlined text-[20px]">shield</span>
               </button>
               <div
-                className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary font-semibold text-xs mt-1"
-                title="Of. Registro Civil - Chamical"
+                onClick={onLogout}
+                className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs mt-1 hover:bg-rose-50 hover:text-rose-700 cursor-pointer"
+                title="Usuario Administrador (Clic para salir)"
               >
-                RC
+                AD
               </div>
             </div>
           ) : (
@@ -297,15 +302,31 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="font-medium">Auditoría Fiscal & AFIP</span>
               </button>
 
-              {/* System Operator Profile Snapshot (Stitch Verbatim) */}
-              <div className="mt-2 pt-2 px-2 flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary font-semibold text-body-sm">
-                  RC
+              {/* System Operator Profile Snapshot */}
+              <div className="mt-2 pt-2 px-2 flex items-center justify-between gap-2 border-t border-outline-variant/60">
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                    AD
+                  </div>
+                  <div className="flex flex-col overflow-hidden leading-tight">
+                    <span className="text-body-sm font-semibold text-on-surface truncate">
+                      {currentUser?.name || 'Administrador'}
+                    </span>
+                    <span className="text-[10px] text-emerald-800 font-medium truncate">
+                      {currentUser?.role || 'Dirección & Tesorería'}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex flex-col overflow-hidden leading-tight">
-                  <span className="text-body-sm font-medium text-on-surface truncate">Of. Registro Civil</span>
-                  <span className="text-[11px] text-outline truncate">Chamical, La Rioja</span>
-                </div>
+                {onLogout && (
+                  <button
+                    type="button"
+                    onClick={onLogout}
+                    className="p-1 rounded text-outline hover:text-rose-700 hover:bg-rose-50 transition-colors shrink-0 cursor-pointer"
+                    title="Cerrar sesión"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">logout</span>
+                  </button>
+                )}
               </div>
             </>
           )}
@@ -540,6 +561,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="hidden sm:inline">Nuevo Registro</span>
             <span className="sm:hidden">Nuevo</span>
           </button>
+
+          {/* Logout Button */}
+          {onLogout && (
+            <button
+              type="button"
+              id="btn-topbar-logout"
+              onClick={onLogout}
+              className="h-8 px-2 sm:px-2.5 rounded text-body-sm font-medium bg-surface-container hover:bg-rose-50 text-outline hover:text-rose-700 border border-outline-variant transition-colors flex items-center gap-1 cursor-pointer"
+              title="Cerrar sesión de usuario"
+            >
+              <span className="material-symbols-outlined text-[17px] text-rose-600">logout</span>
+              <span className="hidden md:inline text-xs font-semibold">Salir</span>
+            </button>
+          )}
         </div>
       </header>
 
