@@ -65,30 +65,7 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
   const totalCovid = inhumaciones.filter((i) => i.es_covid).length
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden space-y-2 sm:space-y-4">
-      {/* ===================================================================== */}
-      {/* BREADCRUMBS & CONTEXT BANNER (Stitch Verbatim)                       */}
-      {/* ===================================================================== */}
-      <div className="hidden sm:flex flex-wrap items-center justify-between gap-3 pb-1 border-b border-outline-variant/40 shrink-0">
-        <div className="flex items-center gap-2 text-body-sm text-outline">
-          <span className="hover:text-primary cursor-pointer flex items-center gap-1">
-            <span className="material-symbols-outlined text-[14px]">home</span> Registro Central
-          </span>
-          <span>/</span>
-          <span className="text-on-surface font-semibold flex items-center gap-1">
-            <span className="material-symbols-outlined text-[14px]">history_edu</span> Libro Digital de Inhumaciones
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
-            <span>Libro Abierto Tomo XXXII - Folio {inhumaciones.length + 148}</span>
-          </span>
-          <span className="text-label-caps font-label-caps text-outline bg-surface-container px-2 py-0.5 rounded">
-            Jurisdicción: Parque Municipal Este · Chamical
-          </span>
-        </div>
-      </div>
+    <div className="w-full h-full flex flex-col overflow-hidden space-y-1.5 sm:space-y-3">
 
       {/* ===================================================================== */}
       {/* HEADER BAR CON BOTÓN MODAL PARA NUEVA INHUMACIÓN                     */}
