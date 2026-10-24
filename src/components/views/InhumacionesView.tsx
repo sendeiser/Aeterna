@@ -65,11 +65,11 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
   const totalCovid = inhumaciones.filter((i) => i.es_covid).length
 
   return (
-    <div className="space-y-6">
+    <div className="w-full h-full flex flex-col overflow-hidden space-y-2 sm:space-y-4">
       {/* ===================================================================== */}
       {/* BREADCRUMBS & CONTEXT BANNER (Stitch Verbatim)                       */}
       {/* ===================================================================== */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-1 border-b border-outline-variant/40">
+      <div className="hidden sm:flex flex-wrap items-center justify-between gap-3 pb-1 border-b border-outline-variant/40 shrink-0">
         <div className="flex items-center gap-2 text-body-sm text-outline">
           <span className="hover:text-primary cursor-pointer flex items-center gap-1">
             <span className="material-symbols-outlined text-[14px]">home</span> Registro Central
@@ -93,13 +93,13 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
       {/* ===================================================================== */}
       {/* HEADER BAR CON BOTÓN MODAL PARA NUEVA INHUMACIÓN                     */}
       {/* ===================================================================== */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-surface-container-lowest border border-outline-variant rounded-lg p-4 shadow-[0_1px_2px_0_rgba(15,23,42,0.04)]">
-        <div>
-          <h2 className="text-headline-sm font-headline-sm text-on-surface font-bold tracking-tight flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[24px]">history_edu</span>
-            <span>Libro Digital de Inhumaciones y Actas</span>
+      <div className="flex items-center justify-between gap-2 bg-surface-container-lowest border border-outline-variant rounded-lg px-2.5 py-1.5 sm:p-4 shadow-[0_1px_2px_0_rgba(15,23,42,0.04)] shrink-0">
+        <div className="min-w-0">
+          <h2 className="text-xs sm:text-headline-sm font-headline-sm text-on-surface font-bold tracking-tight flex items-center gap-1.5 truncate">
+            <span className="material-symbols-outlined text-primary text-[18px] sm:text-[24px]">history_edu</span>
+            <span>Libro Digital de Inhumaciones</span>
           </h2>
-          <p className="text-body-sm text-outline mt-0.5">
+          <p className="text-[11px] sm:text-body-sm text-outline mt-0.5 hidden sm:block">
             Registro oficial y legajo histórico de defunciones e inhumaciones en parcelas municipales.
           </p>
         </div>
@@ -109,10 +109,11 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
             type="button"
             id="btn-nueva-inhumacion"
             onClick={onNuevaInhumacion}
-            className="h-[38px] px-4 rounded bg-primary hover:bg-secondary text-white text-body-sm font-semibold inline-flex items-center justify-center gap-1.5 shadow-sm transition-colors shrink-0 cursor-pointer"
+            className="h-7 sm:h-[38px] px-2.5 sm:px-4 rounded bg-primary hover:bg-secondary text-white text-xs sm:text-body-sm font-semibold inline-flex items-center justify-center gap-1 shadow-sm transition-colors shrink-0 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[18px]">add_circle</span>
-            <span>+ Nueva Inhumación</span>
+            <span className="material-symbols-outlined text-[15px] sm:text-[18px]">add_circle</span>
+            <span className="hidden xs:inline">+ Nueva Inhumación</span>
+            <span className="xs:hidden">+ Nueva</span>
           </button>
         )}
       </div>
@@ -120,9 +121,9 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
       {/* ===================================================================== */}
       {/* HISTORICAL RECORD & SEARCH (Bottom Region Stitch Verbatim)             */}
       {/* ===================================================================== */}
-      <section className="bg-surface-container-lowest border border-outline-variant rounded-lg shadow-[0_1px_2px_0_rgba(15,23,42,0.04)] overflow-hidden">
+      <section className="bg-surface-container-lowest border border-outline-variant rounded-lg shadow-[0_1px_2px_0_rgba(15,23,42,0.04)] flex-1 min-h-0 flex flex-col overflow-hidden">
         {/* Tabbed Year Selector & Header Filters */}
-        <div className="border-b border-outline-variant bg-surface-container-low/40 px-3 sm:px-4 pt-3 pb-0 flex flex-wrap items-end justify-between gap-3 overflow-hidden">
+        <div className="border-b border-outline-variant bg-surface-container-low/40 px-3 sm:px-4 pt-2.5 sm:pt-3 pb-0 flex flex-wrap items-end justify-between gap-2 sm:gap-3 overflow-hidden shrink-0">
           {/* Year Tabs - Scrollable on mobile */}
           <div className="flex items-center gap-1 overflow-x-auto custom-scroll pb-1 w-full sm:w-auto">
             <button
@@ -201,7 +202,7 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
         </div>
 
         {/* Filter Sub-Toolbar */}
-        <div className="p-3 bg-surface-container-lowest border-b border-outline-variant flex flex-wrap items-center justify-between gap-3">
+        <div className="p-2 sm:p-3 bg-surface-container-lowest border-b border-outline-variant flex flex-wrap items-center justify-between gap-2 sm:gap-3 shrink-0">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1 max-w-2xl w-full">
             {/* Search bar */}
             <div className="relative flex-1 min-w-0">
@@ -244,7 +245,7 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
         </div>
 
         {/* MOBILE VIEW (< md): Responsive Inhumaciones Cards */}
-        <div className="md:hidden divide-y divide-outline-variant/40 p-2.5 space-y-3 max-h-[500px] overflow-y-auto custom-scroll">
+        <div className="md:hidden divide-y divide-outline-variant/40 p-2 space-y-2 flex-1 min-h-0 overflow-y-auto custom-scroll">
           {filtered.length === 0 ? (
             <div className="p-4 text-center text-outline text-sm">No se encontraron actas de inhumación.</div>
           ) : (
@@ -373,7 +374,7 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
         </div>
 
         {/* DESKTOP VIEW (>= md): Institutional Data Grid */}
-        <div className="hidden md:block overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto flex-1 min-h-0 custom-scroll">
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
               <tr className="bg-slate-100 text-[11px] font-label-caps uppercase text-slate-700 tracking-wider select-none">

@@ -162,13 +162,13 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
   })
 
   return (
-    <div className="space-y-6">
+    <div className="w-full h-full flex flex-col overflow-hidden space-y-1.5 sm:space-y-4">
       {/* ===================================================================== */}
       {/* HEADER & METRIC COUNTERS (Stitch Verbatim)                           */}
       {/* ===================================================================== */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="hidden sm:flex flex-col md:flex-row md:items-center justify-between gap-2 sm:gap-4 shrink-0">
         <div>
-          <h1 className="text-headline-lg font-headline-lg text-primary tracking-tight">
+          <h1 className="text-headline-lg font-headline-lg text-primary tracking-tight font-bold">
             Padrón General de Afiliados al Plan Seguro Integral
           </h1>
           <p className="text-body-md font-body-md text-on-surface-variant mt-0.5">
@@ -177,8 +177,8 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
         </div>
 
         {/* Metric Counters: Estado Cobranza Mensual (Marzo 2026) */}
-        <div className="flex items-center gap-3 bg-surface-container-lowest p-2 rounded-xl border border-outline-variant shadow-xs shrink-0">
-          <div className="px-3.5 py-1.5 rounded-lg bg-surface-container border border-outline-variant/50">
+        <div className="flex items-center gap-3 bg-surface-container-lowest p-2 rounded-xl border border-outline-variant shadow-xs shrink-0 overflow-x-auto custom-scroll">
+          <div className="px-3.5 py-1.5 rounded-lg bg-surface-container border border-outline-variant/50 shrink-0">
             <span className="text-label-caps font-label-caps text-on-surface-variant block">
               TOTAL AFILIADOS
             </span>
@@ -187,7 +187,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             </span>
           </div>
 
-          <div className="px-3.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200">
+          <div className="px-3.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 shrink-0">
             <span className="text-label-caps font-label-caps text-emerald-800 block">
               AL DÍA (MARZO)
             </span>
@@ -201,7 +201,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             </div>
           </div>
 
-          <div className="px-3.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
+          <div className="px-3.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200 shrink-0">
             <span className="text-label-caps font-label-caps text-amber-800 block">
               PENDIENTES / MORA
             </span>
@@ -215,7 +215,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             </div>
           </div>
 
-          <div className="px-3.5 py-1.5 rounded-lg bg-rose-50 border border-rose-200">
+          <div className="px-3.5 py-1.5 rounded-lg bg-rose-50 border border-rose-200 shrink-0">
             <span className="text-label-caps font-label-caps text-rose-800 block">
               STAND-BY (+3 MESES)
             </span>
@@ -234,9 +234,9 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
       {/* ===================================================================== */}
       {/* ADMINISTRATIVE CONTROL TOOLBAR (Stitch Verbatim)                      */}
       {/* ===================================================================== */}
-      <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-xs flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4">
+      <div className="bg-surface-container-lowest p-2 sm:p-4 rounded-xl border border-outline-variant shadow-xs shrink-0 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2 sm:gap-4">
         {/* Filter & Search Controls */}
-        <div className="flex flex-wrap items-center gap-3 flex-1">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-1">
           {/* Live Input Search */}
           <div className="relative min-w-0 sm:min-w-[280px] w-full sm:w-auto flex-1">
             <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface-variant">
@@ -249,46 +249,46 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar por Nombre, DNI o N° de Afiliado... (Ctrl+K)"
-              className="w-full h-9 pl-9 pr-14 text-body-md font-body-md bg-white border border-outline-variant rounded-lg focus:border-secondary focus:ring-2 focus:ring-secondary/20 placeholder:text-on-surface-variant/60"
+              placeholder="Buscar por Nombre, DNI o N°... (Ctrl+K)"
+              className="w-full h-8 sm:h-9 pl-9 pr-14 text-xs sm:text-body-md bg-white border border-outline-variant rounded-lg focus:border-secondary focus:ring-2 focus:ring-secondary/20 placeholder:text-on-surface-variant/60"
             />
             <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
-              <span className="text-[10px] bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant font-code-cadastral">
+              <span className="text-[10px] bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant font-code-cadastral hidden sm:inline">
                 Ctrl+K
               </span>
             </div>
           </div>
 
           {/* Zone / Street Collector Selector */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 text-xs sm:text-body-sm">
             <label
               htmlFor="zoneFilter"
-              className="text-body-sm font-body-sm text-on-surface-variant whitespace-nowrap font-medium flex items-center gap-1"
+              className="text-on-surface-variant whitespace-nowrap font-medium flex items-center gap-1"
             >
               <span className="material-symbols-outlined text-[16px]" data-icon="two_wheeler">
                 two_wheeler
               </span>
-              <span>Zona / Cobrador:</span>
+              <span className="hidden xs:inline">Zona:</span>
             </label>
             <select
               id="zoneFilter"
               value={zoneFilter}
               onChange={(e) => setZoneFilter(e.target.value)}
-              className="h-9 text-body-md font-body-md bg-white border border-outline-variant rounded-lg px-3 py-1 pr-8 focus:border-secondary focus:ring-2 focus:ring-secondary/20 font-medium"
+              className="h-8 sm:h-9 text-xs sm:text-body-md bg-white border border-outline-variant rounded-lg px-2 sm:px-3 py-1 pr-7 focus:border-secondary font-medium"
             >
-              <option value="all">[Todas las Zonas - {totalAfiliados} Afiliados]</option>
-              <option value="Zona 1">[Zona 1 - Ruta 1 / B° Tiro - Cobr. Flores]</option>
-              <option value="Zona 2">[Zona 2 - B° Loma Blanca - Cobr. Gómez]</option>
-              <option value="Zona 3">[Zona 3 - Centro Chamical - Cobr. Mercado]</option>
+              <option value="all">[Todas las Zonas ({totalAfiliados})]</option>
+              <option value="Zona 1">[Zona 1 - Cobr. Flores]</option>
+              <option value="Zona 2">[Zona 2 - Cobr. Gómez]</option>
+              <option value="Zona 3">[Zona 3 - Cobr. Mercado]</option>
             </select>
           </div>
 
           {/* Status Filter Pills */}
-          <div className="flex items-center gap-1 border border-outline-variant rounded-lg p-0.5 bg-surface-container-low text-body-sm font-body-sm">
+          <div className="flex items-center gap-1 border border-outline-variant rounded-lg p-0.5 bg-surface-container-low text-[11px] sm:text-body-sm overflow-x-auto custom-scroll max-w-full">
             <button
               type="button"
               onClick={() => setStatusFilter('all')}
-              className={`px-2.5 py-1 rounded-md transition-colors ${
+              className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md transition-colors whitespace-nowrap ${
                 statusFilter === 'all'
                   ? 'bg-white shadow-xs font-semibold text-primary'
                   : 'text-on-surface-variant hover:text-on-surface'
@@ -299,18 +299,18 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             <button
               type="button"
               onClick={() => setStatusFilter('deuda')}
-              className={`px-2.5 py-1 rounded-md transition-colors ${
+              className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md transition-colors whitespace-nowrap ${
                 statusFilter === 'deuda'
                   ? 'bg-white shadow-xs font-semibold text-amber-800'
                   : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
-              Con Deuda ({afiliadosDeuda})
+              Deuda ({afiliadosDeuda})
             </button>
             <button
               type="button"
               onClick={() => setStatusFilter('aldia')}
-              className={`px-2.5 py-1 rounded-md transition-colors ${
+              className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md transition-colors whitespace-nowrap ${
                 statusFilter === 'aldia'
                   ? 'bg-white shadow-xs font-semibold text-emerald-800'
                   : 'text-on-surface-variant hover:text-on-surface'
@@ -321,7 +321,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             <button
               type="button"
               onClick={() => setStatusFilter('standby')}
-              className={`px-2.5 py-1 rounded-md transition-colors ${
+              className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md transition-colors whitespace-nowrap ${
                 statusFilter === 'standby'
                   ? 'bg-rose-600 shadow-xs font-semibold text-white'
                   : 'text-rose-800 hover:text-rose-950 hover:bg-rose-50'
@@ -333,37 +333,36 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
         </div>
 
         {/* Export & New Record Actions */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 w-full sm:w-auto shrink-0 flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 w-full sm:w-auto shrink-0">
           <button
             id="btn-imprimir-talonario"
             type="button"
             onClick={() => setIsTalonarioModalOpen(true)}
-            className="h-9 px-3.5 rounded-lg border border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary font-semibold text-xs transition-colors active:scale-[0.99] flex items-center justify-center gap-2 shadow-xs w-full sm:w-auto cursor-pointer"
-            title="Imprimir talonario físico de 8 recibos por hoja A4 (Cementerio Parque San Nicolás)"
+            className="h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-lg border border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary font-semibold text-xs transition-colors active:scale-[0.99] flex items-center justify-center gap-1 shadow-xs cursor-pointer"
+            title="Imprimir talonario físico de 8 recibos por hoja A4"
           >
-            <span className="material-symbols-outlined text-[18px]">receipt_long</span>
-            <span>Talonario Físico (8 por Hoja A4)</span>
+            <span className="material-symbols-outlined text-[16px]">receipt_long</span>
+            <span className="hidden xs:inline">Talonario</span>
           </button>
           <button
             type="button"
             onClick={() => window.print()}
-            className="h-9 px-3.5 rounded-lg border border-outline-variant bg-white hover:bg-surface-container-low text-on-surface font-title-md text-title-md transition-colors active:scale-[0.99] flex items-center justify-center gap-2 shadow-xs w-full sm:w-auto"
+            className="h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-lg border border-outline-variant bg-white hover:bg-surface-container-low text-on-surface font-title-md text-xs sm:text-title-md transition-colors active:scale-[0.99] items-center justify-center gap-1 shadow-xs hidden sm:flex"
           >
-            <span className="material-symbols-outlined text-[18px] text-primary" data-icon="print">
+            <span className="material-symbols-outlined text-[16px] text-primary" data-icon="print">
               print
             </span>
-            <span className="hidden sm:inline">Planilla de Ruta Cobrador</span>
-            <span className="sm:hidden">Planilla de Ruta</span>
+            <span>Planilla</span>
           </button>
           <button
             type="button"
             onClick={onNuevoAfiliado}
-            className="h-9 px-4 rounded-lg bg-secondary hover:bg-primary text-white font-title-md text-title-md transition-colors active:scale-[0.99] flex items-center justify-center gap-1.5 shadow-sm w-full sm:w-auto"
+            className="h-8 sm:h-9 px-3 sm:px-4 rounded-lg bg-secondary hover:bg-primary text-white font-title-md text-xs sm:text-title-md transition-colors active:scale-[0.99] flex items-center justify-center gap-1 shadow-sm flex-1 sm:flex-initial cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[18px]" data-icon="add_circle">
+            <span className="material-symbols-outlined text-[16px]" data-icon="add_circle">
               add_circle
             </span>
-            <span>+ Nuevo Afiliado</span>
+            <span>+ Nuevo</span>
           </button>
         </div>
       </div>
@@ -371,25 +370,23 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
       {/* ===================================================================== */}
       {/* MATRIX INTERACTIVE LEDGER CARD (Stitch Verbatim)                       */}
       {/* ===================================================================== */}
-      <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-xs overflow-hidden">
+      <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-xs flex-1 min-h-0 flex flex-col overflow-hidden">
         {/* Table Toolbar & Fiscal Year Header */}
-        <div className="px-5 py-3 border-b border-outline-variant bg-surface-container-low flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-[20px]" data-icon="calendar_month">
-                calendar_month
-              </span>
-              <span className="text-title-md font-title-md text-primary font-bold">
-                EJERCICIO FISCAL 2026
-              </span>
-            </div>
+        <div className="px-3 sm:px-5 py-1.5 sm:py-3 border-b border-outline-variant bg-surface-container-low flex flex-wrap items-center justify-between gap-2 sm:gap-4 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="material-symbols-outlined text-primary text-[18px] sm:text-[20px]" data-icon="calendar_month">
+              calendar_month
+            </span>
+            <span className="text-xs sm:text-title-md font-bold text-primary">
+              EJERCICIO FISCAL 2026
+            </span>
             <span className="text-body-sm font-body-sm text-on-surface-variant hidden sm:inline">
               · Cobertura Parroquial y Municipal para Servicios Fúnebres Completos
             </span>
           </div>
 
           {/* Color Key & Legend for Matrix */}
-          <div className="flex items-center gap-4 text-body-sm font-body-sm bg-white px-3 py-1.5 rounded-lg border border-outline-variant/80">
+          <div className="hidden sm:flex items-center gap-4 text-body-sm font-body-sm bg-white px-3 py-1.5 rounded-lg border border-outline-variant/80">
             <span className="text-label-caps font-label-caps text-on-surface-variant font-semibold">
               REFERENCIAS:
             </span>
@@ -414,8 +411,9 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
           </div>
         </div>
 
+
         {/* MOBILE VIEW (< md): Responsive Interactive Afiliados Cards */}
-        <div className="md:hidden divide-y divide-outline-variant/40 p-2.5 space-y-3 max-h-[550px] overflow-y-auto custom-scroll">
+        <div className="md:hidden divide-y divide-outline-variant/40 p-2 space-y-2 flex-1 min-h-0 overflow-y-auto custom-scroll">
           {filtered.length === 0 ? (
             <div className="p-4 text-center text-outline text-sm">No se encontraron afiliados.</div>
           ) : (
@@ -702,7 +700,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
         </div>
 
         {/* DESKTOP VIEW (>= md): Ledger Table with 12-Month Matrix */}
-        <div className="hidden md:block overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto flex-1 min-h-0 custom-scroll">
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
               <tr className="bg-slate-100 text-[11px] font-label-caps text-slate-700 uppercase tracking-wider h-8 select-none">

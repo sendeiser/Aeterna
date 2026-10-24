@@ -775,7 +775,11 @@ export default function App() {
       />
 
       {/* Canvas Principal */}
-      <main className={`${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'} transition-all duration-300 pt-14 min-h-screen pb-20 lg:pb-8 bg-surface text-on-surface`}>
+      <main
+        className={`${
+          isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'
+        } transition-all duration-300 fixed inset-x-0 top-14 bottom-14 lg:static lg:min-h-screen lg:pt-14 lg:pb-8 flex flex-col overflow-hidden lg:overflow-visible bg-surface text-on-surface`}
+      >
         {/* Encabezado Institucional Oficial para Impresión A4 de Reportes */}
         <div className="hidden print:block px-6 pt-4 pb-4 mb-4 border-b-2 border-slate-900 max-w-[1600px] mx-auto">
           <div className="flex items-start justify-between">
@@ -808,9 +812,10 @@ export default function App() {
           </div>
         </div>
 
-        <div className="px-2 sm:px-4 pt-1.5 sm:pt-2.5 pb-6 max-w-[1600px] w-full mx-auto space-y-3 sm:space-y-4">
+        <div className="flex-1 min-h-0 flex flex-col px-2 sm:px-4 pt-1 sm:pt-2 pb-1 lg:pb-6 max-w-[1600px] w-full mx-auto overflow-hidden lg:overflow-visible">
           {currentTab === 'dashboard' && (
-            <DashboardView
+            <div className="flex-1 min-h-0 overflow-y-auto custom-scroll pb-4">
+              <DashboardView
               parcelas={parcelas}
               afiliados={afiliados}
               inhumaciones={inhumaciones}
@@ -831,6 +836,7 @@ export default function App() {
               onVerParcelasMora={() => setCurrentTab('parcelas')}
               onOpenSearch={() => setSearchOpen(true)}
             />
+            </div>
           )}
 
           {currentTab === 'parcelas' && (
@@ -895,7 +901,9 @@ export default function App() {
           )}
 
           {currentTab === 'configuracion' && (
-            <ConfiguracionView config={config} onSave={handleSaveConfig} />
+            <div className="flex-1 min-h-0 overflow-y-auto custom-scroll pb-4">
+              <ConfiguracionView config={config} onSave={handleSaveConfig} />
+            </div>
           )}
 
           {/* Pie de Firma Institucional para Impresión A4 de Reportes Generales */}
