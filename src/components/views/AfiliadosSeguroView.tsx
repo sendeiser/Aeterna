@@ -162,87 +162,173 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
   })
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden space-y-1.5 sm:space-y-4">
+    <div className="w-full h-full flex flex-col overflow-hidden space-y-1 sm:space-y-2">
       {/* ===================================================================== */}
-      {/* HEADER & METRIC COUNTERS (Stitch Verbatim)                           */}
+      {/* MOBILE COMPACT TOOLBAR (< sm): 2 ultra-dense rows (~65px total)       */}
       {/* ===================================================================== */}
-      <div className="hidden sm:flex flex-col md:flex-row md:items-center justify-between gap-2 sm:gap-4 shrink-0">
-        <div>
-          <h1 className="text-headline-lg font-headline-lg text-primary tracking-tight font-bold">
-            Padrón General de Afiliados al Plan Seguro Integral
-          </h1>
-          <p className="text-body-md font-body-md text-on-surface-variant mt-0.5">
-            Gestión de Cobranzas, Cuotas Anuales y Hojas de Ruta de Cobradores de Calle · Chamical.
-          </p>
+      <div className="sm:hidden bg-surface-container-lowest p-1.5 rounded-lg border border-outline-variant shadow-xs shrink-0 flex flex-col gap-1.5">
+        {/* Row 1: Icon/Title + Search Box + Nuevo Button */}
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 shrink-0">
+            <span className="material-symbols-outlined text-primary text-[18px]">badge</span>
+            <span className="font-bold text-xs text-primary whitespace-nowrap">Afiliados</span>
+            <span className="text-[10px] bg-primary/10 text-primary font-bold px-1.5 py-0.2 rounded-full">
+              {filtered.length}
+            </span>
+          </div>
+
+          <div className="relative flex-1 min-w-0">
+            <span className="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-outline text-[15px]">
+              search
+            </span>
+            <input
+              id="searchBox-mobile"
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar..."
+              className="w-full h-7 pl-6.5 pr-6 text-xs bg-surface-container-low border border-outline-variant rounded focus:border-secondary focus:bg-white focus:outline-none"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface p-0.5"
+              >
+                <span className="material-symbols-outlined text-[13px]">close</span>
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={onNuevoAfiliado}
+            className="h-7 px-2 rounded bg-secondary hover:bg-primary text-white font-medium text-[11px] flex items-center gap-0.5 shrink-0 shadow-xs cursor-pointer active:scale-95 transition-transform"
+          >
+            <span className="material-symbols-outlined text-[14px]">add</span>
+            <span>Nuevo</span>
+          </button>
         </div>
 
-        {/* Metric Counters: Estado Cobranza Mensual (Marzo 2026) */}
-        <div className="flex items-center gap-3 bg-surface-container-lowest p-2 rounded-xl border border-outline-variant shadow-xs shrink-0 overflow-x-auto custom-scroll">
-          <div className="px-3.5 py-1.5 rounded-lg bg-surface-container border border-outline-variant/50 shrink-0">
-            <span className="text-label-caps font-label-caps text-on-surface-variant block">
-              TOTAL AFILIADOS
-            </span>
-            <span className="text-headline-md font-code-cadastral text-on-surface font-bold">
-              {totalAfiliados}
+        {/* Row 2: Status chips + Zone selector + Talonario */}
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0 text-[10px]">
+          <button
+            type="button"
+            onClick={() => setStatusFilter('all')}
+            className={`px-2 py-0.5 rounded font-medium whitespace-nowrap shrink-0 transition-colors ${
+              statusFilter === 'all'
+                ? 'bg-primary text-white shadow-xs font-semibold'
+                : 'bg-surface-container-low text-on-surface hover:bg-surface-container'
+            }`}
+          >
+            Todos ({totalAfiliados})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('aldia')}
+            className={`px-2 py-0.5 rounded font-medium whitespace-nowrap shrink-0 transition-colors ${
+              statusFilter === 'aldia'
+                ? 'bg-emerald-700 text-white shadow-xs font-semibold'
+                : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+            }`}
+          >
+            Al Día ({afiliadosAlDia})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('deuda')}
+            className={`px-2 py-0.5 rounded font-medium whitespace-nowrap shrink-0 transition-colors ${
+              statusFilter === 'deuda'
+                ? 'bg-amber-600 text-white shadow-xs font-semibold'
+                : 'bg-amber-50 text-amber-800 border border-amber-200'
+            }`}
+          >
+            Deuda ({afiliadosDeuda})
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('standby')}
+            className={`px-2 py-0.5 rounded font-medium whitespace-nowrap shrink-0 transition-colors ${
+              statusFilter === 'standby'
+                ? 'bg-rose-600 text-white shadow-xs font-semibold'
+                : 'bg-rose-50 text-rose-800 border border-rose-200'
+            }`}
+          >
+            Stand-by ({afiliadosStandby})
+          </button>
+
+          <span className="h-4 w-px bg-outline-variant/60 shrink-0"></span>
+
+          <select
+            value={zoneFilter}
+            onChange={(e) => setZoneFilter(e.target.value)}
+            className="h-6 text-[10px] bg-white border border-outline-variant rounded px-1.5 py-0 pr-4 shrink-0 font-medium"
+            title="Filtrar por Zona"
+          >
+            <option value="all">Todas las Zonas</option>
+            <option value="Zona 1">Zona 1</option>
+            <option value="Zona 2">Zona 2</option>
+            <option value="Zona 3">Zona 3</option>
+          </select>
+
+          <button
+            type="button"
+            onClick={() => setIsTalonarioModalOpen(true)}
+            className="h-6 px-1.5 rounded border border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary text-[10px] font-semibold flex items-center gap-0.5 shrink-0 whitespace-nowrap cursor-pointer"
+            title="Imprimir talonario"
+          >
+            <span className="material-symbols-outlined text-[13px]">receipt_long</span>
+            <span>Talonario</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ===================================================================== */}
+      {/* DESKTOP VIEW (>= sm): Header + Inline Metric Pills                     */}
+      {/* ===================================================================== */}
+      <div className="hidden sm:flex items-center justify-between gap-3 shrink-0 pb-1 border-b border-outline-variant/50">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="material-symbols-outlined text-primary text-[22px] shrink-0">badge</span>
+          <div className="min-w-0 flex items-baseline gap-2">
+            <h1 className="text-headline-sm font-bold text-primary tracking-tight truncate">
+              Padrón General de Afiliados
+            </h1>
+            <span className="text-body-sm text-on-surface-variant truncate hidden md:inline">
+              · Plan Seguro Integral (Chamical)
             </span>
           </div>
+        </div>
 
-          <div className="px-3.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 shrink-0">
-            <span className="text-label-caps font-label-caps text-emerald-800 block">
-              AL DÍA (MARZO)
-            </span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-headline-md font-code-cadastral text-emerald-700 font-bold">
-                {afiliadosAlDia}
-              </span>
-              <span className="text-body-sm font-body-sm text-emerald-600">
-                ({Math.round((afiliadosAlDia / (totalAfiliados || 1)) * 100)}%)
-              </span>
-            </div>
+        {/* Inline Compact Metric Badges */}
+        <div className="flex items-center gap-1.5 text-xs font-medium shrink-0">
+          <div className="px-2 py-0.5 rounded-md bg-surface-container border border-outline-variant/60 flex items-center gap-1">
+            <span className="text-on-surface-variant text-[11px]">Total:</span>
+            <span className="font-bold text-on-surface font-code-cadastral">{totalAfiliados}</span>
           </div>
-
-          <div className="px-3.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200 shrink-0">
-            <span className="text-label-caps font-label-caps text-amber-800 block">
-              PENDIENTES / MORA
-            </span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-headline-md font-code-cadastral text-amber-700 font-bold">
-                {afiliadosDeuda}
-              </span>
-              <span className="text-body-sm font-body-sm text-amber-600">
-                ({Math.round((afiliadosDeuda / (totalAfiliados || 1)) * 100)}%)
-              </span>
-            </div>
+          <div className="px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 flex items-center gap-1 text-emerald-800">
+            <span className="text-[11px]">Al Día:</span>
+            <span className="font-bold font-code-cadastral">{afiliadosAlDia}</span>
           </div>
-
-          <div className="px-3.5 py-1.5 rounded-lg bg-rose-50 border border-rose-200 shrink-0">
-            <span className="text-label-caps font-label-caps text-rose-800 block">
-              STAND-BY (+3 MESES)
-            </span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-headline-md font-code-cadastral text-rose-700 font-bold">
-                {afiliadosStandby}
-              </span>
-              <span className="text-body-sm font-body-sm text-rose-600">
-                ({Math.round((afiliadosStandby / (totalAfiliados || 1)) * 100)}%)
-              </span>
-            </div>
+          <div className="px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 flex items-center gap-1 text-amber-800">
+            <span className="text-[11px]">Mora:</span>
+            <span className="font-bold font-code-cadastral">{afiliadosDeuda}</span>
+          </div>
+          <div className="px-2 py-0.5 rounded-md bg-rose-50 border border-rose-200 flex items-center gap-1 text-rose-800">
+            <span className="text-[11px]">Stand-by:</span>
+            <span className="font-bold font-code-cadastral">{afiliadosStandby}</span>
           </div>
         </div>
       </div>
 
       {/* ===================================================================== */}
-      {/* ADMINISTRATIVE CONTROL TOOLBAR (Stitch Verbatim)                      */}
+      {/* DESKTOP TOOLBAR (>= sm): Single-row compact bar                       */}
       {/* ===================================================================== */}
-      <div className="bg-surface-container-lowest p-2 sm:p-4 rounded-xl border border-outline-variant shadow-xs shrink-0 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2 sm:gap-4">
-        {/* Filter & Search Controls */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-1">
+      <div className="hidden sm:flex items-center justify-between gap-2.5 bg-surface-container-lowest p-2 rounded-xl border border-outline-variant shadow-xs shrink-0 flex-wrap">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           {/* Live Input Search */}
-          <div className="relative min-w-0 sm:min-w-[280px] w-full sm:w-auto flex-1">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface-variant">
-              <span className="material-symbols-outlined text-[18px]" data-icon="search">
-                search
-              </span>
+          <div className="relative min-w-[200px] max-w-sm flex-1">
+            <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-on-surface-variant">
+              <span className="material-symbols-outlined text-[17px]">search</span>
             </span>
             <input
               id="searchBox"
@@ -250,45 +336,45 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar por Nombre, DNI o N°... (Ctrl+K)"
-              className="w-full h-8 sm:h-9 pl-9 pr-14 text-xs sm:text-body-md bg-white border border-outline-variant rounded-lg focus:border-secondary focus:ring-2 focus:ring-secondary/20 placeholder:text-on-surface-variant/60"
+              className="w-full h-8 pl-8 pr-12 text-xs bg-white border border-outline-variant rounded-lg focus:border-secondary focus:ring-1 focus:ring-secondary/20 placeholder:text-on-surface-variant/60"
             />
-            <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
-              <span className="text-[10px] bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant text-on-surface-variant font-code-cadastral hidden sm:inline">
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute inset-y-0 right-7 pr-1 flex items-center text-outline hover:text-on-surface"
+              >
+                <span className="material-symbols-outlined text-[14px]">close</span>
+              </button>
+            )}
+            <div className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
+              <span className="text-[9px] bg-surface-container px-1 py-0.5 rounded border border-outline-variant text-on-surface-variant font-code-cadastral">
                 Ctrl+K
               </span>
             </div>
           </div>
 
-          {/* Zone / Street Collector Selector */}
-          <div className="flex items-center gap-1.5 text-xs sm:text-body-sm">
-            <label
-              htmlFor="zoneFilter"
-              className="text-on-surface-variant whitespace-nowrap font-medium flex items-center gap-1"
-            >
-              <span className="material-symbols-outlined text-[16px]" data-icon="two_wheeler">
-                two_wheeler
-              </span>
-              <span className="hidden xs:inline">Zona:</span>
-            </label>
+          {/* Zone Selector */}
+          <div className="flex items-center gap-1 text-xs">
             <select
               id="zoneFilter"
               value={zoneFilter}
               onChange={(e) => setZoneFilter(e.target.value)}
-              className="h-8 sm:h-9 text-xs sm:text-body-md bg-white border border-outline-variant rounded-lg px-2 sm:px-3 py-1 pr-7 focus:border-secondary font-medium"
+              className="h-8 text-xs bg-white border border-outline-variant rounded-lg px-2 py-1 pr-6 focus:border-secondary font-medium"
             >
-              <option value="all">[Todas las Zonas ({totalAfiliados})]</option>
-              <option value="Zona 1">[Zona 1 - Cobr. Flores]</option>
-              <option value="Zona 2">[Zona 2 - Cobr. Gómez]</option>
-              <option value="Zona 3">[Zona 3 - Cobr. Mercado]</option>
+              <option value="all">Todas las Zonas ({totalAfiliados})</option>
+              <option value="Zona 1">Zona 1 (Flores)</option>
+              <option value="Zona 2">Zona 2 (Gómez)</option>
+              <option value="Zona 3">Zona 3 (Mercado)</option>
             </select>
           </div>
 
           {/* Status Filter Pills */}
-          <div className="flex items-center gap-1 border border-outline-variant rounded-lg p-0.5 bg-surface-container-low text-[11px] sm:text-body-sm overflow-x-auto custom-scroll max-w-full">
+          <div className="flex items-center gap-0.5 border border-outline-variant rounded-lg p-0.5 bg-surface-container-low text-xs shrink-0">
             <button
               type="button"
               onClick={() => setStatusFilter('all')}
-              className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md transition-colors whitespace-nowrap ${
+              className={`px-2 py-1 rounded-md transition-colors whitespace-nowrap ${
                 statusFilter === 'all'
                   ? 'bg-white shadow-xs font-semibold text-primary'
                   : 'text-on-surface-variant hover:text-on-surface'
@@ -299,7 +385,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             <button
               type="button"
               onClick={() => setStatusFilter('deuda')}
-              className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md transition-colors whitespace-nowrap ${
+              className={`px-2 py-1 rounded-md transition-colors whitespace-nowrap ${
                 statusFilter === 'deuda'
                   ? 'bg-white shadow-xs font-semibold text-amber-800'
                   : 'text-on-surface-variant hover:text-on-surface'
@@ -310,7 +396,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             <button
               type="button"
               onClick={() => setStatusFilter('aldia')}
-              className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md transition-colors whitespace-nowrap ${
+              className={`px-2 py-1 rounded-md transition-colors whitespace-nowrap ${
                 statusFilter === 'aldia'
                   ? 'bg-white shadow-xs font-semibold text-emerald-800'
                   : 'text-on-surface-variant hover:text-on-surface'
@@ -321,7 +407,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             <button
               type="button"
               onClick={() => setStatusFilter('standby')}
-              className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md transition-colors whitespace-nowrap ${
+              className={`px-2 py-1 rounded-md transition-colors whitespace-nowrap ${
                 statusFilter === 'standby'
                   ? 'bg-rose-600 shadow-xs font-semibold text-white'
                   : 'text-rose-800 hover:text-rose-950 hover:bg-rose-50'
@@ -333,35 +419,31 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
         </div>
 
         {/* Export & New Record Actions */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 w-full sm:w-auto shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             id="btn-imprimir-talonario"
             type="button"
             onClick={() => setIsTalonarioModalOpen(true)}
-            className="h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-lg border border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary font-semibold text-xs transition-colors active:scale-[0.99] flex items-center justify-center gap-1 shadow-xs cursor-pointer"
+            className="h-8 px-2.5 rounded-lg border border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary font-semibold text-xs transition-colors active:scale-[0.99] flex items-center justify-center gap-1 shadow-xs cursor-pointer"
             title="Imprimir talonario físico de 8 recibos por hoja A4"
           >
-            <span className="material-symbols-outlined text-[16px]">receipt_long</span>
-            <span className="hidden xs:inline">Talonario</span>
+            <span className="material-symbols-outlined text-[15px]">receipt_long</span>
+            <span>Talonario</span>
           </button>
           <button
             type="button"
             onClick={() => window.print()}
-            className="h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-lg border border-outline-variant bg-white hover:bg-surface-container-low text-on-surface font-title-md text-xs sm:text-title-md transition-colors active:scale-[0.99] items-center justify-center gap-1 shadow-xs hidden sm:flex"
+            className="h-8 px-2.5 rounded-lg border border-outline-variant bg-white hover:bg-surface-container-low text-on-surface font-medium text-xs transition-colors active:scale-[0.99] items-center justify-center gap-1 shadow-xs hidden md:flex"
           >
-            <span className="material-symbols-outlined text-[16px] text-primary" data-icon="print">
-              print
-            </span>
+            <span className="material-symbols-outlined text-[15px] text-primary">print</span>
             <span>Planilla</span>
           </button>
           <button
             type="button"
             onClick={onNuevoAfiliado}
-            className="h-8 sm:h-9 px-3 sm:px-4 rounded-lg bg-secondary hover:bg-primary text-white font-title-md text-xs sm:text-title-md transition-colors active:scale-[0.99] flex items-center justify-center gap-1 shadow-sm flex-1 sm:flex-initial cursor-pointer"
+            className="h-8 px-3 rounded-lg bg-secondary hover:bg-primary text-white font-semibold text-xs transition-colors active:scale-[0.99] flex items-center justify-center gap-1 shadow-sm cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[16px]" data-icon="add_circle">
-              add_circle
-            </span>
+            <span className="material-symbols-outlined text-[15px]">add_circle</span>
             <span>+ Nuevo</span>
           </button>
         </div>
@@ -371,42 +453,42 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
       {/* MATRIX INTERACTIVE LEDGER CARD (Stitch Verbatim)                       */}
       {/* ===================================================================== */}
       <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-xs flex-1 min-h-0 flex flex-col overflow-hidden">
-        {/* Table Toolbar & Fiscal Year Header */}
-        <div className="px-3 sm:px-5 py-1.5 sm:py-3 border-b border-outline-variant bg-surface-container-low flex flex-wrap items-center justify-between gap-2 sm:gap-4 shrink-0">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <span className="material-symbols-outlined text-primary text-[18px] sm:text-[20px]" data-icon="calendar_month">
+        {/* Table Toolbar & Fiscal Year Header: Hidden on mobile to maximize card height */}
+        <div className="hidden sm:flex px-3 sm:px-4 py-1.5 border-b border-outline-variant bg-surface-container-low items-center justify-between gap-2 shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-[17px]" data-icon="calendar_month">
               calendar_month
             </span>
-            <span className="text-xs sm:text-title-md font-bold text-primary">
+            <span className="text-xs font-bold text-primary">
               EJERCICIO FISCAL 2026
             </span>
-            <span className="text-body-sm font-body-sm text-on-surface-variant hidden sm:inline">
+            <span className="text-xs text-on-surface-variant hidden md:inline">
               · Cobertura Parroquial y Municipal para Servicios Fúnebres Completos
             </span>
           </div>
 
           {/* Color Key & Legend for Matrix */}
-          <div className="hidden sm:flex items-center gap-4 text-body-sm font-body-sm bg-white px-3 py-1.5 rounded-lg border border-outline-variant/80">
-            <span className="text-label-caps font-label-caps text-on-surface-variant font-semibold">
+          <div className="flex items-center gap-3 text-xs bg-white px-2.5 py-1 rounded border border-outline-variant/80">
+            <span className="text-[10px] text-on-surface-variant font-semibold">
               REFERENCIAS:
             </span>
-            <div className="flex items-center gap-1.5">
-              <span className="w-4 h-4 rounded bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">
+            <div className="flex items-center gap-1">
+              <span className="w-3.5 h-3.5 rounded bg-emerald-600 text-white flex items-center justify-center text-[9px] font-bold">
                 ✓
               </span>
-              <span className="text-on-surface font-medium text-[11px]">Pagada</span>
+              <span className="text-on-surface font-medium text-[10px]">Pagada</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-4 h-4 rounded bg-red-600 text-white flex items-center justify-center text-[10px] font-bold">
+            <div className="flex items-center gap-1">
+              <span className="w-3.5 h-3.5 rounded bg-red-600 text-white flex items-center justify-center text-[9px] font-bold">
                 !
               </span>
-              <span className="text-red-700 font-medium text-[11px]">Vencida / Cobro directo</span>
+              <span className="text-red-700 font-medium text-[10px]">Vencida</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-4 h-4 rounded bg-slate-100 border border-slate-300 text-slate-400 flex items-center justify-center text-[10px]">
+            <div className="flex items-center gap-1">
+              <span className="w-3.5 h-3.5 rounded bg-slate-100 border border-slate-300 text-slate-400 flex items-center justify-center text-[9px]">
                 ·
               </span>
-              <span className="text-on-surface-variant text-[11px]">A vencer (Meses futuros)</span>
+              <span className="text-on-surface-variant text-[10px]">Meses futuros</span>
             </div>
           </div>
         </div>

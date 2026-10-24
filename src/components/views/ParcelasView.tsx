@@ -383,40 +383,66 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
           </div>
         </div>
 
-        {/* DESKTOP VIEW (>= sm): Full Expanded Toolbar */}
-        <div className="hidden sm:flex flex-col gap-2.5">
-          {/* Header de Toolbar: Título + Botón Nueva Parcela */}
-          <div className="flex items-center justify-between gap-2 pb-1.5 sm:pb-2 border-b border-outline-variant/60">
-            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              <span className="material-symbols-outlined text-primary text-[18px] sm:text-[22px] shrink-0">domain</span>
-              <div className="min-w-0">
-                <h2 className="text-sm sm:text-headline-sm font-semibold text-on-surface leading-tight truncate">Padrón de Parcelas</h2>
-                <p className="text-[10px] sm:text-body-sm text-on-surface-variant truncate">
-                  Gestión de parcelas, titulares y fosas
-                </p>
+        {/* DESKTOP VIEW (>= sm): Consolidated 2-Row Toolbar */}
+        <div className="hidden sm:flex flex-col gap-2">
+          {/* Row 1: Título + Búsqueda Rápida + Botón Nueva Parcela */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="material-symbols-outlined text-primary text-[22px]">domain</span>
+              <div className="flex items-baseline gap-2">
+                <h2 className="text-headline-sm font-semibold text-on-surface leading-tight">Padrón de Parcelas</h2>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                  {parcelas.length}
+                </span>
               </div>
             </div>
+
+            {/* Quick Search Cadastral Input */}
+            <div className="relative flex-1 max-w-md">
+              <span
+                className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[18px]"
+                data-icon="search"
+              >
+                search
+              </span>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Filtrar por parcela (ej. A-25), apellido titular o DNI..."
+                className="w-full h-8 pl-8 pr-8 text-xs bg-surface-container-low border border-outline-variant rounded focus:border-secondary focus:bg-white focus:outline-none"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface p-0.5"
+                >
+                  <span className="material-symbols-outlined text-[14px]">close</span>
+                </button>
+              )}
+            </div>
+
             {onNuevaParcela && (
               <button
                 id="btn-nueva-parcela"
                 type="button"
                 onClick={onNuevaParcela}
-                className="h-7 sm:h-8 px-2.5 sm:px-3.5 bg-primary text-on-primary hover:bg-primary/90 font-semibold text-[11px] sm:text-xs rounded-lg flex items-center gap-1 shadow-sm transition-colors cursor-pointer shrink-0"
+                className="h-8 px-3 bg-primary text-on-primary hover:bg-primary/90 font-semibold text-xs rounded-lg flex items-center gap-1 shadow-sm transition-colors cursor-pointer shrink-0"
               >
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">add_circle</span>
-                <span className="hidden xs:inline sm:inline">Nueva Parcela</span>
-                <span className="xs:hidden sm:hidden">Nueva</span>
+                <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                <span>Nueva Parcela</span>
               </button>
             )}
           </div>
 
-          {/* Filter Tabs / Sector Chips - Scrollable on mobile */}
-          <div className="flex items-center justify-between flex-wrap gap-1.5 sm:gap-2">
-            <div className="flex items-center gap-1 overflow-x-auto custom-scroll pb-0.5 w-full sm:w-auto">
+          {/* Row 2: Sectores + Condición Vital */}
+          <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-outline-variant/60 flex-wrap">
+            <div className="flex items-center gap-1 overflow-x-auto custom-scroll">
               <button
                 type="button"
                 onClick={() => setFilterSector('todos')}
-                className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded text-[11px] sm:text-body-sm font-semibold whitespace-nowrap transition-colors shrink-0 ${
+                className={`px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
                   filterSector === 'todos'
                     ? 'bg-primary text-on-primary shadow-xs'
                     : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
@@ -427,7 +453,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               <button
                 type="button"
                 onClick={() => setFilterSector('A')}
-                className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded text-[11px] sm:text-body-sm font-medium whitespace-nowrap transition-colors shrink-0 ${
+                className={`px-2.5 py-1 rounded text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
                   filterSector === 'A'
                     ? 'bg-primary text-on-primary shadow-xs font-semibold'
                     : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
@@ -438,7 +464,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               <button
                 type="button"
                 onClick={() => setFilterSector('E')}
-                className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded text-[11px] sm:text-body-sm font-medium whitespace-nowrap transition-colors shrink-0 ${
+                className={`px-2.5 py-1 rounded text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
                   filterSector === 'E'
                     ? 'bg-primary text-on-primary shadow-xs font-semibold'
                     : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
@@ -449,7 +475,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               <button
                 type="button"
                 onClick={() => setFilterSector('SALINAS')}
-                className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded text-[11px] sm:text-body-sm font-medium whitespace-nowrap transition-colors shrink-0 ${
+                className={`px-2.5 py-1 rounded text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
                   filterSector === 'SALINAS'
                     ? 'bg-primary text-on-primary shadow-xs font-semibold'
                     : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
@@ -460,7 +486,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               <button
                 type="button"
                 onClick={() => setFilterSector('mora')}
-                className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded text-[11px] sm:text-body-sm font-medium border whitespace-nowrap transition-colors shrink-0 ${
+                className={`px-2.5 py-1 rounded text-xs font-medium border whitespace-nowrap transition-colors shrink-0 ${
                   filterSector === 'mora'
                     ? 'border-amber-600 bg-amber-600 text-white font-semibold'
                     : 'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100'
@@ -472,7 +498,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 id="btn-filtro-sector-standby"
                 type="button"
                 onClick={() => setFilterSector('standby')}
-                className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded text-[11px] sm:text-body-sm font-medium border whitespace-nowrap transition-colors shrink-0 ${
+                className={`px-2.5 py-1 rounded text-xs font-medium border whitespace-nowrap transition-colors shrink-0 ${
                   filterSector === 'standby'
                     ? 'border-rose-600 bg-rose-600 text-white font-semibold'
                     : 'border-rose-300 bg-rose-50 text-rose-900 hover:bg-rose-100'
@@ -480,94 +506,64 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               >
                 ⚠️ Stand-by ({countStandby})
               </button>
+
+              <span className="h-4 w-px bg-outline-variant/60 mx-1 shrink-0"></span>
+
+              {/* Titular Vital Condition Filter */}
+              <div className="flex items-center gap-0.5 bg-surface-container-low p-0.5 rounded border border-outline-variant shrink-0">
+                <button
+                  id="btn-filtro-vital-todos"
+                  type="button"
+                  onClick={() => setFilterTitularVital('todos')}
+                  className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                    filterTitularVital === 'todos'
+                      ? 'bg-primary text-white shadow-xs font-semibold'
+                      : 'text-on-surface hover:bg-surface-container'
+                  }`}
+                >
+                  Todos
+                </button>
+                <button
+                  id="btn-filtro-vital-vivo"
+                  type="button"
+                  onClick={() => setFilterTitularVital('vivo')}
+                  className={`px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1 transition-colors ${
+                    filterTitularVital === 'vivo'
+                      ? 'bg-emerald-600 text-white shadow-xs font-semibold'
+                      : 'text-emerald-800 hover:bg-emerald-50'
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span>Vivos</span>
+                </button>
+                <button
+                  id="btn-filtro-vital-fallecido"
+                  type="button"
+                  onClick={() => setFilterTitularVital('fallecido')}
+                  className={`px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1 transition-colors ${
+                    filterTitularVital === 'fallecido'
+                      ? 'bg-slate-700 text-white shadow-xs font-semibold'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                  <span>Fallecidos</span>
+                </button>
+              </div>
             </div>
+
             {/* Quick Counter Metric */}
-            <span className="text-[10px] sm:text-body-sm font-code-cadastral text-outline shrink-0 hidden sm:inline">
-              Total reg: {filteredParcelas.length} parcelas
+            <span className="text-xs font-code-cadastral text-outline shrink-0 hidden lg:inline">
+              {filteredParcelas.length} parcelas listadas
             </span>
-          </div>
-
-          {/* Quick Search Cadastral Input */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <div className="relative flex-1">
-              <span
-                className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px] sm:text-[20px]"
-                data-icon="search"
-              >
-                search
-              </span>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Filtrar por parcela (ej. A-25), apellido titular o DNI..."
-                className="w-full h-8 sm:h-9 pl-8 sm:pl-9 pr-3 text-xs sm:text-body-md bg-surface-container-low border border-outline-variant rounded focus:border-secondary focus:bg-white focus:outline-none"
-              />
-            </div>
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => setSearchTerm('')}
-                className="h-8 sm:h-9 px-2 sm:px-3 rounded border border-outline-variant bg-surface text-on-surface hover:bg-surface-container flex items-center gap-1 text-[11px] sm:text-body-sm font-medium shrink-0"
-              >
-                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">close</span>
-                <span>Limpiar</span>
-              </button>
-            )}
-          </div>
-
-          {/* Titular Vital Condition Filter */}
-          <div className="flex items-center gap-1.5 sm:gap-2 pt-1 border-t border-outline-variant/40 flex-wrap">
-            <span className="text-[9px] sm:text-[11px] font-semibold text-outline uppercase tracking-wider">
-              Condición:
-            </span>
-            <div className="flex items-center gap-0.5 sm:gap-1 bg-surface-container-low p-0.5 rounded border border-outline-variant">
-              <button
-                id="btn-filtro-vital-todos"
-                type="button"
-                onClick={() => setFilterTitularVital('todos')}
-                className={`px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded text-[10px] sm:text-xs font-medium transition-colors ${
-                  filterTitularVital === 'todos'
-                    ? 'bg-primary text-white shadow-xs font-semibold'
-                    : 'text-on-surface hover:bg-surface-container'
-                }`}
-              >
-                Todos
-              </button>
-              <button
-                id="btn-filtro-vital-vivo"
-                type="button"
-                onClick={() => setFilterTitularVital('vivo')}
-                className={`px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded text-[10px] sm:text-xs font-medium flex items-center gap-1 transition-colors ${
-                  filterTitularVital === 'vivo'
-                    ? 'bg-emerald-600 text-white shadow-xs font-semibold'
-                    : 'text-emerald-800 hover:bg-emerald-50'
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                <span>Vivos</span>
-              </button>
-              <button
-                id="btn-filtro-vital-fallecido"
-                type="button"
-                onClick={() => setFilterTitularVital('fallecido')}
-                className={`px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded text-[10px] sm:text-xs font-medium flex items-center gap-1 transition-colors ${
-                  filterTitularVital === 'fallecido'
-                    ? 'bg-slate-700 text-white shadow-xs font-semibold'
-                    : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                <span>Fallecidos</span>
-              </button>
-            </div>
           </div>
         </div>
       </div>
 
       {/* Parcel List / Interactive Data Grid & Mobile Cards */}
       <div className="bg-surface-container-lowest rounded border border-outline-variant shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden">
-        <div className="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-surface-container-low border-b border-outline-variant flex items-center justify-between shrink-0">
+        {/* Subheader: Hidden on mobile (< sm) so cards start right under the toolbar */}
+        <div className="hidden sm:flex px-2.5 py-1.5 sm:px-3 sm:py-2 bg-surface-container-low border-b border-outline-variant items-center justify-between shrink-0">
           <span className="text-[11px] sm:text-label-caps font-semibold uppercase text-outline">
             Listado de Parcelas Dinámico
           </span>
