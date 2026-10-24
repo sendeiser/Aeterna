@@ -13,6 +13,7 @@ import { ConfiguracionView } from './components/views/ConfiguracionView'
 import { CierreCajaModal } from './components/modals/CierreCajaModal'
 import { PortalPagoPublico } from './components/payment/PortalPagoPublico'
 import { LoginView } from './components/auth/LoginView'
+import { PwaInstallPrompt } from './components/pwa/PwaInstallPrompt'
 import { Parcela, Inhumacion, AfiliadoSeguro, ConfiguracionCobro } from './types/database'
 import { isSupabaseConfigured } from './lib/supabase'
 import {
@@ -734,7 +735,12 @@ export default function App() {
 
   // Si no hay usuario autenticado, presentar pantalla de login de usuario único
   if (!currentUser) {
-    return <LoginView onLoginSuccess={(user) => setCurrentUser(user)} />
+    return (
+      <>
+        <LoginView onLoginSuccess={(user) => setCurrentUser(user)} />
+        <PwaInstallPrompt />
+      </>
+    )
   }
 
   return (
@@ -998,6 +1004,9 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* PWA Install Banner & Prompt (Android / iOS) */}
+      <PwaInstallPrompt />
     </div>
   )
 }

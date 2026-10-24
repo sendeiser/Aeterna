@@ -1,0 +1,63 @@
+{
+  "name": "Aeterna Parque San Nicolás - Sistema Mortuorio",
+  "short_name": "Aeterna",
+  "description": "Sistema Mortuorio y Gestión de Cementerio Parque Municipal San Nicolás · Chamical",
+  "id": "/?source=pwa",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#00236f",
+  "theme_color": "#00236f",
+  "lang": "es-AR",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Padrón de Parcelas",
+      "short_name": "Parcelas",
+      "description": "Consultar y registrar parcelas",
+      "url": "/#parcelas",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Inhumaciones y Actas",
+      "short_name": "Inhumaciones",
+      "description": "Libro digital de sepelios",
+      "url": "/#inhumaciones",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Plan Seguro Integral",
+      "short_name": "Seguro",
+      "description": "Padrón y cobranzas",
+      "url": "/#seguro",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
