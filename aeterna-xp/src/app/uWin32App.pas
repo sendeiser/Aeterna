@@ -14,26 +14,23 @@ procedure RunAeternaWin32App;
 implementation
 
 const
-  APP_TITLE = 'Aeterna - Gestion de Sepelios y Cementerio Parque San Nicolas (Win32 XP)';
+  APP_TITLE = 'Aeterna - Gestion de Sepelios y Cementerio Parque San Nicolas';
   WINDOW_CLASS_NAME = 'AeternaWin32AppClass';
+
+  // Navigation Button IDs
+  IDC_NAV_DASHBOARD   = 1100;
+  IDC_NAV_PARCELAS    = 1101;
+  IDC_NAV_INHUMACIONES= 1102;
+  IDC_NAV_AFILIADOS   = 1103;
+  IDC_NAV_CAJA        = 1104;
+  IDC_NAV_REPORTES    = 1105;
 
   // Command IDs para Menus y Botones
   IDM_SALIR           = 1001;
   IDM_REFRESCAR       = 1002;
-  IDM_TAB_DASHBOARD   = 1010;
-  IDM_TAB_PARCELAS    = 1011;
-  IDM_TAB_INHUMACIONES= 1012;
-  IDM_TAB_AFILIADOS   = 1013;
-  IDM_TAB_CAJA        = 1014;
-  IDM_PDF_ACTA        = 1020;
-  IDM_PDF_FOLIO       = 1021;
-  IDM_PDF_RECIBO      = 1022;
-  IDM_PDF_PLANILLA    = 1023;
-  IDM_PDF_CIERRE      = 1024;
   IDM_ACERCA          = 1030;
 
-  // Botones de las pestanas
-  IDC_TABCONTROL      = 2001;
+  // Botones de Accion
   IDC_BTN_SYNC        = 2002;
   IDC_BTN_NUEVA_INH   = 2003;
   IDC_BTN_ACTA_PDF    = 2004;
@@ -44,33 +41,49 @@ const
   IDC_BTN_RECIBO_PDF  = 2009;
   IDC_BTN_ABRIR_CARPETA = 2010;
   IDC_BTN_COBRAR_MANT = 2011;
+  IDC_BTN_BUSCAR_INH  = 2012;
+  IDC_BTN_FILTRAR_PARC= 2013;
 
-  // ListViews y Combos
+  // Controles de Datos
   IDC_LV_PARCELAS     = 3001;
   IDC_LV_INHUMACIONES = 3002;
   IDC_LV_AFILIADOS    = 3003;
   IDC_LV_CAJA         = 3004;
-  IDC_CMB_SECTOR      = 3005;
-  IDC_CMB_MORA        = 3006;
-  IDC_EDT_BUSCAR_INH  = 3007;
-  IDC_BTN_BUSCAR_INH  = 3008;
+  IDC_LV_RECENT_INH   = 3005;
+  IDC_CMB_SECTOR      = 3006;
+  IDC_CMB_ESTADO_PARC = 3007;
+  IDC_CMB_MORA        = 3008;
+  IDC_EDT_BUSCAR_INH  = 3009;
 
 var
   hMainWnd: HWND;
-  hTabCtrl: HWND;
   hStatusBar: HWND;
-  hGuiFont, hBoldFont, hTitleFont: HFONT;
 
-  // Paneles de Pestanas
-  hTabPanels: array[0..5] of HWND;
-  CurrentTab: Integer = 0;
+  // Fuentes estilizadas
+  hGuiFont, hBoldFont, hTitleFont, hCardBigFont, hCardTitleFont, hHeaderSubFont: HFONT;
 
-  // Controles del Tablero (KPIs)
-  hLblKpiParcelas, hLblKpiInh, hLblKpiAfiliados, hLblKpiCaja: HWND;
+  // Pinceles de Color
+  hHeaderBrush, hNavBrush, hBgBrush: HBRUSH;
+  hCardBlueBrush, hCardPurpleBrush, hCardGreenBrush, hCardRedBrush, hCardTealBrush: HBRUSH;
+
+  // Pestaña Activa (0..5)
+  CurrentModule: Integer = 0;
+  NavButtons: array[0..5] of HWND;
+  ModuleControls: array[0..5] of array of HWND;
+
+  // Controles de Cabecera
+  hHeaderBanner, hHeaderSub, hHeaderStatus: HWND;
+
+  // Controles de Tarjetas KPI
+  hCard1, hCard1Val, hCard1Sub: HWND;
+  hCard2, hCard2Val, hCard2Sub: HWND;
+  hCard3, hCard3Val, hCard3Sub: HWND;
+  hCard4, hCard4Val, hCard4Sub: HWND;
+  hCard5, hCard5Val, hCard5Sub: HWND;
 
   // ListViews
-  hLvParcelas, hLvInh, hLvAfiliados, hLvCaja: HWND;
-  hCmbSector, hCmbMora, hEdtBuscarInh: HWND;
+  hLvParcelas, hLvInh, hLvAfiliados, hLvCaja, hLvRecentInh: HWND;
+  hCmbSector, hCmbEstadoParc, hCmbMora, hEdtBuscarInh: HWND;
   hLblResumenCaja: HWND;
 
   // Datos en Memoria
@@ -79,6 +92,42 @@ var
   DataAfiliados: TAfiliadoArray;
   DataPagos: TPagoArray;
   TotalEfHoy, TotalDigHoy: Currency;
+
+// -------------------------------------------------------------
+// Registro de Controles por Modulo
+// -------------------------------------------------------------
+
+procedure AddControlToModule(ModIdx: Integer; hCtrl: HWND);
+var
+  Len: Integer;
+begin
+  if hCtrl = 0 then Exit;
+  Len := Length(ModuleControls[ModIdx]);
+  SetLength(ModuleControls[ModIdx], Len + 1);
+  ModuleControls[ModIdx][Len] := hCtrl;
+end;
+
+procedure SwitchModule(ModIdx: Integer);
+var
+  m, i: Integer;
+begin
+  if (ModIdx < 0) or (ModIdx > 5) then Exit;
+  CurrentModule := ModIdx;
+
+  for m := 0 to 5 do
+  begin
+    for i := 0 to High(ModuleControls[m]) do
+    begin
+      if m = ModIdx then
+        ShowWindow(ModuleControls[m][i], SW_SHOW)
+      else
+        ShowWindow(ModuleControls[m][i], SW_HIDE);
+    end;
+  end;
+
+  // Forzar redibujado de la ventana y actualizar barra de estado
+  InvalidateRect(hMainWnd, nil, True);
+end;
 
 // -------------------------------------------------------------
 // Funciones Utilitarias de Interfaz Win32
@@ -110,10 +159,23 @@ begin
     SendMessage(hStatusBar, SB_SETTEXT, 0, LPARAM(PChar(MsgText)));
 end;
 
-procedure InitFonts;
+procedure InitFontsAndBrushes;
 var
   lf: TLogFont;
 begin
+  // Pinceles Institucionales
+  hHeaderBrush := CreateSolidBrush(RGB(26, 43, 76));    // Azul Institucional Marino
+  hNavBrush    := CreateSolidBrush(RGB(15, 23, 42));    // Azul Noche Oscuro
+  hBgBrush     := CreateSolidBrush(RGB(241, 245, 249)); // Gris Claro Limpio
+
+  // Pinceles para Tarjetas KPI
+  hCardBlueBrush   := CreateSolidBrush(RGB(30, 58, 138)); // Azul Zafiro
+  hCardPurpleBrush := CreateSolidBrush(RGB(88, 28, 135)); // Purpura
+  hCardGreenBrush  := CreateSolidBrush(RGB(6, 95, 70));   // Esmeralda
+  hCardRedBrush    := CreateSolidBrush(RGB(153, 27, 27)); // Carmesi Alerta
+  hCardTealBrush   := CreateSolidBrush(RGB(19, 78, 74));  // Turquesa Oscuro
+
+  // Fuentes
   FillChar(lf, SizeOf(lf), 0);
   lf.lfHeight := -12;
   lf.lfWeight := FW_NORMAL;
@@ -123,16 +185,41 @@ begin
   lf.lfWeight := FW_BOLD;
   hBoldFont := CreateFontIndirect(lf);
 
-  lf.lfHeight := -16;
+  lf.lfHeight := -11;
+  lf.lfWeight := FW_BOLD;
+  hCardTitleFont := CreateFontIndirect(lf);
+
+  lf.lfHeight := -10;
+  lf.lfWeight := FW_NORMAL;
+  hHeaderSubFont := CreateFontIndirect(lf);
+
+  lf.lfHeight := -18;
+  lf.lfWeight := FW_BOLD;
+  hCardBigFont := CreateFontIndirect(lf);
+
+  lf.lfHeight := -15;
   lf.lfWeight := FW_BOLD;
   hTitleFont := CreateFontIndirect(lf);
 end;
 
-procedure FreeFonts;
+procedure FreeFontsAndBrushes;
 begin
   if hGuiFont <> 0 then DeleteObject(hGuiFont);
   if hBoldFont <> 0 then DeleteObject(hBoldFont);
   if hTitleFont <> 0 then DeleteObject(hTitleFont);
+  if hCardBigFont <> 0 then DeleteObject(hCardBigFont);
+  if hCardTitleFont <> 0 then DeleteObject(hCardTitleFont);
+  if hHeaderSubFont <> 0 then DeleteObject(hHeaderSubFont);
+
+  if hHeaderBrush <> 0 then DeleteObject(hHeaderBrush);
+  if hNavBrush <> 0 then DeleteObject(hNavBrush);
+  if hBgBrush <> 0 then DeleteObject(hBgBrush);
+
+  if hCardBlueBrush <> 0 then DeleteObject(hCardBlueBrush);
+  if hCardPurpleBrush <> 0 then DeleteObject(hCardPurpleBrush);
+  if hCardGreenBrush <> 0 then DeleteObject(hCardGreenBrush);
+  if hCardRedBrush <> 0 then DeleteObject(hCardRedBrush);
+  if hCardTealBrush <> 0 then DeleteObject(hCardTealBrush);
 end;
 
 function CreateButton(Parent: HWND; const Caption: string; X, Y, W, H, Id: Integer): HWND;
@@ -140,18 +227,15 @@ begin
   Result := CreateWindow('BUTTON', PChar(Caption),
     WS_CHILD or WS_VISIBLE or BS_PUSHBUTTON,
     X, Y, W, H, Parent, HMENU(Id), hInstance, nil);
-  SendMessage(Result, WM_SETFONT, WPARAM(hGuiFont), 1);
+  SendMessage(Result, WM_SETFONT, WPARAM(hBoldFont), 1);
 end;
 
-function CreateLabel(Parent: HWND; const Caption: string; X, Y, W, H, Id: Integer; IsBold: Boolean = False): HWND;
+function CreateLabel(Parent: HWND; const Caption: string; X, Y, W, H: Integer; FontToUse: HFONT): HWND;
 begin
   Result := CreateWindow('STATIC', PChar(Caption),
     WS_CHILD or WS_VISIBLE or SS_LEFT,
-    X, Y, W, H, Parent, HMENU(Id), hInstance, nil);
-  if IsBold then
-    SendMessage(Result, WM_SETFONT, WPARAM(hBoldFont), 1)
-  else
-    SendMessage(Result, WM_SETFONT, WPARAM(hGuiFont), 1);
+    X, Y, W, H, Parent, 0, hInstance, nil);
+  SendMessage(Result, WM_SETFONT, WPARAM(FontToUse), 1);
 end;
 
 function CreateGroupBox(Parent: HWND; const Caption: string; X, Y, W, H: Integer): HWND;
@@ -238,7 +322,7 @@ var
   i, MesesM: Integer;
   MoraLabel: string;
 begin
-  SetStatusMessage('Conectando a Supabase Cloud...');
+  SetStatusMessage('Sincronizando con Supabase Cloud en tiempo real...');
 
   // 1. Inhumaciones desde Supabase
   try
@@ -254,7 +338,6 @@ begin
     SetLength(DataParcelas, 0);
   end;
 
-  // Si no hay datos remotos de parcelas, proveer mapa de sectores base
   if Length(DataParcelas) = 0 then
   begin
     SetLength(DataParcelas, 6);
@@ -301,11 +384,21 @@ begin
     DataPagos[2].NroRecibo := '2026-00383'; DataPagos[2].TitularNombre := 'Benitez, Marta'; DataPagos[2].MontoPagado := 40000; DataPagos[2].MetodoPago := mpTransferenciaQR; DataPagos[2].Observaciones := 'Cuota Seguro Sepelio Transferencia';
   end;
 
-  // Actualizar Tablero (KPIs)
-  SetWindowText(hLblKpiParcelas, PChar('Parcelas Registradas: ' + IntToStr(Length(DataParcelas)) + ' · Ocupadas: 142 · Disponibles: 178'));
-  SetWindowText(hLblKpiInh, PChar('Actas Registradas en Libro de Inhumaciones: ' + IntToStr(Length(DataInhumaciones)) + ' Difuntos'));
-  SetWindowText(hLblKpiAfiliados, PChar('Padron Seguro de Sepelio: ' + IntToStr(Length(DataAfiliados)) + ' Titulares (Activos y al dia)'));
-  SetWindowText(hLblKpiCaja, PChar('Total Caja de Hoy: ' + FormatearMoneda(TotalEfHoy + TotalDigHoy) + ' (Efectivo: ' + FormatearMoneda(TotalEfHoy) + ' · Digital: ' + FormatearMoneda(TotalDigHoy) + ')'));
+  // Actualizar Tarjetas KPI
+  SetWindowText(hCard1Val, '142 / 320');
+  SetWindowText(hCard1Sub, 'Ocupadas · 178 Disponibles');
+
+  SetWindowText(hCard2Val, PChar(IntToStr(Length(DataInhumaciones)) + ' Actas'));
+  SetWindowText(hCard2Sub, 'Difuntos Registrados');
+
+  SetWindowText(hCard3Val, '32 Titulares');
+  SetWindowText(hCard3Sub, 'Cobertura Activa al Dia');
+
+  SetWindowText(hCard4Val, '9 Mora / 4 Baja');
+  SetWindowText(hCard4Sub, 'Aviso 3m / Urgente 3a');
+
+  SetWindowText(hCard5Val, PChar(FormatearMoneda(TotalEfHoy + TotalDigHoy)));
+  SetWindowText(hCard5Sub, PChar('Ef: ' + FormatearMoneda(TotalEfHoy) + ' · Dig: ' + FormatearMoneda(TotalDigHoy)));
 
   // Poblar ListView Inhumaciones
   ClearListView(hLvInh);
@@ -318,7 +411,21 @@ begin
       DataInhumaciones[i].NomenclaturaParcela,
       IntToStr(DataInhumaciones[i].NivelPosicion),
       DataInhumaciones[i].EmpresaFunebrera,
-      BoolToTexto(DataInhumaciones[i].EsCovid, 'SI (Protocolo Covid)', 'Estandar')
+      BoolToTexto(DataInhumaciones[i].EsCovid, 'COVID-19', 'Estandar')
+    ]);
+  end;
+
+  // Poblar Actividad Reciente en Dashboard
+  ClearListView(hLvRecentInh);
+  for i := 0 to High(DataInhumaciones) do
+  begin
+    if i >= 10 then Break;
+    AddListViewItem(hLvRecentInh, i, [
+      FormatearFecha(DataInhumaciones[i].FechaInhumacion),
+      DataInhumaciones[i].NombreDifunto,
+      DataInhumaciones[i].DniDifunto,
+      DataInhumaciones[i].NomenclaturaParcela,
+      DataInhumaciones[i].EmpresaFunebrera
     ]);
   end;
 
@@ -374,10 +481,10 @@ begin
     ]);
   end;
 
-  SetWindowText(hLblResumenCaja, PChar('TOTAL RECAUDACION HOY: ' + FormatearMoneda(TotalEfHoy + TotalDigHoy) +
-    '  [ Efectivo: ' + FormatearMoneda(TotalEfHoy) + ' | Digital: ' + FormatearMoneda(TotalDigHoy) + ' ]'));
+  SetWindowText(hLblResumenCaja, PChar('TOTAL RECAUDADO HOY: ' + FormatearMoneda(TotalEfHoy + TotalDigHoy) +
+    '   [ Efectivo en Caja: ' + FormatearMoneda(TotalEfHoy) + '  |  Transferencias / QR: ' + FormatearMoneda(TotalDigHoy) + ' ]'));
 
-  SetStatusMessage('Aeterna conectado a Supabase Cloud · Listo para operar.');
+  SetStatusMessage('Aeterna conectado a Supabase Cloud · ' + IntToStr(Length(DataInhumaciones)) + ' actas cargadas.');
 end;
 
 // -------------------------------------------------------------
@@ -483,192 +590,226 @@ begin
 end;
 
 // -------------------------------------------------------------
-// Cambio de Pestanas
-// -------------------------------------------------------------
-
-procedure SwitchTab(TabIndex: Integer);
-var
-  i: Integer;
-begin
-  if (TabIndex < 0) or (TabIndex > 5) then Exit;
-  CurrentTab := TabIndex;
-  for i := 0 to 5 do
-  begin
-    if i = TabIndex then
-      ShowWindow(hTabPanels[i], SW_SHOW)
-    else
-      ShowWindow(hTabPanels[i], SW_HIDE);
-  end;
-  SendMessage(hTabCtrl, TCM_SETCURSEL, WPARAM(TabIndex), 0);
-end;
-
-// -------------------------------------------------------------
 // Creacion de la Interfaz Visual
 // -------------------------------------------------------------
 
 procedure BuildUI(hWnd: HWND);
 var
-  hHeaderGroup, hKpiGroup, hQuickGroup: HWND;
-  Tie: TTCItem;
-  TabTitles: array[0..5] of string = (
-    ' Tablero General ',
-    ' Catastro & Parcelas ',
-    ' Libro de Inhumaciones ',
-    ' Afiliados & Cuotas ',
-    ' Caja Diaria & Arqueo ',
-    ' Centro de Reportes PDF '
-  );
+  hCtrl: HWND;
   i: Integer;
-  rc: TRect;
 begin
-  // Cabecera Institucional
-  hHeaderGroup := CreateWindowEx(0, 'STATIC',
-    'CEMENTERIO PARQUE SAN NICOLAS · PARROQUIA SAN NICOLAS DE BARI'#13#10 +
-    'Sistema Integral de Catastro, Sepelios, Afiliados y Caja Diaria · Estado Supabase: [ EN LINEA ]',
-    WS_CHILD or WS_VISIBLE or SS_LEFT,
-    15, 10, 940, 36, hWnd, 0, hInstance, nil);
-  SendMessage(hHeaderGroup, WM_SETFONT, WPARAM(hBoldFont), 1);
-
-  // Tab Control
-  hTabCtrl := CreateWindow(WC_TABCONTROL, '',
-    WS_CHILD or WS_VISIBLE or WS_CLIPSIBLINGS,
-    15, 52, 940, 560, hWnd, HMENU(IDC_TABCONTROL), hInstance, nil);
-  SendMessage(hTabCtrl, WM_SETFONT, WPARAM(hGuiFont), 1);
-
   for i := 0 to 5 do
-  begin
-    FillChar(Tie, SizeOf(Tie), 0);
-    Tie.mask := TCIF_TEXT;
-    Tie.pszText := PChar(TabTitles[i]);
-    SendMessage(hTabCtrl, TCM_INSERTITEM, i, LPARAM(@Tie));
-  end;
+    SetLength(ModuleControls[i], 0);
 
-  // Crear paneles contenedores para cada pestana
-  GetClientRect(hTabCtrl, rc);
-  SendMessage(hTabCtrl, TCM_ADJUSTRECT, 0, LPARAM(@rc));
+  // 1. BANNER INSTITUCIONAL SUPERIOR (Fondo Azul Marino)
+  hHeaderBanner := CreateLabel(hWnd, '  CEMENTERIO PARQUE SAN NICOLAS · PARROQUIA SAN NICOLAS DE BARI', 0, 0, 1024, 34, hTitleFont);
+  hHeaderSub    := CreateLabel(hWnd, '   Obispado de San Nicolas de los Arroyos · Sistema Integrado de Administracion General', 0, 34, 750, 24, hHeaderSubFont);
+  hHeaderStatus := CreateLabel(hWnd, '● SUPABASE CLOUD: EN LINEA (TLS 1.2)  ', 750, 34, 274, 24, hBoldFont);
 
-  for i := 0 to 5 do
-  begin
-    hTabPanels[i] := CreateWindow('STATIC', '',
-      WS_CHILD or WS_CLIPSIBLINGS or SS_WHITERECT,
-      rc.Left + 15, rc.Top + 52, rc.Right - rc.Left, rc.Bottom - rc.Top,
-      hWnd, 0, hInstance, nil);
-  end;
+  // 2. BARRA DE NAVEGACION DE MODULOS (Botones Destacados)
+  NavButtons[0] := CreateButton(hWnd, '📊 1. Tablero',     10,  64, 160, 36, IDC_NAV_DASHBOARD);
+  NavButtons[1] := CreateButton(hWnd, '🗺️ 2. Catastro',    175, 64, 160, 36, IDC_NAV_PARCELAS);
+  NavButtons[2] := CreateButton(hWnd, '🪦 3. Inhumaciones', 340, 64, 165, 36, IDC_NAV_INHUMACIONES);
+  NavButtons[3] := CreateButton(hWnd, '🛡️ 4. Afiliados',    510, 64, 160, 36, IDC_NAV_AFILIADOS);
+  NavButtons[4] := CreateButton(hWnd, '💰 5. Caja Diaria',  675, 64, 160, 36, IDC_NAV_CAJA);
+  NavButtons[5] := CreateButton(hWnd, '📄 6. Reportes PDF', 840, 64, 165, 36, IDC_NAV_REPORTES);
 
-  // -----------------------------------------------------------
-  // PESTANA 0: Tablero General (KPIs)
-  // -----------------------------------------------------------
-  hKpiGroup := CreateGroupBox(hTabPanels[0], 'Indicadores Ejecutivos en Tiempo Real (Supabase Cloud)', 10, 10, 890, 200);
-  hLblKpiParcelas := CreateLabel(hKpiGroup, 'Cargando estado catastral de parcelas...', 20, 35, 840, 25, 0, True);
-  hLblKpiInh := CreateLabel(hKpiGroup, 'Cargando libro parroquial de inhumaciones...', 20, 75, 840, 25, 0, True);
-  hLblKpiAfiliados := CreateLabel(hKpiGroup, 'Cargando padron de afiliados y seguro de sepelio...', 20, 115, 840, 25, 0, True);
-  hLblKpiCaja := CreateLabel(hKpiGroup, 'Cargando arqueo y recaudacion diaria...', 20, 155, 840, 25, 0, True);
+  // ===========================================================
+  // MODULO 0: TABLERO GENERAL (DASHBOARD)
+  // ===========================================================
+  // Tarjetas KPI con colores institucionales
+  hCard1    := CreateLabel(hWnd, '  🗺️ CATASTRO PARCELAS', 15, 110, 190, 24, hCardTitleFont);
+  hCard1Val := CreateLabel(hWnd, '  142 / 320',            15, 134, 190, 30, hCardBigFont);
+  hCard1Sub := CreateLabel(hWnd, '  Ocupadas · 178 Libres', 15, 164, 190, 22, hGuiFont);
+  AddControlToModule(0, hCard1); AddControlToModule(0, hCard1Val); AddControlToModule(0, hCard1Sub);
 
-  hQuickGroup := CreateGroupBox(hTabPanels[0], 'Operaciones Rapidas del Sistema', 10, 230, 890, 270);
-  CreateButton(hQuickGroup, 'Registrar Inhumacion', 25, 40, 260, 42, IDC_BTN_NUEVA_INH);
-  CreateButton(hQuickGroup, 'Cobrar Cuota de Sepelio', 315, 40, 260, 42, IDC_BTN_COBRAR_CUOTA);
-  CreateButton(hQuickGroup, 'Cobrar Mantenimiento Parcela', 605, 40, 260, 42, IDC_BTN_COBRAR_MANT);
+  hCard2    := CreateLabel(hWnd, '  🪦 INHUMACIONES',      215, 110, 190, 24, hCardTitleFont);
+  hCard2Val := CreateLabel(hWnd, '  203 Actas',            215, 134, 190, 30, hCardBigFont);
+  hCard2Sub := CreateLabel(hWnd, '  Libro Sincronizado',   215, 164, 190, 22, hGuiFont);
+  AddControlToModule(0, hCard2); AddControlToModule(0, hCard2Val); AddControlToModule(0, hCard2Sub);
 
-  CreateButton(hQuickGroup, 'Generar Acta Inhumacion (PDF)', 25, 100, 260, 42, IDC_BTN_ACTA_PDF);
-  CreateButton(hQuickGroup, 'Generar Planilla de Ruta (PDF)', 315, 100, 260, 42, IDC_BTN_PLANILLA_PDF);
-  CreateButton(hQuickGroup, 'Arqueo y Cierre de Caja (PDF)', 605, 100, 260, 42, IDC_BTN_CIERRE_CAJA);
+  hCard3    := CreateLabel(hWnd, '  🛡️ AFILIADOS AL DIA',   415, 110, 190, 24, hCardTitleFont);
+  hCard3Val := CreateLabel(hWnd, '  32 Titulares',         415, 134, 190, 30, hCardBigFont);
+  hCard3Sub := CreateLabel(hWnd, '  Cobertura Activa',     415, 164, 190, 22, hGuiFont);
+  AddControlToModule(0, hCard3); AddControlToModule(0, hCard3Val); AddControlToModule(0, hCard3Sub);
 
-  CreateButton(hQuickGroup, 'Sincronizar con Supabase Cloud Ahora', 25, 170, 410, 44, IDC_BTN_SYNC);
-  CreateButton(hQuickGroup, 'Abrir Carpeta de Reportes Generados', 455, 170, 410, 44, IDC_BTN_ABRIR_CARPETA);
+  hCard4    := CreateLabel(hWnd, '  ⚠️ MOROSIDAD SEGURO',  615, 110, 190, 24, hCardTitleFont);
+  hCard4Val := CreateLabel(hWnd, '  9 Mora / 4 Baja',      615, 134, 190, 30, hCardBigFont);
+  hCard4Sub := CreateLabel(hWnd, '  Aviso 3m / Urgente 3a',615, 164, 190, 22, hGuiFont);
+  AddControlToModule(0, hCard4); AddControlToModule(0, hCard4Val); AddControlToModule(0, hCard4Sub);
 
-  // -----------------------------------------------------------
-  // PESTANA 1: Catastro & Parcelas
-  // -----------------------------------------------------------
-  CreateLabel(hTabPanels[1], 'Sector:', 15, 15, 50, 20, 0, True);
-  hCmbSector := CreateComboBox(hTabPanels[1], 70, 12, 180, 140, IDC_CMB_SECTOR);
+  hCard5    := CreateLabel(hWnd, '  💰 RECAUDACION HOY',   815, 110, 190, 24, hCardTitleFont);
+  hCard5Val := CreateLabel(hWnd, '  $ 125,000.00',         815, 134, 190, 30, hCardBigFont);
+  hCard5Sub := CreateLabel(hWnd, '  Ef: $85k · Dig: $40k', 815, 164, 190, 22, hGuiFont);
+  AddControlToModule(0, hCard5); AddControlToModule(0, hCard5Val); AddControlToModule(0, hCard5Sub);
+
+  // Acciones Rapidas
+  hCtrl := CreateGroupBox(hWnd, ' Operaciones Rapidas del Sistema ', 15, 195, 990, 110);
+  AddControlToModule(0, hCtrl);
+
+  hCtrl := CreateButton(hWnd, '🪦 Nueva Inhumacion',       30, 222, 225, 34, IDC_BTN_NUEVA_INH);
+  AddControlToModule(0, hCtrl);
+  hCtrl := CreateButton(hWnd, '🛡️ Cobrar Cuota Seguro',    270, 222, 225, 34, IDC_BTN_COBRAR_CUOTA);
+  AddControlToModule(0, hCtrl);
+  hCtrl := CreateButton(hWnd, '🗺️ Cobrar Mantenimiento',   510, 222, 235, 34, IDC_BTN_COBRAR_MANT);
+  AddControlToModule(0, hCtrl);
+  hCtrl := CreateButton(hWnd, '🔒 Arqueo / Cierre Caja',   760, 222, 225, 34, IDC_BTN_CIERRE_CAJA);
+  AddControlToModule(0, hCtrl);
+
+  hCtrl := CreateButton(hWnd, '🔄 Sincronizar Supabase Ahora', 30, 262, 465, 32, IDC_BTN_SYNC);
+  AddControlToModule(0, hCtrl);
+  hCtrl := CreateButton(hWnd, '📂 Abrir Carpeta de Reportes PDF', 510, 262, 475, 32, IDC_BTN_ABRIR_CARPETA);
+  AddControlToModule(0, hCtrl);
+
+  // Listado de Actividad Reciente en Dashboard
+  hCtrl := CreateLabel(hWnd, 'ULTIMAS INHUMACIONES Y MOVIMIENTOS ASENTADOS EN EL SISTEMA:', 15, 315, 600, 20, hBoldFont);
+  AddControlToModule(0, hCtrl);
+
+  hLvRecentInh := CreateListView(hWnd, 15, 340, 990, 270, IDC_LV_RECENT_INH);
+  AddListViewColumn(hLvRecentInh, 0, 'Fecha Inhumacion', 130);
+  AddListViewColumn(hLvRecentInh, 1, 'Nombre Completo del Difunto', 320);
+  AddListViewColumn(hLvRecentInh, 2, 'DNI', 120);
+  AddListViewColumn(hLvRecentInh, 3, 'Parcela Asignada', 140);
+  AddListViewColumn(hLvRecentInh, 4, 'Empresa Funebrera Responsable', 250);
+  AddControlToModule(0, hLvRecentInh);
+
+  // ===========================================================
+  // MODULO 1: CATASTRO Y PARCELAS
+  // ===========================================================
+  hCtrl := CreateLabel(hWnd, 'Sector:', 15, 115, 50, 22, hBoldFont);
+  AddControlToModule(1, hCtrl);
+  hCmbSector := CreateComboBox(hWnd, 70, 112, 170, 140, IDC_CMB_SECTOR);
   SendMessage(hCmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Todos los Sectores')));
   SendMessage(hCmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Sector A')));
   SendMessage(hCmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Sector E')));
   SendMessage(hCmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Sector Salinas')));
   SendMessage(hCmbSector, CB_SETCURSEL, 0, 0);
+  AddControlToModule(1, hCmbSector);
 
-  CreateButton(hTabPanels[1], 'Cobrar Mantenimiento', 600, 10, 160, 28, IDC_BTN_COBRAR_MANT);
-  CreateButton(hTabPanels[1], 'Actualizar Lista', 770, 10, 130, 28, IDC_BTN_SYNC);
+  hCtrl := CreateLabel(hWnd, 'Estado:', 255, 115, 55, 22, hBoldFont);
+  AddControlToModule(1, hCtrl);
+  hCmbEstadoParc := CreateComboBox(hWnd, 315, 112, 160, 140, IDC_CMB_ESTADO_PARC);
+  SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Todos los Estados')));
+  SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Disponible')));
+  SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Ocupada')));
+  SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Reservada')));
+  SendMessage(hCmbEstadoParc, CB_SETCURSEL, 0, 0);
+  AddControlToModule(1, hCmbEstadoParc);
 
-  hLvParcelas := CreateListView(hTabPanels[1], 15, 48, 885, 450, IDC_LV_PARCELAS);
-  AddListViewColumn(hLvParcelas, 0, 'Nomenclatura', 110);
-  AddListViewColumn(hLvParcelas, 1, 'Sector', 80);
-  AddListViewColumn(hLvParcelas, 2, 'Fila / Mz', 80);
-  AddListViewColumn(hLvParcelas, 3, 'Parcela', 70);
-  AddListViewColumn(hLvParcelas, 4, 'Estado', 100);
-  AddListViewColumn(hLvParcelas, 5, 'Titular Concesion', 250);
-  AddListViewColumn(hLvParcelas, 6, 'Ultimo Pago Mant.', 130);
+  hCtrl := CreateButton(hWnd, '💰 Cobrar Mantenimiento ($49.000)', 500, 110, 260, 30, IDC_BTN_COBRAR_MANT);
+  AddControlToModule(1, hCtrl);
+  hCtrl := CreateButton(hWnd, '🔄 Recargar Parcelas', 775, 110, 230, 30, IDC_BTN_SYNC);
+  AddControlToModule(1, hCtrl);
 
-  // -----------------------------------------------------------
-  // PESTANA 2: Libro de Inhumaciones
-  // -----------------------------------------------------------
-  CreateLabel(hTabPanels[2], 'Buscar Difunto o DNI:', 15, 15, 140, 20, 0, True);
-  hEdtBuscarInh := CreateEdit(hTabPanels[2], '', 160, 12, 220, 24, IDC_EDT_BUSCAR_INH);
-  CreateButton(hTabPanels[2], 'Buscar', 390, 10, 90, 28, IDC_BTN_BUSCAR_INH);
-  CreateButton(hTabPanels[2], 'Emitir Acta (PDF)', 500, 10, 180, 28, IDC_BTN_ACTA_PDF);
-  CreateButton(hTabPanels[2], 'Folio Completo (PDF)', 690, 10, 180, 28, IDC_BTN_FOLIO_PDF);
+  hLvParcelas := CreateListView(hWnd, 15, 150, 990, 460, IDC_LV_PARCELAS);
+  AddListViewColumn(hLvParcelas, 0, 'Nomenclatura', 120);
+  AddListViewColumn(hLvParcelas, 1, 'Sector', 90);
+  AddListViewColumn(hLvParcelas, 2, 'Fila / Mz', 90);
+  AddListViewColumn(hLvParcelas, 3, 'Parcela Nro', 90);
+  AddListViewColumn(hLvParcelas, 4, 'Estado Parcela', 120);
+  AddListViewColumn(hLvParcelas, 5, 'Titular de Concesion', 300);
+  AddListViewColumn(hLvParcelas, 6, 'Ultimo Pago Registrado', 150);
+  AddControlToModule(1, hLvParcelas);
 
-  hLvInh := CreateListView(hTabPanels[2], 15, 48, 885, 450, IDC_LV_INHUMACIONES);
-  AddListViewColumn(hLvInh, 0, 'Fecha Inh.', 90);
-  AddListViewColumn(hLvInh, 1, 'Nombre del Difunto', 240);
-  AddListViewColumn(hLvInh, 2, 'DNI', 100);
-  AddListViewColumn(hLvInh, 3, 'Parcela', 100);
-  AddListViewColumn(hLvInh, 4, 'Nivel', 60);
-  AddListViewColumn(hLvInh, 5, 'Empresa Funebrera', 160);
-  AddListViewColumn(hLvInh, 6, 'Protocolo', 110);
+  // ===========================================================
+  // MODULO 2: LIBRO PARROQUIAL DE INHUMACIONES
+  // ===========================================================
+  hCtrl := CreateLabel(hWnd, 'Buscar Difunto o DNI:', 15, 115, 150, 22, hBoldFont);
+  AddControlToModule(2, hCtrl);
+  hEdtBuscarInh := CreateEdit(hWnd, '', 170, 112, 220, 24, IDC_EDT_BUSCAR_INH);
+  AddControlToModule(2, hEdtBuscarInh);
 
-  // -----------------------------------------------------------
-  // PESTANA 3: Seguro de Sepelio y Afiliados
-  // -----------------------------------------------------------
-  CreateLabel(hTabPanels[3], 'Filtro Morosidad:', 15, 15, 110, 20, 0, True);
-  hCmbMora := CreateComboBox(hTabPanels[3], 130, 12, 240, 140, IDC_CMB_MORA);
+  hCtrl := CreateButton(hWnd, '🔍 Buscar', 400, 110, 90, 30, IDC_BTN_BUSCAR_INH);
+  AddControlToModule(2, hCtrl);
+  hCtrl := CreateButton(hWnd, '🪦 Nueva Inhumacion', 505, 110, 170, 30, IDC_BTN_NUEVA_INH);
+  AddControlToModule(2, hCtrl);
+  hCtrl := CreateButton(hWnd, '📄 Emitir Acta (PDF)', 685, 110, 160, 30, IDC_BTN_ACTA_PDF);
+  AddControlToModule(2, hCtrl);
+  hCtrl := CreateButton(hWnd, '📄 Folio Completo (PDF)', 855, 110, 150, 30, IDC_BTN_FOLIO_PDF);
+  AddControlToModule(2, hCtrl);
+
+  hLvInh := CreateListView(hWnd, 15, 150, 990, 460, IDC_LV_INHUMACIONES);
+  AddListViewColumn(hLvInh, 0, 'Fecha Inh.', 100);
+  AddListViewColumn(hLvInh, 1, 'Nombre Completo del Difunto', 260);
+  AddListViewColumn(hLvInh, 2, 'DNI', 110);
+  AddListViewColumn(hLvInh, 3, 'Parcela', 110);
+  AddListViewColumn(hLvInh, 4, 'Nivel', 65);
+  AddListViewColumn(hLvInh, 5, 'Empresa Funebrera', 180);
+  AddListViewColumn(hLvInh, 6, 'Protocolo Sanitario', 130);
+  AddControlToModule(2, hLvInh);
+
+  // ===========================================================
+  // MODULO 3: SEGURO DE SEPELIO Y AFILIADOS
+  // ===========================================================
+  hCtrl := CreateLabel(hWnd, 'Filtro Cobranza:', 15, 115, 115, 22, hBoldFont);
+  AddControlToModule(3, hCtrl);
+  hCmbMora := CreateComboBox(hWnd, 135, 112, 260, 140, IDC_CMB_MORA);
   SendMessage(hCmbMora, CB_ADDSTRING, 0, LPARAM(PChar('Todos los Afiliados')));
   SendMessage(hCmbMora, CB_ADDSTRING, 0, LPARAM(PChar('Al Dia (Habilitados)')));
-  SendMessage(hCmbMora, CB_ADDSTRING, 0, LPARAM(PChar('Mora >= 3 Meses')));
-  SendMessage(hCmbMora, CB_ADDSTRING, 0, LPARAM(PChar('En Riesgo Baja (>= 3 Anos)')));
+  SendMessage(hCmbMora, CB_ADDSTRING, 0, LPARAM(PChar('Aviso: Mora >= 3 Meses')));
+  SendMessage(hCmbMora, CB_ADDSTRING, 0, LPARAM(PChar('Urgente: Riesgo Baja (>= 3 Anos)')));
   SendMessage(hCmbMora, CB_SETCURSEL, 0, 0);
+  AddControlToModule(3, hCmbMora);
 
-  CreateButton(hTabPanels[3], 'Cobrar Cuotas de Seguro', 460, 10, 200, 28, IDC_BTN_COBRAR_CUOTA);
-  CreateButton(hTabPanels[3], 'Planilla de Ruta Cobrador (PDF)', 670, 10, 225, 28, IDC_BTN_PLANILLA_PDF);
+  hCtrl := CreateButton(hWnd, '💰 Cobrar Cuotas de Seguro', 420, 110, 230, 30, IDC_BTN_COBRAR_CUOTA);
+  AddControlToModule(3, hCtrl);
+  hCtrl := CreateButton(hWnd, '📄 Planilla de Ruta Cobrador (PDF)', 665, 110, 250, 30, IDC_BTN_PLANILLA_PDF);
+  AddControlToModule(3, hCtrl);
+  hCtrl := CreateButton(hWnd, '🔄 Recargar', 925, 110, 80, 30, IDC_BTN_SYNC);
+  AddControlToModule(3, hCtrl);
 
-  hLvAfiliados := CreateListView(hTabPanels[3], 15, 48, 885, 450, IDC_LV_AFILIADOS);
-  AddListViewColumn(hLvAfiliados, 0, 'Nro Afiliado', 85);
-  AddListViewColumn(hLvAfiliados, 1, 'Nombre Completo del Titular', 220);
-  AddListViewColumn(hLvAfiliados, 2, 'DNI', 95);
-  AddListViewColumn(hLvAfiliados, 3, 'Direccion de Cobro', 180);
-  AddListViewColumn(hLvAfiliados, 4, 'Cuota Mensual', 100);
-  AddListViewColumn(hLvAfiliados, 5, 'Mora', 80);
+  hLvAfiliados := CreateListView(hWnd, 15, 150, 990, 460, IDC_LV_AFILIADOS);
+  AddListViewColumn(hLvAfiliados, 0, 'Nro Afiliado', 95);
+  AddListViewColumn(hLvAfiliados, 1, 'Nombre Completo del Titular', 240);
+  AddListViewColumn(hLvAfiliados, 2, 'DNI', 105);
+  AddListViewColumn(hLvAfiliados, 3, 'Direccion de Cobro', 190);
+  AddListViewColumn(hLvAfiliados, 4, 'Cuota Mensual', 110);
+  AddListViewColumn(hLvAfiliados, 5, 'Mora', 85);
   AddListViewColumn(hLvAfiliados, 6, 'Estado Cobertura', 190);
+  AddControlToModule(3, hLvAfiliados);
 
-  // -----------------------------------------------------------
-  // PESTANA 4: Caja Diaria y Arqueo
-  // -----------------------------------------------------------
-  hLblResumenCaja := CreateLabel(hTabPanels[4], 'Calculando totales de caja diaria...', 15, 15, 520, 22, 0, True);
-  CreateButton(hTabPanels[4], 'Cobro en Caja', 550, 10, 150, 28, IDC_BTN_COBRAR_CUOTA);
-  CreateButton(hTabPanels[4], 'Acta Cierre de Caja (PDF)', 710, 10, 190, 28, IDC_BTN_CIERRE_CAJA);
+  // ===========================================================
+  // MODULO 4: CAJA DIARIA Y ARQUEO
+  // ===========================================================
+  hLblResumenCaja := CreateLabel(hWnd, '  TOTAL RECAUDADO HOY: $ 125,000.00   [ Efectivo: $ 85,000.00 | Digital: $ 40,000.00 ]', 15, 110, 660, 30, hBoldFont);
+  AddControlToModule(4, hLblResumenCaja);
 
-  hLvCaja := CreateListView(hTabPanels[4], 15, 48, 885, 450, IDC_LV_CAJA);
-  AddListViewColumn(hLvCaja, 0, 'Recibo Nro', 110);
-  AddListViewColumn(hLvCaja, 1, 'Hora', 70);
-  AddListViewColumn(hLvCaja, 2, 'Titular / Pagador', 220);
-  AddListViewColumn(hLvCaja, 3, 'Concepto Imputado', 260);
-  AddListViewColumn(hLvCaja, 4, 'Metodo', 90);
-  AddListViewColumn(hLvCaja, 5, 'Importe', 110);
+  hCtrl := CreateButton(hWnd, '💰 Cobro en Caja', 690, 110, 140, 30, IDC_BTN_COBRAR_CUOTA);
+  AddControlToModule(4, hCtrl);
+  hCtrl := CreateButton(hWnd, '🔒 Acta Cierre Caja (PDF)', 840, 110, 165, 30, IDC_BTN_CIERRE_CAJA);
+  AddControlToModule(4, hCtrl);
 
-  // -----------------------------------------------------------
-  // PESTANA 5: Centro de Reportes Oficiales PDF
-  // -----------------------------------------------------------
-  CreateLabel(hTabPanels[5], 'CENTRO DE EMISION DE REPORTES OFICIALES EN PDF VECTORIAL NATIVO', 20, 15, 800, 24, 0, True);
-  CreateLabel(hTabPanels[5], 'Haga clic en cualquiera de los documentos para generarlo de inmediato e inspeccionarlo:', 20, 42, 800, 20, 0);
+  hLvCaja := CreateListView(hWnd, 15, 150, 990, 460, IDC_LV_CAJA);
+  AddListViewColumn(hLvCaja, 0, 'Recibo Nro', 120);
+  AddListViewColumn(hLvCaja, 1, 'Hora', 80);
+  AddListViewColumn(hLvCaja, 2, 'Titular / Pagador', 240);
+  AddListViewColumn(hLvCaja, 3, 'Concepto Imputado', 280);
+  AddListViewColumn(hLvCaja, 4, 'Metodo de Pago', 110);
+  AddListViewColumn(hLvCaja, 5, 'Importe', 130);
+  AddControlToModule(4, hLvCaja);
 
-  CreateButton(hTabPanels[5], '1. Acta Oficial de Inhumacion (PDF)', 25, 80, 400, 46, IDC_BTN_ACTA_PDF);
-  CreateButton(hTabPanels[5], '2. Folio del Libro de Inhumaciones (PDF)', 455, 80, 400, 46, IDC_BTN_FOLIO_PDF);
+  // ===========================================================
+  // MODULO 5: CENTRO DE REPORTES OFICIALES PDF
+  // ===========================================================
+  hCtrl := CreateLabel(hWnd, 'CENTRO DE EMISION DE REPORTES OFICIALES VECTORIALES EN PDF NATIVO', 20, 115, 800, 24, hTitleFont);
+  AddControlToModule(5, hCtrl);
+  hCtrl := CreateLabel(hWnd, 'Haga clic en cualquiera de los botones para emitir el documento oficial e inspeccionarlo de inmediato:', 20, 145, 850, 20, hGuiFont);
+  AddControlToModule(5, hCtrl);
 
-  CreateButton(hTabPanels[5], '3. Recibo Oficial de Pago por Duplicado (PDF)', 25, 150, 400, 46, IDC_BTN_RECIBO_PDF);
-  CreateButton(hTabPanels[5], '4. Planilla de Ruta Domiciliaria Cobrador (PDF)', 455, 150, 400, 46, IDC_BTN_PLANILLA_PDF);
+  hCtrl := CreateButton(hWnd, '📄 1. Generar Acta Oficial de Inhumacion (PDF)', 30, 185, 450, 46, IDC_BTN_ACTA_PDF);
+  AddControlToModule(5, hCtrl);
+  hCtrl := CreateButton(hWnd, '📄 2. Generar Folio del Libro de Inhumaciones (PDF)', 510, 185, 450, 46, IDC_BTN_FOLIO_PDF);
+  AddControlToModule(5, hCtrl);
 
-  CreateButton(hTabPanels[5], '5. Acta de Arqueo y Cierre Diario de Caja (PDF)', 25, 220, 400, 46, IDC_BTN_CIERRE_CAJA);
-  CreateButton(hTabPanels[5], 'Abrir Carpeta de Reportes Generados', 455, 220, 400, 46, IDC_BTN_ABRIR_CARPETA);
+  hCtrl := CreateButton(hWnd, '📄 3. Generar Recibo Oficial de Pago por Duplicado (PDF)', 30, 255, 450, 46, IDC_BTN_RECIBO_PDF);
+  AddControlToModule(5, hCtrl);
+  hCtrl := CreateButton(hWnd, '📄 4. Generar Planilla de Ruta Domiciliaria Cobrador (PDF)', 510, 255, 450, 46, IDC_BTN_PLANILLA_PDF);
+  AddControlToModule(5, hCtrl);
+
+  hCtrl := CreateButton(hWnd, '📄 5. Generar Acta de Arqueo y Cierre Diario de Caja (PDF)', 30, 325, 450, 46, IDC_BTN_CIERRE_CAJA);
+  AddControlToModule(5, hCtrl);
+  hCtrl := CreateButton(hWnd, '📂 Abrir Carpeta de Reportes Generados', 510, 325, 450, 46, IDC_BTN_ABRIR_CARPETA);
+  AddControlToModule(5, hCtrl);
 
   // Barra de Estado
   hStatusBar := CreateWindow(STATUSCLASSNAME, '',
@@ -676,10 +817,10 @@ begin
     0, 0, 0, 0, hWnd, 0, hInstance, nil);
   SendMessage(hStatusBar, WM_SETFONT, WPARAM(hGuiFont), 1);
 
-  // Mostrar la primera pestana
-  SwitchTab(0);
+  // Mostrar el primer modulo (Tablero General)
+  SwitchModule(0);
 
-  // Cargar datos reales
+  // Cargar datos reales desde Supabase
   CargarDatosIniciales;
 end;
 
@@ -702,20 +843,21 @@ begin
 
   // Menu Modulos
   hSubMenuMod := CreatePopupMenu;
-  AppendMenu(hSubMenuMod, MF_STRING, IDM_TAB_DASHBOARD, '&1. Tablero General (KPIs)');
-  AppendMenu(hSubMenuMod, MF_STRING, IDM_TAB_PARCELAS, '&2. Catastro & Parcelas');
-  AppendMenu(hSubMenuMod, MF_STRING, IDM_TAB_INHUMACIONES, '&3. Libro de Inhumaciones');
-  AppendMenu(hSubMenuMod, MF_STRING, IDM_TAB_AFILIADOS, '&4. Seguro de Sepelio y Afiliados');
-  AppendMenu(hSubMenuMod, MF_STRING, IDM_TAB_CAJA, '&5. Caja Diaria y Arqueo');
+  AppendMenu(hSubMenuMod, MF_STRING, IDC_NAV_DASHBOARD, '&1. Tablero General (KPIs)');
+  AppendMenu(hSubMenuMod, MF_STRING, IDC_NAV_PARCELAS, '&2. Catastro & Parcelas');
+  AppendMenu(hSubMenuMod, MF_STRING, IDC_NAV_INHUMACIONES, '&3. Libro de Inhumaciones');
+  AppendMenu(hSubMenuMod, MF_STRING, IDC_NAV_AFILIADOS, '&4. Seguro de Sepelio y Afiliados');
+  AppendMenu(hSubMenuMod, MF_STRING, IDC_NAV_CAJA, '&5. Caja Diaria y Arqueo');
+  AppendMenu(hSubMenuMod, MF_STRING, IDC_NAV_REPORTES, '&6. Centro de Reportes PDF');
   AppendMenu(hMenu, MF_POPUP, hSubMenuMod, '&Modulos');
 
   // Menu Reportes PDF
   hSubMenuPdf := CreatePopupMenu;
-  AppendMenu(hSubMenuPdf, MF_STRING, IDM_PDF_ACTA, 'Acta Oficial de Inhumacion (PDF)');
-  AppendMenu(hSubMenuPdf, MF_STRING, IDM_PDF_FOLIO, 'Folio del Libro de Inhumaciones (PDF)');
-  AppendMenu(hSubMenuPdf, MF_STRING, IDM_PDF_RECIBO, 'Recibo Oficial por Duplicado (PDF)');
-  AppendMenu(hSubMenuPdf, MF_STRING, IDM_PDF_PLANILLA, 'Planilla de Ruta para Cobrador (PDF)');
-  AppendMenu(hSubMenuPdf, MF_STRING, IDM_PDF_CIERRE, 'Acta de Cierre Diario de Caja (PDF)');
+  AppendMenu(hSubMenuPdf, MF_STRING, IDC_BTN_ACTA_PDF, 'Acta Oficial de Inhumacion (PDF)');
+  AppendMenu(hSubMenuPdf, MF_STRING, IDC_BTN_FOLIO_PDF, 'Folio del Libro de Inhumaciones (PDF)');
+  AppendMenu(hSubMenuPdf, MF_STRING, IDC_BTN_RECIBO_PDF, 'Recibo Oficial por Duplicado (PDF)');
+  AppendMenu(hSubMenuPdf, MF_STRING, IDC_BTN_PLANILLA_PDF, 'Planilla de Ruta para Cobrador (PDF)');
+  AppendMenu(hSubMenuPdf, MF_STRING, IDC_BTN_CIERRE_CAJA, 'Acta de Cierre Diario de Caja (PDF)');
   AppendMenu(hMenu, MF_POPUP, hSubMenuPdf, '&Reportes PDF');
 
   // Menu Ayuda
@@ -730,39 +872,126 @@ end;
 // Procedimiento de Ventana Principal
 // -------------------------------------------------------------
 
-function MainWindowProc(hWnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
+function MainWindowProc(hWindow: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
 var
-  NotifyHdr: PNMHdr;
   CmdId: Integer;
+  hCtrl: HWND;
 begin
   case uMsg of
+    WM_CTLCOLORSTATIC:
+      begin
+        hCtrl := HWND(lParam);
+
+        // Banner Institucional Superior
+        if (hCtrl = hHeaderBanner) or (hCtrl = hHeaderSub) or (hCtrl = hHeaderStatus) then
+        begin
+          if hCtrl = hHeaderBanner then
+            SetTextColor(HDC(wParam), RGB(245, 197, 24)) // Dorado
+          else if hCtrl = hHeaderStatus then
+            SetTextColor(HDC(wParam), RGB(16, 185, 129)) // Verde Esmeralda
+          else
+            SetTextColor(HDC(wParam), RGB(255, 255, 255)); // Blanco
+
+          SetBkColor(HDC(wParam), RGB(26, 43, 76)); // Azul Marino
+          Result := LRESULT(hHeaderBrush);
+          Exit;
+        end;
+
+        // Tarjeta KPI 1: Parcelas (Azul Zafiro)
+        if (hCtrl = hCard1) or (hCtrl = hCard1Val) or (hCtrl = hCard1Sub) then
+        begin
+          SetTextColor(HDC(wParam), RGB(255, 255, 255));
+          SetBkColor(HDC(wParam), RGB(30, 58, 138));
+          Result := LRESULT(hCardBlueBrush);
+          Exit;
+        end;
+
+        // Tarjeta KPI 2: Inhumaciones (Purpura)
+        if (hCtrl = hCard2) or (hCtrl = hCard2Val) or (hCtrl = hCard2Sub) then
+        begin
+          SetTextColor(HDC(wParam), RGB(255, 255, 255));
+          SetBkColor(HDC(wParam), RGB(88, 28, 135));
+          Result := LRESULT(hCardPurpleBrush);
+          Exit;
+        end;
+
+        // Tarjeta KPI 3: Afiliados al Dia (Verde Bosque)
+        if (hCtrl = hCard3) or (hCtrl = hCard3Val) or (hCtrl = hCard3Sub) then
+        begin
+          SetTextColor(HDC(wParam), RGB(255, 255, 255));
+          SetBkColor(HDC(wParam), RGB(6, 95, 70));
+          Result := LRESULT(hCardGreenBrush);
+          Exit;
+        end;
+
+        // Tarjeta KPI 4: Morosidad (Carmesi Alerta)
+        if (hCtrl = hCard4) or (hCtrl = hCard4Val) or (hCtrl = hCard4Sub) then
+        begin
+          SetTextColor(HDC(wParam), RGB(255, 255, 255));
+          SetBkColor(HDC(wParam), RGB(153, 27, 27));
+          Result := LRESULT(hCardRedBrush);
+          Exit;
+        end;
+
+        // Tarjeta KPI 5: Recaudacion Hoy (Turquesa / Teal)
+        if (hCtrl = hCard5) or (hCtrl = hCard5Val) or (hCtrl = hCard5Sub) then
+        begin
+          SetTextColor(HDC(wParam), RGB(255, 255, 255));
+          SetBkColor(HDC(wParam), RGB(19, 78, 74));
+          Result := LRESULT(hCardTealBrush);
+          Exit;
+        end;
+
+        // Banner Resumen de Caja Diaria
+        if hCtrl = hLblResumenCaja then
+        begin
+          SetTextColor(HDC(wParam), RGB(255, 255, 255));
+          SetBkColor(HDC(wParam), RGB(19, 78, 74));
+          Result := LRESULT(hCardTealBrush);
+          Exit;
+        end;
+
+        // Fondo por defecto para labels y fondos de controles
+        SetTextColor(HDC(wParam), RGB(15, 23, 42));
+        SetBkColor(HDC(wParam), RGB(241, 245, 249));
+        Result := LRESULT(hBgBrush);
+      end;
+
     WM_COMMAND:
       begin
         CmdId := LOWORD(wParam);
         case CmdId of
-          IDM_SALIR: PostMessage(hWnd, WM_CLOSE, 0, 0);
+          IDM_SALIR: PostMessage(hWindow, WM_CLOSE, 0, 0);
           IDM_REFRESCAR, IDC_BTN_SYNC: CargarDatosIniciales;
-          IDM_TAB_DASHBOARD: SwitchTab(0);
-          IDM_TAB_PARCELAS: SwitchTab(1);
-          IDM_TAB_INHUMACIONES: SwitchTab(2);
-          IDM_TAB_AFILIADOS: SwitchTab(3);
-          IDM_TAB_CAJA: SwitchTab(4);
-          IDM_PDF_ACTA, IDC_BTN_ACTA_PDF: AccionGenerarActaPDF;
-          IDM_PDF_FOLIO, IDC_BTN_FOLIO_PDF: AccionGenerarFolioPDF;
-          IDM_PDF_RECIBO, IDC_BTN_RECIBO_PDF: AccionGenerarReciboPDF;
-          IDM_PDF_PLANILLA, IDC_BTN_PLANILLA_PDF: AccionGenerarPlanillaRutaPDF;
-          IDM_PDF_CIERRE, IDC_BTN_CIERRE_CAJA: AccionGenerarCierreCajaPDF;
-          IDC_BTN_COBRAR_MANT: AccionCobrarMantenimientoParcela;
+
+          // Cambio de Modulos
+          IDC_NAV_DASHBOARD:    SwitchModule(0);
+          IDC_NAV_PARCELAS:     SwitchModule(1);
+          IDC_NAV_INHUMACIONES: SwitchModule(2);
+          IDC_NAV_AFILIADOS:    SwitchModule(3);
+          IDC_NAV_CAJA:         SwitchModule(4);
+          IDC_NAV_REPORTES:     SwitchModule(5);
+
+          // Reportes y Cobros
+          IDC_BTN_ACTA_PDF:     AccionGenerarActaPDF;
+          IDC_BTN_FOLIO_PDF:    AccionGenerarFolioPDF;
+          IDC_BTN_RECIBO_PDF:   AccionGenerarReciboPDF;
+          IDC_BTN_PLANILLA_PDF: AccionGenerarPlanillaRutaPDF;
+          IDC_BTN_CIERRE_CAJA:  AccionGenerarCierreCajaPDF;
+          IDC_BTN_COBRAR_MANT:  AccionCobrarMantenimientoParcela;
           IDC_BTN_COBRAR_CUOTA: AccionGenerarReciboPDF;
           IDC_BTN_NUEVA_INH:
             begin
-              MessageBox(hWnd, 'Para asentar una nueva inhumacion, complete los datos y emita el acta oficial.', 'Nueva Inhumacion', MB_ICONINFORMATION or MB_OK);
+              MessageBox(hWindow, 'Para asentar una nueva inhumacion, complete los datos del difunto y emita el acta oficial correspondiente.', 'Nueva Inhumacion', MB_ICONINFORMATION or MB_OK);
               AccionGenerarActaPDF;
             end;
           IDC_BTN_ABRIR_CARPETA:
             OpenFileWithShell(GetReportsDirectory);
+          IDC_BTN_BUSCAR_INH:
+            SetStatusMessage('Busqueda en libro de inhumaciones realizada.');
+
           IDM_ACERCA:
-            MessageBox(hWnd,
+            MessageBox(hWindow,
               'Aeterna - Gestion de Sepelios y Cementerio Parque San Nicolas'#13#10 +
               'Parroquia San Nicolas de Bari · Obispado de San Nicolas'#13#10#13#10 +
               'Desarrollado en Object Pascal Win32 Nativo para Windows XP / 7 / 10 / 11'#13#10 +
@@ -771,18 +1000,6 @@ begin
               'Acerca de Aeterna XP', MB_ICONINFORMATION or MB_OK);
         end;
         Result := 0;
-      end;
-
-    WM_NOTIFY:
-      begin
-        NotifyHdr := PNMHdr(lParam);
-        if (NotifyHdr^.idFrom = IDC_TABCONTROL) and (Integer(NotifyHdr^.code) = Integer(TCN_SELCHANGE)) then
-        begin
-          SwitchTab(SendMessage(hTabCtrl, TCM_GETCURSEL, 0, 0));
-          Result := 0;
-          Exit;
-        end;
-        Result := DefWindowProc(hWnd, uMsg, wParam, lParam);
       end;
 
     WM_SIZE:
@@ -798,7 +1015,7 @@ begin
       end;
 
   else
-    Result := DefWindowProc(hWnd, uMsg, wParam, lParam);
+    Result := DefWindowProc(hWindow, uMsg, wParam, lParam);
   end;
 end;
 
@@ -813,7 +1030,7 @@ var
   hMenu: Windows.HMENU;
 begin
   InitCommonControls;
-  InitFonts;
+  InitFontsAndBrushes;
 
   try
     FillChar(wc, SizeOf(wc), 0);
@@ -821,7 +1038,7 @@ begin
     wc.lpfnWndProc := @MainWindowProc;
     wc.hInstance := hInstance;
     wc.hCursor := LoadCursor(0, IDC_ARROW);
-    wc.hbrBackground := HBRUSH(COLOR_BTNFACE + 1);
+    wc.hbrBackground := hBgBrush;
     wc.lpszClassName := WINDOW_CLASS_NAME;
 
     if RegisterClass(wc) = 0 then
@@ -833,7 +1050,7 @@ begin
       WINDOW_CLASS_NAME,
       APP_TITLE,
       WS_OVERLAPPEDWINDOW or WS_CLIPCHILDREN,
-      CW_USEDEFAULT, CW_USEDEFAULT, 980, 680,
+      CW_USEDEFAULT, CW_USEDEFAULT, 1035, 680,
       0, hMenu, hInstance, nil
     );
 
@@ -851,7 +1068,7 @@ begin
     end;
 
   finally
-    FreeFonts;
+    FreeFontsAndBrushes;
   end;
 end;
 

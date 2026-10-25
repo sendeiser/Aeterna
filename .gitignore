@@ -17,6 +17,7 @@ dist
 *.ppu
 *.compiled
 *.bak
+reportes/
 
 # Portable compilers & tools
 tools/

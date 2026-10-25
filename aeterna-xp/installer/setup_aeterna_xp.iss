@@ -15,14 +15,15 @@ Compression=lzma/ultra64
 SolidCompression=yes
 ; Requiere Windows XP SP3 (Version 5.1.2600) o superior
 MinVersion=0,5.1.2600
-PrivilegesRequired=lowest
+; Requiere elevacion de administrador para crear la carpeta en Program Files (evita Error 5)
+PrivilegesRequired=admin
 DisableProgramGroupPage=yes
 
 [Languages]
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
 ; Ejecutable principal compilado Win32 nativo
@@ -36,7 +37,7 @@ Source: "..\bin\ssleay32.dll"; DestDir: "{app}"; Flags: ignoreversion
 [Icons]
 Name: "{group}\Aeterna XP"; Filename: "{app}\AeternaXP.exe"
 Name: "{group}\Desinstalar Aeterna"; Filename: "{uninstallexe}"
-Name: "{userdesktop}\Aeterna XP"; Filename: "{app}\AeternaXP.exe"; Tasks: desktopicon
+Name: "{commondesktop}\Aeterna XP"; Filename: "{app}\AeternaXP.exe"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\AeternaXP.exe"; Description: "{cm:LaunchProgram,Aeterna XP}"; Flags: nowait postinstall skipifsilent
