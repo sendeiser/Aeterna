@@ -3,6 +3,7 @@ import { AfiliadoSeguro } from '../../types/database'
 import { formatCurrency } from '../../lib/formatters'
 import { DetalleCuotaModal } from '../modals/DetalleCuotaModal'
 import { TalonarioRecibosModal } from '../modals/TalonarioRecibosModal'
+import { PlanillaRutaModal } from '../modals/PlanillaRutaModal'
 import { evaluarMoraAfiliado } from '../../lib/reglasNegocio'
 
 interface AfiliadosSeguroViewProps {
@@ -30,6 +31,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
   const [zoneFilter, setZoneFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'deuda' | 'aldia' | 'standby'>('all')
   const [isTalonarioModalOpen, setIsTalonarioModalOpen] = useState(false)
+  const [isPlanillaModalOpen, setIsPlanillaModalOpen] = useState(false)
 
   const [modalDetalleCuota, setModalDetalleCuota] = useState<{
     isOpen: boolean
@@ -431,11 +433,13 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             <span>Talonario</span>
           </button>
           <button
+            id="btn-abrir-planilla-ruta"
             type="button"
-            onClick={() => window.print()}
-            className="h-8 px-2.5 rounded-lg border border-outline-variant bg-white hover:bg-surface-container-low text-on-surface font-medium text-xs transition-colors active:scale-[0.99] items-center justify-center gap-1 shadow-xs hidden md:flex"
+            onClick={() => setIsPlanillaModalOpen(true)}
+            className="h-8 px-2.5 rounded-lg border border-outline-variant bg-white hover:bg-surface-container-low text-on-surface font-semibold text-xs transition-colors active:scale-[0.99] flex items-center justify-center gap-1 shadow-xs cursor-pointer"
+            title="Generar e imprimir Planilla de Ruta para cobrador (Formato A4 PDF)"
           >
-            <span className="material-symbols-outlined text-[15px] text-primary">print</span>
+            <span className="material-symbols-outlined text-[15px] text-primary">route</span>
             <span>Planilla</span>
           </button>
           <button
@@ -1129,6 +1133,13 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
       <TalonarioRecibosModal
         isOpen={isTalonarioModalOpen}
         onClose={() => setIsTalonarioModalOpen(false)}
+        afiliados={afiliados}
+      />
+
+      {/* Modal Planilla de Ruta para Cobrador (Formato A4 PDF) */}
+      <PlanillaRutaModal
+        isOpen={isPlanillaModalOpen}
+        onClose={() => setIsPlanillaModalOpen(false)}
         afiliados={afiliados}
       />
     </div>

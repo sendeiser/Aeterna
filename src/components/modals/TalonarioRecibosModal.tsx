@@ -20,7 +20,7 @@ export const TalonarioRecibosModal: React.FC<TalonarioRecibosModalProps> = ({
   onClose,
   afiliados,
 }) => {
-  const [modo, setModo] = useState<'blanco' | 'preimpreso'>('preimpreso')
+  const [modo, setModo] = useState<'blanco' | 'preimpreso'>('blanco')
   const [selectedZone, setSelectedZone] = useState<string>('all')
   const [selectedMes, setSelectedMes] = useState<number>(3) // Marzo por defecto
   const [cantidadHojas, setCantidadHojas] = useState<number>(1) // 1 hoja = 8 recibos
@@ -124,25 +124,25 @@ export const TalonarioRecibosModal: React.FC<TalonarioRecibosModalProps> = ({
             <div className="flex items-center bg-surface-container rounded-lg p-0.5 border border-outline-variant">
               <button
                 type="button"
+                onClick={() => setModo('blanco')}
+                className={`px-3 py-1.5 rounded-md font-semibold transition-all cursor-pointer ${
+                  modo === 'blanco'
+                    ? 'bg-white text-primary shadow-xs'
+                    : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                Solo en Blanco (Talonario Tradicional)
+              </button>
+              <button
+                type="button"
                 onClick={() => setModo('preimpreso')}
-                className={`px-3 py-1.5 rounded-md font-semibold transition-all ${
+                className={`px-3 py-1.5 rounded-md font-semibold transition-all cursor-pointer ${
                   modo === 'preimpreso'
                     ? 'bg-white text-primary shadow-xs'
                     : 'text-on-surface-variant hover:text-on-surface'
                 }`}
               >
                 Pre-impreso con Deudores
-              </button>
-              <button
-                type="button"
-                onClick={() => setModo('blanco')}
-                className={`px-3 py-1.5 rounded-md font-semibold transition-all ${
-                  modo === 'blanco'
-                    ? 'bg-white text-primary shadow-xs'
-                    : 'text-on-surface-variant hover:text-on-surface'
-                }`}
-              >
-                En Blanco (Talonario Tradicional)
               </button>
             </div>
 
