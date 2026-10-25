@@ -834,7 +834,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
 
         {/* DESKTOP VIEW (>= md): Ledger Table with 12-Month Matrix */}
         <div className="hidden md:block overflow-x-auto flex-1 min-h-0 custom-scroll">
-          <table className="w-full min-w-[1040px] text-left border-collapse table-fixed">
+          <table className="w-full min-w-[990px] text-left border-collapse table-fixed">
             <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
               <tr className="bg-slate-100 text-[11px] font-label-caps text-slate-700 uppercase tracking-wider h-8 select-none whitespace-nowrap">
                 <th
@@ -850,7 +850,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                 </th>
                 <th
                   onClick={() => setSortOption((prev) => (prev === 'alfa-asc' ? 'alfa-desc' : 'alfa-asc'))}
-                  className="px-2.5 py-2 w-[215px] font-semibold bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
+                  className="px-2.5 py-2 w-[225px] font-semibold bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
                   title="Ordenar por Alfabeto A-Z / Z-A"
                 >
                   <div className="flex items-center gap-1">
@@ -860,12 +860,12 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                   </div>
                 </th>
                 <th className="px-2 py-2 w-[110px] font-semibold bg-slate-100 whitespace-nowrap">Cuota Base</th>
-                <th className="px-1 py-2 w-[340px] text-center font-semibold bg-slate-100 whitespace-nowrap">
+                <th className="px-1 py-2 w-[265px] text-center font-semibold bg-slate-100 whitespace-nowrap">
                   <span>Cuotas Ejercicio 2026 (Ene - Dic)</span>
                 </th>
                 <th
                   onClick={() => setSortOption((prev) => (prev === 'deuda-desc' ? 'numero-asc' : 'deuda-desc'))}
-                  className="px-2 py-2 w-[115px] text-right font-semibold bg-slate-100 whitespace-nowrap cursor-pointer hover:bg-slate-200 transition-colors"
+                  className="px-2 py-2 w-[120px] text-right font-semibold bg-slate-100 whitespace-nowrap cursor-pointer hover:bg-slate-200 transition-colors"
                   title="Ordenar por Mayor Deuda"
                 >
                   <div className="flex items-center justify-end gap-1">
@@ -873,7 +873,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                     {sortOption === 'deuda-desc' && <span className="material-symbols-outlined text-[13px] text-red-600">arrow_downward</span>}
                   </div>
                 </th>
-                <th className="px-2 py-2 w-[214px] text-right font-semibold bg-slate-100 whitespace-nowrap">Acciones Rápidas</th>
+                <th className="px-2 py-2 w-[224px] text-right font-semibold bg-slate-100 whitespace-nowrap">Acciones Rápidas</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/40 font-body-md text-on-surface">
@@ -1052,9 +1052,9 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                       </span>
                     </td>
 
-                    {/* Col 4: Matriz 12 Cuotas (Stitch Verbatim Cells) */}
-                    <td className="px-1 py-2 align-middle">
-                      <div className="flex items-center justify-center gap-0.5">
+                    {/* Col 4: Matriz 12 Cuotas (Desktop 6x2 Proportional Grid) */}
+                    <td className="px-1.5 py-1.5 align-middle">
+                      <div className="grid grid-cols-6 gap-1 w-full max-w-[248px] mx-auto">
                         {meses.map((m) => {
                           const isPagada = cuotasPagadas.includes(m.num)
                           const isVencida = !isPagada && m.num <= mesActual
@@ -1065,13 +1065,13 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                                 key={m.num}
                                 type="button"
                                 onClick={() => handleVerDetalleCuota(afiliado, m.num)}
-                                className="w-6 h-6 rounded bg-emerald-600 hover:bg-emerald-700 text-white flex flex-col items-center justify-center shadow-xs transition-transform hover:scale-110 active:scale-95 cursor-pointer shrink-0"
+                                className="h-[26px] rounded bg-emerald-600 hover:bg-emerald-700 text-white flex flex-col items-center justify-center shadow-2xs transition-transform hover:scale-105 active:scale-95 cursor-pointer"
                                 title={`${m.label} 2026: Pagada (${formatCurrency(
                                   afiliado.monto_cuota_mensual
                                 )}) - Clic para ver recibo`}
                               >
-                                <span className="text-[11px] leading-none font-black">{m.num}</span>
-                                <span className="text-[7px] leading-none font-bold text-emerald-200 mt-0.5">✓</span>
+                                <span className="text-[9.5px] leading-tight font-bold">{m.label}</span>
+                                <span className="text-[10px] leading-none font-black text-emerald-100">✓</span>
                               </button>
                             )
                           }
@@ -1082,11 +1082,11 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                                 key={m.num}
                                 type="button"
                                 onClick={() => onCobrarCuota(afiliado, m.num)}
-                                className="w-6 h-6 rounded bg-red-600 hover:bg-red-700 text-white flex flex-col items-center justify-center shadow-xs border border-red-300 animate-pulse transition-transform hover:scale-110 active:scale-95 cursor-pointer shrink-0"
+                                className="h-[26px] rounded bg-red-600 hover:bg-red-700 text-white flex flex-col items-center justify-center shadow-2xs border border-red-300 animate-pulse transition-transform hover:scale-105 active:scale-95 cursor-pointer"
                                 title={`${m.label} 2026: VENCIDA - Clic para cobrar con QR`}
                               >
-                                <span className="text-[11px] leading-none font-black">{m.num}</span>
-                                <span className="text-[7px] leading-none font-black text-red-200 mt-0.5">!</span>
+                                <span className="text-[9.5px] leading-tight font-bold">{m.label}</span>
+                                <span className="text-[10px] leading-none font-black text-red-100">!</span>
                               </button>
                             )
                           }
@@ -1096,10 +1096,11 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                               key={m.num}
                               type="button"
                               onClick={() => onCobrarCuota(afiliado, m.num)}
-                              className="w-6 h-6 rounded bg-slate-100 border border-slate-300 text-slate-800 hover:bg-slate-200 hover:text-slate-950 flex items-center justify-center text-[11px] font-black font-code-cadastral transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+                              className="h-[26px] rounded bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 hover:text-slate-900 flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer"
                               title={`${m.label} 2026: A vencer - Clic para adelantar cobro`}
                             >
-                              {m.num}
+                              <span className="text-[9.5px] leading-tight font-semibold text-slate-800">{m.label}</span>
+                              <span className="text-[10px] leading-none text-slate-400 font-black">·</span>
                             </button>
                           )
                         })}
