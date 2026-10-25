@@ -1,0 +1,120 @@
+object frmAfiliados: TfrmAfiliados
+  Left = 220
+  Height = 520
+  Top = 150
+  Width = 960
+  Caption = 'Afiliados al Seguro de Sepelio y Cuotas'
+  ClientHeight = 520
+  ClientWidth = 960
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  OnCreate = FormCreate
+  OnShow = FormShow
+  Position = poScreenCenter
+  LCLVersion = '2.2.6.0'
+  object pnlTop: TPanel
+    Left = 0
+    Height = 48
+    Top = 0
+    Width = 960
+    Align = alTop
+    BevelOuter = bvNone
+    Color = 15724527
+    TabOrder = 0
+    object lblFiltroEstado: TLabel
+      Left = 12
+      Height = 13
+      Top = 16
+      Width = 42
+      Caption = 'Estado:'
+      Font.Style = [fsBold]
+      ParentFont = False
+    end
+    object cbFiltroEstado: TComboBox
+      Left = 58
+      Height = 21
+      Top = 12
+      Width = 155
+      ItemHeight = 13
+      ItemIndex = 0
+      Items.Strings = (
+        'Todos'
+        'Al Dia'
+        'En Mora (>= 3 meses)'
+      )
+      OnChange = cbFiltroEstadoChange
+      Style = csDropDownList
+      TabOrder = 0
+      Text = 'Todos'
+    end
+    object lblBuscar: TLabel
+      Left = 225
+      Height = 13
+      Top = 16
+      Width = 42
+      Caption = 'Buscar:'
+      Font.Style = [fsBold]
+      ParentFont = False
+    end
+    object edtBuscar: TEdit
+      Left = 272
+      Height = 21
+      Top = 12
+      Width = 200
+      OnChange = edtBuscarChange
+      TabOrder = 1
+    end
+    object btnRefrescar: TButton
+      Left = 482
+      Height = 25
+      Top = 10
+      Width = 80
+      Caption = 'Refrescar'
+      OnClick = btnRefrescarClick
+      TabOrder = 2
+    end
+    object btnCobrarCuota: TButton
+      Left = 570
+      Height = 25
+      Top = 10
+      Width = 110
+      Caption = 'Cobrar Cuotas'
+      Font.Style = [fsBold]
+      OnClick = btnCobrarCuotaClick
+      ParentFont = False
+      TabOrder = 3
+    end
+    object btnPlanillaRuta: TButton
+      Left = 688
+      Height = 25
+      Top = 10
+      Width = 140
+      Caption = 'Planilla de Ruta PDF'
+      OnClick = btnPlanillaRutaClick
+      TabOrder = 4
+    end
+    object lblContador: TLabel
+      Left = 840
+      Height = 13
+      Top = 16
+      Width = 70
+      Caption = 'Afiliados: 0'
+      Font.Color = clGray
+      ParentColor = False
+    end
+  end
+  object gridAfiliados: TStringGrid
+    Left = 0
+    Height = 472
+    Top = 48
+    Width = 960
+    Align = alClient
+    FixedCols = 0
+    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect, goSmoothScroll]
+    TabOrder = 1
+    OnDblClick = gridAfiliadosDblClick
+    OnDrawCell = gridAfiliadosDrawCell
+  end
+end

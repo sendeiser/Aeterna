@@ -1,0 +1,161 @@
+object frmCobranzaCuota: TfrmCobranzaCuota
+  Left = 320
+  Height = 440
+  Top = 180
+  Width = 460
+  BorderStyle = bsDialog
+  Caption = 'Cobranza de Cuotas de Seguro de Sepelio'
+  ClientHeight = 440
+  ClientWidth = 460
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  OnCreate = FormCreate
+  Position = poScreenCenter
+  LCLVersion = '2.2.6.0'
+  object pnlHeader: TPanel
+    Left = 0
+    Height = 55
+    Top = 0
+    Width = 460
+    Align = alTop
+    BevelOuter = bvNone
+    Color = 3022342
+    TabOrder = 0
+    object lblAfiliadoTit: TLabel
+      Left = 16
+      Height = 19
+      Top = 10
+      Width = 240
+      Caption = 'Afiliado #101: Nombre Titular'
+      Font.Color = clWhite
+      Font.Height = -16
+      Font.Name = 'Tahoma'
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object lblAfiliadoDetalle: TLabel
+      Left = 16
+      Height = 13
+      Top = 32
+      Width = 180
+      Caption = 'DNI: 00000000 | Cuota: $ 18,000'
+      Font.Color = 14474460
+      ParentColor = False
+    end
+  end
+  object gbMeses: TGroupBox
+    Left = 12
+    Height = 220
+    Top = 64
+    Width = 436
+    Caption = 'Seleccion de Cuotas a Cobrar (Año 2026)'
+    Font.Style = [fsBold]
+    ParentFont = False
+    TabOrder = 1
+    object clbMeses: TCheckListBox
+      Left = 12
+      Height = 150
+      Top = 10
+      Width = 412
+      Font.Style = []
+      ItemHeight = 18
+      OnClickCheck = clbMesesClickCheck
+      ParentFont = False
+      TabOrder = 0
+    end
+    object lblTotal: TLabel
+      Left = 12
+      Height = 16
+      Top = 175
+      Width = 95
+      Caption = 'TOTAL A COBRAR:'
+      Font.Height = -12
+      Font.Style = [fsBold]
+      ParentFont = False
+    end
+    object lblTotalVal: TLabel
+      Left = 130
+      Height = 20
+      Top = 172
+      Width = 80
+      Caption = '$ 0 (0 cuotas)'
+      Font.Color = 32768
+      Font.Height = -15
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+  end
+  object gbPago: TGroupBox
+    Left = 12
+    Height = 85
+    Top = 294
+    Width = 436
+    Caption = 'Metodo de Cobro y Recibo'
+    Font.Style = [fsBold]
+    ParentFont = False
+    TabOrder = 2
+    object lblMetodo: TLabel
+      Left = 12
+      Height = 13
+      Top = 14
+      Width = 85
+      Caption = 'Metodo de Pago:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object cbMetodo: TComboBox
+      Left = 12
+      Height = 21
+      Top = 32
+      Width = 180
+      Font.Style = []
+      ItemHeight = 13
+      ParentFont = False
+      Style = csDropDownList
+      TabOrder = 0
+    end
+    object lblNroRecibo: TLabel
+      Left = 220
+      Height = 13
+      Top = 14
+      Width = 85
+      Caption = 'Numero de Recibo:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object edtNroRecibo: TEdit
+      Left = 220
+      Height = 21
+      Top = 32
+      Width = 200
+      Font.Style = []
+      ParentFont = False
+      TabOrder = 1
+    end
+  end
+  object btnRegistrar: TButton
+    Left = 240
+    Height = 35
+    Top = 390
+    Width = 110
+    Caption = 'Confirmar Cobro'
+    Font.Style = [fsBold]
+    OnClick = btnRegistrarClick
+    ParentFont = False
+    TabOrder = 3
+  end
+  object btnCancelar: TButton
+    Left = 360
+    Height = 35
+    Top = 390
+    Width = 88
+    Cancel = True
+    Caption = 'Cancelar'
+    ModalResult = 2
+    TabOrder = 4
+  end
+end
