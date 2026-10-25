@@ -1,0 +1,212 @@
+object frmCierreCaja: TfrmCierreCaja
+  Left = 330
+  Height = 440
+  Top = 170
+  Width = 470
+  BorderStyle = bsDialog
+  Caption = 'Arqueo y Cierre Diario de Caja'
+  ClientHeight = 440
+  ClientWidth = 470
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  OnCreate = FormCreate
+  Position = poScreenCenter
+  LCLVersion = '2.2.6.0'
+  object pnlHeader: TPanel
+    Left = 0
+    Height = 55
+    Top = 0
+    Width = 470
+    Align = alTop
+    BevelOuter = bvNone
+    Color = 3022342
+    TabOrder = 0
+    object lblTitulo: TLabel
+      Left = 16
+      Height = 19
+      Top = 10
+      Width = 245
+      Caption = 'ARQUEO Y CIERRE DE CAJA'
+      Font.Color = clWhite
+      Font.Height = -16
+      Font.Name = 'Tahoma'
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object lblFechaCierre: TLabel
+      Left = 16
+      Height = 13
+      Top = 32
+      Width = 150
+      Caption = 'Fecha: --/--/---- --:--'
+      Font.Color = 14474460
+      ParentColor = False
+    end
+  end
+  object gbEsperado: TGroupBox
+    Left = 12
+    Height = 90
+    Top = 64
+    Width = 446
+    Caption = 'Totales Registrados en Sistema'
+    Font.Style = [fsBold]
+    ParentFont = False
+    TabOrder = 1
+    object lblEfvoSisTit: TLabel
+      Left = 12
+      Height = 13
+      Top = 10
+      Width = 84
+      Caption = 'Efectivo Sistema:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object lblEfvoSisVal: TLabel
+      Left = 12
+      Height = 16
+      Top = 26
+      Width = 50
+      Caption = '$ 0'
+      Font.Color = 32768
+      Font.Height = -13
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object lblDigSisTit: TLabel
+      Left = 160
+      Height = 13
+      Top = 10
+      Width = 74
+      Caption = 'Digital Sistema:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object lblDigSisVal: TLabel
+      Left = 160
+      Height = 16
+      Top = 26
+      Width = 50
+      Caption = '$ 0'
+      Font.Color = 9384704
+      Font.Height = -13
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object lblTotalSisTit: TLabel
+      Left = 305
+      Height = 13
+      Top = 10
+      Width = 69
+      Caption = 'Total General:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object lblTotalSisVal: TLabel
+      Left = 305
+      Height = 16
+      Top = 26
+      Width = 50
+      Caption = '$ 0'
+      Font.Color = clBlack
+      Font.Height = -13
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+  end
+  object gbArqueo: TGroupBox
+    Left = 12
+    Height = 190
+    Top = 162
+    Width = 446
+    Caption = 'Conteo Fisico de Efectivo (Cajon)'
+    Font.Style = [fsBold]
+    ParentFont = False
+    TabOrder = 2
+    object lblEfvoRealTit: TLabel
+      Left = 12
+      Height = 13
+      Top = 12
+      Width = 144
+      Caption = 'Efectivo Fisico en Mano (*):'
+      Font.Style = []
+      ParentFont = False
+    end
+    object edtEfvoReal: TEdit
+      Left = 12
+      Height = 24
+      Top = 30
+      Width = 180
+      Font.Height = -13
+      Font.Style = [fsBold]
+      OnChange = edtEfvoRealChange
+      ParentFont = False
+      TabOrder = 0
+    end
+    object lblDiferenciaTit: TLabel
+      Left = 230
+      Height = 13
+      Top = 12
+      Width = 56
+      Caption = 'Diferencia:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object lblDiferenciaVal: TLabel
+      Left = 230
+      Height = 19
+      Top = 32
+      Width = 75
+      Caption = 'Exacto ($ 0)'
+      Font.Color = 32768
+      Font.Height = -15
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object lblObservaciones: TLabel
+      Left = 12
+      Height = 13
+      Top = 72
+      Width = 145
+      Caption = 'Observaciones del Responsable:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object memoObservaciones: TMemo
+      Left = 12
+      Height = 70
+      Top = 90
+      Width = 418
+      Font.Style = []
+      ParentFont = False
+      TabOrder = 1
+    end
+  end
+  object btnConfirmar: TButton
+    Left = 220
+    Height = 35
+    Top = 390
+    Width = 135
+    Caption = 'Confirmar Cierre'
+    Font.Style = [fsBold]
+    OnClick = btnConfirmarClick
+    ParentFont = False
+    TabOrder = 3
+  end
+  object btnCancelar: TButton
+    Left = 363
+    Height = 35
+    Top = 390
+    Width = 95
+    Cancel = True
+    Caption = 'Cancelar'
+    ModalResult = 2
+    TabOrder = 4
+  end
+end

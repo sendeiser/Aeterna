@@ -1,0 +1,135 @@
+object frmCaja: TfrmCaja
+  Left = 230
+  Height = 520
+  Top = 150
+  Width = 950
+  Caption = 'Caja Diaria y Control de Cobranzas'
+  ClientHeight = 520
+  ClientWidth = 950
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  OnCreate = FormCreate
+  OnShow = FormShow
+  Position = poScreenCenter
+  LCLVersion = '2.2.6.0'
+  object pnlTop: TPanel
+    Left = 0
+    Height = 65
+    Top = 0
+    Width = 950
+    Align = alTop
+    BevelOuter = bvNone
+    Color = 3022342
+    TabOrder = 0
+    object lblCajaTit: TLabel
+      Left = 16
+      Height = 19
+      Top = 10
+      Width = 145
+      Caption = 'MOVIMIENTOS DE HOY'
+      Font.Color = clWhite
+      Font.Height = -15
+      Font.Name = 'Tahoma'
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object lblTotalHoy: TLabel
+      Left = 16
+      Height = 22
+      Top = 32
+      Width = 240
+      Caption = 'Total Recaudado: $ 0'
+      Font.Color = 7077631
+      Font.Height = -16
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object lblEfvoHoy: TLabel
+      Left = 320
+      Height = 16
+      Top = 36
+      Width = 140
+      Caption = 'Efectivo: $ 0'
+      Font.Color = clWhite
+      Font.Height = -12
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object lblDigitalHoy: TLabel
+      Left = 520
+      Height = 16
+      Top = 36
+      Width = 180
+      Caption = 'Digital / Transferencias: $ 0'
+      Font.Color = 14474460
+      Font.Height = -12
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+  end
+  object pnlActions: TPanel
+    Left = 0
+    Height = 42
+    Top = 65
+    Width = 950
+    Align = alTop
+    BevelOuter = bvNone
+    Color = 15724527
+    TabOrder = 1
+    object btnRefrescar: TButton
+      Left = 12
+      Height = 26
+      Top = 8
+      Width = 90
+      Caption = 'Refrescar'
+      OnClick = btnRefrescarClick
+      TabOrder = 0
+    end
+    object btnCierreCaja: TButton
+      Left = 110
+      Height = 26
+      Top = 8
+      Width = 135
+      Caption = 'Arqueo y Cierre Diario'
+      Font.Style = [fsBold]
+      OnClick = btnCierreCajaClick
+      ParentFont = False
+      TabOrder = 1
+    end
+    object btnImprimirCierre: TButton
+      Left = 255
+      Height = 26
+      Top = 8
+      Width = 140
+      Caption = 'Imprimir Cierre PDF'
+      OnClick = btnImprimirCierreClick
+      TabOrder = 2
+    end
+    object lblContador: TLabel
+      Left = 820
+      Height = 13
+      Top = 14
+      Width = 80
+      Caption = '0 movimientos'
+      Font.Color = clGray
+      ParentColor = False
+    end
+  end
+  object gridMovimientos: TStringGrid
+    Left = 0
+    Height = 413
+    Top = 107
+    Width = 950
+    Align = alClient
+    FixedCols = 0
+    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect, goSmoothScroll]
+    TabOrder = 2
+    OnDrawCell = gridMovimientosDrawCell
+  end
+end
