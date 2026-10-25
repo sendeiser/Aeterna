@@ -52,7 +52,7 @@ begin
   inherited Create;
   FBaseUrl := ABaseUrl;
   if (FBaseUrl <> '') and (FBaseUrl[Length(FBaseUrl)] = '/') then
-    Delete(FBaseUrl, Length(FBaseUrl), 1);
+    System.Delete(FBaseUrl, Length(FBaseUrl), 1);
   FApiKey := AApiKey;
   if AAuthToken <> '' then
     FAuthToken := AAuthToken
@@ -72,7 +72,7 @@ var
 begin
   CleanEp := AEndpoint;
   if (CleanEp <> '') and (CleanEp[1] = '/') then
-    Delete(CleanEp, 1, 1);
+    System.Delete(CleanEp, 1, 1);
 
   Result := FBaseUrl + '/rest/v1/' + CleanEp;
   if AParams <> '' then

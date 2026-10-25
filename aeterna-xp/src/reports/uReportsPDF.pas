@@ -15,70 +15,105 @@ procedure GenerarCierreCajaPDF(const Pagos: TPagoArray; TotalEf, TotalDig: Curre
 
 implementation
 
+procedure PDFDrawLine(Page: TPDFPage; X1, Y1, X2, Y2: Single; LineWidth: Single = 0.5);
+begin
+  Page.DrawLine(X1, Y1, X2, Y2, LineWidth, True);
+end;
+
+procedure PDFDrawRect(Page: TPDFPage; X, Y, W, H: Single; LineWidth: Single = 0.5);
+begin
+  Page.DrawRect(X, Y, W, H, LineWidth, False, True, 0);
+end;
+
 procedure ConfigurarEncabezado(Doc: TPDFDocument; Page: TPDFPage; FontTitle, FontNormal: Integer; const TituloDoc: string);
 begin
-  // Linea superior
-  Page.DrawLine(40, 800, 555, 800, 2);
-  Page.WriteText(40, 780, 'CEMENTERIO PARQUE SAN NICOLAS · PARROQUIA SAN NICOLAS DE BARI', FontTitle, 11);
-  Page.WriteText(40, 765, UpperCase(TituloDoc), FontTitle, 14);
-  Page.WriteText(40, 750, 'Registro Eclesiastico y Administracion General de Sepelios', FontNormal, 9);
-  Page.WriteText(450, 750, 'Fecha: ' + FormatDateTime('dd/mm/yyyy', Now), FontNormal, 9);
-  Page.DrawLine(40, 742, 555, 742, 1);
+  PDFDrawLine(Page, 15, 12, 195, 12);
+
+  Page.SetFont(FontNormal, 8);
+  Page.WriteText(15, 16, 'CEMENTERIO PARQUE SAN NICOLAS · PARROQUIA SAN NICOLAS DE BARI');
+
+  Page.SetFont(FontTitle, 13);
+  Page.WriteText(15, 23, UpperCase(TituloDoc));
+
+  Page.SetFont(FontNormal, 8);
+  Page.WriteText(15, 28, 'Registro Eclesiastico y Administracion General de Sepelios');
+  Page.WriteText(155, 28, 'Fecha: ' + FormatDateTime('dd/mm/yyyy', Now));
+
+  PDFDrawLine(Page, 15, 30, 195, 30);
 end;
 
 procedure GenerarActaInhumacionPDF(const Inh: TInhumacion; const OutputPath: string);
 var
   Doc: TPDFDocument;
+  Section: TPDFSection;
   Page: TPDFPage;
-  FontH, FontN, FontB: Integer;
+  FontH, FontN: Integer;
 begin
   Doc := TPDFDocument.Create(nil);
   try
-    Doc.PaperType := ptA4;
-    Doc.Title := 'Acta de Inhumacion - ' + Inh.NombreDifunto;
-    FontH := Doc.AddFont('Helvetica-Bold', 'Helvetica-Bold');
-    FontB := Doc.AddFont('Helvetica-Bold', 'Helvetica-Bold');
-    FontN := Doc.AddFont('Helvetica', 'Helvetica');
+    Doc.StartDocument;
+    Section := Doc.Sections.AddSection;
+
+    FontH := Doc.AddFont('Helvetica-Bold');
+    FontN := Doc.AddFont('Helvetica');
 
     Page := Doc.Pages.AddPage;
+    Page.PaperType := ptA4;
+    Page.Orientation := ppoPortrait;
+    Page.UnitOfMeasure := uomMillimeters;
+    Section.AddPage(Page);
+
     ConfigurarEncabezado(Doc, Page, FontH, FontN, 'Acta Oficial de Inhumacion');
 
-    // Recuadro Principal
-    Page.DrawRect(40, 520, 515, 200, 1, False, True);
+    // Recuadro Principal: Datos del Difunto
+    PDFDrawRect(Page, 15, 36, 180, 52);
+    Page.SetFont(FontH, 10);
+    Page.WriteText(20, 42, 'DATOS DEL FALLECIDO:');
+    Page.SetFont(FontN, 9);
+    Page.WriteText(20, 49, 'Nombre Completo: ' + Inh.NombreDifunto);
+    Page.WriteText(20, 56, 'DNI: ' + Inh.DniDifunto);
+    Page.WriteText(20, 63, 'Fecha Defuncion: ' + FormatearFecha(Inh.FechaFallecimiento));
+    Page.WriteText(20, 70, 'Fecha Inhumacion: ' + FormatearFecha(Inh.FechaInhumacion));
 
-    Page.WriteText(60, 695, 'DATOS DEL FALLECIDO:', FontB, 11);
-    Page.WriteText(60, 675, 'Nombre Completo: ' + Inh.NombreDifunto, FontN, 10);
-    Page.WriteText(60, 655, 'Documento Nacional de Identidad (DNI): ' + Inh.DniDifunto, FontN, 10);
-    Page.WriteText(60, 635, 'Fecha de Defuncion: ' + FormatearFecha(Inh.FechaFallecimiento), FontN, 10);
-    Page.WriteText(60, 615, 'Fecha de Inhumacion: ' + FormatearFecha(Inh.FechaInhumacion), FontN, 10);
-
-    Page.WriteText(320, 695, 'UBICACION CATASTRAL:', FontB, 11);
-    Page.WriteText(320, 675, 'Parcela Nro: ' + Inh.NomenclaturaParcela, FontB, 12);
-    Page.WriteText(320, 655, 'Nivel / Espacio Ocupado: ' + IntToStr(Inh.NivelPosicion), FontN, 10);
+    Page.SetFont(FontH, 10);
+    Page.WriteText(115, 42, 'UBICACION CATASTRAL:');
+    Page.SetFont(FontH, 11);
+    Page.WriteText(115, 50, 'Parcela: ' + Inh.NomenclaturaParcela);
+    Page.SetFont(FontN, 9);
+    Page.WriteText(115, 57, 'Nivel Asignado: ' + IntToStr(Inh.NivelPosicion));
     if Inh.EsCovid then
-      Page.WriteText(320, 635, 'Protocolo Sanitario: ESPECIAL COVID-19', FontB, 10)
+    begin
+      Page.SetFont(FontH, 9);
+      Page.WriteText(115, 65, 'Protocolo: ESPECIAL COVID-19');
+    end
     else
-      Page.WriteText(320, 635, 'Protocolo Sanitario: ESTANDAR', FontN, 10);
+    begin
+      Page.SetFont(FontN, 9);
+      Page.WriteText(115, 65, 'Protocolo: ESTANDAR');
+    end;
 
-    // Datos del Servicio
-    Page.DrawRect(40, 390, 515, 115, 1, False, True);
-    Page.WriteText(60, 480, 'DATOS DEL SERVICIO FUNEBRE Y RESPONSABLE:', FontB, 11);
-    Page.WriteText(60, 460, 'Empresa Funebrera: ' + Inh.EmpresaFunebrera, FontN, 10);
-    Page.WriteText(60, 440, 'Causa de Defuncion: ' + Inh.CausaDefuncion, FontN, 10);
-    Page.WriteText(60, 420, 'Familiar / Declarante: ' + Inh.NombreResponsable + ' (Tel: ' + Inh.TelefonoResponsable + ')', FontN, 10);
+    // Recuadro Secundario: Datos del Servicio
+    PDFDrawRect(Page, 15, 94, 180, 36);
+    Page.SetFont(FontH, 10);
+    Page.WriteText(20, 100, 'DATOS DEL SERVICIO FUNEBRE Y RESPONSABLE:');
+    Page.SetFont(FontN, 9);
+    Page.WriteText(20, 107, 'Empresa Funebrera: ' + Inh.EmpresaFunebrera);
+    Page.WriteText(20, 114, 'Causa de Defuncion: ' + Inh.CausaDefuncion);
+    Page.WriteText(20, 121, 'Familiar / Declarante: ' + Inh.NombreResponsable + ' (Tel: ' + Inh.TelefonoResponsable + ')');
 
-    // Clausula Institucional
-    Page.WriteText(40, 350, 'Certifico que en el dia de la fecha se ha procedido a la inhumacion de los restos del extinto en el predio del', FontN, 9);
-    Page.WriteText(40, 335, 'Cementerio Parque San Nicolas, labrandose la presente acta para constancia en el Libro de Archivo Parroquial.', FontN, 9);
+    // Clausula
+    Page.SetFont(FontN, 8);
+    Page.WriteText(15, 140, 'Certifico que en el dia de la fecha se ha procedido a la inhumacion de los restos en el predio del');
+    Page.WriteText(15, 144, 'Cementerio Parque San Nicolas, labrandose la presente acta para el Libro de Archivo Parroquial.');
 
     // Firmas
-    Page.DrawLine(60, 200, 240, 200, 1);
-    Page.WriteText(80, 185, 'Firma Familiar / Declarante', FontN, 9);
-    Page.WriteText(95, 170, 'Aclaracion y DNI', FontN, 9);
+    PDFDrawLine(Page, 25, 185, 85, 185);
+    Page.WriteText(30, 190, 'Firma Familiar / Declarante');
+    Page.WriteText(35, 194, 'Aclaracion y DNI');
 
-    Page.DrawLine(350, 200, 530, 200, 1);
-    Page.WriteText(370, 185, 'Direccion y Archivo Parroquial', FontN, 9);
-    Page.WriteText(385, 170, 'Sello Oficial Cementerio', FontN, 9);
+    PDFDrawLine(Page, 125, 185, 185, 185);
+    Page.WriteText(130, 190, 'Direccion y Archivo Parroquial');
+    Page.WriteText(137, 194, 'Sello Oficial Cementerio');
 
     Doc.SaveToFile(OutputPath);
   finally
@@ -89,51 +124,63 @@ end;
 procedure GenerarFolioInhumacionesPDF(const Lista: TInhumacionArray; const OutputPath: string);
 var
   Doc: TPDFDocument;
+  Section: TPDFSection;
   Page: TPDFPage;
   FontH, FontN: Integer;
-  i, Y, Pag: Integer;
+  i, Y: Integer;
 begin
   Doc := TPDFDocument.Create(nil);
   try
-    Doc.PaperType := ptA4;
-    Doc.Title := 'Folio de Inhumaciones';
-    FontH := Doc.AddFont('Helvetica-Bold', 'Helvetica-Bold');
-    FontN := Doc.AddFont('Helvetica', 'Helvetica');
+    Doc.StartDocument;
+    Section := Doc.Sections.AddSection;
+
+    FontH := Doc.AddFont('Helvetica-Bold');
+    FontN := Doc.AddFont('Helvetica');
 
     Page := Doc.Pages.AddPage;
+    Page.PaperType := ptA4;
+    Page.Orientation := ppoPortrait;
+    Page.UnitOfMeasure := uomMillimeters;
+    Section.AddPage(Page);
+
     ConfigurarEncabezado(Doc, Page, FontH, FontN, 'Folio del Libro de Inhumaciones');
 
-    // Cabecera de Tabla
-    Y := 720;
-    Page.DrawRect(40, Y, 515, 20, 1, False, True);
-    Page.WriteText(45, Y + 5, 'Fecha', FontH, 9);
-    Page.WriteText(110, Y + 5, 'Nombre del Difunto', FontH, 9);
-    Page.WriteText(290, Y + 5, 'DNI', FontH, 9);
-    Page.WriteText(360, Y + 5, 'Parcela', FontH, 9);
-    Page.WriteText(430, Y + 5, 'Nivel', FontH, 9);
-    Page.WriteText(470, Y + 5, 'Protocolo', FontH, 9);
+    // Cabecera Tabla
+    PDFDrawRect(Page, 15, 34, 180, 7);
+    Page.SetFont(FontH, 8);
+    Page.WriteText(17, 39, 'Fecha');
+    Page.WriteText(40, 39, 'Nombre del Difunto');
+    Page.WriteText(105, 39, 'DNI');
+    Page.WriteText(130, 39, 'Parcela');
+    Page.WriteText(155, 39, 'Nivel');
+    Page.WriteText(170, 39, 'Protocolo');
 
-    Y := 695;
+    Y := 46;
     for i := Low(Lista) to High(Lista) do
     begin
-      Page.WriteText(45, Y, FormatearFecha(Lista[i].FechaInhumacion), FontN, 8);
-      Page.WriteText(110, Y, Copy(Lista[i].NombreDifunto, 1, 32), FontN, 8);
-      Page.WriteText(290, Y, Lista[i].DniDifunto, FontN, 8);
-      Page.WriteText(360, Y, Lista[i].NomenclaturaParcela, FontN, 8);
-      Page.WriteText(435, Y, IntToStr(Lista[i].NivelPosicion), FontN, 8);
+      Page.SetFont(FontN, 7);
+      Page.WriteText(17, Y, FormatearFecha(Lista[i].FechaInhumacion));
+      Page.WriteText(40, Y, Copy(Lista[i].NombreDifunto, 1, 32));
+      Page.WriteText(105, Y, Lista[i].DniDifunto);
+      Page.WriteText(130, Y, Lista[i].NomenclaturaParcela);
+      Page.WriteText(158, Y, IntToStr(Lista[i].NivelPosicion));
       if Lista[i].EsCovid then
-        Page.WriteText(470, Y, 'COVID-19', FontH, 8)
+        Page.WriteText(170, Y, 'COVID-19')
       else
-        Page.WriteText(470, Y, 'Estandar', FontN, 8);
+        Page.WriteText(170, Y, 'Estandar');
 
-      Page.DrawLine(40, Y - 4, 555, Y - 4, 1);
-      Dec(Y, 18);
+      PDFDrawLine(Page, 15, Y + 2, 195, Y + 2);
+      Inc(Y, 6);
 
-      if Y < 60 then
+      if Y > 280 then
       begin
         Page := Doc.Pages.AddPage;
+        Page.PaperType := ptA4;
+        Page.Orientation := ppoPortrait;
+        Page.UnitOfMeasure := uomMillimeters;
+        Section.AddPage(Page);
         ConfigurarEncabezado(Doc, Page, FontH, FontN, 'Folio del Libro de Inhumaciones (Cont.)');
-        Y := 720;
+        Y := 38;
       end;
     end;
 
@@ -146,57 +193,74 @@ end;
 procedure GenerarReciboPagoPDF(const Pago: TPagoMantenimiento; const OutputPath: string);
 var
   Doc: TPDFDocument;
+  Section: TPDFSection;
   Page: TPDFPage;
-  FontH, FontN, FontB: Integer;
+  FontH, FontN: Integer;
 begin
   Doc := TPDFDocument.Create(nil);
   try
-    Doc.PaperType := ptA4;
-    Doc.Title := 'Recibo Oficial Nro ' + Pago.NroRecibo;
-    FontH := Doc.AddFont('Helvetica-Bold', 'Helvetica-Bold');
-    FontB := Doc.AddFont('Helvetica-Bold', 'Helvetica-Bold');
-    FontN := Doc.AddFont('Helvetica', 'Helvetica');
+    Doc.StartDocument;
+    Section := Doc.Sections.AddSection;
+
+    FontH := Doc.AddFont('Helvetica-Bold');
+    FontN := Doc.AddFont('Helvetica');
 
     Page := Doc.Pages.AddPage;
+    Page.PaperType := ptA4;
+    Page.Orientation := ppoPortrait;
+    Page.UnitOfMeasure := uomMillimeters;
+    Section.AddPage(Page);
 
-    // ORIGINAL (Para el Afiliado / Titular)
-    Page.DrawRect(40, 480, 515, 340, 1, False, True);
-    Page.WriteText(55, 800, 'CEMENTERIO PARQUE SAN NICOLAS · RECIBO OFICIAL', FontH, 12);
-    Page.WriteText(430, 800, 'ORIGINAL', FontB, 11);
-    Page.WriteText(55, 780, 'Recibo Nro: ' + Pago.NroRecibo, FontB, 11);
-    Page.WriteText(400, 780, 'Fecha: ' + FormatDateTime('dd/mm/yyyy', Now), FontN, 10);
-    Page.DrawLine(55, 770, 540, 770, 1);
+    // ORIGINAL (Afiliado)
+    PDFDrawRect(Page, 15, 15, 180, 110);
+    Page.SetFont(FontH, 11);
+    Page.WriteText(20, 24, 'CEMENTERIO PARQUE SAN NICOLAS · RECIBO OFICIAL');
+    Page.SetFont(FontH, 9);
+    Page.WriteText(160, 24, 'ORIGINAL');
+    Page.WriteText(20, 31, 'Recibo Nro: ' + Pago.NroRecibo);
+    Page.SetFont(FontN, 9);
+    Page.WriteText(145, 31, 'Fecha: ' + FormatDateTime('dd/mm/yyyy', Now));
+    PDFDrawLine(Page, 20, 34, 190, 34);
 
-    Page.WriteText(55, 745, 'Recibimos de: ' + Pago.TitularNombre, FontN, 11);
-    Page.WriteText(55, 725, 'La cantidad de: ' + FormatearMoneda(Pago.MontoPagado), FontB, 13);
-    Page.WriteText(55, 705, 'En concepto de: ' + Pago.Observaciones, FontN, 10);
-    Page.WriteText(55, 685, 'Periodo Imputado: ' + Pago.PeriodoCubierto, FontN, 10);
-    Page.WriteText(55, 665, 'Forma de Pago: ' + MetodoPagoToStr(Pago.MetodoPago), FontN, 10);
+    Page.WriteText(20, 42, 'Recibimos de: ' + Pago.TitularNombre);
+    Page.SetFont(FontH, 12);
+    Page.WriteText(20, 52, 'La cantidad de: ' + FormatearMoneda(Pago.MontoPagado));
+    Page.SetFont(FontN, 9);
+    Page.WriteText(20, 60, 'En concepto de: ' + Pago.Observaciones);
+    Page.WriteText(20, 67, 'Periodo Imputado: ' + Pago.PeriodoCubierto);
+    Page.WriteText(20, 74, 'Forma de Pago: ' + MetodoPagoToStr(Pago.MetodoPago));
 
-    Page.DrawLine(360, 530, 520, 530, 1);
-    Page.WriteText(380, 515, 'Operador: ' + Pago.OperadorNombre, FontN, 9);
-    Page.WriteText(405, 500, 'Firma y Sello Caja', FontN, 9);
+    PDFDrawLine(Page, 130, 105, 185, 105);
+    Page.SetFont(FontN, 8);
+    Page.WriteText(135, 110, 'Firma y Sello Caja');
+    Page.WriteText(135, 114, 'Operador: ' + Pago.OperadorNombre);
 
-    // Linea punteada de corte
-    Page.DrawLine(40, 440, 555, 440, 1);
-    Page.WriteText(240, 445, '- - - - - - - - - CORTAR AQUI - - - - - - - - -', FontN, 8);
+    // Linea de corte
+    PDFDrawLine(Page, 15, 138, 195, 138);
+    Page.WriteText(85, 137, '- - - - - CORTAR AQUI - - - - -');
 
-    // DUPLICADO (Para el Archivo de Administracion)
-    Page.DrawRect(40, 80, 515, 340, 1, False, True);
-    Page.WriteText(55, 400, 'CEMENTERIO PARQUE SAN NICOLAS · RECIBO OFICIAL', FontH, 12);
-    Page.WriteText(410, 400, 'TALON CONTROL', FontB, 11);
-    Page.WriteText(55, 380, 'Recibo Nro: ' + Pago.NroRecibo, FontB, 11);
-    Page.WriteText(400, 380, 'Fecha: ' + FormatDateTime('dd/mm/yyyy', Now), FontN, 10);
-    Page.DrawLine(55, 370, 540, 370, 1);
+    // DUPLICADO (Administracion)
+    PDFDrawRect(Page, 15, 148, 180, 110);
+    Page.SetFont(FontH, 11);
+    Page.WriteText(20, 157, 'CEMENTERIO PARQUE SAN NICOLAS · RECIBO OFICIAL');
+    Page.SetFont(FontH, 9);
+    Page.WriteText(150, 157, 'TALON CONTROL');
+    Page.WriteText(20, 164, 'Recibo Nro: ' + Pago.NroRecibo);
+    Page.SetFont(FontN, 9);
+    Page.WriteText(145, 164, 'Fecha: ' + FormatDateTime('dd/mm/yyyy', Now));
+    PDFDrawLine(Page, 20, 167, 190, 167);
 
-    Page.WriteText(55, 345, 'Titular: ' + Pago.TitularNombre, FontN, 11);
-    Page.WriteText(55, 325, 'Monto Cobrado: ' + FormatearMoneda(Pago.MontoPagado), FontB, 13);
-    Page.WriteText(55, 305, 'Concepto: ' + Pago.Observaciones, FontN, 10);
-    Page.WriteText(55, 285, 'Forma de Pago: ' + MetodoPagoToStr(Pago.MetodoPago), FontN, 10);
+    Page.WriteText(20, 175, 'Titular: ' + Pago.TitularNombre);
+    Page.SetFont(FontH, 12);
+    Page.WriteText(20, 185, 'Monto Cobrado: ' + FormatearMoneda(Pago.MontoPagado));
+    Page.SetFont(FontN, 9);
+    Page.WriteText(20, 193, 'Concepto: ' + Pago.Observaciones);
+    Page.WriteText(20, 200, 'Forma de Pago: ' + MetodoPagoToStr(Pago.MetodoPago));
 
-    Page.DrawLine(360, 130, 520, 130, 1);
-    Page.WriteText(380, 115, 'Operador: ' + Pago.OperadorNombre, FontN, 9);
-    Page.WriteText(405, 100, 'Firma y Sello Caja', FontN, 9);
+    PDFDrawLine(Page, 130, 238, 185, 238);
+    Page.SetFont(FontN, 8);
+    Page.WriteText(135, 243, 'Firma y Sello Caja');
+    Page.WriteText(135, 247, 'Operador: ' + Pago.OperadorNombre);
 
     Doc.SaveToFile(OutputPath);
   finally
@@ -207,45 +271,59 @@ end;
 procedure GenerarPlanillaRutaPDF(const Afiliados: TAfiliadoArray; const OutputPath: string);
 var
   Doc: TPDFDocument;
+  Section: TPDFSection;
   Page: TPDFPage;
   FontH, FontN: Integer;
   i, Y: Integer;
 begin
   Doc := TPDFDocument.Create(nil);
   try
-    Doc.PaperType := ptA4;
-    Doc.Title := 'Planilla de Ruta para Cobrador';
-    FontH := Doc.AddFont('Helvetica-Bold', 'Helvetica-Bold');
-    FontN := Doc.AddFont('Helvetica', 'Helvetica');
+    Doc.StartDocument;
+    Section := Doc.Sections.AddSection;
+
+    FontH := Doc.AddFont('Helvetica-Bold');
+    FontN := Doc.AddFont('Helvetica');
 
     Page := Doc.Pages.AddPage;
+    Page.PaperType := ptA4;
+    Page.Orientation := ppoPortrait;
+    Page.UnitOfMeasure := uomMillimeters;
+    Section.AddPage(Page);
+
     ConfigurarEncabezado(Doc, Page, FontH, FontN, 'Planilla de Ruta y Cobranza Domiciliaria');
 
-    Y := 720;
-    Page.DrawRect(40, Y, 515, 20, 1, False, True);
-    Page.WriteText(45, Y + 5, 'Nro', FontH, 9);
-    Page.WriteText(75, Y + 5, 'Nombre del Afiliado', FontH, 9);
-    Page.WriteText(240, Y + 5, 'Direccion / Domicilio', FontH, 9);
-    Page.WriteText(400, Y + 5, 'Cuota', FontH, 9);
-    Page.WriteText(460, Y + 5, 'Firma / Cobrado', FontH, 9);
+    // Cabecera Tabla
+    PDFDrawRect(Page, 15, 34, 180, 7);
+    Page.SetFont(FontH, 8);
+    Page.WriteText(17, 39, 'Nro');
+    Page.WriteText(30, 39, 'Nombre del Afiliado');
+    Page.WriteText(95, 39, 'Direccion / Domicilio');
+    Page.WriteText(145, 39, 'Cuota');
+    Page.WriteText(168, 39, 'Cobrado / Firma');
 
-    Y := 695;
+    Y := 46;
     for i := Low(Afiliados) to High(Afiliados) do
     begin
-      Page.WriteText(45, Y, IntToStr(Afiliados[i].NumeroAfiliado), FontN, 8);
-      Page.WriteText(75, Y, Copy(Afiliados[i].NombreCompleto, 1, 26), FontN, 8);
-      Page.WriteText(240, Y, Copy(Afiliados[i].DireccionCobro, 1, 30), FontN, 8);
-      Page.WriteText(400, Y, FormatearMoneda(Afiliados[i].MontoCuotaMensual), FontH, 8);
-      Page.DrawRect(465, Y - 2, 80, 14, 1, False, True); // Casilla para tildar o firmar
+      Page.SetFont(FontN, 7);
+      Page.WriteText(17, Y, IntToStr(Afiliados[i].NumeroAfiliado));
+      Page.WriteText(30, Y, Copy(Afiliados[i].NombreCompleto, 1, 28));
+      Page.WriteText(95, Y, Copy(Afiliados[i].DireccionCobro, 1, 28));
+      Page.SetFont(FontH, 7);
+      Page.WriteText(145, Y, FormatearMoneda(Afiliados[i].MontoCuotaMensual));
+      PDFDrawRect(Page, 168, Y - 3, 22, 5); // Casilla para marcar
 
-      Page.DrawLine(40, Y - 4, 555, Y - 4, 1);
-      Dec(Y, 18);
+      PDFDrawLine(Page, 15, Y + 2, 195, Y + 2);
+      Inc(Y, 6);
 
-      if Y < 60 then
+      if Y > 280 then
       begin
         Page := Doc.Pages.AddPage;
+        Page.PaperType := ptA4;
+        Page.Orientation := ppoPortrait;
+        Page.UnitOfMeasure := uomMillimeters;
+        Section.AddPage(Page);
         ConfigurarEncabezado(Doc, Page, FontH, FontN, 'Planilla de Ruta para Cobrador (Cont.)');
-        Y := 720;
+        Y := 38;
       end;
     end;
 
@@ -258,62 +336,80 @@ end;
 procedure GenerarCierreCajaPDF(const Pagos: TPagoArray; TotalEf, TotalDig: Currency; const OutputPath: string);
 var
   Doc: TPDFDocument;
+  Section: TPDFSection;
   Page: TPDFPage;
-  FontH, FontN, FontB: Integer;
+  FontH, FontN: Integer;
   i, Y: Integer;
 begin
   Doc := TPDFDocument.Create(nil);
   try
-    Doc.PaperType := ptA4;
-    Doc.Title := 'Cierre Diario de Caja';
-    FontH := Doc.AddFont('Helvetica-Bold', 'Helvetica-Bold');
-    FontB := Doc.AddFont('Helvetica-Bold', 'Helvetica-Bold');
-    FontN := Doc.AddFont('Helvetica', 'Helvetica');
+    Doc.StartDocument;
+    Section := Doc.Sections.AddSection;
+
+    FontH := Doc.AddFont('Helvetica-Bold');
+    FontN := Doc.AddFont('Helvetica');
 
     Page := Doc.Pages.AddPage;
+    Page.PaperType := ptA4;
+    Page.Orientation := ppoPortrait;
+    Page.UnitOfMeasure := uomMillimeters;
+    Section.AddPage(Page);
+
     ConfigurarEncabezado(Doc, Page, FontH, FontN, 'Acta de Arqueo y Cierre Diario de Caja');
 
-    // Cuadro de Totales
-    Page.DrawRect(40, 650, 515, 75, 1, False, True);
-    Page.WriteText(55, 705, 'RESUMEN DEL CIERRE:', FontB, 11);
-    Page.WriteText(55, 685, 'Total Efectivo: ' + FormatearMoneda(TotalEf), FontN, 10);
-    Page.WriteText(240, 685, 'Total Digital/Transf: ' + FormatearMoneda(TotalDig), FontN, 10);
-    Page.WriteText(55, 665, 'TOTAL GENERAL RECAUDADO: ' + FormatearMoneda(TotalEf + TotalDig), FontB, 12);
+    // Cuadro de Resumen
+    PDFDrawRect(Page, 15, 35, 180, 24);
+    Page.SetFont(FontH, 9);
+    Page.WriteText(20, 41, 'RESUMEN DEL CIERRE:');
+    Page.SetFont(FontN, 9);
+    Page.WriteText(20, 47, 'Total Efectivo: ' + FormatearMoneda(TotalEf));
+    Page.WriteText(95, 47, 'Total Digital/Transf: ' + FormatearMoneda(TotalDig));
+    Page.SetFont(FontH, 10);
+    Page.WriteText(20, 54, 'TOTAL GENERAL RECAUDADO: ' + FormatearMoneda(TotalEf + TotalDig));
 
-    // Listado de Movimientos
-    Page.WriteText(40, 630, 'DETALLE DE COMPROBANTES ASENTADOS EN EL DIA:', FontB, 10);
-    Y := 605;
-    Page.DrawRect(40, Y, 515, 18, 1, False, True);
-    Page.WriteText(45, Y + 4, 'Recibo Nro', FontH, 9);
-    Page.WriteText(140, Y + 4, 'Titular / Concepto', FontH, 9);
-    Page.WriteText(370, Y + 4, 'Metodo', FontH, 9);
-    Page.WriteText(470, Y + 4, 'Monto', FontH, 9);
+    // Cabecera Movimientos
+    Page.SetFont(FontH, 9);
+    Page.WriteText(15, 65, 'COMPROBANTES ASENTADOS EN EL DIA:');
 
-    Y := 585;
+    PDFDrawRect(Page, 15, 68, 180, 6);
+    Page.SetFont(FontH, 7);
+    Page.WriteText(17, 72, 'Recibo Nro');
+    Page.WriteText(45, 72, 'Titular / Concepto');
+    Page.WriteText(140, 72, 'Metodo');
+    Page.WriteText(170, 72, 'Monto');
+
+    Y := 78;
     for i := Low(Pagos) to High(Pagos) do
     begin
-      Page.WriteText(45, Y, Pagos[i].NroRecibo, FontN, 8);
-      Page.WriteText(140, Y, Copy(Pagos[i].TitularNombre + ' - ' + Pagos[i].Observaciones, 1, 40), FontN, 8);
-      Page.WriteText(370, Y, MetodoPagoToStr(Pagos[i].MetodoPago), FontN, 8);
-      Page.WriteText(470, Y, FormatearMoneda(Pagos[i].MontoPagado), FontH, 8);
+      Page.SetFont(FontN, 7);
+      Page.WriteText(17, Y, Pagos[i].NroRecibo);
+      Page.WriteText(45, Y, Copy(Pagos[i].TitularNombre + ' - ' + Pagos[i].Observaciones, 1, 44));
+      Page.WriteText(140, Y, MetodoPagoToStr(Pagos[i].MetodoPago));
+      Page.SetFont(FontH, 7);
+      Page.WriteText(170, Y, FormatearMoneda(Pagos[i].MontoPagado));
 
-      Page.DrawLine(40, Y - 3, 555, Y - 3, 1);
-      Dec(Y, 16);
+      PDFDrawLine(Page, 15, Y + 2, 195, Y + 2);
+      Inc(Y, 6);
 
-      if Y < 120 then
+      if Y > 260 then
       begin
         Page := Doc.Pages.AddPage;
+        Page.PaperType := ptA4;
+        Page.Orientation := ppoPortrait;
+        Page.UnitOfMeasure := uomMillimeters;
+        Section.AddPage(Page);
         ConfigurarEncabezado(Doc, Page, FontH, FontN, 'Detalle de Movimientos de Caja (Cont.)');
-        Y := 720;
+        Y := 38;
       end;
     end;
 
-    // Firmas de Cierre
-    Page.DrawLine(80, 80, 240, 80, 1);
-    Page.WriteText(100, 65, 'Firma Cajero de Turno', FontN, 9);
+    // Firmas
+    PDFDrawLine(Page, 30, 275, 85, 275);
+    Page.SetFont(FontN, 8);
+    Page.WriteText(35, 280, 'Firma Cajero de Turno');
 
-    Page.DrawLine(350, 80, 510, 80, 1);
-    Page.WriteText(370, 65, 'Firma Tesoreria / Direccion', FontN, 9);
+    PDFDrawLine(Page, 125, 275, 180, 275);
+    Page.WriteText(130, 280, 'Firma Tesoreria / Parroquia');
 
     Doc.SaveToFile(OutputPath);
   finally

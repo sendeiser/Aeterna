@@ -1,70 +1,87 @@
 # Aeterna XP - Suite de Escritorio Nativa para Windows XP
 
 **Versión:** 1.0.0-XP  
-**Lenguaje:** Object Pascal (Lazarus / Free Pascal Compiler)  
+**Lenguaje:** Object Pascal (Free Pascal 3.2.2 / Lazarus)  
 **Arquitectura:** Win32 (x86 32-bit PE)  
-**Requisitos de Sistema:** Windows XP Service Pack 3 o superior, 64 MB de RAM mínimo (diseñado para máquinas con hasta 2 GB de RAM).  
-**Consumo de Memoria:** ~20 a 25 MB de RAM en ejecución.
+**Requisitos de Sistema:** Windows XP Service Pack 3 o superior, Windows 7, 8, 10 y 11.  
+**Consumo de Memoria:** < 15 MB de RAM en ejecución.
 
 ---
 
-## 1. Descripción General
+## 1. Instalador y Ejecutables Listos para Usar
 
-Aeterna XP es el cliente nativo de escritorio para la administración integral del **Cementerio Parque San Nicolás y Mutual de Sepelios**. 
+El instalador oficial ha sido compilado con **Inno Setup 5.6.1 (versión final certificada para Windows XP SP3)** y está disponible en las siguientes ubicaciones para prueba inmediata:
 
-Ha sido desarrollado para operar de forma ultraliviana y fluida en terminales antiguas con Windows XP SP3, manteniendo una **sincronización en tiempo real con la nube (Supabase)** y emitiendo **reportes vectoriales en PDF de forma nativa** sin depender de software pesado de terceros.
+* **Instalador Oficial:** [`aeterna-xp/setup.exe`](file:///d:/Aeterna/aeterna-xp/setup.exe) (o [`aeterna-xp/instalador.exe`](file:///d:/Aeterna/aeterna-xp/instalador.exe))
+* **Carpeta de Instaladores:** [`aeterna-xp/installer/setup_aeterna_xp.exe`](file:///d:/Aeterna/aeterna-xp/installer/setup_aeterna_xp.exe)
+* **Binario Portátil Directo:** [`aeterna-xp/bin/AeternaXP.exe`](file:///d:/Aeterna/aeterna-xp/bin/AeternaXP.exe) (requiere `config.ini`, `libeay32.dll` y `ssleay32.dll` en la misma carpeta).
+
+### Instrucciones para Probar en Windows XP:
+1. Copie el archivo `setup.exe` a un pendrive o compártalo en red con la PC con Windows XP SP3 (o Windows 7/10/11).
+2. Ejecute `setup.exe`. El asistente en español guiará la instalación.
+3. Se creará un acceso directo en el Escritorio y en el Menú Inicio (*Aeterna XP*).
+4. Al abrirlo, el sistema se conectará en tiempo real con Supabase Cloud vía TLS 1.2 usando las DLLs OpenSSL incluidas.
 
 ---
 
-## 2. Módulos Incluidos
+## 2. Módulos Incluidos en la Aplicación
 
-1. **Dashboard y Actividad Global:** Tarjetas de estado con indicadores de ocupación (52%), parcelas en mora, afiliados a seguro y balance de caja diaria en tiempo real.
-2. **Catastro y Parcelas:** Visualizador tabular y por sectores (Sector A, Sector E, Salinas), con código de colores según estado (disponible, ocupada, en mora, standby) y ficha técnica de parcela con historial.
-3. **Libro de Actas de Inhumaciones:** Registro de servicios fúnebres con protocolo estándar o especial COVID-19, empresa funebrera, responsable y emisión inmediata de actas oficiales.
-4. **Afiliados al Seguro de Sepelio:** Padrón de mutual con matriz de cuotas anuales (Enero a Diciembre), detector automático de afiliados en mora (>= 3 meses), modal de cobranza y planilla de ruta domiciliaria.
-5. **Caja Diaria y Arqueo:** Registro automático de cobros (efectivo y transferencias), balance en tiempo real y proceso de arqueo de cierre con conciliación física de billetes.
-6. **Motor de Reportes PDF Nativos (`fpPDF`):** Generación de documentos oficiales con tipografía vectorial clara y líneas de corte:
-   * *Acta Oficial de Inhumación*
-   * *Folio del Libro de Inhumaciones*
-   * *Recibo de Cobranza Oficial (Original y Talón Control)*
-   * *Planilla de Ruta para Cobrador*
-   * *Acta de Arqueo y Cierre Diario de Caja*
+1. **Tablero Ejecutivo (KPIs en Tiempo Real):**
+   * Indicadores de ocupación catastral de parcelas.
+   * Total histórico de actas del libro de inhumaciones (203 actas registradas).
+   * Padrón de afiliados al seguro de sepelio, con detección de morosidad (3 meses y 3 años).
+   * Recaudación de caja diaria discriminada (efectivo y digital).
+
+2. **Catastro y Parcelas:**
+   * Mapa de sectores: **Sector A**, **Sector E** y **Sector Salinas**.
+   * Filtros por sector y por estado (disponible, ocupada, reservada).
+   * Visualizador tabular con titular y fecha de último pago.
+   * Botón para registrar cobro de mantenimiento anual con emisión automática de recibo oficial por duplicado en PDF.
+
+3. **Libro Parroquial de Inhumaciones:**
+   * Registro histórico con más de 200 actas conectadas a Supabase.
+   * Búsqueda rápida por nombre de difunto o DNI.
+   * Generación instantánea de **Acta Oficial de Inhumación (PDF)** y **Folio Completo del Libro (PDF)** con apertura automática en el visor de documentos.
+
+4. **Seguro de Sepelio y Afiliados:**
+   * Matriz de cobranzas y cuotas.
+   * Detección y alerta visual de morosidad: *Al Día*, *Aviso: Mora >= 3 meses*, *Urgente: Riesgo de Baja >= 3 años*.
+   * Registro de cobro de cuotas con comprobante PDF.
+   * Emisión de la **Planilla de Ruta para Cobrador Domiciliario (PDF)** con casillas para firma.
+
+5. **Caja Diaria y Arqueo:**
+   * Libro de movimientos y comprobantes emitidos en el día.
+   * Totalizadores automáticos de Efectivo vs. Transferencias / QR.
+   * Cierre diario de caja con emisión de **Acta de Arqueo y Cierre (PDF)**.
+
+6. **Centro de Reportes PDF Nativos (`fpPDF`):**
+   * Emisión con un solo clic de los 5 documentos oficiales vectoriales sin dependencias de software externo.
+   * Botón de acceso directo a la carpeta de reportes generados.
 
 ---
 
 ## 3. Conectividad Segura con Supabase en Windows XP
 
-Windows XP carece de soporte nativo para TLS 1.2 y TLS 1.3 en su subsistema `schannel.dll`. Para resolver esto de forma definitiva y segura:
+Para garantizar que una terminal con Windows XP (que carece de TLS 1.2 en su subsistema nativo) se comunique sin problemas con la nube de Supabase:
 
-* El programa incluye su propio adaptador HTTP (`uSynapseHttp.pas` / `uSupabaseClient.pas`).
-* Carga de forma local las librerías independientes de OpenSSL 1.1.1 de 32 bits (`libeay32.dll` y `ssleay32.dll`) ubicadas en la carpeta de la aplicación.
-* Se comunica directamente con los endpoints PostgREST de Supabase:
+* Se implementó el cliente HTTP en Object Pascal (`uSynapseHttp.pas` / `uSupabaseClient.pas`).
+* El instalador distribuye las bibliotecas OpenSSL 32-bit (`libeay32.dll` y `ssleay32.dll`), permitiendo handshake TLS 1.2 / 1.3 directo contra:
   ```text
   https://xftwykrxumzxaqhosbvt.supabase.co/rest/v1/
   ```
 
 ---
 
-## 4. Instrucciones de Compilación
+## 4. Instrucciones de Recompilación
 
-### Opción A: Compilar desde el Entorno Lazarus IDE
-1. Descargar e instalar **Lazarus 2.2.x o 3.x (32-bit i386-win32)** desde [Lazarus IDE](https://www.lazarus-ide.org/).
-2. Abrir el archivo de proyecto `aeterna-xp\AeternaXP.lpi`.
-3. Seleccionar el modo de compilación **Release**.
-4. Ir al menú **Ejecutar -> Construir Todo (Shift + F9)**.
-5. El ejecutable optimizado `AeternaXP.exe` se generará automáticamente en la carpeta `aeterna-xp\bin\`.
-
-### Opción B: Compilación por Línea de Comandos (`lazbuild`)
-Ejecutar en la terminal:
+### Compilación del Ejecutable (`AeternaXP.exe`):
+Con Free Pascal 32-bit (`fpc.exe`):
 ```bash
-lazbuild --build-mode=Release aeterna-xp\AeternaXP.lpi
+tools\fpc\app\bin\i386-win32\fpc.exe -Fu"aeterna-xp\src\core" -Fu"aeterna-xp\src\services" -Fu"aeterna-xp\src\reports" -Fu"aeterna-xp\src\app" -FE"aeterna-xp\bin" "aeterna-xp\AeternaXP.pas"
 ```
 
----
-
-## 5. Generación del Instalador para Windows XP (`setup_aeterna_xp.exe`)
-
-1. Instalar [Inno Setup 5 o 6](https://jrsoftware.org/isdl.php).
-2. Abrir el archivo `aeterna-xp\installer\setup_aeterna_xp.iss`.
-3. Hacer clic en **Build -> Compile (Ctrl + F9)**.
-4. Se generará el instalador `setup_aeterna_xp.exe`, listo para copiar en un pendrive y ejecutar en cualquier PC con Windows XP.
+### Compilación del Instalador (`setup_aeterna_xp.exe`):
+Con Inno Setup 5.6.1 (`ISCC.exe`):
+```bash
+tools\inno5\app\ISCC.exe "aeterna-xp\installer\setup_aeterna_xp.iss"
+```

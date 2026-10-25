@@ -12,3 +12,15 @@ dist
 .trae
 .windsurf
 
+# Pascal build artifacts
+*.o
+*.ppu
+*.compiled
+*.bak
+
+# Portable compilers & tools
+tools/
+
+# Temporary analysis scripts
+dump_defs.py
+dump_pdf.py
