@@ -1,0 +1,294 @@
+object frmNuevaInhumacion: TfrmNuevaInhumacion
+  Left = 300
+  Height = 490
+  Top = 140
+  Width = 520
+  BorderStyle = bsDialog
+  Caption = 'Registrar Servicio de Inhumacion'
+  ClientHeight = 490
+  ClientWidth = 520
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  OnCreate = FormCreate
+  Position = poScreenCenter
+  LCLVersion = '2.2.6.0'
+  object pnlHeader: TPanel
+    Left = 0
+    Height = 50
+    Top = 0
+    Width = 520
+    Align = alTop
+    BevelOuter = bvNone
+    Color = 3022342
+    TabOrder = 0
+    object lblTitulo: TLabel
+      Left = 16
+      Height = 20
+      Top = 14
+      Width = 330
+      Caption = 'NUEVO INGRESO AL LIBRO DE INHUMACIONES'
+      Font.Color = clWhite
+      Font.Height = -15
+      Font.Name = 'Tahoma'
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+  end
+  object gbDifunto: TGroupBox
+    Left = 12
+    Height = 110
+    Top = 56
+    Width = 496
+    Caption = 'Datos del Fallecido'
+    Font.Style = [fsBold]
+    ParentFont = False
+    TabOrder = 1
+    object lblNombreDifunto: TLabel
+      Left = 12
+      Height = 13
+      Top = 10
+      Width = 105
+      Caption = 'Nombre Completo (*):'
+      Font.Style = []
+      ParentFont = False
+    end
+    object edtNombreDifunto: TEdit
+      Left = 12
+      Height = 21
+      Top = 26
+      Width = 310
+      Font.Style = []
+      ParentFont = False
+      TabOrder = 0
+    end
+    object lblDniDifunto: TLabel
+      Left = 336
+      Height = 13
+      Top = 10
+      Width = 22
+      Caption = 'DNI:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object edtDniDifunto: TEdit
+      Left = 336
+      Height = 21
+      Top = 26
+      Width = 140
+      Font.Style = []
+      ParentFont = False
+      TabOrder = 1
+    end
+    object lblFechaFallecimiento: TLabel
+      Left = 12
+      Height = 13
+      Top = 56
+      Width = 101
+      Caption = 'Fecha Fallecimiento:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object edtFechaFallecimiento: TEdit
+      Left = 12
+      Height = 21
+      Top = 72
+      Width = 150
+      Font.Style = []
+      ParentFont = False
+      TabOrder = 2
+    end
+    object lblFechaInhumacion: TLabel
+      Left = 180
+      Height = 13
+      Top = 56
+      Width = 112
+      Caption = 'Fecha Inhumacion (*):'
+      Font.Style = []
+      ParentFont = False
+    end
+    object edtFechaInhumacion: TEdit
+      Left = 180
+      Height = 21
+      Top = 72
+      Width = 150
+      Font.Style = []
+      ParentFont = False
+      TabOrder = 3
+    end
+  end
+  object gbUbicacion: TGroupBox
+    Left = 12
+    Height = 80
+    Top = 172
+    Width = 496
+    Caption = 'Asignacion Catastral'
+    Font.Style = [fsBold]
+    ParentFont = False
+    TabOrder = 2
+    object lblParcela: TLabel
+      Left = 12
+      Height = 13
+      Top = 12
+      Width = 59
+      Caption = 'Parcela (*):'
+      Font.Style = []
+      ParentFont = False
+    end
+    object cbParcelas: TComboBox
+      Left = 12
+      Height = 21
+      Top = 30
+      Width = 240
+      Font.Style = []
+      ItemHeight = 13
+      ParentFont = False
+      Style = csDropDownList
+      TabOrder = 0
+    end
+    object lblNivel: TLabel
+      Left = 270
+      Height = 13
+      Top = 12
+      Width = 27
+      Caption = 'Nivel:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object cbNivel: TComboBox
+      Left = 270
+      Height = 21
+      Top = 30
+      Width = 60
+      Font.Style = []
+      ItemHeight = 13
+      ItemIndex = 0
+      Items.Strings = (
+        '1'
+        '2'
+        '3'
+      )
+      ParentFont = False
+      Style = csDropDownList
+      TabOrder = 1
+      Text = '1'
+    end
+    object chkCovid: TCheckBox
+      Left = 350
+      Height = 19
+      Top = 32
+      Width = 135
+      Caption = 'Protocolo COVID-19'
+      Font.Color = clMaroon
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+      TabOrder = 2
+    end
+  end
+  object gbProtocolo: TGroupBox
+    Left = 12
+    Height = 160
+    Top = 260
+    Width = 496
+    Caption = 'Datos del Servicio y Responsable'
+    Font.Style = [fsBold]
+    ParentFont = False
+    TabOrder = 3
+    object lblCausa: TLabel
+      Left = 12
+      Height = 13
+      Top = 10
+      Width = 100
+      Caption = 'Causa de Defuncion:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object edtCausa: TEdit
+      Left = 12
+      Height = 21
+      Top = 26
+      Width = 220
+      Font.Style = []
+      ParentFont = False
+      TabOrder = 0
+    end
+    object lblEmpresa: TLabel
+      Left = 250
+      Height = 13
+      Top = 10
+      Width = 100
+      Caption = 'Empresa Funebrera:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object edtEmpresa: TEdit
+      Left = 250
+      Height = 21
+      Top = 26
+      Width = 226
+      Font.Style = []
+      ParentFont = False
+      TabOrder = 1
+    end
+    object lblResponsable: TLabel
+      Left = 12
+      Height = 13
+      Top = 60
+      Width = 123
+      Caption = 'Familiar / Responsable:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object edtResponsable: TEdit
+      Left = 12
+      Height = 21
+      Top = 76
+      Width = 220
+      Font.Style = []
+      ParentFont = False
+      TabOrder = 2
+    end
+    object lblTelefono: TLabel
+      Left = 250
+      Height = 13
+      Top = 60
+      Width = 107
+      Caption = 'Telefono de Contacto:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object edtTelefono: TEdit
+      Left = 250
+      Height = 21
+      Top = 76
+      Width = 226
+      Font.Style = []
+      ParentFont = False
+      TabOrder = 3
+    end
+  end
+  object btnGuardar: TButton
+    Left = 260
+    Height = 32
+    Top = 440
+    Width = 140
+    Caption = 'Registrar Inhumacion'
+    Font.Style = [fsBold]
+    OnClick = btnGuardarClick
+    ParentFont = False
+    TabOrder = 4
+  end
+  object btnCancelar: TButton
+    Left = 412
+    Height = 32
+    Top = 440
+    Width = 95
+    Cancel = True
+    Caption = 'Cancelar'
+    ModalResult = 2
+    TabOrder = 5
+  end
+end
