@@ -836,6 +836,8 @@ export default function App() {
               }}
               onVerParcelasMora={() => setCurrentTab('parcelas')}
               onOpenSearch={() => setSearchOpen(true)}
+              onSelectTab={setCurrentTab}
+              onCierreCaja={() => setCierreCajaOpen(true)}
             />
             </div>
           )}
