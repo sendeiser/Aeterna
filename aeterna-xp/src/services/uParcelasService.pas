@@ -1,0 +1,129 @@
+unit uParcelasService;
+
+{$mode objfpc}{$H+}
+
+interface
+
+uses
+  Classes, SysUtils, fpjson, uDataModels, uSupabaseClient;
+
+type
+  { TParcelasService }
+  TParcelasService = class
+  public
+    class function ObtenerTodas(const ASector: string = ''): TParcelaArray;
+    class function ObtenerPorId(const AId: string; out AParcela: TParcela): Boolean;
+    class function ActualizarEstado(const AId: string; AEstado: TEstadoParcela; ASaldo: Currency): Boolean;
+  end;
+
+implementation
+
+{ TParcelasService }
+
+class function TParcelasService.ObtenerTodas(const ASector: string): TParcelaArray;
+var
+  JsonArr: TJSONArray;
+  Item: TJSONObject;
+  TitularObj: TJSONObject;
+  i, Total: Integer;
+  Query: string;
+begin
+  SetLength(Result, 0);
+  Query := 'select=id,nomenclatura,sector_id,manzana_fila,numero_parcela,capacidad_total,espacios_ocupados,estado,saldo_mantenimiento,fecha_adquisicion,fecha_ultimo_pago,ultima_cuota_pagada,motivo_bloqueo,notas,titular:titulares(id,nombre_completo,dni)&order=nomenclatura.asc';
+
+  if ASector <> '' then
+    Query := Query + '&sector_id=eq.' + ASector;
+
+  JsonArr := Supabase.Select('parcelas', Query);
+  if JsonArr = nil then Exit;
+
+  try
+    Total := JsonArr.Count;
+    SetLength(Result, Total);
+    for i := 0 to Total - 1 do
+    begin
+      Item := TJSONObject(JsonArr.Items[i]);
+      Result[i].Id := Item.Get('id', '');
+      Result[i].Nomenclatura := Item.Get('nomenclatura', '');
+      Result[i].SectorId := Item.Get('sector_id', '');
+      Result[i].ManzanaFila := Item.Get('manzana_fila', '');
+      Result[i].NumeroParcela := Item.Get('numero_parcela', '');
+      Result[i].CapacidadTotal := Item.Get('capacidad_total', 3);
+      Result[i].EspaciosOcupados := Item.Get('espacios_ocupados', 0);
+      Result[i].Estado := StrToEstadoParcela(Item.Get('estado', 'disponible'));
+      Result[i].SaldoMantenimiento := Item.Get('saldo_mantenimiento', 0.0);
+      Result[i].FechaAdquisicion := Item.Get('fecha_adquisicion', '');
+      Result[i].FechaUltimoPago := Item.Get('fecha_ultimo_pago', '');
+      Result[i].UltimaCuotaPagada := Item.Get('ultima_cuota_pagada', '');
+      Result[i].MotivoBloqueo := Item.Get('motivo_bloqueo', '');
+      Result[i].Notas := Item.Get('notas', '');
+
+      // Parse titular
+      Result[i].TitularNombre := '';
+      Result[i].TitularDni := '';
+      Result[i].TitularId := '';
+      if Item.Find('titular') <> nil then
+      begin
+        if Item.Types['titular'] = jtObject then
+        begin
+          TitularObj := Item.Objects['titular'];
+          Result[i].TitularId := TitularObj.Get('id', '');
+          Result[i].TitularNombre := TitularObj.Get('nombre_completo', '');
+          Result[i].TitularDni := TitularObj.Get('dni', '');
+        end;
+      end;
+    end;
+  finally
+    JsonArr.Free;
+  end;
+end;
+
+class function TParcelasService.ObtenerPorId(const AId: string; out AParcela: TParcela): Boolean;
+var
+  JsonArr: TJSONArray;
+  Item: TJSONObject;
+begin
+  Result := False;
+  FillChar(AParcela, SizeOf(AParcela), 0);
+
+  JsonArr := Supabase.Select('parcelas', 'id=eq.' + AId + '&select=*,titular:titulares(*)');
+  if (JsonArr <> nil) and (JsonArr.Count > 0) then
+  begin
+    try
+      Item := TJSONObject(JsonArr.Items[0]);
+      AParcela.Id := Item.Get('id', '');
+      AParcela.Nomenclatura := Item.Get('nomenclatura', '');
+      AParcela.SectorId := Item.Get('sector_id', '');
+      AParcela.ManzanaFila := Item.Get('manzana_fila', '');
+      AParcela.NumeroParcela := Item.Get('numero_parcela', '');
+      AParcela.CapacidadTotal := Item.Get('capacidad_total', 3);
+      AParcela.EspaciosOcupados := Item.Get('espacios_ocupados', 0);
+      AParcela.Estado := StrToEstadoParcela(Item.Get('estado', 'disponible'));
+      AParcela.SaldoMantenimiento := Item.Get('saldo_mantenimiento', 0.0);
+      AParcela.FechaAdquisicion := Item.Get('fecha_adquisicion', '');
+      AParcela.FechaUltimoPago := Item.Get('fecha_ultimo_pago', '');
+      AParcela.UltimaCuotaPagada := Item.Get('ultima_cuota_pagada', '');
+      AParcela.MotivoBloqueo := Item.Get('motivo_bloqueo', '');
+      AParcela.Notas := Item.Get('notas', '');
+      Result := True;
+    finally
+      JsonArr.Free;
+    end;
+  end;
+end;
+
+class function TParcelasService.ActualizarEstado(const AId: string; AEstado: TEstadoParcela; ASaldo: Currency): Boolean;
+var
+  Data: TJSONObject;
+begin
+  Data := TJSONObject.Create;
+  try
+    Data.Add('estado', EstadoParcelaToStr(AEstado));
+    Data.Add('saldo_mantenimiento', Double(ASaldo));
+    Result := Supabase.Update('parcelas', 'id=eq.' + AId, Data);
+  finally
+    Data.Free;
+  end;
+end;
+
+end.
