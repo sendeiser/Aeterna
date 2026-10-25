@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
-import { SoporteMunicipalModal } from '../modals/SoporteMunicipalModal'
 import { AuditoriaModal } from '../modals/AuditoriaModal'
 import { Parcela, AfiliadoSeguro } from '../../types/database'
 import { evaluarMoraAfiliado, evaluarMoraParcela } from '../../lib/reglasNegocio'
@@ -82,7 +81,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   afiliados = [],
   parcelas = [],
 }) => {
-  const [soporteOpen, setSoporteOpen] = useState(false)
   const [auditoriaOpen, setAuditoriaOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const [readNotifIds, setReadNotifIds] = useState<Set<string>>(new Set())
@@ -353,14 +351,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               ></span>
               <button
                 type="button"
-                className="w-10 h-9 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low text-primary transition-colors cursor-pointer"
-                onClick={() => setSoporteOpen(true)}
-                title="Soporte Municipal"
-              >
-                <span className="material-symbols-outlined text-[20px]">support_agent</span>
-              </button>
-              <button
-                type="button"
                 className="w-10 h-9 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low text-slate-700 transition-colors cursor-pointer"
                 onClick={() => setAuditoriaOpen(true)}
                 title="Auditoría Fiscal & AFIP"
@@ -377,16 +367,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           ) : (
             <>
-              <button
-                type="button"
-                className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low text-body-sm font-body-sm transition-colors duration-150 text-left w-full cursor-pointer"
-                onClick={() => setSoporteOpen(true)}
-              >
-                <span className="material-symbols-outlined text-[18px] text-primary" data-icon="support_agent">
-                  support_agent
-                </span>
-                <span className="font-medium">Soporte Municipal</span>
-              </button>
               <button
                 type="button"
                 className="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low text-body-sm font-body-sm transition-colors duration-150 text-left w-full cursor-pointer"
@@ -648,11 +628,6 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </header>
 
-      {/* Modal Soporte Municipal */}
-      <SoporteMunicipalModal
-        isOpen={soporteOpen}
-        onClose={() => setSoporteOpen(false)}
-      />
 
       {/* Modal Auditoría Fiscal & AFIP */}
       <AuditoriaModal
