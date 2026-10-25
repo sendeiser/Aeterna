@@ -13,6 +13,7 @@ type
   public
     class function ObtenerMovimientosHoy: TPagoArray;
     class function RegistrarPago(const ARecibo, AParcelaId, ATitularId, ATitularNombre, AConcepto: string; AMonto: Currency; AMetodo: TMetodoPago; const AOperador, APeriodo: string): Boolean;
+    class function EliminarPago(const AId: string): Boolean;
     class function CalcularTotalesHoy(out TotalEfectivo, TotalDigital: Currency): Currency;
   end;
 
@@ -94,6 +95,13 @@ begin
   finally
     Data.Free;
   end;
+end;
+
+class function TCajaService.EliminarPago(const AId: string): Boolean;
+begin
+  Result := False;
+  if AId = '' then Exit;
+  Result := Supabase.Delete('pagos_mantenimiento', 'id=eq.' + AId);
 end;
 
 class function TCajaService.CalcularTotalesHoy(out TotalEfectivo, TotalDigital: Currency): Currency;

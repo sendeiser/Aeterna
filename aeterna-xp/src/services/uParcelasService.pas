@@ -14,6 +14,9 @@ type
     class function ObtenerTodas(const ASector: string = ''): TParcelaArray;
     class function ObtenerPorId(const AId: string; out AParcela: TParcela): Boolean;
     class function ActualizarEstado(const AId: string; AEstado: TEstadoParcela; ASaldo: Currency): Boolean;
+    class function CrearParcela(const AParcela: TParcela): Boolean;
+    class function ActualizarParcela(const AId: string; const AParcela: TParcela): Boolean;
+    class function EliminarParcela(const AId: string): Boolean;
   end;
 
 implementation
@@ -124,6 +127,62 @@ begin
   finally
     Data.Free;
   end;
+end;
+
+class function TParcelasService.CrearParcela(const AParcela: TParcela): Boolean;
+var
+  Data, Resp: TJSONObject;
+begin
+  Result := False;
+  Data := TJSONObject.Create;
+  try
+    Data.Add('nomenclatura', AParcela.Nomenclatura);
+    Data.Add('sector_id', AParcela.SectorId);
+    Data.Add('manzana_fila', AParcela.ManzanaFila);
+    Data.Add('numero_parcela', AParcela.NumeroParcela);
+    Data.Add('capacidad_total', AParcela.CapacidadTotal);
+    Data.Add('espacios_ocupados', AParcela.EspaciosOcupados);
+    Data.Add('estado', EstadoParcelaToStr(AParcela.Estado));
+    Data.Add('saldo_mantenimiento', Double(AParcela.SaldoMantenimiento));
+    if AParcela.Notas <> '' then
+      Data.Add('notas', AParcela.Notas);
+    Resp := Supabase.Insert('parcelas', Data);
+    if Resp <> nil then
+    begin
+      Result := True;
+      Resp.Free;
+    end;
+  finally
+    Data.Free;
+  end;
+end;
+
+class function TParcelasService.ActualizarParcela(const AId: string; const AParcela: TParcela): Boolean;
+var
+  Data: TJSONObject;
+begin
+  Result := False;
+  if AId = '' then Exit;
+  Data := TJSONObject.Create;
+  try
+    Data.Add('nomenclatura', AParcela.Nomenclatura);
+    Data.Add('sector_id', AParcela.SectorId);
+    Data.Add('manzana_fila', AParcela.ManzanaFila);
+    Data.Add('numero_parcela', AParcela.NumeroParcela);
+    Data.Add('estado', EstadoParcelaToStr(AParcela.Estado));
+    Data.Add('saldo_mantenimiento', Double(AParcela.SaldoMantenimiento));
+    Data.Add('notas', AParcela.Notas);
+    Result := Supabase.Update('parcelas', 'id=eq.' + AId, Data);
+  finally
+    Data.Free;
+  end;
+end;
+
+class function TParcelasService.EliminarParcela(const AId: string): Boolean;
+begin
+  Result := False;
+  if AId = '' then Exit;
+  Result := Supabase.Delete('parcelas', 'id=eq.' + AId);
 end;
 
 end.

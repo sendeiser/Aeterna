@@ -18,6 +18,7 @@ MinVersion=0,5.1.2600
 ; Requiere elevacion de administrador para crear la carpeta en Program Files (evita Error 5)
 PrivilegesRequired=admin
 DisableProgramGroupPage=yes
+SetupIconFile=..\aeterna.ico
 
 [Languages]
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"

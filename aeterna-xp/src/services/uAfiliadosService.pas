@@ -14,6 +14,9 @@ type
     class function ObtenerTodos: TAfiliadoArray;
     class function ObtenerCuotas(const AAfiliadoId: string; Anio: Integer = 2026): TCuotaSeguroArray;
     class function RegistrarPagoCuota(const AAfiliadoId: string; Anio, NroCuota: Integer; AMonto: Currency; AMetodo: TMetodoPago; const ARecibo: string): Boolean;
+    class function CrearAfiliado(const AAfiliado: TAfiliadoSeguro): Boolean;
+    class function ActualizarAfiliado(const AId: string; const AAfiliado: TAfiliadoSeguro): Boolean;
+    class function EliminarAfiliado(const AId: string): Boolean;
   end;
 
 implementation
@@ -134,6 +137,67 @@ begin
   finally
     Data.Free;
   end;
+end;
+
+class function TAfiliadosService.CrearAfiliado(const AAfiliado: TAfiliadoSeguro): Boolean;
+var
+  Data, Resp: TJSONObject;
+begin
+  Result := False;
+  Data := TJSONObject.Create;
+  try
+    Data.Add('numero_afiliado', AAfiliado.NumeroAfiliado);
+    Data.Add('nombre_completo', AAfiliado.NombreCompleto);
+    if AAfiliado.Dni <> '' then
+      Data.Add('dni', AAfiliado.Dni);
+    Data.Add('direccion_cobro', AAfiliado.DireccionCobro);
+    Data.Add('zona_cobro', AAfiliado.ZonaCobro);
+    Data.Add('cobrador_asignado', AAfiliado.CobradorAsignado);
+    Data.Add('monto_cuota_mensual', Double(AAfiliado.MontoCuotaMensual));
+    Data.Add('estado', EstadoAfiliadoToStr(AAfiliado.Estado));
+    if AAfiliado.FechaAlta <> '' then
+      Data.Add('fecha_alta', AAfiliado.FechaAlta)
+    else
+      Data.Add('fecha_alta', FormatDateTime('yyyy-mm-dd', Now));
+
+    Resp := Supabase.Insert('afiliados_seguro', Data);
+    if Resp <> nil then
+    begin
+      Result := True;
+      Resp.Free;
+    end;
+  finally
+    Data.Free;
+  end;
+end;
+
+class function TAfiliadosService.ActualizarAfiliado(const AId: string; const AAfiliado: TAfiliadoSeguro): Boolean;
+var
+  Data: TJSONObject;
+begin
+  Result := False;
+  if AId = '' then Exit;
+  Data := TJSONObject.Create;
+  try
+    Data.Add('nombre_completo', AAfiliado.NombreCompleto);
+    Data.Add('dni', AAfiliado.Dni);
+    Data.Add('direccion_cobro', AAfiliado.DireccionCobro);
+    Data.Add('zona_cobro', AAfiliado.ZonaCobro);
+    Data.Add('cobrador_asignado', AAfiliado.CobradorAsignado);
+    Data.Add('monto_cuota_mensual', Double(AAfiliado.MontoCuotaMensual));
+    Data.Add('estado', EstadoAfiliadoToStr(AAfiliado.Estado));
+
+    Result := Supabase.Update('afiliados_seguro', 'id=eq.' + AId, Data);
+  finally
+    Data.Free;
+  end;
+end;
+
+class function TAfiliadosService.EliminarAfiliado(const AId: string): Boolean;
+begin
+  Result := False;
+  if AId = '' then Exit;
+  Result := Supabase.Delete('afiliados_seguro', 'id=eq.' + AId);
 end;
 
 end.

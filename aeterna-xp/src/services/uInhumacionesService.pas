@@ -13,6 +13,8 @@ type
   public
     class function ObtenerTodas: TInhumacionArray;
     class function CrearInhumacion(const AInhumacion: TInhumacion): Boolean;
+    class function ActualizarInhumacion(const AId: string; const AInhumacion: TInhumacion): Boolean;
+    class function EliminarInhumacion(const AId: string): Boolean;
   end;
 
 implementation
@@ -96,6 +98,44 @@ begin
   finally
     Data.Free;
   end;
+end;
+
+class function TInhumacionesService.ActualizarInhumacion(const AId: string; const AInhumacion: TInhumacion): Boolean;
+var
+  Data: TJSONObject;
+begin
+  Result := False;
+  if AId = '' then Exit;
+  Data := TJSONObject.Create;
+  try
+    if AInhumacion.ParcelaId <> '' then
+      Data.Add('parcela_id', AInhumacion.ParcelaId);
+    if AInhumacion.NomenclaturaParcela <> '' then
+      Data.Add('parcela_nomenclatura', AInhumacion.NomenclaturaParcela);
+    Data.Add('nombre_difunto', AInhumacion.NombreDifunto);
+    Data.Add('dni_difunto', AInhumacion.DniDifunto);
+    if AInhumacion.FechaFallecimiento <> '' then
+      Data.Add('fecha_fallecimiento', AInhumacion.FechaFallecimiento);
+    Data.Add('fecha_inhumacion', AInhumacion.FechaInhumacion);
+    Data.Add('nivel_posicion', AInhumacion.NivelPosicion);
+    Data.Add('es_covid', AInhumacion.EsCovid);
+    Data.Add('causa_defuncion', AInhumacion.CausaDefuncion);
+    Data.Add('empresa_funebrera', AInhumacion.EmpresaFunebrera);
+    Data.Add('responsable_contacto', AInhumacion.NombreResponsable);
+    Data.Add('telefono_responsable', AInhumacion.TelefonoResponsable);
+    Data.Add('observaciones', AInhumacion.Observaciones);
+
+    Result := Supabase.Update('inhumaciones', 'id=eq.' + AId, Data);
+  finally
+    Data.Free;
+  end;
+end;
+
+class function TInhumacionesService.EliminarInhumacion(const AId: string): Boolean;
+begin
+  Result := False;
+  if AId = '' then Exit;
+  Result := Supabase.Delete('inhumaciones', 'id=eq.' + AId);
 end;
 
 end.

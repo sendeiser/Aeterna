@@ -2,6 +2,7 @@ program AeternaXP;
 
 {$mode objfpc}{$H+}
 {$apptype gui}
+{$R aeterna.res}
 
 uses
   {$IFDEF UNIX}

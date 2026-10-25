@@ -7,7 +7,8 @@ interface
 uses
   SysUtils, Classes, ShellAPI, CommCtrl, Windows, Messages,
   uConfig, uDataModels, uBusinessRules, uSupabaseClient, uReportsPDF,
-  uParcelasService, uInhumacionesService, uAfiliadosService, uCajaService;
+  uParcelasService, uInhumacionesService, uAfiliadosService, uCajaService,
+  uWin32Dialogs;
 
 procedure RunAeternaWin32App;
 
@@ -28,6 +29,7 @@ const
   // Command IDs para Menus y Botones
   IDM_SALIR           = 1001;
   IDM_REFRESCAR       = 1002;
+  IDM_FULLSCREEN      = 1003;
   IDM_ACERCA          = 1030;
 
   // Botones de Accion
@@ -44,6 +46,18 @@ const
   IDC_BTN_BUSCAR_INH  = 2012;
   IDC_BTN_FILTRAR_PARC= 2013;
 
+  // Nuevas Acciones CRUD
+  IDC_BTN_EDIT_INH    = 2020;
+  IDC_BTN_DEL_INH     = 2021;
+  IDC_BTN_NUEVA_PARC  = 2022;
+  IDC_BTN_EDIT_PARC   = 2023;
+  IDC_BTN_DEL_PARC    = 2024;
+  IDC_BTN_NUEVO_AFIL  = 2025;
+  IDC_BTN_EDIT_AFIL   = 2026;
+  IDC_BTN_DEL_AFIL    = 2027;
+  IDC_BTN_NUEVO_COBRO = 2028;
+  IDC_BTN_DEL_COBRO   = 2029;
+
   // Controles de Datos
   IDC_LV_PARCELAS     = 3001;
   IDC_LV_INHUMACIONES = 3002;
@@ -58,6 +72,11 @@ const
 var
   hMainWnd: HWND;
   hStatusBar: HWND;
+  hAppIcon: HICON;
+
+  // Estado Pantalla Completa
+  IsFullScreen: Boolean = False;
+  PrevPlacement: WINDOWPLACEMENT;
 
   // Fuentes estilizadas
   hGuiFont, hBoldFont, hTitleFont, hCardBigFont, hCardTitleFont, hHeaderSubFont: HFONT;
@@ -81,10 +100,35 @@ var
   hCard4, hCard4Val, hCard4Sub: HWND;
   hCard5, hCard5Val, hCard5Sub: HWND;
 
+  // Contenedor de Acciones Rapidas en Dashboard
+  hGrpAcciones: HWND;
+  hBtnDashNuevaInh, hBtnDashCobrarCuota, hBtnDashCobrarMant, hBtnDashNuevoCobro: HWND;
+  hBtnDashArqueo, hBtnDashSync, hBtnDashAbrirCarpeta: HWND;
+  hLblRecentTitle: HWND;
+
   // ListViews
   hLvParcelas, hLvInh, hLvAfiliados, hLvCaja, hLvRecentInh: HWND;
   hCmbSector, hCmbEstadoParc, hCmbMora, hEdtBuscarInh: HWND;
   hLblResumenCaja: HWND;
+
+  // Controles Modulo 1 (Catastro)
+  hLblSector, hLblEstadoParc: HWND;
+  hBtnNuevaParc, hBtnEditParc, hBtnCobrarMantParc, hBtnDelParc, hBtnSyncParc: HWND;
+
+  // Controles Modulo 2 (Inhumaciones)
+  hLblBuscarInh: HWND;
+  hBtnBuscarInh, hBtnNuevaInh, hBtnEditInh, hBtnDelInh, hBtnActaPdf, hBtnFolioPdf, hBtnSyncInh: HWND;
+
+  // Controles Modulo 3 (Afiliados)
+  hLblFiltroMora: HWND;
+  hBtnNuevoAfil, hBtnEditAfil, hBtnCobrarAfil, hBtnDelAfil, hBtnPlanillaPdf, hBtnSyncAfil: HWND;
+
+  // Controles Modulo 4 (Caja)
+  hBtnNuevoCobroCaja, hBtnDelCobroCaja, hBtnCierreCaja, hBtnSyncCaja: HWND;
+
+  // Controles Modulo 5 (Reportes)
+  hLblRepTitle, hLblRepSub: HWND;
+  hBtnRepActa, hBtnRepFolio, hBtnRepRecibo, hBtnRepPlanilla, hBtnRepCierre, hBtnRepCarpeta: HWND;
 
   // Datos en Memoria
   DataParcelas: TParcelaArray;
@@ -94,7 +138,7 @@ var
   TotalEfHoy, TotalDigHoy: Currency;
 
 // -------------------------------------------------------------
-// Registro de Controles por Modulo
+// Registro y Cambio de Modulos
 // -------------------------------------------------------------
 
 procedure AddControlToModule(ModIdx: Integer; hCtrl: HWND);
@@ -125,12 +169,11 @@ begin
     end;
   end;
 
-  // Forzar redibujado de la ventana y actualizar barra de estado
   InvalidateRect(hMainWnd, nil, True);
 end;
 
 // -------------------------------------------------------------
-// Funciones Utilitarias de Interfaz Win32
+// Utilitarios de Interfaz Win32
 // -------------------------------------------------------------
 
 function BoolToTexto(Cond: Boolean; const Si, No: string): string;
@@ -164,7 +207,7 @@ var
   lf: TLogFont;
 begin
   // Pinceles Institucionales
-  hHeaderBrush := CreateSolidBrush(RGB(26, 43, 76));    // Azul Institucional Marino
+  hHeaderBrush := CreateSolidBrush(RGB(26, 43, 76));    // Azul Marino Institucional
   hNavBrush    := CreateSolidBrush(RGB(15, 23, 42));    // Azul Noche Oscuro
   hBgBrush     := CreateSolidBrush(RGB(241, 245, 249)); // Gris Claro Limpio
 
@@ -175,7 +218,7 @@ begin
   hCardRedBrush    := CreateSolidBrush(RGB(153, 27, 27)); // Carmesi Alerta
   hCardTealBrush   := CreateSolidBrush(RGB(19, 78, 74));  // Turquesa Oscuro
 
-  // Fuentes
+  // Fuentes del Sistema
   FillChar(lf, SizeOf(lf), 0);
   lf.lfHeight := -12;
   lf.lfWeight := FW_NORMAL;
@@ -313,8 +356,13 @@ begin
   SendMessage(hLv, LVM_DELETEALLITEMS, 0, 0);
 end;
 
+function GetSelectedListViewIndex(hLv: HWND): Integer;
+begin
+  Result := SendMessage(hLv, LVM_GETNEXTITEM, -1, LVNI_SELECTED);
+end;
+
 // -------------------------------------------------------------
-// Carga de Datos y Poblacion de Controles
+// Carga de Datos y Actualizacion de Pantalla
 // -------------------------------------------------------------
 
 procedure CargarDatosIniciales;
@@ -338,32 +386,11 @@ begin
     SetLength(DataParcelas, 0);
   end;
 
-  if Length(DataParcelas) = 0 then
-  begin
-    SetLength(DataParcelas, 6);
-    DataParcelas[0].Nomenclatura := 'A-01-01'; DataParcelas[0].SectorId := 'A'; DataParcelas[0].ManzanaFila := '01'; DataParcelas[0].NumeroParcela := '01'; DataParcelas[0].Estado := epOcupada; DataParcelas[0].TitularNombre := 'Gonzalez, Ramon'; DataParcelas[0].FechaUltimoPago := '2026-12-31';
-    DataParcelas[1].Nomenclatura := 'A-01-02'; DataParcelas[1].SectorId := 'A'; DataParcelas[1].ManzanaFila := '01'; DataParcelas[1].NumeroParcela := '02'; DataParcelas[1].Estado := epDisponible; DataParcelas[1].TitularNombre := ''; DataParcelas[1].FechaUltimoPago := '';
-    DataParcelas[2].Nomenclatura := 'A-02-05'; DataParcelas[2].SectorId := 'A'; DataParcelas[2].ManzanaFila := '02'; DataParcelas[2].NumeroParcela := '05'; DataParcelas[2].Estado := epReservada; DataParcelas[2].TitularNombre := 'Suarez, Maria'; DataParcelas[2].FechaUltimoPago := '2027-06-30';
-    DataParcelas[3].Nomenclatura := 'E-03-12'; DataParcelas[3].SectorId := 'E'; DataParcelas[3].ManzanaFila := '03'; DataParcelas[3].NumeroParcela := '12'; DataParcelas[3].Estado := epOcupada; DataParcelas[3].TitularNombre := 'Lopez, Francisco'; DataParcelas[3].FechaUltimoPago := '2026-10-15';
-    DataParcelas[4].Nomenclatura := 'E-04-01'; DataParcelas[4].SectorId := 'E'; DataParcelas[4].ManzanaFila := '04'; DataParcelas[4].NumeroParcela := '01'; DataParcelas[4].Estado := epDisponible; DataParcelas[4].TitularNombre := ''; DataParcelas[4].FechaUltimoPago := '';
-    DataParcelas[5].Nomenclatura := 'SAL-01-10'; DataParcelas[5].SectorId := 'Salinas'; DataParcelas[5].ManzanaFila := '01'; DataParcelas[5].NumeroParcela := '10'; DataParcelas[5].Estado := epOcupada; DataParcelas[5].TitularNombre := 'Benitez, Carlos'; DataParcelas[5].FechaUltimoPago := '2025-05-20';
-  end;
-
   // 3. Afiliados desde Supabase
   try
     DataAfiliados := TAfiliadosService.ObtenerTodos;
   except
     SetLength(DataAfiliados, 0);
-  end;
-
-  if Length(DataAfiliados) = 0 then
-  begin
-    SetLength(DataAfiliados, 5);
-    DataAfiliados[0].NumeroAfiliado := 101; DataAfiliados[0].NombreCompleto := 'Alvarez, Juan Carlos'; DataAfiliados[0].Dni := '18.420.912'; DataAfiliados[0].DireccionCobro := 'Mitre 250'; DataAfiliados[0].MontoCuotaMensual := 18000; DataAfiliados[0].FechaAlta := '2020-03-15'; DataAfiliados[0].MesesMora := 0;
-    DataAfiliados[1].NumeroAfiliado := 102; DataAfiliados[1].NombreCompleto := 'Benitez, Marta'; DataAfiliados[1].Dni := '22.109.845'; DataAfiliados[1].DireccionCobro := 'Pellegrini 410'; DataAfiliados[1].MontoCuotaMensual := 18000; DataAfiliados[1].FechaAlta := '2019-07-20'; DataAfiliados[1].MesesMora := 3;
-    DataAfiliados[2].NumeroAfiliado := 103; DataAfiliados[2].NombreCompleto := 'Castillo, Horacio'; DataAfiliados[2].Dni := '12.890.312'; DataAfiliados[2].DireccionCobro := 'Belgrano 118'; DataAfiliados[2].MontoCuotaMensual := 18000; DataAfiliados[2].FechaAlta := '2018-01-10'; DataAfiliados[2].MesesMora := 0;
-    DataAfiliados[3].NumeroAfiliado := 104; DataAfiliados[3].NombreCompleto := 'Diaz, Patricia'; DataAfiliados[3].Dni := '27.432.109'; DataAfiliados[3].DireccionCobro := 'Urquiza 820'; DataAfiliados[3].MontoCuotaMensual := 18000; DataAfiliados[3].FechaAlta := '2022-05-14'; DataAfiliados[3].MesesMora := 0;
-    DataAfiliados[4].NumeroAfiliado := 105; DataAfiliados[4].NombreCompleto := 'Gomez, Roberto'; DataAfiliados[4].Dni := '16.782.991'; DataAfiliados[4].DireccionCobro := 'San Martin 450'; DataAfiliados[4].MontoCuotaMensual := 18000; DataAfiliados[4].FechaAlta := '2015-11-03'; DataAfiliados[4].MesesMora := 38;
   end;
 
   // 4. Caja Diaria desde Supabase
@@ -372,33 +399,25 @@ begin
     TCajaService.CalcularTotalesHoy(TotalEfHoy, TotalDigHoy);
   except
     SetLength(DataPagos, 0);
-    TotalEfHoy := 85000;
-    TotalDigHoy := 40000;
-  end;
-
-  if Length(DataPagos) = 0 then
-  begin
-    SetLength(DataPagos, 3);
-    DataPagos[0].NroRecibo := '2026-00381'; DataPagos[0].TitularNombre := 'Alvarez, Juan Carlos'; DataPagos[0].MontoPagado := 36000; DataPagos[0].MetodoPago := mpEfectivo; DataPagos[0].Observaciones := 'Cuota Seguro Sepelio Oct-Nov 2026';
-    DataPagos[1].NroRecibo := '2026-00382'; DataPagos[1].TitularNombre := 'Lopez, Francisco'; DataPagos[1].MontoPagado := 49000; DataPagos[1].MetodoPago := mpEfectivo; DataPagos[1].Observaciones := 'Mantenimiento Anual Parcela E-03-12';
-    DataPagos[2].NroRecibo := '2026-00383'; DataPagos[2].TitularNombre := 'Benitez, Marta'; DataPagos[2].MontoPagado := 40000; DataPagos[2].MetodoPago := mpTransferenciaQR; DataPagos[2].Observaciones := 'Cuota Seguro Sepelio Transferencia';
+    TotalEfHoy := 0;
+    TotalDigHoy := 0;
   end;
 
   // Actualizar Tarjetas KPI
-  SetWindowText(hCard1Val, '142 / 320');
-  SetWindowText(hCard1Sub, 'Ocupadas · 178 Disponibles');
+  SetWindowText(hCard1Val, PChar(IntToStr(Length(DataParcelas)) + ' Parcelas'));
+  SetWindowText(hCard1Sub, 'Catastro Sincronizado');
 
   SetWindowText(hCard2Val, PChar(IntToStr(Length(DataInhumaciones)) + ' Actas'));
   SetWindowText(hCard2Sub, 'Difuntos Registrados');
 
-  SetWindowText(hCard3Val, '32 Titulares');
+  SetWindowText(hCard3Val, PChar(IntToStr(Length(DataAfiliados)) + ' Titulares'));
   SetWindowText(hCard3Sub, 'Cobertura Activa al Dia');
 
-  SetWindowText(hCard4Val, '9 Mora / 4 Baja');
-  SetWindowText(hCard4Sub, 'Aviso 3m / Urgente 3a');
+  SetWindowText(hCard4Val, 'Seguro Sepelio');
+  SetWindowText(hCard4Sub, 'Cobranza y Morosidad');
 
   SetWindowText(hCard5Val, PChar(FormatearMoneda(TotalEfHoy + TotalDigHoy)));
-  SetWindowText(hCard5Sub, PChar('Ef: ' + FormatearMoneda(TotalEfHoy) + ' · Dig: ' + FormatearMoneda(TotalDigHoy)));
+  SetWindowText(hCard5Sub, PChar('Ef: ' + FormatearMoneda(TotalEfHoy) + ' - Dig: ' + FormatearMoneda(TotalDigHoy)));
 
   // Poblar ListView Inhumaciones
   ClearListView(hLvInh);
@@ -419,7 +438,7 @@ begin
   ClearListView(hLvRecentInh);
   for i := 0 to High(DataInhumaciones) do
   begin
-    if i >= 10 then Break;
+    if i >= 12 then Break;
     AddListViewItem(hLvRecentInh, i, [
       FormatearFecha(DataInhumaciones[i].FechaInhumacion),
       DataInhumaciones[i].NombreDifunto,
@@ -440,7 +459,8 @@ begin
       DataParcelas[i].NumeroParcela,
       EstadoParcelaToStr(DataParcelas[i].Estado),
       DataParcelas[i].TitularNombre,
-      FormatearFecha(DataParcelas[i].FechaUltimoPago)
+      FormatearFecha(DataParcelas[i].FechaUltimoPago),
+      FormatearMoneda(DataParcelas[i].SaldoMantenimiento)
     ]);
   end;
 
@@ -473,7 +493,7 @@ begin
   begin
     AddListViewItem(hLvCaja, i, [
       DataPagos[i].NroRecibo,
-      '10:30',
+      FormatearFecha(DataPagos[i].FechaPago),
       DataPagos[i].TitularNombre,
       DataPagos[i].Observaciones,
       MetodoPagoToStr(DataPagos[i].MetodoPago),
@@ -484,11 +504,452 @@ begin
   SetWindowText(hLblResumenCaja, PChar('TOTAL RECAUDADO HOY: ' + FormatearMoneda(TotalEfHoy + TotalDigHoy) +
     '   [ Efectivo en Caja: ' + FormatearMoneda(TotalEfHoy) + '  |  Transferencias / QR: ' + FormatearMoneda(TotalDigHoy) + ' ]'));
 
-  SetStatusMessage('Aeterna conectado a Supabase Cloud · ' + IntToStr(Length(DataInhumaciones)) + ' actas cargadas.');
+  SetStatusMessage('Aeterna conectado a Supabase Cloud - ' + IntToStr(Length(DataInhumaciones)) + ' actas cargadas.');
 end;
 
 // -------------------------------------------------------------
-// Generacion de Reportes PDF
+// Operaciones CRUD: INHUMACIONES
+// -------------------------------------------------------------
+
+procedure AccionNuevaInhumacion;
+var
+  Inh: TInhumacion;
+  Ruta: string;
+begin
+  FillChar(Inh, SizeOf(Inh), 0);
+  Inh.FechaInhumacion := FormatDateTime('yyyy-mm-dd', Now);
+  Inh.NivelPosicion := 1;
+  Inh.EmpresaFunebrera := 'Servicios Sociales Chamical - Mat. Fun. 104';
+
+  if ShowDlgInhumacion(hMainWnd, False, Inh) then
+  begin
+    SetStatusMessage('Guardando nueva inhumacion en Supabase Cloud...');
+    if TInhumacionesService.CrearInhumacion(Inh) then
+    begin
+      MessageBox(hMainWnd, PChar('Acta de Inhumacion guardada exitosamente en Supabase Cloud.'#13#10 +
+        'Difunto: ' + Inh.NombreDifunto + #13#10 +
+        'Parcela: ' + Inh.NomenclaturaParcela), 'Inhumacion Registrada', MB_ICONINFORMATION or MB_OK);
+
+      // Emitir Acta Oficial en PDF
+      Ruta := GetReportsDirectory + '\Acta_Inhumacion_' + FormatDateTime('yyyymmdd_hhnnss', Now) + '.pdf';
+      GenerarActaInhumacionPDF(Inh, Ruta);
+      OpenFileWithShell(Ruta);
+
+      CargarDatosIniciales;
+    end
+    else
+      MessageBox(hMainWnd, 'Error al asentar la inhumacion en Supabase. Verifique la conexion a Internet.', 'Error', MB_ICONERROR or MB_OK);
+  end;
+end;
+
+procedure AccionModificarInhumacion;
+var
+  Idx: Integer;
+  Inh: TInhumacion;
+begin
+  Idx := GetSelectedListViewIndex(hLvInh);
+  if (Idx < 0) or (Idx > High(DataInhumaciones)) then
+  begin
+    MessageBox(hMainWnd, 'Seleccione un acta de inhumacion del listado para modificar.', 'Aviso', MB_ICONINFORMATION or MB_OK);
+    Exit;
+  end;
+
+  Inh := DataInhumaciones[Idx];
+  if ShowDlgInhumacion(hMainWnd, True, Inh) then
+  begin
+    SetStatusMessage('Actualizando acta de inhumacion en Supabase...');
+    if TInhumacionesService.ActualizarInhumacion(Inh.Id, Inh) then
+    begin
+      MessageBox(hMainWnd, 'Acta de inhumacion actualizada correctamente.', 'Exito', MB_ICONINFORMATION or MB_OK);
+      CargarDatosIniciales;
+    end
+    else
+      MessageBox(hMainWnd, 'Error al actualizar en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+  end;
+end;
+
+procedure AccionEliminarInhumacion;
+var
+  Idx: Integer;
+  Inh: TInhumacion;
+begin
+  Idx := GetSelectedListViewIndex(hLvInh);
+  if (Idx < 0) or (Idx > High(DataInhumaciones)) then
+  begin
+    MessageBox(hMainWnd, 'Seleccione un acta de inhumacion para eliminar.', 'Aviso', MB_ICONINFORMATION or MB_OK);
+    Exit;
+  end;
+
+  Inh := DataInhumaciones[Idx];
+  if MessageBox(hMainWnd,
+    PChar('Esta seguro de eliminar definitivamente el acta de inhumacion de:'#13#10#13#10 +
+      'Difunto: ' + Inh.NombreDifunto + #13#10 +
+      'DNI: ' + Inh.DniDifunto + #13#10 +
+      'Parcela: ' + Inh.NomenclaturaParcela + #13#10#13#10 +
+      'Esta operacion borrara el registro en Supabase Cloud.'),
+    'Confirmar Eliminacion', MB_ICONQUESTION or MB_YESNO) = IDYES then
+  begin
+    SetStatusMessage('Eliminando acta de inhumacion de Supabase...');
+    if TInhumacionesService.EliminarInhumacion(Inh.Id) then
+    begin
+      MessageBox(hMainWnd, 'Acta eliminada exitosamente.', 'Operacion Completada', MB_ICONINFORMATION or MB_OK);
+      CargarDatosIniciales;
+    end
+    else
+      MessageBox(hMainWnd, 'Error al eliminar el registro en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+  end;
+end;
+
+// -------------------------------------------------------------
+// Operaciones CRUD: PARCELAS
+// -------------------------------------------------------------
+
+procedure AccionNuevaParcela;
+var
+  Parc: TParcela;
+begin
+  FillChar(Parc, SizeOf(Parc), 0);
+  Parc.SectorId := 'A';
+  Parc.CapacidadTotal := 3;
+  Parc.Estado := epDisponible;
+
+  if ShowDlgParcela(hMainWnd, False, Parc) then
+  begin
+    SetStatusMessage('Guardando nueva parcela en Supabase...');
+    if TParcelasService.CrearParcela(Parc) then
+    begin
+      MessageBox(hMainWnd, 'Parcela creada exitosamente en Supabase Cloud.', 'Exito', MB_ICONINFORMATION or MB_OK);
+      CargarDatosIniciales;
+    end
+    else
+      MessageBox(hMainWnd, 'Error al crear la parcela en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+  end;
+end;
+
+procedure AccionModificarParcela;
+var
+  Idx: Integer;
+  Parc: TParcela;
+begin
+  Idx := GetSelectedListViewIndex(hLvParcelas);
+  if (Idx < 0) or (Idx > High(DataParcelas)) then
+  begin
+    MessageBox(hMainWnd, 'Seleccione una parcela del listado para modificar.', 'Aviso', MB_ICONINFORMATION or MB_OK);
+    Exit;
+  end;
+
+  Parc := DataParcelas[Idx];
+  if ShowDlgParcela(hMainWnd, True, Parc) then
+  begin
+    SetStatusMessage('Actualizando parcela en Supabase...');
+    if TParcelasService.ActualizarParcela(Parc.Id, Parc) then
+    begin
+      MessageBox(hMainWnd, 'Datos de la parcela actualizados exitosamente.', 'Exito', MB_ICONINFORMATION or MB_OK);
+      CargarDatosIniciales;
+    end
+    else
+      MessageBox(hMainWnd, 'Error al actualizar la parcela en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+  end;
+end;
+
+procedure AccionEliminarParcela;
+var
+  Idx: Integer;
+  Parc: TParcela;
+begin
+  Idx := GetSelectedListViewIndex(hLvParcelas);
+  if (Idx < 0) or (Idx > High(DataParcelas)) then
+  begin
+    MessageBox(hMainWnd, 'Seleccione una parcela del listado para eliminar.', 'Aviso', MB_ICONINFORMATION or MB_OK);
+    Exit;
+  end;
+
+  Parc := DataParcelas[Idx];
+  if MessageBox(hMainWnd,
+    PChar('Esta seguro de eliminar la Parcela ' + Parc.Nomenclatura + ' de Supabase Cloud?'#13#10#13#10 +
+      'Sector: ' + Parc.SectorId + ' - Fila: ' + Parc.ManzanaFila + ' - Nro: ' + Parc.NumeroParcela),
+    'Confirmar Eliminacion', MB_ICONQUESTION or MB_YESNO) = IDYES then
+  begin
+    SetStatusMessage('Eliminando parcela de Supabase...');
+    if TParcelasService.EliminarParcela(Parc.Id) then
+    begin
+      MessageBox(hMainWnd, 'Parcela eliminada exitosamente.', 'Operacion Completada', MB_ICONINFORMATION or MB_OK);
+      CargarDatosIniciales;
+    end
+    else
+      MessageBox(hMainWnd, 'Error al eliminar la parcela.', 'Error', MB_ICONERROR or MB_OK);
+  end;
+end;
+
+procedure AccionCobrarMantenimientoParcela;
+var
+  Idx: Integer;
+  Nomenclatura, Titular, Periodo, Recibo: string;
+  Monto: Currency;
+  Metodo: TMetodoPago;
+  Pago: TPagoMantenimiento;
+  Ruta: string;
+  ParcId: string;
+begin
+  Idx := GetSelectedListViewIndex(hLvParcelas);
+  if (Idx >= 0) and (Idx <= High(DataParcelas)) then
+  begin
+    Nomenclatura := DataParcelas[Idx].Nomenclatura;
+    Titular := DataParcelas[Idx].TitularNombre;
+    ParcId := DataParcelas[Idx].Id;
+  end
+  else
+  begin
+    Nomenclatura := 'A-01-01';
+    Titular := 'Titular Concesion';
+    ParcId := '';
+  end;
+
+  Monto := 49000;
+  Metodo := mpEfectivo;
+  Periodo := 'Anual 2026/2027';
+  Recibo := 'MANT-' + FormatDateTime('hhnnss', Now);
+
+  if ShowDlgCobroMantenimiento(hMainWnd, Nomenclatura, Titular, Monto, Metodo, Periodo, Recibo) then
+  begin
+    SetStatusMessage('Registrando cobro de mantenimiento en Supabase...');
+    TCajaService.RegistrarPago(Recibo, ParcId, '', Titular, 'Mantenimiento Parcela ' + Nomenclatura, Monto, Metodo, 'Admin Catastro', Periodo);
+
+    // Emitir Recibo Oficial en PDF
+    FillChar(Pago, SizeOf(Pago), 0);
+    Pago.NroRecibo := Recibo;
+    Pago.TitularNombre := Titular;
+    Pago.MontoPagado := Monto;
+    Pago.PeriodoCubierto := Periodo;
+    Pago.MetodoPago := Metodo;
+    Pago.OperadorNombre := 'Admin General';
+    Pago.Observaciones := 'Mantenimiento Parcela ' + Nomenclatura;
+
+    Ruta := GetReportsDirectory + '\Recibo_Mantenimiento_' + Pago.NroRecibo + '.pdf';
+    GenerarReciboPagoPDF(Pago, Ruta);
+
+    MessageBox(hMainWnd, PChar('Cobro de mantenimiento registrado exitosamente.'#13#10 +
+      'Se genero el recibo oficial por duplicado: ' + Ruta), 'Cobro Registrado', MB_ICONINFORMATION or MB_OK);
+    OpenFileWithShell(Ruta);
+
+    CargarDatosIniciales;
+  end;
+end;
+
+// -------------------------------------------------------------
+// Operaciones CRUD: AFILIADOS
+// -------------------------------------------------------------
+
+procedure AccionNuevoAfiliado;
+var
+  Afil: TAfiliadoSeguro;
+begin
+  FillChar(Afil, SizeOf(Afil), 0);
+  Afil.NumeroAfiliado := Length(DataAfiliados) + 101;
+  Afil.MontoCuotaMensual := 18000;
+  Afil.ZonaCobro := 'Zona Centro';
+  Afil.CobradorAsignado := 'Cobrador 1';
+  Afil.Estado := eaActivo;
+
+  if ShowDlgAfiliado(hMainWnd, False, Afil) then
+  begin
+    SetStatusMessage('Guardando nuevo afiliado en Supabase...');
+    if TAfiliadosService.CrearAfiliado(Afil) then
+    begin
+      MessageBox(hMainWnd, 'Afiliado registrado exitosamente en Supabase Cloud.', 'Exito', MB_ICONINFORMATION or MB_OK);
+      CargarDatosIniciales;
+    end
+    else
+      MessageBox(hMainWnd, 'Error al registrar afiliado en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+  end;
+end;
+
+procedure AccionModificarAfiliado;
+var
+  Idx: Integer;
+  Afil: TAfiliadoSeguro;
+begin
+  Idx := GetSelectedListViewIndex(hLvAfiliados);
+  if (Idx < 0) or (Idx > High(DataAfiliados)) then
+  begin
+    MessageBox(hMainWnd, 'Seleccione un afiliado del listado para modificar.', 'Aviso', MB_ICONINFORMATION or MB_OK);
+    Exit;
+  end;
+
+  Afil := DataAfiliados[Idx];
+  if ShowDlgAfiliado(hMainWnd, True, Afil) then
+  begin
+    SetStatusMessage('Actualizando datos de afiliado en Supabase...');
+    if TAfiliadosService.ActualizarAfiliado(Afil.Id, Afil) then
+    begin
+      MessageBox(hMainWnd, 'Datos de afiliado actualizados correctamente.', 'Exito', MB_ICONINFORMATION or MB_OK);
+      CargarDatosIniciales;
+    end
+    else
+      MessageBox(hMainWnd, 'Error al actualizar afiliado en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+  end;
+end;
+
+procedure AccionEliminarAfiliado;
+var
+  Idx: Integer;
+  Afil: TAfiliadoSeguro;
+begin
+  Idx := GetSelectedListViewIndex(hLvAfiliados);
+  if (Idx < 0) or (Idx > High(DataAfiliados)) then
+  begin
+    MessageBox(hMainWnd, 'Seleccione un afiliado para dar de baja o eliminar.', 'Aviso', MB_ICONINFORMATION or MB_OK);
+    Exit;
+  end;
+
+  Afil := DataAfiliados[Idx];
+  if MessageBox(hMainWnd,
+    PChar('Esta seguro de eliminar al Afiliado Nro ' + IntToStr(Afil.NumeroAfiliado) + '?'#13#10#13#10 +
+      'Titular: ' + Afil.NombreCompleto + #13#10 +
+      'DNI: ' + Afil.Dni + #13#10#13#10 +
+      'Esta operacion borrara el registro en Supabase Cloud.'),
+    'Confirmar Eliminacion', MB_ICONQUESTION or MB_YESNO) = IDYES then
+  begin
+    SetStatusMessage('Eliminando afiliado de Supabase...');
+    if TAfiliadosService.EliminarAfiliado(Afil.Id) then
+    begin
+      MessageBox(hMainWnd, 'Afiliado eliminado exitosamente.', 'Operacion Completada', MB_ICONINFORMATION or MB_OK);
+      CargarDatosIniciales;
+    end
+    else
+      MessageBox(hMainWnd, 'Error al eliminar el afiliado.', 'Error', MB_ICONERROR or MB_OK);
+  end;
+end;
+
+procedure AccionCobrarCuotaSeguro;
+var
+  Idx: Integer;
+  Titular, Concepto, Recibo: string;
+  Monto: Currency;
+  Metodo: TMetodoPago;
+  Pago: TPagoMantenimiento;
+  Ruta: string;
+begin
+  Idx := GetSelectedListViewIndex(hLvAfiliados);
+  if (Idx >= 0) and (Idx <= High(DataAfiliados)) then
+  begin
+    Titular := DataAfiliados[Idx].NombreCompleto;
+    Concepto := 'Cuota Seguro Sepelio Afiliado Nro ' + IntToStr(DataAfiliados[Idx].NumeroAfiliado);
+    Monto := DataAfiliados[Idx].MontoCuotaMensual;
+  end
+  else
+  begin
+    Titular := 'Afiliado Seguro';
+    Concepto := 'Cuota Seguro Sepelio';
+    Monto := 18000;
+  end;
+
+  Recibo := 'SEG-' + FormatDateTime('hhnnss', Now);
+  Metodo := mpEfectivo;
+
+  if ShowDlgCobroCaja(hMainWnd, Titular, Concepto, Monto, Metodo, Recibo) then
+  begin
+    SetStatusMessage('Registrando cobro de cuota en Supabase...');
+    TCajaService.RegistrarPago(Recibo, '', '', Titular, Concepto, Monto, Metodo, 'Cobrador General', FormatDateTime('yyyy-mm', Now));
+
+    // Emitir Recibo Oficial en PDF
+    FillChar(Pago, SizeOf(Pago), 0);
+    Pago.NroRecibo := Recibo;
+    Pago.TitularNombre := Titular;
+    Pago.MontoPagado := Monto;
+    Pago.PeriodoCubierto := 'Mes ' + FormatDateTime('mm/yyyy', Now);
+    Pago.MetodoPago := Metodo;
+    Pago.OperadorNombre := 'Cobrador General';
+    Pago.Observaciones := Concepto;
+
+    Ruta := GetReportsDirectory + '\Recibo_Cuota_' + Pago.NroRecibo + '.pdf';
+    GenerarReciboPagoPDF(Pago, Ruta);
+
+    MessageBox(hMainWnd, PChar('Cobro de cuota asentado exitosamente.'#13#10 +
+      'Se emitio el recibo oficial por duplicado: ' + Ruta), 'Cobro Registrado', MB_ICONINFORMATION or MB_OK);
+    OpenFileWithShell(Ruta);
+
+    CargarDatosIniciales;
+  end;
+end;
+
+// -------------------------------------------------------------
+// Operaciones CRUD: CAJA DIARIA
+// -------------------------------------------------------------
+
+procedure AccionNuevoCobroCaja;
+var
+  Titular, Concepto, Recibo: string;
+  Monto: Currency;
+  Metodo: TMetodoPago;
+  Pago: TPagoMantenimiento;
+  Ruta: string;
+begin
+  Titular := '';
+  Concepto := 'Cobro General de Servicios';
+  Monto := 18000;
+  Metodo := mpEfectivo;
+  Recibo := 'REC-' + FormatDateTime('hhnnss', Now);
+
+  if ShowDlgCobroCaja(hMainWnd, Titular, Concepto, Monto, Metodo, Recibo) then
+  begin
+    SetStatusMessage('Registrando ingreso en caja...');
+    TCajaService.RegistrarPago(Recibo, '', '', Titular, Concepto, Monto, Metodo, 'Caja Central', FormatDateTime('yyyy-mm-dd', Now));
+
+    // Emitir Recibo Oficial en PDF
+    FillChar(Pago, SizeOf(Pago), 0);
+    Pago.NroRecibo := Recibo;
+    Pago.TitularNombre := Titular;
+    Pago.MontoPagado := Monto;
+    Pago.PeriodoCubierto := 'Dia ' + FormatDateTime('dd/mm/yyyy', Now);
+    Pago.MetodoPago := Metodo;
+    Pago.OperadorNombre := 'Caja Central';
+    Pago.Observaciones := Concepto;
+
+    Ruta := GetReportsDirectory + '\Recibo_Caja_' + Pago.NroRecibo + '.pdf';
+    GenerarReciboPagoPDF(Pago, Ruta);
+
+    MessageBox(hMainWnd, PChar('Cobro registrado exitosamente en Caja Diaria.'#13#10 +
+      'Se emitio el recibo oficial por duplicado: ' + Ruta), 'Ingreso Registrado', MB_ICONINFORMATION or MB_OK);
+    OpenFileWithShell(Ruta);
+
+    CargarDatosIniciales;
+  end;
+end;
+
+procedure AccionEliminarCobroCaja;
+var
+  Idx: Integer;
+  Pago: TPagoMantenimiento;
+begin
+  Idx := GetSelectedListViewIndex(hLvCaja);
+  if (Idx < 0) or (Idx > High(DataPagos)) then
+  begin
+    MessageBox(hMainWnd, 'Seleccione un movimiento de caja del listado para anular.', 'Aviso', MB_ICONINFORMATION or MB_OK);
+    Exit;
+  end;
+
+  Pago := DataPagos[Idx];
+  if MessageBox(hMainWnd,
+    PChar('Esta seguro de anular el cobro con Recibo Nro ' + Pago.NroRecibo + '?'#13#10#13#10 +
+      'Titular: ' + Pago.TitularNombre + #13#10 +
+      'Importe: ' + FormatearMoneda(Pago.MontoPagado) + #13#10#13#10 +
+      'Esta operacion descontara el monto de la caja en Supabase Cloud.'),
+    'Confirmar Anulacion', MB_ICONQUESTION or MB_YESNO) = IDYES then
+  begin
+    SetStatusMessage('Anulando movimiento de caja en Supabase...');
+    if TCajaService.EliminarPago(Pago.Id) then
+    begin
+      MessageBox(hMainWnd, 'Movimiento anulado exitosamente.', 'Operacion Completada', MB_ICONINFORMATION or MB_OK);
+      CargarDatosIniciales;
+    end
+    else
+      MessageBox(hMainWnd, 'Error al anular el movimiento en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+  end;
+end;
+
+// -------------------------------------------------------------
+// Reportes PDF
 // -------------------------------------------------------------
 
 procedure AccionGenerarActaPDF;
@@ -568,25 +1029,147 @@ begin
   OpenFileWithShell(Ruta);
 end;
 
-procedure AccionCobrarMantenimientoParcela;
-var
-  Pago: TPagoMantenimiento;
-  Ruta: string;
-begin
-  FillChar(Pago, SizeOf(Pago), 0);
-  Pago.NroRecibo := 'MANT-' + FormatDateTime('hhnnss', Now);
-  Pago.TitularNombre := 'Lopez, Francisco';
-  Pago.MontoPagado := 49000;
-  Pago.PeriodoCubierto := 'Anual 2026/2027';
-  Pago.MetodoPago := mpEfectivo;
-  Pago.OperadorNombre := 'Admin Catastro';
-  Pago.Observaciones := 'Mantenimiento Anual Parcela E-03-12';
+// -------------------------------------------------------------
+// Pantalla Completa (Full Screen F11)
+// -------------------------------------------------------------
 
-  Ruta := GetReportsDirectory + '\Recibo_Mantenimiento_' + Pago.NroRecibo + '.pdf';
-  GenerarReciboPagoPDF(Pago, Ruta);
-  MessageBox(hMainWnd, PChar('Cobro de mantenimiento anual registrado con exito.'#13#10 +
-    'Se emitio el recibo oficial por duplicado: ' + Ruta), 'Cobro Registrado', MB_ICONINFORMATION or MB_OK);
-  OpenFileWithShell(Ruta);
+procedure ToggleFullScreen(hWnd: HWND);
+var
+  dwStyle: DWORD;
+  rcScreen: RECT;
+begin
+  IsFullScreen := not IsFullScreen;
+  if IsFullScreen then
+  begin
+    GetWindowPlacement(hWnd, @PrevPlacement);
+    dwStyle := GetWindowLong(hWnd, GWL_STYLE);
+    SetWindowLong(hWnd, GWL_STYLE, dwStyle and not (WS_CAPTION or WS_THICKFRAME));
+    rcScreen.Left := 0;
+    rcScreen.Top := 0;
+    rcScreen.Right := GetSystemMetrics(SM_CXSCREEN);
+    rcScreen.Bottom := GetSystemMetrics(SM_CYSCREEN);
+    SetWindowPos(hWnd, HWND_TOP, rcScreen.Left, rcScreen.Top, rcScreen.Right, rcScreen.Bottom,
+      SWP_NOZORDER or SWP_FRAMECHANGED);
+    SetStatusMessage('Modo Pantalla Completa activado. Presione F11 para restaurar.');
+  end
+  else
+  begin
+    dwStyle := GetWindowLong(hWnd, GWL_STYLE);
+    SetWindowLong(hWnd, GWL_STYLE, dwStyle or WS_CAPTION or WS_THICKFRAME);
+    SetWindowPlacement(hWnd, @PrevPlacement);
+    SetWindowPos(hWnd, 0, 0, 0, 0, 0,
+      SWP_NOMOVE or SWP_NOSIZE or SWP_NOZORDER or SWP_FRAMECHANGED);
+    SetStatusMessage('Modo Ventana restaurado.');
+  end;
+end;
+
+// -------------------------------------------------------------
+// Disposicion Dinamica Responsiva (WM_SIZE)
+// -------------------------------------------------------------
+
+procedure UpdateLayout(cxClient, cyClient: Integer);
+var
+  btnW, cardW, i, x, w: Integer;
+  innerW, qW: Integer;
+begin
+  if cxClient < 600 then cxClient := 600;
+  if cyClient < 400 then cyClient := 400;
+
+  // 1. Cabecera Banner Superior
+  MoveWindow(hHeaderBanner, 0, 0, cxClient, 34, True);
+  MoveWindow(hHeaderSub, 0, 34, cxClient - 320, 24, True);
+  MoveWindow(hHeaderStatus, cxClient - 320, 34, 320, 24, True);
+
+  // 2. Botones de Navegacion (Espaciados uniformemente)
+  btnW := (cxClient - 20) div 6;
+  for i := 0 to 5 do
+    MoveWindow(NavButtons[i], 10 + i * btnW, 64, btnW - 4, 36, True);
+
+  // ===========================================================
+  // Modulo 0: Tablero General
+  // ===========================================================
+  cardW := (cxClient - 30) div 5;
+  // Card 1
+  x := 15; w := cardW - 8;
+  MoveWindow(hCard1, x, 110, w, 24, True);
+  MoveWindow(hCard1Val, x, 134, w, 30, True);
+  MoveWindow(hCard1Sub, x, 164, w, 22, True);
+  // Card 2
+  x := 15 + cardW;
+  MoveWindow(hCard2, x, 110, w, 24, True);
+  MoveWindow(hCard2Val, x, 134, w, 30, True);
+  MoveWindow(hCard2Sub, x, 164, w, 22, True);
+  // Card 3
+  x := 15 + cardW * 2;
+  MoveWindow(hCard3, x, 110, w, 24, True);
+  MoveWindow(hCard3Val, x, 134, w, 30, True);
+  MoveWindow(hCard3Sub, x, 164, w, 22, True);
+  // Card 4
+  x := 15 + cardW * 3;
+  MoveWindow(hCard4, x, 110, w, 24, True);
+  MoveWindow(hCard4Val, x, 134, w, 30, True);
+  MoveWindow(hCard4Sub, x, 164, w, 22, True);
+  // Card 5
+  x := 15 + cardW * 4;
+  MoveWindow(hCard5, x, 110, w, 24, True);
+  MoveWindow(hCard5Val, x, 134, w, 30, True);
+  MoveWindow(hCard5Sub, x, 164, w, 22, True);
+
+  // GroupBox de Operaciones Rapidas
+  MoveWindow(hGrpAcciones, 15, 195, cxClient - 30, 115, True);
+  innerW := (cxClient - 60);
+  qW := innerW div 4;
+  MoveWindow(hBtnDashNuevaInh,    25, 220, qW - 8, 34, True);
+  MoveWindow(hBtnDashCobrarCuota, 25 + qW, 220, qW - 8, 34, True);
+  MoveWindow(hBtnDashCobrarMant,  25 + qW * 2, 220, qW - 8, 34, True);
+  MoveWindow(hBtnDashNuevoCobro,  25 + qW * 3, 220, qW - 8, 34, True);
+
+  qW := innerW div 3;
+  MoveWindow(hBtnDashArqueo,       25, 262, qW - 8, 34, True);
+  MoveWindow(hBtnDashSync,         25 + qW, 262, qW - 8, 34, True);
+  MoveWindow(hBtnDashAbrirCarpeta, 25 + qW * 2, 262, qW - 8, 34, True);
+
+  // Listado de Actividad Reciente
+  MoveWindow(hLblRecentTitle, 15, 320, cxClient - 30, 20, True);
+  MoveWindow(hLvRecentInh, 15, 345, cxClient - 30, cyClient - 375, True);
+
+  // ===========================================================
+  // Modulo 1: Catastro y Parcelas
+  // ===========================================================
+  MoveWindow(hLvParcelas, 15, 150, cxClient - 30, cyClient - 180, True);
+
+  // ===========================================================
+  // Modulo 2: Inhumaciones
+  // ===========================================================
+  MoveWindow(hLvInh, 15, 150, cxClient - 30, cyClient - 180, True);
+
+  // ===========================================================
+  // Modulo 3: Afiliados
+  // ===========================================================
+  MoveWindow(hLvAfiliados, 15, 150, cxClient - 30, cyClient - 180, True);
+
+  // ===========================================================
+  // Modulo 4: Caja Diaria
+  // ===========================================================
+  MoveWindow(hLblResumenCaja, 15, 110, cxClient - 520, 32, True);
+  MoveWindow(hBtnNuevoCobroCaja, cxClient - 500, 110, 130, 32, True);
+  MoveWindow(hBtnDelCobroCaja,   cxClient - 365, 110, 130, 32, True);
+  MoveWindow(hBtnCierreCaja,     cxClient - 230, 110, 140, 32, True);
+  MoveWindow(hBtnSyncCaja,       cxClient - 85,  110, 70,  32, True);
+  MoveWindow(hLvCaja, 15, 150, cxClient - 30, cyClient - 180, True);
+
+  // ===========================================================
+  // Modulo 5: Reportes PDF
+  // ===========================================================
+  qW := (cxClient - 60) div 2;
+  MoveWindow(hBtnRepActa,     20, 185, qW, 46, True);
+  MoveWindow(hBtnRepFolio,    30 + qW, 185, qW, 46, True);
+  MoveWindow(hBtnRepRecibo,   20, 250, qW, 46, True);
+  MoveWindow(hBtnRepPlanilla, 30 + qW, 250, qW, 46, True);
+  MoveWindow(hBtnRepCierre,   20, 315, qW, 46, True);
+  MoveWindow(hBtnRepCarpeta,  30 + qW, 315, qW, 46, True);
+
+  SendMessage(hStatusBar, WM_SIZE, 0, 0);
 end;
 
 // -------------------------------------------------------------
@@ -601,71 +1184,72 @@ begin
   for i := 0 to 5 do
     SetLength(ModuleControls[i], 0);
 
-  // 1. BANNER INSTITUCIONAL SUPERIOR (Fondo Azul Marino)
-  hHeaderBanner := CreateLabel(hWnd, '  CEMENTERIO PARQUE SAN NICOLAS · PARROQUIA SAN NICOLAS DE BARI', 0, 0, 1024, 34, hTitleFont);
-  hHeaderSub    := CreateLabel(hWnd, '   Obispado de San Nicolas de los Arroyos · Sistema Integrado de Administracion General', 0, 34, 750, 24, hHeaderSubFont);
-  hHeaderStatus := CreateLabel(hWnd, '● SUPABASE CLOUD: EN LINEA (TLS 1.2)  ', 750, 34, 274, 24, hBoldFont);
+  // 1. BANNER INSTITUCIONAL SUPERIOR (Texto Limpio sin caracteres corruptos)
+  hHeaderBanner := CreateLabel(hWnd, '  CEMENTERIO PARQUE SAN NICOLAS - PARROQUIA SAN NICOLAS DE BARI', 0, 0, 1024, 34, hTitleFont);
+  hHeaderSub    := CreateLabel(hWnd, '   Obispado de San Nicolas de los Arroyos - Sistema Integrado de Administracion General', 0, 34, 750, 24, hHeaderSubFont);
+  hHeaderStatus := CreateLabel(hWnd, '* SUPABASE CLOUD: EN LINEA (TLS 1.2)  ', 750, 34, 274, 24, hBoldFont);
 
-  // 2. BARRA DE NAVEGACION DE MODULOS (Botones Destacados)
-  NavButtons[0] := CreateButton(hWnd, '📊 1. Tablero',     10,  64, 160, 36, IDC_NAV_DASHBOARD);
-  NavButtons[1] := CreateButton(hWnd, '🗺️ 2. Catastro',    175, 64, 160, 36, IDC_NAV_PARCELAS);
-  NavButtons[2] := CreateButton(hWnd, '🪦 3. Inhumaciones', 340, 64, 165, 36, IDC_NAV_INHUMACIONES);
-  NavButtons[3] := CreateButton(hWnd, '🛡️ 4. Afiliados',    510, 64, 160, 36, IDC_NAV_AFILIADOS);
-  NavButtons[4] := CreateButton(hWnd, '💰 5. Caja Diaria',  675, 64, 160, 36, IDC_NAV_CAJA);
-  NavButtons[5] := CreateButton(hWnd, '📄 6. Reportes PDF', 840, 64, 165, 36, IDC_NAV_REPORTES);
+  // 2. BARRA DE NAVEGACION DE MODULOS
+  NavButtons[0] := CreateButton(hWnd, '[1] Tablero General',    10,  64, 160, 36, IDC_NAV_DASHBOARD);
+  NavButtons[1] := CreateButton(hWnd, '[2] Catastro y Parcelas',175, 64, 160, 36, IDC_NAV_PARCELAS);
+  NavButtons[2] := CreateButton(hWnd, '[3] Libro Inhumaciones', 340, 64, 165, 36, IDC_NAV_INHUMACIONES);
+  NavButtons[3] := CreateButton(hWnd, '[4] Afiliados Seguro',   510, 64, 160, 36, IDC_NAV_AFILIADOS);
+  NavButtons[4] := CreateButton(hWnd, '[5] Caja Diaria',        675, 64, 160, 36, IDC_NAV_CAJA);
+  NavButtons[5] := CreateButton(hWnd, '[6] Reportes PDF',       840, 64, 165, 36, IDC_NAV_REPORTES);
 
   // ===========================================================
   // MODULO 0: TABLERO GENERAL (DASHBOARD)
   // ===========================================================
-  // Tarjetas KPI con colores institucionales
-  hCard1    := CreateLabel(hWnd, '  🗺️ CATASTRO PARCELAS', 15, 110, 190, 24, hCardTitleFont);
-  hCard1Val := CreateLabel(hWnd, '  142 / 320',            15, 134, 190, 30, hCardBigFont);
-  hCard1Sub := CreateLabel(hWnd, '  Ocupadas · 178 Libres', 15, 164, 190, 22, hGuiFont);
+  hCard1    := CreateLabel(hWnd, '  CATASTRO PARCELAS',  15, 110, 190, 24, hCardTitleFont);
+  hCard1Val := CreateLabel(hWnd, '  142 / 320',          15, 134, 190, 30, hCardBigFont);
+  hCard1Sub := CreateLabel(hWnd, '  Ocupadas - Libres',  15, 164, 190, 22, hGuiFont);
   AddControlToModule(0, hCard1); AddControlToModule(0, hCard1Val); AddControlToModule(0, hCard1Sub);
 
-  hCard2    := CreateLabel(hWnd, '  🪦 INHUMACIONES',      215, 110, 190, 24, hCardTitleFont);
-  hCard2Val := CreateLabel(hWnd, '  203 Actas',            215, 134, 190, 30, hCardBigFont);
-  hCard2Sub := CreateLabel(hWnd, '  Libro Sincronizado',   215, 164, 190, 22, hGuiFont);
+  hCard2    := CreateLabel(hWnd, '  INHUMACIONES',       215, 110, 190, 24, hCardTitleFont);
+  hCard2Val := CreateLabel(hWnd, '  203 Actas',          215, 134, 190, 30, hCardBigFont);
+  hCard2Sub := CreateLabel(hWnd, '  Libro Sincronizado', 215, 164, 190, 22, hGuiFont);
   AddControlToModule(0, hCard2); AddControlToModule(0, hCard2Val); AddControlToModule(0, hCard2Sub);
 
-  hCard3    := CreateLabel(hWnd, '  🛡️ AFILIADOS AL DIA',   415, 110, 190, 24, hCardTitleFont);
-  hCard3Val := CreateLabel(hWnd, '  32 Titulares',         415, 134, 190, 30, hCardBigFont);
-  hCard3Sub := CreateLabel(hWnd, '  Cobertura Activa',     415, 164, 190, 22, hGuiFont);
+  hCard3    := CreateLabel(hWnd, '  AFILIADOS AL DIA',   415, 110, 190, 24, hCardTitleFont);
+  hCard3Val := CreateLabel(hWnd, '  32 Titulares',       415, 134, 190, 30, hCardBigFont);
+  hCard3Sub := CreateLabel(hWnd, '  Cobertura Activa',   415, 164, 190, 22, hGuiFont);
   AddControlToModule(0, hCard3); AddControlToModule(0, hCard3Val); AddControlToModule(0, hCard3Sub);
 
-  hCard4    := CreateLabel(hWnd, '  ⚠️ MOROSIDAD SEGURO',  615, 110, 190, 24, hCardTitleFont);
-  hCard4Val := CreateLabel(hWnd, '  9 Mora / 4 Baja',      615, 134, 190, 30, hCardBigFont);
-  hCard4Sub := CreateLabel(hWnd, '  Aviso 3m / Urgente 3a',615, 164, 190, 22, hGuiFont);
+  hCard4    := CreateLabel(hWnd, '  MOROSIDAD SEGURO',   615, 110, 190, 24, hCardTitleFont);
+  hCard4Val := CreateLabel(hWnd, '  9 Mora / 4 Baja',    615, 134, 190, 30, hCardBigFont);
+  hCard4Sub := CreateLabel(hWnd, '  Aviso 3m / Baja 3a', 615, 164, 190, 22, hGuiFont);
   AddControlToModule(0, hCard4); AddControlToModule(0, hCard4Val); AddControlToModule(0, hCard4Sub);
 
-  hCard5    := CreateLabel(hWnd, '  💰 RECAUDACION HOY',   815, 110, 190, 24, hCardTitleFont);
-  hCard5Val := CreateLabel(hWnd, '  $ 125,000.00',         815, 134, 190, 30, hCardBigFont);
-  hCard5Sub := CreateLabel(hWnd, '  Ef: $85k · Dig: $40k', 815, 164, 190, 22, hGuiFont);
+  hCard5    := CreateLabel(hWnd, '  RECAUDACION HOY',    815, 110, 190, 24, hCardTitleFont);
+  hCard5Val := CreateLabel(hWnd, '  $ 125,000.00',       815, 134, 190, 30, hCardBigFont);
+  hCard5Sub := CreateLabel(hWnd, '  Efectivo - Digital', 815, 164, 190, 22, hGuiFont);
   AddControlToModule(0, hCard5); AddControlToModule(0, hCard5Val); AddControlToModule(0, hCard5Sub);
 
-  // Acciones Rapidas
-  hCtrl := CreateGroupBox(hWnd, ' Operaciones Rapidas del Sistema ', 15, 195, 990, 110);
-  AddControlToModule(0, hCtrl);
+  // Contenedor de Operaciones Rapidas
+  hGrpAcciones := CreateGroupBox(hWnd, ' Operaciones Rapidas del Sistema ', 15, 195, 990, 115);
+  AddControlToModule(0, hGrpAcciones);
 
-  hCtrl := CreateButton(hWnd, '🪦 Nueva Inhumacion',       30, 222, 225, 34, IDC_BTN_NUEVA_INH);
-  AddControlToModule(0, hCtrl);
-  hCtrl := CreateButton(hWnd, '🛡️ Cobrar Cuota Seguro',    270, 222, 225, 34, IDC_BTN_COBRAR_CUOTA);
-  AddControlToModule(0, hCtrl);
-  hCtrl := CreateButton(hWnd, '🗺️ Cobrar Mantenimiento',   510, 222, 235, 34, IDC_BTN_COBRAR_MANT);
-  AddControlToModule(0, hCtrl);
-  hCtrl := CreateButton(hWnd, '🔒 Arqueo / Cierre Caja',   760, 222, 225, 34, IDC_BTN_CIERRE_CAJA);
-  AddControlToModule(0, hCtrl);
+  hBtnDashNuevaInh := CreateButton(hWnd, '+ Nueva Inhumacion', 25, 220, 235, 34, IDC_BTN_NUEVA_INH);
+  AddControlToModule(0, hBtnDashNuevaInh);
+  hBtnDashCobrarCuota := CreateButton(hWnd, '$ Cobrar Cuota Seguro', 270, 220, 235, 34, IDC_BTN_COBRAR_CUOTA);
+  AddControlToModule(0, hBtnDashCobrarCuota);
+  hBtnDashCobrarMant := CreateButton(hWnd, '$ Cobrar Mantenimiento', 515, 220, 235, 34, IDC_BTN_COBRAR_MANT);
+  AddControlToModule(0, hBtnDashCobrarMant);
+  hBtnDashNuevoCobro := CreateButton(hWnd, '+ Cobro en Caja', 760, 220, 235, 34, IDC_BTN_NUEVO_COBRO);
+  AddControlToModule(0, hBtnDashNuevoCobro);
 
-  hCtrl := CreateButton(hWnd, '🔄 Sincronizar Supabase Ahora', 30, 262, 465, 32, IDC_BTN_SYNC);
-  AddControlToModule(0, hCtrl);
-  hCtrl := CreateButton(hWnd, '📂 Abrir Carpeta de Reportes PDF', 510, 262, 475, 32, IDC_BTN_ABRIR_CARPETA);
-  AddControlToModule(0, hCtrl);
+  hBtnDashArqueo := CreateButton(hWnd, 'Arqueo / Cierre Caja', 25, 262, 310, 34, IDC_BTN_CIERRE_CAJA);
+  AddControlToModule(0, hBtnDashArqueo);
+  hBtnDashSync := CreateButton(hWnd, 'Sincronizar Supabase Ahora', 345, 262, 325, 34, IDC_BTN_SYNC);
+  AddControlToModule(0, hBtnDashSync);
+  hBtnDashAbrirCarpeta := CreateButton(hWnd, 'Abrir Carpeta de Reportes PDF', 680, 262, 315, 34, IDC_BTN_ABRIR_CARPETA);
+  AddControlToModule(0, hBtnDashAbrirCarpeta);
 
-  // Listado de Actividad Reciente en Dashboard
-  hCtrl := CreateLabel(hWnd, 'ULTIMAS INHUMACIONES Y MOVIMIENTOS ASENTADOS EN EL SISTEMA:', 15, 315, 600, 20, hBoldFont);
-  AddControlToModule(0, hCtrl);
+  // Listado de Actividad Reciente
+  hLblRecentTitle := CreateLabel(hWnd, 'ULTIMAS INHUMACIONES Y MOVIMIENTOS ASENTADOS EN EL SISTEMA:', 15, 320, 700, 20, hBoldFont);
+  AddControlToModule(0, hLblRecentTitle);
 
-  hLvRecentInh := CreateListView(hWnd, 15, 340, 990, 270, IDC_LV_RECENT_INH);
+  hLvRecentInh := CreateListView(hWnd, 15, 345, 990, 265, IDC_LV_RECENT_INH);
   AddListViewColumn(hLvRecentInh, 0, 'Fecha Inhumacion', 130);
   AddListViewColumn(hLvRecentInh, 1, 'Nombre Completo del Difunto', 320);
   AddListViewColumn(hLvRecentInh, 2, 'DNI', 120);
@@ -674,11 +1258,11 @@ begin
   AddControlToModule(0, hLvRecentInh);
 
   // ===========================================================
-  // MODULO 1: CATASTRO Y PARCELAS
+  // MODULO 1: CATASTRO Y PARCELAS (CRUD COMPLETO)
   // ===========================================================
-  hCtrl := CreateLabel(hWnd, 'Sector:', 15, 115, 50, 22, hBoldFont);
-  AddControlToModule(1, hCtrl);
-  hCmbSector := CreateComboBox(hWnd, 70, 112, 170, 140, IDC_CMB_SECTOR);
+  hLblSector := CreateLabel(hWnd, 'Sector:', 15, 115, 50, 22, hBoldFont);
+  AddControlToModule(1, hLblSector);
+  hCmbSector := CreateComboBox(hWnd, 70, 112, 130, 140, IDC_CMB_SECTOR);
   SendMessage(hCmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Todos los Sectores')));
   SendMessage(hCmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Sector A')));
   SendMessage(hCmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Sector E')));
@@ -686,9 +1270,9 @@ begin
   SendMessage(hCmbSector, CB_SETCURSEL, 0, 0);
   AddControlToModule(1, hCmbSector);
 
-  hCtrl := CreateLabel(hWnd, 'Estado:', 255, 115, 55, 22, hBoldFont);
-  AddControlToModule(1, hCtrl);
-  hCmbEstadoParc := CreateComboBox(hWnd, 315, 112, 160, 140, IDC_CMB_ESTADO_PARC);
+  hLblEstadoParc := CreateLabel(hWnd, 'Estado:', 210, 115, 50, 22, hBoldFont);
+  AddControlToModule(1, hLblEstadoParc);
+  hCmbEstadoParc := CreateComboBox(hWnd, 265, 112, 130, 140, IDC_CMB_ESTADO_PARC);
   SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Todos los Estados')));
   SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Disponible')));
   SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Ocupada')));
@@ -696,37 +1280,48 @@ begin
   SendMessage(hCmbEstadoParc, CB_SETCURSEL, 0, 0);
   AddControlToModule(1, hCmbEstadoParc);
 
-  hCtrl := CreateButton(hWnd, '💰 Cobrar Mantenimiento ($49.000)', 500, 110, 260, 30, IDC_BTN_COBRAR_MANT);
-  AddControlToModule(1, hCtrl);
-  hCtrl := CreateButton(hWnd, '🔄 Recargar Parcelas', 775, 110, 230, 30, IDC_BTN_SYNC);
-  AddControlToModule(1, hCtrl);
+  hBtnNuevaParc := CreateButton(hWnd, '+ Nueva Parcela', 410, 110, 120, 30, IDC_BTN_NUEVA_PARC);
+  AddControlToModule(1, hBtnNuevaParc);
+  hBtnEditParc := CreateButton(hWnd, '* Modificar', 535, 110, 95, 30, IDC_BTN_EDIT_PARC);
+  AddControlToModule(1, hBtnEditParc);
+  hBtnCobrarMantParc := CreateButton(hWnd, '$ Cobrar Mantenimiento', 635, 110, 175, 30, IDC_BTN_COBRAR_MANT);
+  AddControlToModule(1, hBtnCobrarMantParc);
+  hBtnDelParc := CreateButton(hWnd, '- Eliminar', 815, 110, 85, 30, IDC_BTN_DEL_PARC);
+  AddControlToModule(1, hBtnDelParc);
+  hBtnSyncParc := CreateButton(hWnd, 'Recargar', 905, 110, 85, 30, IDC_BTN_SYNC);
+  AddControlToModule(1, hBtnSyncParc);
 
   hLvParcelas := CreateListView(hWnd, 15, 150, 990, 460, IDC_LV_PARCELAS);
   AddListViewColumn(hLvParcelas, 0, 'Nomenclatura', 120);
   AddListViewColumn(hLvParcelas, 1, 'Sector', 90);
   AddListViewColumn(hLvParcelas, 2, 'Fila / Mz', 90);
   AddListViewColumn(hLvParcelas, 3, 'Parcela Nro', 90);
-  AddListViewColumn(hLvParcelas, 4, 'Estado Parcela', 120);
-  AddListViewColumn(hLvParcelas, 5, 'Titular de Concesion', 300);
-  AddListViewColumn(hLvParcelas, 6, 'Ultimo Pago Registrado', 150);
+  AddListViewColumn(hLvParcelas, 4, 'Estado Parcela', 110);
+  AddListViewColumn(hLvParcelas, 5, 'Titular de Concesion', 260);
+  AddListViewColumn(hLvParcelas, 6, 'Ultimo Pago', 120);
+  AddListViewColumn(hLvParcelas, 7, 'Saldo', 100);
   AddControlToModule(1, hLvParcelas);
 
   // ===========================================================
-  // MODULO 2: LIBRO PARROQUIAL DE INHUMACIONES
+  // MODULO 2: LIBRO PARROQUIAL DE INHUMACIONES (CRUD COMPLETO)
   // ===========================================================
-  hCtrl := CreateLabel(hWnd, 'Buscar Difunto o DNI:', 15, 115, 150, 22, hBoldFont);
-  AddControlToModule(2, hCtrl);
-  hEdtBuscarInh := CreateEdit(hWnd, '', 170, 112, 220, 24, IDC_EDT_BUSCAR_INH);
+  hLblBuscarInh := CreateLabel(hWnd, 'Buscar Difunto / DNI:', 15, 115, 140, 22, hBoldFont);
+  AddControlToModule(2, hLblBuscarInh);
+  hEdtBuscarInh := CreateEdit(hWnd, '', 160, 112, 160, 24, IDC_EDT_BUSCAR_INH);
   AddControlToModule(2, hEdtBuscarInh);
 
-  hCtrl := CreateButton(hWnd, '🔍 Buscar', 400, 110, 90, 30, IDC_BTN_BUSCAR_INH);
-  AddControlToModule(2, hCtrl);
-  hCtrl := CreateButton(hWnd, '🪦 Nueva Inhumacion', 505, 110, 170, 30, IDC_BTN_NUEVA_INH);
-  AddControlToModule(2, hCtrl);
-  hCtrl := CreateButton(hWnd, '📄 Emitir Acta (PDF)', 685, 110, 160, 30, IDC_BTN_ACTA_PDF);
-  AddControlToModule(2, hCtrl);
-  hCtrl := CreateButton(hWnd, '📄 Folio Completo (PDF)', 855, 110, 150, 30, IDC_BTN_FOLIO_PDF);
-  AddControlToModule(2, hCtrl);
+  hBtnBuscarInh := CreateButton(hWnd, 'Buscar', 325, 110, 70, 30, IDC_BTN_BUSCAR_INH);
+  AddControlToModule(2, hBtnBuscarInh);
+  hBtnNuevaInh := CreateButton(hWnd, '+ Nueva Inhumacion', 400, 110, 150, 30, IDC_BTN_NUEVA_INH);
+  AddControlToModule(2, hBtnNuevaInh);
+  hBtnEditInh := CreateButton(hWnd, '* Modificar', 555, 110, 95, 30, IDC_BTN_EDIT_INH);
+  AddControlToModule(2, hBtnEditInh);
+  hBtnDelInh := CreateButton(hWnd, '- Eliminar', 655, 110, 85, 30, IDC_BTN_DEL_INH);
+  AddControlToModule(2, hBtnDelInh);
+  hBtnActaPdf := CreateButton(hWnd, 'Emitir Acta (PDF)', 745, 110, 130, 30, IDC_BTN_ACTA_PDF);
+  AddControlToModule(2, hBtnActaPdf);
+  hBtnFolioPdf := CreateButton(hWnd, 'Folio (PDF)', 880, 110, 100, 30, IDC_BTN_FOLIO_PDF);
+  AddControlToModule(2, hBtnFolioPdf);
 
   hLvInh := CreateListView(hWnd, 15, 150, 990, 460, IDC_LV_INHUMACIONES);
   AddListViewColumn(hLvInh, 0, 'Fecha Inh.', 100);
@@ -739,11 +1334,11 @@ begin
   AddControlToModule(2, hLvInh);
 
   // ===========================================================
-  // MODULO 3: SEGURO DE SEPELIO Y AFILIADOS
+  // MODULO 3: SEGURO DE SEPELIO Y AFILIADOS (CRUD COMPLETO)
   // ===========================================================
-  hCtrl := CreateLabel(hWnd, 'Filtro Cobranza:', 15, 115, 115, 22, hBoldFont);
-  AddControlToModule(3, hCtrl);
-  hCmbMora := CreateComboBox(hWnd, 135, 112, 260, 140, IDC_CMB_MORA);
+  hLblFiltroMora := CreateLabel(hWnd, 'Filtro Cobranza:', 15, 115, 105, 22, hBoldFont);
+  AddControlToModule(3, hLblFiltroMora);
+  hCmbMora := CreateComboBox(hWnd, 125, 112, 190, 140, IDC_CMB_MORA);
   SendMessage(hCmbMora, CB_ADDSTRING, 0, LPARAM(PChar('Todos los Afiliados')));
   SendMessage(hCmbMora, CB_ADDSTRING, 0, LPARAM(PChar('Al Dia (Habilitados)')));
   SendMessage(hCmbMora, CB_ADDSTRING, 0, LPARAM(PChar('Aviso: Mora >= 3 Meses')));
@@ -751,12 +1346,16 @@ begin
   SendMessage(hCmbMora, CB_SETCURSEL, 0, 0);
   AddControlToModule(3, hCmbMora);
 
-  hCtrl := CreateButton(hWnd, '💰 Cobrar Cuotas de Seguro', 420, 110, 230, 30, IDC_BTN_COBRAR_CUOTA);
-  AddControlToModule(3, hCtrl);
-  hCtrl := CreateButton(hWnd, '📄 Planilla de Ruta Cobrador (PDF)', 665, 110, 250, 30, IDC_BTN_PLANILLA_PDF);
-  AddControlToModule(3, hCtrl);
-  hCtrl := CreateButton(hWnd, '🔄 Recargar', 925, 110, 80, 30, IDC_BTN_SYNC);
-  AddControlToModule(3, hCtrl);
+  hBtnNuevoAfil := CreateButton(hWnd, '+ Nuevo Afiliado', 320, 110, 125, 30, IDC_BTN_NUEVO_AFIL);
+  AddControlToModule(3, hBtnNuevoAfil);
+  hBtnEditAfil := CreateButton(hWnd, '* Modificar', 450, 110, 95, 30, IDC_BTN_EDIT_AFIL);
+  AddControlToModule(3, hBtnEditAfil);
+  hBtnCobrarAfil := CreateButton(hWnd, '$ Cobrar Cuota', 550, 110, 120, 30, IDC_BTN_COBRAR_CUOTA);
+  AddControlToModule(3, hBtnCobrarAfil);
+  hBtnDelAfil := CreateButton(hWnd, '- Eliminar / Baja', 675, 110, 125, 30, IDC_BTN_DEL_AFIL);
+  AddControlToModule(3, hBtnDelAfil);
+  hBtnPlanillaPdf := CreateButton(hWnd, 'Planilla Cobrador (PDF)', 805, 110, 175, 30, IDC_BTN_PLANILLA_PDF);
+  AddControlToModule(3, hBtnPlanillaPdf);
 
   hLvAfiliados := CreateListView(hWnd, 15, 150, 990, 460, IDC_LV_AFILIADOS);
   AddListViewColumn(hLvAfiliados, 0, 'Nro Afiliado', 95);
@@ -769,47 +1368,51 @@ begin
   AddControlToModule(3, hLvAfiliados);
 
   // ===========================================================
-  // MODULO 4: CAJA DIARIA Y ARQUEO
+  // MODULO 4: CAJA DIARIA Y ARQUEO (CRUD COMPLETO)
   // ===========================================================
-  hLblResumenCaja := CreateLabel(hWnd, '  TOTAL RECAUDADO HOY: $ 125,000.00   [ Efectivo: $ 85,000.00 | Digital: $ 40,000.00 ]', 15, 110, 660, 30, hBoldFont);
+  hLblResumenCaja := CreateLabel(hWnd, '  TOTAL RECAUDADO HOY: $ 0.00   [ Efectivo: $ 0.00 | Digital: $ 0.00 ]', 15, 110, 500, 32, hBoldFont);
   AddControlToModule(4, hLblResumenCaja);
 
-  hCtrl := CreateButton(hWnd, '💰 Cobro en Caja', 690, 110, 140, 30, IDC_BTN_COBRAR_CUOTA);
-  AddControlToModule(4, hCtrl);
-  hCtrl := CreateButton(hWnd, '🔒 Acta Cierre Caja (PDF)', 840, 110, 165, 30, IDC_BTN_CIERRE_CAJA);
-  AddControlToModule(4, hCtrl);
+  hBtnNuevoCobroCaja := CreateButton(hWnd, '+ Cobro en Caja', 525, 110, 130, 32, IDC_BTN_NUEVO_COBRO);
+  AddControlToModule(4, hBtnNuevoCobroCaja);
+  hBtnDelCobroCaja   := CreateButton(hWnd, '- Anular Cobro', 660, 110, 120, 32, IDC_BTN_DEL_COBRO);
+  AddControlToModule(4, hBtnDelCobroCaja);
+  hBtnCierreCaja     := CreateButton(hWnd, 'Acta Cierre (PDF)', 785, 110, 135, 32, IDC_BTN_CIERRE_CAJA);
+  AddControlToModule(4, hBtnCierreCaja);
+  hBtnSyncCaja       := CreateButton(hWnd, 'Recargar', 925, 110, 70, 32, IDC_BTN_SYNC);
+  AddControlToModule(4, hBtnSyncCaja);
 
   hLvCaja := CreateListView(hWnd, 15, 150, 990, 460, IDC_LV_CAJA);
   AddListViewColumn(hLvCaja, 0, 'Recibo Nro', 120);
-  AddListViewColumn(hLvCaja, 1, 'Hora', 80);
+  AddListViewColumn(hLvCaja, 1, 'Fecha / Hora', 130);
   AddListViewColumn(hLvCaja, 2, 'Titular / Pagador', 240);
-  AddListViewColumn(hLvCaja, 3, 'Concepto Imputado', 280);
+  AddListViewColumn(hLvCaja, 3, 'Concepto Imputado', 260);
   AddListViewColumn(hLvCaja, 4, 'Metodo de Pago', 110);
-  AddListViewColumn(hLvCaja, 5, 'Importe', 130);
+  AddListViewColumn(hLvCaja, 5, 'Importe', 120);
   AddControlToModule(4, hLvCaja);
 
   // ===========================================================
   // MODULO 5: CENTRO DE REPORTES OFICIALES PDF
   // ===========================================================
-  hCtrl := CreateLabel(hWnd, 'CENTRO DE EMISION DE REPORTES OFICIALES VECTORIALES EN PDF NATIVO', 20, 115, 800, 24, hTitleFont);
-  AddControlToModule(5, hCtrl);
-  hCtrl := CreateLabel(hWnd, 'Haga clic en cualquiera de los botones para emitir el documento oficial e inspeccionarlo de inmediato:', 20, 145, 850, 20, hGuiFont);
-  AddControlToModule(5, hCtrl);
+  hLblRepTitle := CreateLabel(hWnd, 'CENTRO DE EMISION DE REPORTES OFICIALES VECTORIALES EN PDF NATIVO', 20, 115, 800, 24, hTitleFont);
+  AddControlToModule(5, hLblRepTitle);
+  hLblRepSub := CreateLabel(hWnd, 'Haga clic en cualquiera de los botones para emitir el documento oficial e inspeccionarlo de inmediato:', 20, 145, 850, 20, hGuiFont);
+  AddControlToModule(5, hLblRepSub);
 
-  hCtrl := CreateButton(hWnd, '📄 1. Generar Acta Oficial de Inhumacion (PDF)', 30, 185, 450, 46, IDC_BTN_ACTA_PDF);
-  AddControlToModule(5, hCtrl);
-  hCtrl := CreateButton(hWnd, '📄 2. Generar Folio del Libro de Inhumaciones (PDF)', 510, 185, 450, 46, IDC_BTN_FOLIO_PDF);
-  AddControlToModule(5, hCtrl);
+  hBtnRepActa := CreateButton(hWnd, '1. Generar Acta Oficial de Inhumacion (PDF)', 30, 185, 450, 46, IDC_BTN_ACTA_PDF);
+  AddControlToModule(5, hBtnRepActa);
+  hBtnRepFolio := CreateButton(hWnd, '2. Generar Folio del Libro de Inhumaciones (PDF)', 510, 185, 450, 46, IDC_BTN_FOLIO_PDF);
+  AddControlToModule(5, hBtnRepFolio);
 
-  hCtrl := CreateButton(hWnd, '📄 3. Generar Recibo Oficial de Pago por Duplicado (PDF)', 30, 255, 450, 46, IDC_BTN_RECIBO_PDF);
-  AddControlToModule(5, hCtrl);
-  hCtrl := CreateButton(hWnd, '📄 4. Generar Planilla de Ruta Domiciliaria Cobrador (PDF)', 510, 255, 450, 46, IDC_BTN_PLANILLA_PDF);
-  AddControlToModule(5, hCtrl);
+  hBtnRepRecibo := CreateButton(hWnd, '3. Generar Recibo Oficial de Pago por Duplicado (PDF)', 30, 250, 450, 46, IDC_BTN_RECIBO_PDF);
+  AddControlToModule(5, hBtnRepRecibo);
+  hBtnRepPlanilla := CreateButton(hWnd, '4. Generar Planilla de Ruta Domiciliaria Cobrador (PDF)', 510, 250, 450, 46, IDC_BTN_PLANILLA_PDF);
+  AddControlToModule(5, hBtnRepPlanilla);
 
-  hCtrl := CreateButton(hWnd, '📄 5. Generar Acta de Arqueo y Cierre Diario de Caja (PDF)', 30, 325, 450, 46, IDC_BTN_CIERRE_CAJA);
-  AddControlToModule(5, hCtrl);
-  hCtrl := CreateButton(hWnd, '📂 Abrir Carpeta de Reportes Generados', 510, 325, 450, 46, IDC_BTN_ABRIR_CARPETA);
-  AddControlToModule(5, hCtrl);
+  hBtnRepCierre := CreateButton(hWnd, '5. Generar Acta de Arqueo y Cierre Diario de Caja (PDF)', 30, 315, 450, 46, IDC_BTN_CIERRE_CAJA);
+  AddControlToModule(5, hBtnRepCierre);
+  hBtnRepCarpeta := CreateButton(hWnd, '6. Abrir Carpeta de Reportes Generados', 510, 315, 450, 46, IDC_BTN_ABRIR_CARPETA);
+  AddControlToModule(5, hBtnRepCarpeta);
 
   // Barra de Estado
   hStatusBar := CreateWindow(STATUSCLASSNAME, '',
@@ -830,7 +1433,7 @@ end;
 
 function CreateAppMenu: Windows.HMENU;
 var
-  hMenu, hSubMenuArch, hSubMenuMod, hSubMenuPdf, hSubMenuAyu: Windows.HMENU;
+  hMenu, hSubMenuArch, hSubMenuVer, hSubMenuMod, hSubMenuPdf, hSubMenuAyu: Windows.HMENU;
 begin
   hMenu := CreateMenu;
 
@@ -840,6 +1443,11 @@ begin
   AppendMenu(hSubMenuArch, MF_SEPARATOR, 0, nil);
   AppendMenu(hSubMenuArch, MF_STRING, IDM_SALIR, '&Salir de Aeterna'#9'Alt+F4');
   AppendMenu(hMenu, MF_POPUP, hSubMenuArch, '&Archivo');
+
+  // Menu Ver (Pantalla Completa F11)
+  hSubMenuVer := CreatePopupMenu;
+  AppendMenu(hSubMenuVer, MF_STRING, IDM_FULLSCREEN, '&Pantalla Completa'#9'F11');
+  AppendMenu(hMenu, MF_POPUP, hSubMenuVer, '&Ver');
 
   // Menu Modulos
   hSubMenuMod := CreatePopupMenu;
@@ -957,12 +1565,29 @@ begin
         Result := LRESULT(hBgBrush);
       end;
 
+    WM_KEYDOWN:
+      begin
+        if wParam = VK_F11 then
+        begin
+          ToggleFullScreen(hWindow);
+          Result := 0;
+          Exit;
+        end
+        else if wParam = VK_F5 then
+        begin
+          CargarDatosIniciales;
+          Result := 0;
+          Exit;
+        end;
+      end;
+
     WM_COMMAND:
       begin
         CmdId := LOWORD(wParam);
         case CmdId of
           IDM_SALIR: PostMessage(hWindow, WM_CLOSE, 0, 0);
           IDM_REFRESCAR, IDC_BTN_SYNC: CargarDatosIniciales;
+          IDM_FULLSCREEN: ToggleFullScreen(hWindow);
 
           // Cambio de Modulos
           IDC_NAV_DASHBOARD:    SwitchModule(0);
@@ -972,31 +1597,44 @@ begin
           IDC_NAV_CAJA:         SwitchModule(4);
           IDC_NAV_REPORTES:     SwitchModule(5);
 
-          // Reportes y Cobros
+          // CRUD Inhumaciones
+          IDC_BTN_NUEVA_INH:    AccionNuevaInhumacion;
+          IDC_BTN_EDIT_INH:     AccionModificarInhumacion;
+          IDC_BTN_DEL_INH:      AccionEliminarInhumacion;
           IDC_BTN_ACTA_PDF:     AccionGenerarActaPDF;
           IDC_BTN_FOLIO_PDF:    AccionGenerarFolioPDF;
-          IDC_BTN_RECIBO_PDF:   AccionGenerarReciboPDF;
-          IDC_BTN_PLANILLA_PDF: AccionGenerarPlanillaRutaPDF;
-          IDC_BTN_CIERRE_CAJA:  AccionGenerarCierreCajaPDF;
+          IDC_BTN_BUSCAR_INH:   SetStatusMessage('Busqueda en libro de inhumaciones realizada.');
+
+          // CRUD Parcelas
+          IDC_BTN_NUEVA_PARC:   AccionNuevaParcela;
+          IDC_BTN_EDIT_PARC:    AccionModificarParcela;
+          IDC_BTN_DEL_PARC:     AccionEliminarParcela;
           IDC_BTN_COBRAR_MANT:  AccionCobrarMantenimientoParcela;
-          IDC_BTN_COBRAR_CUOTA: AccionGenerarReciboPDF;
-          IDC_BTN_NUEVA_INH:
-            begin
-              MessageBox(hWindow, 'Para asentar una nueva inhumacion, complete los datos del difunto y emita el acta oficial correspondiente.', 'Nueva Inhumacion', MB_ICONINFORMATION or MB_OK);
-              AccionGenerarActaPDF;
-            end;
+
+          // CRUD Afiliados
+          IDC_BTN_NUEVO_AFIL:   AccionNuevoAfiliado;
+          IDC_BTN_EDIT_AFIL:    AccionModificarAfiliado;
+          IDC_BTN_DEL_AFIL:     AccionEliminarAfiliado;
+          IDC_BTN_COBRAR_CUOTA: AccionCobrarCuotaSeguro;
+          IDC_BTN_PLANILLA_PDF: AccionGenerarPlanillaRutaPDF;
+
+          // CRUD Caja
+          IDC_BTN_NUEVO_COBRO:  AccionNuevoCobroCaja;
+          IDC_BTN_DEL_COBRO:    AccionEliminarCobroCaja;
+          IDC_BTN_CIERRE_CAJA:  AccionGenerarCierreCajaPDF;
+          IDC_BTN_RECIBO_PDF:   AccionGenerarReciboPDF;
+
           IDC_BTN_ABRIR_CARPETA:
             OpenFileWithShell(GetReportsDirectory);
-          IDC_BTN_BUSCAR_INH:
-            SetStatusMessage('Busqueda en libro de inhumaciones realizada.');
 
           IDM_ACERCA:
             MessageBox(hWindow,
               'Aeterna - Gestion de Sepelios y Cementerio Parque San Nicolas'#13#10 +
-              'Parroquia San Nicolas de Bari · Obispado de San Nicolas'#13#10#13#10 +
+              'Parroquia San Nicolas de Bari - Obispado de San Nicolas'#13#10#13#10 +
               'Desarrollado en Object Pascal Win32 Nativo para Windows XP / 7 / 10 / 11'#13#10 +
               'Consumo de Memoria: < 15 MB RAM'#13#10 +
-              'Conexion en Tiempo Real: Supabase PostgreSQL Cloud via TLS 1.2',
+              'Conexion en Tiempo Real: Supabase PostgreSQL Cloud via TLS 1.2'#13#10 +
+              'CRUD Integral y Generacion Vectorial de Documentos PDF Oficiales',
               'Acerca de Aeterna XP', MB_ICONINFORMATION or MB_OK);
         end;
         Result := 0;
@@ -1004,7 +1642,7 @@ begin
 
     WM_SIZE:
       begin
-        SendMessage(hStatusBar, WM_SIZE, 0, 0);
+        UpdateLayout(LOWORD(lParam), HIWORD(lParam));
         Result := 0;
       end;
 
@@ -1028,15 +1666,26 @@ var
   wc: TWndClass;
   msgObj: MSG;
   hMenu: Windows.HMENU;
+  ExeDir: string;
 begin
   InitCommonControls;
   InitFontsAndBrushes;
+
+  ExeDir := ExtractFilePath(ParamStr(0));
+
+  // Cargar Icono Oficial desde Recurso o Archivo
+  hAppIcon := LoadIcon(hInstance, 'MAINICON');
+  if hAppIcon = 0 then
+    hAppIcon := LoadImage(0, PChar(ExeDir + 'aeterna.ico'), IMAGE_ICON, 32, 32, LR_LOADFROMFILE);
+  if hAppIcon = 0 then
+    hAppIcon := LoadIcon(0, IDI_APPLICATION);
 
   try
     FillChar(wc, SizeOf(wc), 0);
     wc.style := CS_HREDRAW or CS_VREDRAW;
     wc.lpfnWndProc := @MainWindowProc;
     wc.hInstance := hInstance;
+    wc.hIcon := hAppIcon;
     wc.hCursor := LoadCursor(0, IDC_ARROW);
     wc.hbrBackground := hBgBrush;
     wc.lpszClassName := WINDOW_CLASS_NAME;
@@ -1050,12 +1699,16 @@ begin
       WINDOW_CLASS_NAME,
       APP_TITLE,
       WS_OVERLAPPEDWINDOW or WS_CLIPCHILDREN,
-      CW_USEDEFAULT, CW_USEDEFAULT, 1035, 680,
+      CW_USEDEFAULT, CW_USEDEFAULT, 1040, 700,
       0, hMenu, hInstance, nil
     );
 
     if hMainWnd = 0 then
       Exit;
+
+    // Asignar Icono a la Barra de Titulo y Taskbar
+    SendMessage(hMainWnd, WM_SETICON, ICON_BIG, LPARAM(hAppIcon));
+    SendMessage(hMainWnd, WM_SETICON, ICON_SMALL, LPARAM(hAppIcon));
 
     BuildUI(hMainWnd);
     ShowWindow(hMainWnd, SW_SHOW);
@@ -1063,12 +1716,21 @@ begin
 
     while GetMessage(msgObj, 0, 0, 0) do
     begin
+      // Soporte para F11 y atajos de teclado
+      if (msgObj.message = WM_KEYDOWN) and (msgObj.wParam = VK_F11) then
+      begin
+        ToggleFullScreen(hMainWnd);
+        Continue;
+      end;
+
       TranslateMessage(msgObj);
       DispatchMessage(msgObj);
     end;
 
   finally
     FreeFontsAndBrushes;
+    if (hAppIcon <> 0) and (hAppIcon <> LoadIcon(0, IDI_APPLICATION)) then
+      DestroyIcon(hAppIcon);
   end;
 end;
 
