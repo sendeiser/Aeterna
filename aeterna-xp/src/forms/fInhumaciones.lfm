@@ -115,5 +115,6 @@ object frmInhumaciones: TfrmInhumaciones
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect, goSmoothScroll]
     TabOrder = 1
     OnDrawCell = gridInhumacionesDrawCell
+    OnDblClick = gridInhumacionesDblClick
   end
 end

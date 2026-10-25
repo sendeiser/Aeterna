@@ -31,6 +31,7 @@ type
     procedure btnNuevaInhumacionClick(Sender: TObject);
     procedure btnImprimirActaClick(Sender: TObject);
     procedure gridInhumacionesDrawCell(Sender: TObject; aCol, aRow: Integer; aRect: TRect; aState: TGridDrawState);
+    procedure gridInhumacionesDblClick(Sender: TObject);
   private
     FInhumaciones: TInhumacionArray;
     FInhumacionesFiltradas: TInhumacionArray;
@@ -206,6 +207,17 @@ begin
   end
   else
     ShowMessage('Seleccione una inhumacion de la lista para imprimir el acta.');
+end;
+
+procedure TfrmInhumaciones.gridInhumacionesDblClick(Sender: TObject);
+var
+  SelIdx: Integer;
+begin
+  SelIdx := gridInhumaciones.Row - 1;
+  if (SelIdx >= 0) and (SelIdx < Length(FInhumacionesFiltradas)) then
+  begin
+    btnImprimirActaClick(Sender);
+  end;
 end;
 
 end.

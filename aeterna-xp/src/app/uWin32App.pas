@@ -1177,11 +1177,12 @@ begin
   SetWindowText(hCard5Sub, PChar('Ef: ' + FormatearMoneda(TotalEfHoy) + ' - Dig: ' + FormatearMoneda(TotalDigHoy)));
 
   // Poblar Actividad Reciente en Dashboard
+  // Poblar Actividad Reciente en Dashboard
   ClearListView(hLvRecentInh);
   for i := 0 to High(DataInhumaciones) do
   begin
     if i >= 12 then Break;
-    AddListViewItem(hLvRecentInh, i, [
+    AddListViewItemWithParam(hLvRecentInh, i, i, [
       FormatearFecha(DataInhumaciones[i].FechaInhumacion),
       DataInhumaciones[i].NombreDifunto,
       DataInhumaciones[i].DniDifunto,
@@ -2259,6 +2260,49 @@ begin
 end;
 
 // -------------------------------------------------------------
+// Manejador de Doble Clic en Registros de Tablas (Modificacion Directa)
+// -------------------------------------------------------------
+
+procedure HandleListViewDoubleClick(hLv: HWND);
+var
+  Idx: Integer;
+begin
+  if hLv = hLvParcelas then
+  begin
+    Idx := GetSelectedListViewDataIndex(hLvParcelas);
+    if (Idx >= 0) and (Idx <= High(DataParcelas)) then
+      AccionModificarParcela;
+  end
+  else if hLv = hLvInh then
+  begin
+    Idx := GetSelectedListViewDataIndex(hLvInh);
+    if (Idx >= 0) and (Idx <= High(DataInhumaciones)) then
+      AccionModificarInhumacion;
+  end
+  else if hLv = hLvAfiliados then
+  begin
+    Idx := GetSelectedListViewDataIndex(hLvAfiliados);
+    if (Idx >= 0) and (Idx <= High(DataAfiliados)) then
+      AccionModificarAfiliado;
+  end
+  else if hLv = hLvRecentInh then
+  begin
+    Idx := GetSelectedListViewDataIndex(hLvRecentInh);
+    if (Idx >= 0) and (Idx <= High(DataInhumaciones)) then
+    begin
+      SwitchModule(2); // Cambiar al modulo de Inhumaciones
+      AccionModificarInhumacion;
+    end;
+  end
+  else if hLv = hLvCaja then
+  begin
+    Idx := GetSelectedListViewDataIndex(hLvCaja);
+    if (Idx >= 0) and (Idx <= High(DataPagos)) then
+      AccionGenerarReciboPDF;
+  end;
+end;
+
+// -------------------------------------------------------------
 // Procedimiento de Ventana Principal
 // -------------------------------------------------------------
 
@@ -2275,12 +2319,21 @@ begin
     WM_NOTIFY:
       begin
         pnm := PNMHDR(lParam);
-        if (pnm <> nil) and (pnm^.code = LVN_COLUMNCLICK) then
+        if pnm <> nil then
         begin
-          pnmv := PNMListView(lParam);
-          HandleColumnClick(pnm^.hwndFrom, pnmv^.iSubItem);
-          Result := 0;
-          Exit;
+          if pnm^.code = LVN_COLUMNCLICK then
+          begin
+            pnmv := PNMListView(lParam);
+            HandleColumnClick(pnm^.hwndFrom, pnmv^.iSubItem);
+            Result := 0;
+            Exit;
+          end
+          else if pnm^.code = NM_DBLCLK then
+          begin
+            HandleListViewDoubleClick(pnm^.hwndFrom);
+            Result := 0;
+            Exit;
+          end;
         end;
       end;
 
