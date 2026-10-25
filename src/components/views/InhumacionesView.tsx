@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import { Inhumacion, Parcela } from '../../types/database'
 import { ActaInhumacionModal } from '../modals/ActaInhumacionModal'
+import { FolioInhumacionesModal } from '../modals/FolioInhumacionesModal'
 import { InhumacionForm } from '../forms/InhumacionForm'
 
 interface InhumacionesViewProps {
@@ -22,10 +23,10 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterProtocol, setFilterProtocol] = useState<'all' | 'covid' | 'standard' | 'judicial'>('all')
-  const [yearFilter, setYearFilter] = useState<string>('2026')
   const [sortOption, setSortOption] = useState<
     'fecha-desc' | 'fecha-asc' | 'alfa-asc' | 'alfa-desc' | 'parcela-asc'
   >('fecha-desc')
+  const [isFolioModalOpen, setIsFolioModalOpen] = useState(false)
   const [actaModal, setActaModal] = useState<{
     isOpen: boolean
     inhumacion: Inhumacion | null
@@ -43,16 +44,6 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
   const filtered = inhumaciones.filter((i) => {
     if (filterProtocol === 'covid' && !i.es_covid) return false
     if (filterProtocol === 'standard' && i.es_covid) return false
-
-    if (yearFilter !== 'all') {
-      if (yearFilter === 'covid_era') {
-        const year = i.fecha_inhumacion?.slice(0, 4)
-        if (year !== '2020' && year !== '2021' && year !== '2022' && !i.es_covid) return false
-      } else {
-        const year = i.fecha_inhumacion?.slice(0, 4)
-        if (year !== yearFilter) return false
-      }
-    }
 
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase()
@@ -109,104 +100,37 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
           </p>
         </div>
 
-        {onNuevaInhumacion && (
-          <button
-            type="button"
-            id="btn-nueva-inhumacion"
-            onClick={onNuevaInhumacion}
-            className="h-7 sm:h-[38px] px-2.5 sm:px-4 rounded bg-primary hover:bg-secondary text-white text-xs sm:text-body-sm font-semibold inline-flex items-center justify-center gap-1 shadow-sm transition-colors shrink-0 cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[15px] sm:text-[18px]">add_circle</span>
-            <span className="hidden xs:inline">+ Nueva Inhumación</span>
-            <span className="xs:hidden">+ Nueva</span>
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Métricas breves del libro */}
+          <div className="hidden sm:flex items-center gap-2 text-xs">
+            <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-semibold border border-slate-300">
+              Registradas: <strong className="text-slate-900">{inhumaciones.length}</strong>
+            </span>
+            <span className="px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 font-semibold border border-purple-200">
+              COVID-19: <strong className="text-purple-900">{totalCovid}</strong>
+            </span>
+          </div>
+
+          {onNuevaInhumacion && (
+            <button
+              type="button"
+              id="btn-nueva-inhumacion"
+              onClick={onNuevaInhumacion}
+              className="h-7 sm:h-[38px] px-2.5 sm:px-4 rounded bg-primary hover:bg-secondary text-white text-xs sm:text-body-sm font-semibold inline-flex items-center justify-center gap-1 shadow-sm transition-colors shrink-0 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[15px] sm:text-[18px]">add_circle</span>
+              <span className="hidden xs:inline">+ Nueva Inhumación</span>
+              <span className="xs:hidden">+ Nueva</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ===================================================================== */}
-      {/* HISTORICAL RECORD & SEARCH (Bottom Region Stitch Verbatim)             */}
+      {/* HISTORICAL RECORD & SEARCH                                            */}
       {/* ===================================================================== */}
       <section className="bg-surface-container-lowest border border-outline-variant rounded-lg shadow-[0_1px_2px_0_rgba(15,23,42,0.04)] flex-1 min-h-0 flex flex-col overflow-hidden">
-        {/* Tabbed Year Selector & Header Filters */}
-        <div className="border-b border-outline-variant bg-surface-container-low/40 px-3 sm:px-4 pt-2.5 sm:pt-3 pb-0 flex flex-wrap items-end justify-between gap-2 sm:gap-3 overflow-hidden shrink-0">
-          {/* Year Tabs - Scrollable on mobile */}
-          <div className="flex items-center gap-1 overflow-x-auto custom-scroll pb-1 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => setYearFilter('2026')}
-              className={`px-3 py-2 text-body-sm font-semibold rounded-t flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 ${
-                yearFilter === '2026'
-                  ? 'border-b-2 border-primary text-primary bg-surface-container-lowest'
-                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
-              }`}
-            >
-              <span>Recientes / 2026</span>
-              <span className="px-1.5 py-0.2 bg-primary/10 text-primary text-[10px] rounded-full font-label-numeric">
-                {inhumaciones.filter((i) => i.fecha_inhumacion?.startsWith('2026')).length}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setYearFilter('2025')}
-              className={`px-3 py-2 text-body-sm rounded-t transition-colors whitespace-nowrap shrink-0 ${
-                yearFilter === '2025'
-                  ? 'border-b-2 border-primary text-primary bg-surface-container-lowest font-semibold'
-                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
-              }`}
-            >
-              2025
-            </button>
-            <button
-              type="button"
-              onClick={() => setYearFilter('2024')}
-              className={`px-3 py-2 text-body-sm rounded-t transition-colors whitespace-nowrap shrink-0 ${
-                yearFilter === '2024'
-                  ? 'border-b-2 border-primary text-primary bg-surface-container-lowest font-semibold'
-                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
-              }`}
-            >
-              2024
-            </button>
-            <button
-              type="button"
-              onClick={() => setYearFilter('covid_era')}
-              className={`px-3 py-2 text-body-sm font-semibold rounded-t transition-colors flex items-center gap-1 whitespace-nowrap shrink-0 ${
-                yearFilter === 'covid_era'
-                  ? 'border-b-2 border-[#7C3AED] text-[#7C3AED] bg-surface-container-lowest'
-                  : 'text-[#7C3AED] hover:bg-[#F5F3FF]'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[14px]">coronavirus</span>
-              <span>2020-2022 (Etapa COVID)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setYearFilter('all')}
-              className={`px-3 py-2 text-body-sm rounded-t transition-colors whitespace-nowrap shrink-0 ${
-                yearFilter === 'all'
-                  ? 'border-b-2 border-primary text-primary bg-surface-container-lowest font-semibold'
-                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
-              }`}
-            >
-              Ver Archivo Completo
-            </button>
-          </div>
-
-          {/* Total Metrics Counter */}
-          <div className="flex items-center gap-3 pb-2 text-[12px] text-outline font-label-caps shrink-0">
-            <span>
-              Registradas:{' '}
-              <strong className="text-on-surface font-label-numeric font-bold">{inhumaciones.length}</strong>
-            </span>
-            <span className="h-3 w-[1px] bg-outline-variant"></span>
-            <span>
-              COVID-19:{' '}
-              <strong className="text-[#7C3AED] font-label-numeric font-bold">{totalCovid}</strong>
-            </span>
-          </div>
-        </div>
-
-        {/* Filter Sub-Toolbar */}
+        {/* Filter Toolbar (Buscador por nombre, protocolos, orden y exportar folio) */}
         <div className="p-2 sm:p-3 bg-surface-container-lowest border-b border-outline-variant flex flex-wrap items-center justify-between gap-2 sm:gap-3 shrink-0">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1 max-w-2xl w-full">
             {/* Search bar */}
@@ -226,7 +150,7 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
             <select
               value={filterProtocol}
               onChange={(e) => setFilterProtocol(e.target.value as any)}
-              className="h-[34px] px-2.5 text-body-sm bg-surface-container-lowest border border-outline-variant rounded text-on-surface-variant focus:border-secondary outline-none shrink-0"
+              className="h-[34px] px-2.5 text-body-sm bg-surface-container-lowest border border-outline-variant rounded text-on-surface-variant focus:border-secondary outline-none shrink-0 cursor-pointer"
             >
               <option value="all">Todos los Protocolos</option>
               <option value="covid">Solo Protocolo COVID-19</option>
@@ -249,15 +173,16 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
             </select>
           </div>
 
-          {/* Quick export tools */}
+          {/* Exportar Folio PDF Oficial */}
           <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
-              onClick={() => window.print()}
-              title="Exportar Libro en PDF Oficial"
-              className="h-[32px] px-2.5 bg-surface-container-lowest border border-outline-variant rounded text-body-sm text-on-surface-variant hover:bg-surface-container-low flex items-center gap-1"
+              id="btn-exportar-folio"
+              onClick={() => setIsFolioModalOpen(true)}
+              title="Exportar Folio Oficial del Libro de Inhumaciones en PDF Estructurado A4"
+              className="h-[34px] px-3 bg-surface-container-lowest border border-outline-variant hover:border-primary hover:text-primary rounded text-body-sm font-semibold text-on-surface-variant hover:bg-surface-container-low flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors shrink-0"
             >
-              <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+              <span className="material-symbols-outlined text-[17px] text-red-600">picture_as_pdf</span>
               <span>Exportar Folio</span>
             </button>
           </div>
@@ -546,6 +471,15 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
           folioNumber={actaModal.folio}
         />
       )}
+
+      {/* Modal Folio Oficial A4 PDF del Libro de Inhumaciones */}
+      <FolioInhumacionesModal
+        isOpen={isFolioModalOpen}
+        onClose={() => setIsFolioModalOpen(false)}
+        inhumaciones={inhumaciones}
+        currentFilterProtocol={filterProtocol}
+        currentSearchTerm={searchTerm}
+      />
 
       {/* Modal de Edición de Inhumación (Requerimiento explícito: editar mediante modales) */}
       {modalEditInhumacion && (
