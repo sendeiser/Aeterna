@@ -362,13 +362,155 @@ begin
 end;
 
 // -------------------------------------------------------------
+// -------------------------------------------------------------
+// Filtrado y Poblado de ListViews
+// -------------------------------------------------------------
+
+function EstadoParcelaToDisplay(AEstado: TEstadoParcela): string;
+begin
+  case AEstado of
+    epDisponible: Result := 'Disponible';
+    epOcupada:    Result := 'Ocupada';
+    epReservada:  Result := 'Reservada';
+    epEnMora:     Result := 'En Mora';
+    epBaja:       Result := 'Baja';
+    epStandby:    Result := 'Standby';
+  else
+    Result := 'Disponible';
+  end;
+end;
+
+procedure FiltrarYMostrarParcelas;
+var
+  i, OutIdx, SecIdx, EstIdx: Integer;
+  PasaSec, PasaEst: Boolean;
+begin
+  ClearListView(hLvParcelas);
+  SecIdx := SendMessage(hCmbSector, CB_GETCURSEL, 0, 0);
+  EstIdx := SendMessage(hCmbEstadoParc, CB_GETCURSEL, 0, 0);
+
+  OutIdx := 0;
+  for i := 0 to High(DataParcelas) do
+  begin
+    PasaSec := True;
+    if SecIdx = 1 then PasaSec := SameText(DataParcelas[i].SectorId, 'A')
+    else if SecIdx = 2 then PasaSec := SameText(DataParcelas[i].SectorId, 'B')
+    else if SecIdx = 3 then PasaSec := SameText(DataParcelas[i].SectorId, 'E')
+    else if SecIdx = 4 then PasaSec := (SameText(DataParcelas[i].SectorId, 'SALINAS') or SameText(DataParcelas[i].SectorId, 'Salinas'));
+
+    PasaEst := True;
+    if EstIdx = 1 then PasaEst := (DataParcelas[i].Estado = epDisponible)
+    else if EstIdx = 2 then PasaEst := (DataParcelas[i].Estado = epOcupada)
+    else if EstIdx = 3 then PasaEst := (DataParcelas[i].Estado = epEnMora)
+    else if EstIdx = 4 then PasaEst := (DataParcelas[i].Estado = epReservada)
+    else if EstIdx = 5 then PasaEst := (DataParcelas[i].Estado = epBaja);
+
+    if PasaSec and PasaEst then
+    begin
+      AddListViewItem(hLvParcelas, OutIdx, [
+        DataParcelas[i].Nomenclatura,
+        BoolToTexto(DataParcelas[i].SectorId <> '', DataParcelas[i].SectorId, '-'),
+        DataParcelas[i].ManzanaFila,
+        DataParcelas[i].NumeroParcela,
+        EstadoParcelaToDisplay(DataParcelas[i].Estado),
+        BoolToTexto(DataParcelas[i].TitularNombre <> '', DataParcelas[i].TitularNombre, '(Sin Titular Asignado)'),
+        FormatearFecha(DataParcelas[i].FechaAdquisicion),
+        FormatearMoneda(DataParcelas[i].SaldoMantenimiento)
+      ]);
+      Inc(OutIdx);
+    end;
+  end;
+end;
+
+procedure FiltrarYMostrarAfiliados;
+var
+  i, OutIdx, MoraIdx, MesesM: Integer;
+  PasaMora: Boolean;
+  MoraLabel: string;
+begin
+  ClearListView(hLvAfiliados);
+  MoraIdx := SendMessage(hCmbMora, CB_GETCURSEL, 0, 0);
+
+  OutIdx := 0;
+  for i := 0 to High(DataAfiliados) do
+  begin
+    MesesM := DataAfiliados[i].MesesMora;
+    PasaMora := True;
+    if MoraIdx = 1 then PasaMora := (DataAfiliados[i].Estado = eaActivo) and (MesesM < 3)
+    else if MoraIdx = 2 then PasaMora := (MesesM >= 3) and (MesesM < 36) and (DataAfiliados[i].Estado <> eaBaja)
+    else if MoraIdx = 3 then PasaMora := (MesesM >= 36) or (DataAfiliados[i].Estado = eaBaja);
+
+    if PasaMora then
+    begin
+      if DataAfiliados[i].Estado = eaBaja then
+        MoraLabel := 'BAJA DEFINITIVA'
+      else if MesesM >= 36 then
+        MoraLabel := 'URGENTE: RIESGO DE BAJA (3 ANOS)'
+      else if MesesM >= 3 then
+        MoraLabel := 'AVISO: MORA 3 MESES'
+      else
+        MoraLabel := 'AL DIA (Habilitado)';
+
+      AddListViewItem(hLvAfiliados, OutIdx, [
+        IntToStr(DataAfiliados[i].NumeroAfiliado),
+        DataAfiliados[i].NombreCompleto,
+        BoolToTexto(DataAfiliados[i].Dni <> '', DataAfiliados[i].Dni, 'S/D'),
+        DataAfiliados[i].DireccionCobro,
+        FormatearMoneda(DataAfiliados[i].MontoCuotaMensual),
+        IntToStr(MesesM) + ' meses',
+        MoraLabel
+      ]);
+      Inc(OutIdx);
+    end;
+  end;
+end;
+
+procedure FiltrarYMostrarInhumaciones(const FiltroTexto: string);
+var
+  i, OutIdx: Integer;
+  FiltroUpper, NomUpper, DniUpper, ParcUpper: string;
+  Pasa: Boolean;
+begin
+  ClearListView(hLvInh);
+  FiltroUpper := UpperCase(Trim(FiltroTexto));
+
+  OutIdx := 0;
+  for i := 0 to High(DataInhumaciones) do
+  begin
+    Pasa := True;
+    if FiltroUpper <> '' then
+    begin
+      NomUpper := UpperCase(DataInhumaciones[i].NombreDifunto);
+      DniUpper := UpperCase(DataInhumaciones[i].DniDifunto);
+      ParcUpper := UpperCase(DataInhumaciones[i].NomenclaturaParcela);
+      Pasa := (Pos(FiltroUpper, NomUpper) > 0) or (Pos(FiltroUpper, DniUpper) > 0) or (Pos(FiltroUpper, ParcUpper) > 0);
+    end;
+
+    if Pasa then
+    begin
+      AddListViewItem(hLvInh, OutIdx, [
+        FormatearFecha(DataInhumaciones[i].FechaInhumacion),
+        DataInhumaciones[i].NombreDifunto,
+        DataInhumaciones[i].DniDifunto,
+        DataInhumaciones[i].NomenclaturaParcela,
+        IntToStr(DataInhumaciones[i].NivelPosicion),
+        DataInhumaciones[i].EmpresaFunebrera,
+        BoolToTexto(DataInhumaciones[i].EsCovid, 'COVID-19', 'Estandar')
+      ]);
+      Inc(OutIdx);
+    end;
+  end;
+end;
+
+// -------------------------------------------------------------
 // Carga de Datos y Actualizacion de Pantalla
 // -------------------------------------------------------------
 
 procedure CargarDatosIniciales;
 var
-  i, MesesM: Integer;
-  MoraLabel: string;
+  i: Integer;
+  CountOcupadas, CountLibres: Integer;
+  CountActivos, CountMora, CountBaja: Integer;
 begin
   SetStatusMessage('Sincronizando con Supabase Cloud en tiempo real...');
 
@@ -403,36 +545,44 @@ begin
     TotalDigHoy := 0;
   end;
 
-  // Actualizar Tarjetas KPI
-  SetWindowText(hCard1Val, PChar(IntToStr(Length(DataParcelas)) + ' Parcelas'));
-  SetWindowText(hCard1Sub, 'Catastro Sincronizado');
+  // Actualizar Tarjetas KPI con calculo real
+  CountOcupadas := 0;
+  CountLibres := 0;
+  for i := 0 to High(DataParcelas) do
+  begin
+    if DataParcelas[i].Estado = epOcupada then
+      Inc(CountOcupadas)
+    else if DataParcelas[i].Estado = epDisponible then
+      Inc(CountLibres);
+  end;
+
+  CountActivos := 0;
+  CountMora := 0;
+  CountBaja := 0;
+  for i := 0 to High(DataAfiliados) do
+  begin
+    if DataAfiliados[i].Estado = eaActivo then
+      Inc(CountActivos)
+    else if DataAfiliados[i].Estado = eaEnMora then
+      Inc(CountMora)
+    else if DataAfiliados[i].Estado = eaBaja then
+      Inc(CountBaja);
+  end;
+
+  SetWindowText(hCard1Val, PChar(IntToStr(CountOcupadas) + ' / ' + IntToStr(Length(DataParcelas))));
+  SetWindowText(hCard1Sub, PChar(IntToStr(CountOcupadas) + ' Ocupadas - ' + IntToStr(CountLibres) + ' Libres'));
 
   SetWindowText(hCard2Val, PChar(IntToStr(Length(DataInhumaciones)) + ' Actas'));
   SetWindowText(hCard2Sub, 'Difuntos Registrados');
 
-  SetWindowText(hCard3Val, PChar(IntToStr(Length(DataAfiliados)) + ' Titulares'));
-  SetWindowText(hCard3Sub, 'Cobertura Activa al Dia');
+  SetWindowText(hCard3Val, PChar(IntToStr(CountActivos) + ' Activos'));
+  SetWindowText(hCard3Sub, PChar(IntToStr(Length(DataAfiliados)) + ' Titulares en Padron'));
 
-  SetWindowText(hCard4Val, 'Seguro Sepelio');
-  SetWindowText(hCard4Sub, 'Cobranza y Morosidad');
+  SetWindowText(hCard4Val, PChar(IntToStr(CountMora) + ' Mora / ' + IntToStr(CountBaja) + ' Baja'));
+  SetWindowText(hCard4Sub, 'Cobranza y Seguro');
 
   SetWindowText(hCard5Val, PChar(FormatearMoneda(TotalEfHoy + TotalDigHoy)));
   SetWindowText(hCard5Sub, PChar('Ef: ' + FormatearMoneda(TotalEfHoy) + ' - Dig: ' + FormatearMoneda(TotalDigHoy)));
-
-  // Poblar ListView Inhumaciones
-  ClearListView(hLvInh);
-  for i := 0 to High(DataInhumaciones) do
-  begin
-    AddListViewItem(hLvInh, i, [
-      FormatearFecha(DataInhumaciones[i].FechaInhumacion),
-      DataInhumaciones[i].NombreDifunto,
-      DataInhumaciones[i].DniDifunto,
-      DataInhumaciones[i].NomenclaturaParcela,
-      IntToStr(DataInhumaciones[i].NivelPosicion),
-      DataInhumaciones[i].EmpresaFunebrera,
-      BoolToTexto(DataInhumaciones[i].EsCovid, 'COVID-19', 'Estandar')
-    ]);
-  end;
 
   // Poblar Actividad Reciente en Dashboard
   ClearListView(hLvRecentInh);
@@ -448,44 +598,10 @@ begin
     ]);
   end;
 
-  // Poblar ListView Parcelas
-  ClearListView(hLvParcelas);
-  for i := 0 to High(DataParcelas) do
-  begin
-    AddListViewItem(hLvParcelas, i, [
-      DataParcelas[i].Nomenclatura,
-      DataParcelas[i].SectorId,
-      DataParcelas[i].ManzanaFila,
-      DataParcelas[i].NumeroParcela,
-      EstadoParcelaToStr(DataParcelas[i].Estado),
-      DataParcelas[i].TitularNombre,
-      FormatearFecha(DataParcelas[i].FechaUltimoPago),
-      FormatearMoneda(DataParcelas[i].SaldoMantenimiento)
-    ]);
-  end;
-
-  // Poblar ListView Afiliados
-  ClearListView(hLvAfiliados);
-  for i := 0 to High(DataAfiliados) do
-  begin
-    MesesM := DataAfiliados[i].MesesMora;
-    if MesesM >= 36 then
-      MoraLabel := 'URGENTE: RIESGO DE BAJA (3 ANOS)'
-    else if MesesM >= 3 then
-      MoraLabel := 'AVISO: MORA 3 MESES'
-    else
-      MoraLabel := 'AL DIA (Habilitado)';
-
-    AddListViewItem(hLvAfiliados, i, [
-      IntToStr(DataAfiliados[i].NumeroAfiliado),
-      DataAfiliados[i].NombreCompleto,
-      DataAfiliados[i].Dni,
-      DataAfiliados[i].DireccionCobro,
-      FormatearMoneda(DataAfiliados[i].MontoCuotaMensual),
-      IntToStr(MesesM) + ' meses',
-      MoraLabel
-    ]);
-  end;
+  // Poblar Listados Filtrados
+  FiltrarYMostrarInhumaciones('');
+  FiltrarYMostrarParcelas;
+  FiltrarYMostrarAfiliados;
 
   // Poblar ListView Caja
   ClearListView(hLvCaja);
@@ -504,7 +620,7 @@ begin
   SetWindowText(hLblResumenCaja, PChar('TOTAL RECAUDADO HOY: ' + FormatearMoneda(TotalEfHoy + TotalDigHoy) +
     '   [ Efectivo en Caja: ' + FormatearMoneda(TotalEfHoy) + '  |  Transferencias / QR: ' + FormatearMoneda(TotalDigHoy) + ' ]'));
 
-  SetStatusMessage('Aeterna conectado a Supabase Cloud - ' + IntToStr(Length(DataInhumaciones)) + ' actas cargadas.');
+  SetStatusMessage('Aeterna conectado a Supabase Cloud - ' + IntToStr(Length(DataInhumaciones)) + ' actas, ' + IntToStr(Length(DataParcelas)) + ' parcelas, ' + IntToStr(Length(DataAfiliados)) + ' afiliados.');
 end;
 
 // -------------------------------------------------------------
@@ -954,10 +1070,14 @@ end;
 
 procedure AccionGenerarActaPDF;
 var
+  Idx: Integer;
   Inh: TInhumacion;
   Ruta: string;
 begin
-  if Length(DataInhumaciones) > 0 then
+  Idx := GetSelectedListViewIndex(hLvInh);
+  if (Idx >= 0) and (Idx <= High(DataInhumaciones)) then
+    Inh := DataInhumaciones[Idx]
+  else if Length(DataInhumaciones) > 0 then
     Inh := DataInhumaciones[0]
   else
   begin
@@ -975,7 +1095,7 @@ begin
 
   Ruta := GetReportsDirectory + '\Acta_Oficial_Inhumacion_' + FormatDateTime('yyyymmdd_hhnnss', Now) + '.pdf';
   GenerarActaInhumacionPDF(Inh, Ruta);
-  SetStatusMessage('Acta de Inhumacion generada exitosamente.');
+  SetStatusMessage('Acta de Inhumacion generada exitosamente: ' + Inh.NombreDifunto);
   OpenFileWithShell(Ruta);
 end;
 
@@ -991,21 +1111,30 @@ end;
 
 procedure AccionGenerarReciboPDF;
 var
+  Idx: Integer;
   Pago: TPagoMantenimiento;
   Ruta: string;
 begin
-  FillChar(Pago, SizeOf(Pago), 0);
-  Pago.NroRecibo := '2026-' + FormatDateTime('hhnnss', Now);
-  Pago.TitularNombre := 'Marta Beatriz Suarez';
-  Pago.MontoPagado := 36000;
-  Pago.PeriodoCubierto := 'Cuotas Sep - Oct 2026';
-  Pago.MetodoPago := mpEfectivo;
-  Pago.OperadorNombre := 'Admin General';
-  Pago.Observaciones := 'Cobro de Cuotas de Seguro de Sepelio';
+  Idx := GetSelectedListViewIndex(hLvCaja);
+  if (Idx >= 0) and (Idx <= High(DataPagos)) then
+    Pago := DataPagos[Idx]
+  else if Length(DataPagos) > 0 then
+    Pago := DataPagos[0]
+  else
+  begin
+    FillChar(Pago, SizeOf(Pago), 0);
+    Pago.NroRecibo := 'REC-' + FormatDateTime('hhnnss', Now);
+    Pago.TitularNombre := 'Marta Beatriz Suarez';
+    Pago.MontoPagado := 36000;
+    Pago.PeriodoCubierto := 'Periodo Vigente 2026';
+    Pago.MetodoPago := mpEfectivo;
+    Pago.OperadorNombre := 'Administracion General';
+    Pago.Observaciones := 'Cobro de Mantenimiento de Parcela';
+  end;
 
   Ruta := GetReportsDirectory + '\Recibo_Oficial_' + Pago.NroRecibo + '.pdf';
   GenerarReciboPagoPDF(Pago, Ruta);
-  SetStatusMessage('Recibo oficial por duplicado generado.');
+  SetStatusMessage('Recibo oficial por duplicado generado: ' + Pago.NroRecibo);
   OpenFileWithShell(Ruta);
 end;
 
@@ -1265,6 +1394,7 @@ begin
   hCmbSector := CreateComboBox(hWnd, 70, 112, 130, 140, IDC_CMB_SECTOR);
   SendMessage(hCmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Todos los Sectores')));
   SendMessage(hCmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Sector A')));
+  SendMessage(hCmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Sector B')));
   SendMessage(hCmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Sector E')));
   SendMessage(hCmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Sector Salinas')));
   SendMessage(hCmbSector, CB_SETCURSEL, 0, 0);
@@ -1276,7 +1406,9 @@ begin
   SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Todos los Estados')));
   SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Disponible')));
   SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Ocupada')));
+  SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('En Mora')));
   SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Reservada')));
+  SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Baja')));
   SendMessage(hCmbEstadoParc, CB_SETCURSEL, 0, 0);
   AddControlToModule(1, hCmbEstadoParc);
 
@@ -1484,6 +1616,8 @@ function MainWindowProc(hWindow: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARA
 var
   CmdId: Integer;
   hCtrl: HWND;
+  SearchBuf: string;
+  Len: Integer;
 begin
   case uMsg of
     WM_CTLCOLORSTATIC:
@@ -1584,6 +1718,29 @@ begin
     WM_COMMAND:
       begin
         CmdId := LOWORD(wParam);
+
+        // Notificaciones de Seleccion de ComboBox
+        if HIWORD(wParam) = CBN_SELCHANGE then
+        begin
+          if (CmdId = IDC_CMB_SECTOR) or (CmdId = IDC_CMB_ESTADO_PARC) then
+            FiltrarYMostrarParcelas
+          else if CmdId = IDC_CMB_MORA then
+            FiltrarYMostrarAfiliados;
+          Result := 0;
+          Exit;
+        end;
+
+        // Busqueda en tiempo real al tipear en el cuadro de busqueda
+        if (HIWORD(wParam) = EN_CHANGE) and (CmdId = IDC_EDT_BUSCAR_INH) then
+        begin
+          SetLength(SearchBuf, 256);
+          Len := GetWindowText(hEdtBuscarInh, PChar(SearchBuf), 255);
+          SetLength(SearchBuf, Len);
+          FiltrarYMostrarInhumaciones(SearchBuf);
+          Result := 0;
+          Exit;
+        end;
+
         case CmdId of
           IDM_SALIR: PostMessage(hWindow, WM_CLOSE, 0, 0);
           IDM_REFRESCAR, IDC_BTN_SYNC: CargarDatosIniciales;
@@ -1603,7 +1760,14 @@ begin
           IDC_BTN_DEL_INH:      AccionEliminarInhumacion;
           IDC_BTN_ACTA_PDF:     AccionGenerarActaPDF;
           IDC_BTN_FOLIO_PDF:    AccionGenerarFolioPDF;
-          IDC_BTN_BUSCAR_INH:   SetStatusMessage('Busqueda en libro de inhumaciones realizada.');
+          IDC_BTN_BUSCAR_INH:
+            begin
+              SetLength(SearchBuf, 256);
+              Len := GetWindowText(hEdtBuscarInh, PChar(SearchBuf), 255);
+              SetLength(SearchBuf, Len);
+              FiltrarYMostrarInhumaciones(SearchBuf);
+              SetStatusMessage('Busqueda aplicada: ' + SearchBuf);
+            end;
 
           // CRUD Parcelas
           IDC_BTN_NUEVA_PARC:   AccionNuevaParcela;

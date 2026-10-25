@@ -32,7 +32,7 @@ var
   Query: string;
 begin
   SetLength(Result, 0);
-  Query := 'select=id,nomenclatura,sector_id,manzana_fila,numero_parcela,capacidad_total,espacios_ocupados,estado,saldo_mantenimiento,fecha_adquisicion,fecha_ultimo_pago,ultima_cuota_pagada,motivo_bloqueo,notas,titular:titulares(id,nombre_completo,dni)&order=nomenclatura.asc';
+  Query := 'select=id,nomenclatura,sector_id,manzana_fila,numero_parcela,capacidad_total,espacios_ocupados,estado,saldo_mantenimiento,fecha_adquisicion,notas,titular:titulares(id,nombre_completo,dni)&order=nomenclatura.asc';
 
   if ASector <> '' then
     Query := Query + '&sector_id=eq.' + ASector;

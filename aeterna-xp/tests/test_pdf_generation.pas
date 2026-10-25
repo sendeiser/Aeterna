@@ -37,6 +37,19 @@ begin
   else
     WriteLn('[FAIL] No se creo el archivo del acta');
 
+  // 1.b Test Folio del Libro
+  SetLength(ListaInh, 2);
+  ListaInh[0] := Inh;
+  ListaInh[1] := Inh;
+  ListaInh[1].NombreDifunto := 'Marta Sanchez';
+  ListaInh[1].NomenclaturaParcela := 'E-05-12';
+  Fichero := 'test_folio_output.pdf';
+  GenerarFolioInhumacionesPDF(ListaInh, Fichero);
+  if FileExists(Fichero) then
+    WriteLn('[PASS] GenerarFolioInhumacionesPDF produjo archivo: ', Fichero)
+  else
+    WriteLn('[FAIL] No se creo el archivo del folio');
+
   // 2. Test Recibo Oficial
   FillChar(Pago, SizeOf(Pago), 0);
   Pago.NroRecibo := '2026-00412';

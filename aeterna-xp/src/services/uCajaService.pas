@@ -24,14 +24,13 @@ implementation
 class function TCajaService.ObtenerMovimientosHoy: TPagoArray;
 var
   JsonArr: TJSONArray;
-  Item, TitularObj: TJSONObject;
+  Item: TJSONObject;
   i, Total: Integer;
-  FechaHoy: string;
 begin
   SetLength(Result, 0);
-  FechaHoy := FormatDateTime('yyyy-mm-dd', Now);
 
-  JsonArr := Supabase.Select('pagos_mantenimiento', Format('fecha_pago=gte.%sT00:00:00&select=*,titular:titulares(nombre_completo)&order=fecha_pago.desc', [FechaHoy]));
+  // Obtener asientos de caja y recibos en orden cronologico inverso
+  JsonArr := Supabase.Select('pagos_recibos', 'order=fecha_pago.desc&limit=300');
   if JsonArr = nil then Exit;
 
   try
@@ -41,26 +40,21 @@ begin
     begin
       Item := TJSONObject(JsonArr.Items[i]);
       Result[i].Id := Item.Get('id', '');
-      Result[i].NroRecibo := Item.Get('nro_recibo', '');
-      Result[i].ParcelaId := Item.Get('parcela_id', '');
-      Result[i].TitularId := Item.Get('titular_id', '');
-      Result[i].Concepto := 'Mantenimiento de Parcela';
-      Result[i].MontoPagado := Item.Get('monto_pagado', 0.0);
-      Result[i].PeriodoCubierto := Item.Get('periodo_cubierto', '');
-      Result[i].MetodoPago := StrToMetodoPago(Item.Get('metodo_pago', 'efectivo'));
-      Result[i].OperadorNombre := Item.Get('operador_nombre', '');
+      Result[i].NroRecibo := Item.Get('numero_recibo', '');
+      if Result[i].NroRecibo = '' then
+        Result[i].NroRecibo := Item.Get('nro_recibo', '');
+      Result[i].ParcelaId := '';
+      Result[i].TitularId := '';
+      Result[i].Concepto := Item.Get('concepto', 'Cobro General');
+      Result[i].MontoPagado := Item.Get('monto', 0.0);
+      if Result[i].MontoPagado = 0 then
+        Result[i].MontoPagado := Item.Get('monto_pagado', 0.0);
+      Result[i].PeriodoCubierto := 'Periodo Vigente';
+      Result[i].MetodoPago := StrToMetodoPago(Item.Get('metodo_pago', 'transferencia_qr'));
+      Result[i].OperadorNombre := 'Administracion General';
       Result[i].FechaPago := Item.Get('fecha_pago', '');
-      Result[i].Observaciones := Item.Get('observaciones', '');
-
-      Result[i].TitularNombre := '';
-      if Item.Find('titular') <> nil then
-      begin
-        if Item.Types['titular'] = jtObject then
-        begin
-          TitularObj := Item.Objects['titular'];
-          Result[i].TitularNombre := TitularObj.Get('nombre_completo', '');
-        end;
-      end;
+      Result[i].Observaciones := Result[i].Concepto;
+      Result[i].TitularNombre := Item.Get('titular_paga', 'Contribuyente General');
     end;
   finally
     JsonArr.Free;
@@ -76,17 +70,17 @@ begin
   FechaAhora := FormatDateTime('yyyy-mm-dd"T"hh:nn:ss', Now);
   Data := TJSONObject.Create;
   try
-    Data.Add('nro_recibo', ARecibo);
-    Data.Add('parcela_id', AParcelaId);
-    Data.Add('titular_id', ATitularId);
-    Data.Add('monto_pagado', Double(AMonto));
-    Data.Add('periodo_cubierto', APeriodo);
+    Data.Add('numero_recibo', ARecibo);
+    Data.Add('monto', Double(AMonto));
     Data.Add('metodo_pago', MetodoPagoToStr(AMetodo));
-    Data.Add('operador_nombre', AOperador);
+    Data.Add('concepto', AConcepto);
+    if ATitularNombre <> '' then
+      Data.Add('titular_paga', ATitularNombre)
+    else
+      Data.Add('titular_paga', 'Contribuyente Parroquia');
     Data.Add('fecha_pago', FechaAhora);
-    Data.Add('observaciones', AConcepto);
 
-    Resp := Supabase.Insert('pagos_mantenimiento', Data);
+    Resp := Supabase.Insert('pagos_recibos', Data);
     if Resp <> nil then
     begin
       Result := True;
@@ -101,7 +95,7 @@ class function TCajaService.EliminarPago(const AId: string): Boolean;
 begin
   Result := False;
   if AId = '' then Exit;
-  Result := Supabase.Delete('pagos_mantenimiento', 'id=eq.' + AId);
+  Result := Supabase.Delete('pagos_recibos', 'id=eq.' + AId);
 end;
 
 class function TCajaService.CalcularTotalesHoy(out TotalEfectivo, TotalDigital: Currency): Currency;

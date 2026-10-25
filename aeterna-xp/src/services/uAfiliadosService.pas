@@ -5,7 +5,7 @@ unit uAfiliadosService;
 interface
 
 uses
-  Classes, SysUtils, fpjson, uDataModels, uSupabaseClient;
+  Classes, SysUtils, fpjson, uDataModels, uBusinessRules, uSupabaseClient;
 
 type
   { TAfiliadosService }
@@ -30,7 +30,7 @@ var
   i, j, Total, TotalCuotas: Integer;
 begin
   SetLength(Result, 0);
-  JsonArr := Supabase.Select('afiliados_seguro', 'select=*,cuotas_seguro(anio,nro_cuota,estado)&order=numero_afiliado.asc');
+  JsonArr := Supabase.Select('afiliados_seguro', 'select=*,cuotas_seguro(anio,mes,estado_cuota)&order=numero_afiliado.asc');
   if JsonArr = nil then Exit;
 
   try
@@ -62,14 +62,17 @@ begin
           for j := 0 to TotalCuotas - 1 do
           begin
             CuotaItem := TJSONObject(CuotasArr.Items[j]);
-            if CuotaItem.Get('estado', '') = 'pagada' then
+            if CuotaItem.Get('estado_cuota', '') = 'pagada' then
             begin
               SetLength(Result[i].CuotasPagadas, Length(Result[i].CuotasPagadas) + 1);
-              Result[i].CuotasPagadas[High(Result[i].CuotasPagadas)] := CuotaItem.Get('nro_cuota', 0);
+              Result[i].CuotasPagadas[High(Result[i].CuotasPagadas)] := CuotaItem.Get('mes', 0);
             end;
           end;
         end;
       end;
+
+      // Calcular morosidad real segun reglas de negocio
+      Result[i].MesesMora := EvaluarMoraAfiliado(Result[i]);
     end;
   finally
     JsonArr.Free;
@@ -83,7 +86,7 @@ var
   i, Total: Integer;
 begin
   SetLength(Result, 0);
-  JsonArr := Supabase.Select('cuotas_seguro', Format('afiliado_id=eq.%s&anio=eq.%d&order=nro_cuota.asc', [AAfiliadoId, Anio]));
+  JsonArr := Supabase.Select('cuotas_seguro', Format('afiliado_id=eq.%s&anio=eq.%d&order=mes.asc', [AAfiliadoId, Anio]));
   if JsonArr = nil then Exit;
 
   try
@@ -95,9 +98,9 @@ begin
       Result[i].Id := Item.Get('id', '');
       Result[i].AfiliadoId := Item.Get('afiliado_id', '');
       Result[i].Anio := Item.Get('anio', Anio);
-      Result[i].NroCuota := Item.Get('nro_cuota', i + 1);
+      Result[i].NroCuota := Item.Get('mes', i + 1);
       Result[i].Monto := Item.Get('monto', 18000.0);
-      if Item.Get('estado', '') = 'pagada' then
+      if Item.Get('estado_cuota', '') = 'pagada' then
         Result[i].Estado := ecPagada
       else
         Result[i].Estado := ecPendiente;
@@ -121,9 +124,9 @@ begin
   try
     Data.Add('afiliado_id', AAfiliadoId);
     Data.Add('anio', Anio);
-    Data.Add('nro_cuota', NroCuota);
+    Data.Add('mes', NroCuota);
     Data.Add('monto', Double(AMonto));
-    Data.Add('estado', 'pagada');
+    Data.Add('estado_cuota', 'pagada');
     Data.Add('fecha_pago', FechaHoy);
     Data.Add('metodo_pago', MetodoPagoToStr(AMetodo));
     Data.Add('nro_recibo', ARecibo);
@@ -149,7 +152,7 @@ begin
     Data.Add('numero_afiliado', AAfiliado.NumeroAfiliado);
     Data.Add('nombre_completo', AAfiliado.NombreCompleto);
     if AAfiliado.Dni <> '' then
-      Data.Add('dni', AAfiliado.Dni);
+      Data.Add('notas', 'DNI: ' + AAfiliado.Dni);
     Data.Add('direccion_cobro', AAfiliado.DireccionCobro);
     Data.Add('zona_cobro', AAfiliado.ZonaCobro);
     Data.Add('cobrador_asignado', AAfiliado.CobradorAsignado);
@@ -180,7 +183,8 @@ begin
   Data := TJSONObject.Create;
   try
     Data.Add('nombre_completo', AAfiliado.NombreCompleto);
-    Data.Add('dni', AAfiliado.Dni);
+    if AAfiliado.Dni <> '' then
+      Data.Add('notas', 'DNI: ' + AAfiliado.Dni);
     Data.Add('direccion_cobro', AAfiliado.DireccionCobro);
     Data.Add('zona_cobro', AAfiliado.ZonaCobro);
     Data.Add('cobrador_asignado', AAfiliado.CobradorAsignado);
