@@ -1,0 +1,141 @@
+object frmParcelas: TfrmParcelas
+  Left = 240
+  Height = 520
+  Top = 150
+  Width = 920
+  Caption = 'Catastro y Mapa de Parcelas'
+  ClientHeight = 520
+  ClientWidth = 920
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  OnCreate = FormCreate
+  OnShow = FormShow
+  Position = poScreenCenter
+  LCLVersion = '2.2.6.0'
+  object pnlTop: TPanel
+    Left = 0
+    Height = 48
+    Top = 0
+    Width = 920
+    Align = alTop
+    BevelOuter = bvNone
+    Color = 15724527
+    TabOrder = 0
+    object lblSector: TLabel
+      Left = 12
+      Height = 13
+      Top = 16
+      Width = 40
+      Caption = 'Sector:'
+      Font.Style = [fsBold]
+      ParentFont = False
+    end
+    object cbSector: TComboBox
+      Left = 56
+      Height = 21
+      Top = 12
+      Width = 140
+      ItemHeight = 13
+      ItemIndex = 0
+      Items.Strings = (
+        'Todos los Sectores'
+        'A'
+        'E'
+        'Salinas'
+      )
+      OnChange = cbSectorChange
+      Style = csDropDownList
+      TabOrder = 0
+      Text = 'Todos los Sectores'
+    end
+    object lblEstado: TLabel
+      Left = 210
+      Height = 13
+      Top = 16
+      Width = 42
+      Caption = 'Estado:'
+      Font.Style = [fsBold]
+      ParentFont = False
+    end
+    object cbEstado: TComboBox
+      Left = 258
+      Height = 21
+      Top = 12
+      Width = 150
+      ItemHeight = 13
+      ItemIndex = 0
+      Items.Strings = (
+        'Todos los Estados'
+        'Disponibles'
+        'Ocupadas'
+        'En Mora'
+        'Caducidad (>3 a)'
+      )
+      OnChange = cbEstadoChange
+      Style = csDropDownList
+      TabOrder = 1
+      Text = 'Todos los Estados'
+    end
+    object lblBuscar: TLabel
+      Left = 422
+      Height = 13
+      Top = 16
+      Width = 42
+      Caption = 'Buscar:'
+      Font.Style = [fsBold]
+      ParentFont = False
+    end
+    object edtBuscar: TEdit
+      Left = 468
+      Height = 21
+      Top = 12
+      Width = 180
+      OnChange = edtBuscarChange
+      TabOrder = 2
+    end
+    object btnRefrescar: TButton
+      Left = 660
+      Height = 25
+      Top = 10
+      Width = 85
+      Caption = 'Refrescar'
+      OnClick = btnRefrescarClick
+      TabOrder = 3
+    end
+    object btnVerFicha: TButton
+      Left = 752
+      Height = 25
+      Top = 10
+      Width = 85
+      Caption = 'Ver Ficha'
+      Font.Style = [fsBold]
+      OnClick = btnVerFichaClick
+      ParentFont = False
+      TabOrder = 4
+    end
+    object lblContador: TLabel
+      Left = 845
+      Height = 13
+      Top = 16
+      Width = 65
+      Caption = 'Mostrando 0'
+      Font.Color = clGray
+      ParentColor = False
+      ParentFont = False
+    end
+  end
+  object gridParcelas: TStringGrid
+    Left = 0
+    Height = 472
+    Top = 48
+    Width = 920
+    Align = alClient
+    FixedCols = 0
+    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect, goSmoothScroll]
+    TabOrder = 1
+    OnDblClick = gridParcelasDblClick
+    OnDrawCell = gridParcelasDrawCell
+  end
+end

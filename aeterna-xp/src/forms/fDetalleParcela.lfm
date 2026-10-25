@@ -1,0 +1,214 @@
+object frmDetalleParcela: TfrmDetalleParcela
+  Left = 320
+  Height = 440
+  Top = 180
+  Width = 460
+  BorderStyle = bsDialog
+  Caption = 'Ficha Catastral de Parcela'
+  ClientHeight = 440
+  ClientWidth = 460
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  OnCreate = FormCreate
+  Position = poScreenCenter
+  LCLVersion = '2.2.6.0'
+  object pnlHeader: TPanel
+    Left = 0
+    Height = 55
+    Top = 0
+    Width = 460
+    Align = alTop
+    BevelOuter = bvNone
+    Color = 3022342
+    TabOrder = 0
+    object lblNomenclatura: TLabel
+      Left = 16
+      Height = 22
+      Top = 8
+      Width = 180
+      Caption = 'Parcela A-01-01'
+      Font.Color = clWhite
+      Font.Height = -16
+      Font.Name = 'Tahoma'
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object lblSector: TLabel
+      Left = 16
+      Height = 13
+      Top = 32
+      Width = 140
+      Caption = 'Sector: A | Capacidad: 3'
+      Font.Color = 14474460
+      ParentColor = False
+    end
+  end
+  object gbTitular: TGroupBox
+    Left = 12
+    Height = 85
+    Top = 64
+    Width = 436
+    Caption = 'Datos del Titular'
+    Font.Style = [fsBold]
+    ParentFont = False
+    TabOrder = 1
+    object lblTitularNombre: TLabel
+      Left = 12
+      Height = 13
+      Top = 10
+      Width = 90
+      Caption = 'Nombre Completo:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object edtTitularNombre: TEdit
+      Left = 12
+      Height = 21
+      Top = 26
+      Width = 260
+      Font.Style = []
+      ParentFont = False
+      ReadOnly = True
+      TabOrder = 0
+    end
+    object lblTitularDni: TLabel
+      Left = 286
+      Height = 13
+      Top = 10
+      Width = 22
+      Caption = 'DNI:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object edtTitularDni: TEdit
+      Left = 286
+      Height = 21
+      Top = 26
+      Width = 130
+      Font.Style = []
+      ParentFont = False
+      ReadOnly = True
+      TabOrder = 1
+    end
+  end
+  object gbEstado: TGroupBox
+    Left = 12
+    Height = 90
+    Top = 156
+    Width = 436
+    Caption = 'Estado y Deuda de Mantenimiento'
+    Font.Style = [fsBold]
+    ParentFont = False
+    TabOrder = 2
+    object lblEstado: TLabel
+      Left = 12
+      Height = 13
+      Top = 12
+      Width = 37
+      Caption = 'Estado:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object cbEstado: TComboBox
+      Left = 12
+      Height = 21
+      Top = 28
+      Width = 120
+      Font.Style = []
+      ItemHeight = 13
+      ParentFont = False
+      Style = csDropDownList
+      TabOrder = 0
+    end
+    object lblSaldo: TLabel
+      Left = 144
+      Height = 13
+      Top = 12
+      Width = 59
+      Caption = 'Saldo Deuda:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object edtSaldo: TEdit
+      Left = 144
+      Height = 21
+      Top = 28
+      Width = 120
+      Font.Style = []
+      ParentFont = False
+      TabOrder = 1
+    end
+    object lblUltimaCuota: TLabel
+      Left = 276
+      Height = 13
+      Top = 12
+      Width = 64
+      Caption = 'Ultima Cuota:'
+      Font.Style = []
+      ParentFont = False
+    end
+    object edtUltimaCuota: TEdit
+      Left = 276
+      Height = 21
+      Top = 28
+      Width = 140
+      Font.Style = []
+      ParentFont = False
+      TabOrder = 2
+    end
+  end
+  object gbNotas: TGroupBox
+    Left = 12
+    Height = 85
+    Top = 252
+    Width = 436
+    Caption = 'Observaciones y Notas'
+    Font.Style = [fsBold]
+    ParentFont = False
+    TabOrder = 3
+    object memoNotas: TMemo
+      Left = 8
+      Height = 58
+      Top = 4
+      Width = 416
+      Font.Style = []
+      ParentFont = False
+      TabOrder = 0
+    end
+  end
+  object btnCobrar: TButton
+    Left = 12
+    Height = 32
+    Top = 390
+    Width = 150
+    Caption = 'Cobrar Mantenimiento'
+    Font.Style = [fsBold]
+    OnClick = btnCobrarClick
+    ParentFont = False
+    TabOrder = 4
+  end
+  object btnGuardar: TButton
+    Left = 250
+    Height = 32
+    Top = 390
+    Width = 95
+    Caption = 'Guardar'
+    Font.Style = [fsBold]
+    OnClick = btnGuardarClick
+    ParentFont = False
+    TabOrder = 5
+  end
+  object btnCancelar: TButton
+    Left = 353
+    Height = 32
+    Top = 390
+    Width = 95
+    Cancel = True
+    Caption = 'Cerrar'
+    ModalResult = 2
+    TabOrder = 6
+  end
+end
