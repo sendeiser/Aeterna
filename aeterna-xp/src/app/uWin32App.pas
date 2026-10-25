@@ -58,6 +58,7 @@ const
   IDC_BTN_NUEVO_COBRO = 2028;
   IDC_BTN_DEL_COBRO   = 2029;
   IDC_BTN_PADRON_PARC_PDF = 2030;
+  IDC_BTN_FILTRAR_AFIL    = 2031;
 
   // Controles de Datos
   IDC_LV_PARCELAS     = 3001;
@@ -69,6 +70,9 @@ const
   IDC_CMB_ESTADO_PARC = 3007;
   IDC_CMB_MORA        = 3008;
   IDC_EDT_BUSCAR_INH  = 3009;
+  IDC_CMB_SALDO_PARC  = 3010;
+  IDC_EDT_BUSCAR_PARC = 3011;
+  IDC_EDT_BUSCAR_AFIL = 3012;
 
 var
   hMainWnd: HWND;
@@ -113,15 +117,17 @@ var
   hLblResumenCaja: HWND;
 
   // Controles Modulo 1 (Parcelas)
-  hLblSector, hLblEstadoParc: HWND;
+  hLblFiltrosParc, hLblSector, hLblEstadoParc, hLblSaldoParc, hCmbSaldoParc: HWND;
+  hLblBuscarParc, hEdtBuscarParc, hBtnBuscarParc: HWND;
   hBtnNuevaParc, hBtnEditParc, hBtnCobrarMantParc, hBtnRepPadronParc, hBtnDelParc, hBtnSyncParc: HWND;
 
   // Controles Modulo 2 (Inhumaciones)
-  hLblBuscarInh: HWND;
+  hLblBuscarInh, hEdtBuscarInh: HWND;
   hBtnBuscarInh, hBtnNuevaInh, hBtnEditInh, hBtnDelInh, hBtnActaPdf, hBtnFolioPdf, hBtnSyncInh: HWND;
 
   // Controles Modulo 3 (Afiliados)
-  hLblFiltroMora: HWND;
+  hLblFiltroMora, hCmbMora: HWND;
+  hLblBuscarAfil, hEdtBuscarAfil, hBtnBuscarAfil: HWND;
   hBtnNuevoAfil, hBtnEditAfil, hBtnCobrarAfil, hBtnDelAfil, hBtnPlanillaPdf, hBtnSyncAfil: HWND;
 
   // Controles Modulo 4 (Caja)
@@ -131,6 +137,38 @@ var
   hLblRepTitle, hLblRepSub: HWND;
   hBtnRepActa, hBtnRepFolio, hBtnRepRecibo, hBtnRepPlanilla, hBtnRepCierre, hBtnRepCarpeta, hBtnRepPadronParcMod5: HWND;
 
+  // Estado de Ordenamiento de Columnas
+  SortColParcelas: Integer = 0;   // 0: Parcela, 1: Sector, 2: Fila, 3: Nro, 4: Estado, 5: Titular, 6: Ultimo Pago, 7: Saldo
+  SortAscParcelas: Boolean = True;
+
+  SortColInh: Integer = 0;        // 0: Fecha Inh, 1: Difunto, 2: DNI, 3: Parcela, 4: Nivel, 5: Empresa, 6: Protocolo
+  SortAscInh: Boolean = False;
+
+  SortColAfil: Integer = 0;       // 0: Nro Afiliado, 1: Titular, 2: DNI, 3: Direccion, 4: Cuota, 5: Mora, 6: Cobertura, 7: Meses
+  SortAscAfil: Boolean = True;
+
+  SortColCaja: Integer = 1;       // 0: Recibo Nro, 1: Fecha/Hora, 2: Titular, 3: Concepto, 4: Metodo, 5: Importe
+  SortAscCaja: Boolean = False;
+
+const
+  ColNamesParcelas: array[0..7] of string = (
+    'Parcela', 'Sector', 'Fila / Mz', 'Nro Parcela',
+    'Estado Parcela', 'Titular de Concesion', 'Ultimo Pago', 'Saldo'
+  );
+  ColNamesInh: array[0..6] of string = (
+    'Fecha Inh.', 'Nombre Completo del Difunto', 'DNI', 'Parcela',
+    'Nivel', 'Empresa Funebrera', 'Protocolo Sanitario'
+  );
+  ColNamesAfil: array[0..7] of string = (
+    'Nro Afiliado', 'Nombre Completo del Titular', 'DNI', 'Direccion de Cobro',
+    'Cuota', 'Mora', 'Estado Cobertura', 'Meses Pagados 2026'
+  );
+  ColNamesCaja: array[0..5] of string = (
+    'Recibo Nro', 'Fecha / Hora', 'Titular / Pagador',
+    'Concepto Imputado', 'Metodo de Pago', 'Importe'
+  );
+
+var
   // Datos en Memoria
   DataParcelas: TParcelaArray;
   DataInhumaciones: TInhumacionArray;
@@ -352,6 +390,32 @@ begin
   end;
 end;
 
+procedure AddListViewItemWithParam(hLv: HWND; ItemIndex: Integer; DataIndex: Integer; const SubItems: array of string);
+var
+  Item: TLVItem;
+  i: Integer;
+begin
+  if Length(SubItems) = 0 then Exit;
+
+  FillChar(Item, SizeOf(Item), 0);
+  Item.mask := LVIF_TEXT or LVIF_PARAM;
+  Item.iItem := ItemIndex;
+  Item.iSubItem := 0;
+  Item.pszText := PChar(SubItems[0]);
+  Item.lParam := LPARAM(DataIndex);
+  SendMessage(hLv, LVM_INSERTITEM, 0, LPARAM(@Item));
+
+  for i := 1 to High(SubItems) do
+  begin
+    FillChar(Item, SizeOf(Item), 0);
+    Item.mask := LVIF_TEXT;
+    Item.iItem := ItemIndex;
+    Item.iSubItem := i;
+    Item.pszText := PChar(SubItems[i]);
+    SendMessage(hLv, LVM_SETITEM, 0, LPARAM(@Item));
+  end;
+end;
+
 procedure ClearListView(hLv: HWND);
 begin
   SendMessage(hLv, LVM_DELETEALLITEMS, 0, 0);
@@ -362,10 +426,75 @@ begin
   Result := SendMessage(hLv, LVM_GETNEXTITEM, -1, LVNI_SELECTED);
 end;
 
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Filtrado y Poblado de ListViews
-// -------------------------------------------------------------
+function GetSelectedListViewDataIndex(hLv: HWND): Integer;
+var
+  ItemIdx: Integer;
+  Item: TLVItem;
+begin
+  Result := -1;
+  ItemIdx := SendMessage(hLv, LVM_GETNEXTITEM, -1, LVNI_SELECTED);
+  if ItemIdx < 0 then Exit;
+  FillChar(Item, SizeOf(Item), 0);
+  Item.mask := LVIF_PARAM;
+  Item.iItem := ItemIdx;
+  if SendMessage(hLv, LVM_GETITEM, 0, LPARAM(@Item)) <> 0 then
+    Result := Item.lParam
+  else
+    Result := ItemIdx;
+end;
+
+function GetWndText(hCtrl: HWND): string;
+var
+  Len: Integer;
+begin
+  Result := '';
+  if hCtrl = 0 then Exit;
+  Len := GetWindowTextLength(hCtrl);
+  if Len <= 0 then Exit;
+  SetLength(Result, Len + 1);
+  Len := GetWindowText(hCtrl, PChar(Result), Len + 1);
+  SetLength(Result, Len);
+end;
+
+procedure SetListViewColumnText(hLv: HWND; ColIndex: Integer; const NewText: string);
+var
+  Col: TLVColumn;
+begin
+  FillChar(Col, SizeOf(Col), 0);
+  Col.mask := LVCF_TEXT;
+  Col.pszText := PChar(NewText);
+  SendMessage(hLv, LVM_SETCOLUMN, ColIndex, LPARAM(@Col));
+end;
+
+procedure UpdateListViewHeaderIndicators(hLv: HWND; const ColNames: array of string; ActiveCol: Integer; Asc: Boolean);
+var
+  c: Integer;
+  colText, ind: string;
+begin
+  for c := 0 to High(ColNames) do
+  begin
+    if c = ActiveCol then
+    begin
+      if (ColNames[c] = 'Saldo') or (ColNames[c] = 'Importe') or (ColNames[c] = 'Cuota') or (ColNames[c] = 'Mora') then
+      begin
+        if Asc then ind := ' [Menor]' else ind := ' [Mayor]';
+      end
+      else if (ColNames[c] = 'Fecha Inh.') or (ColNames[c] = 'Fecha / Hora') or (ColNames[c] = 'Ultimo Pago') then
+      begin
+        if Asc then ind := ' [Antiguos]' else ind := ' [Recientes]';
+      end
+      else
+      begin
+        if Asc then ind := ' [A-Z]' else ind := ' [Z-A]';
+      end;
+      colText := ColNames[c] + ind;
+    end
+    else
+      colText := ColNames[c];
+
+    SetListViewColumnText(hLv, c, colText);
+  end;
+end;
 
 function EstadoParcelaToDisplay(AEstado: TEstadoParcela): string;
 begin
@@ -381,16 +510,312 @@ begin
   end;
 end;
 
+function CompareNaturalNomenclatura(const S1, S2: string): Integer;
+var
+  Sec1, Sec2, Fila1, Fila2, Nro1, Nro2: string;
+  p1, p2, nFila1, nFila2, nNro1, nNro2: Integer;
+begin
+  p1 := Pos('-', S1);
+  p2 := Pos('-', S2);
+  if (p1 > 0) and (p2 > 0) then
+  begin
+    Sec1 := Copy(S1, 1, p1 - 1);
+    Sec2 := Copy(S2, 1, p2 - 1);
+    if CompareText(Sec1, Sec2) <> 0 then
+    begin
+      Result := CompareText(Sec1, Sec2);
+      Exit;
+    end;
+
+    Fila1 := Copy(S1, p1 + 1, Length(S1));
+    p1 := Pos('-', Fila1);
+    if p1 > 0 then
+    begin
+      Nro1 := Copy(Fila1, p1 + 1, Length(Fila1));
+      Fila1 := Copy(Fila1, 1, p1 - 1);
+    end
+    else
+      Nro1 := '';
+
+    Fila2 := Copy(S2, p2 + 1, Length(S2));
+    p2 := Pos('-', Fila2);
+    if p2 > 0 then
+    begin
+      Nro2 := Copy(Fila2, p2 + 1, Length(Fila2));
+      Fila2 := Copy(Fila2, 1, p2 - 1);
+    end
+    else
+      Nro2 := '';
+
+    nFila1 := StrToIntDef(Fila1, -1);
+    nFila2 := StrToIntDef(Fila2, -1);
+    if (nFila1 <> -1) and (nFila2 <> -1) and (nFila1 <> nFila2) then
+    begin
+      Result := nFila1 - nFila2;
+      Exit;
+    end;
+
+    nNro1 := StrToIntDef(Nro1, -1);
+    nNro2 := StrToIntDef(Nro2, -1);
+    if (nNro1 <> -1) and (nNro2 <> -1) and (nNro1 <> nNro2) then
+    begin
+      Result := nNro1 - nNro2;
+      Exit;
+    end;
+  end;
+  Result := CompareText(S1, S2);
+end;
+
+// =============================================================
+// Rutinas de Comparacion y Ordenamiento: PARCELAS
+// =============================================================
+
+function CompareParcelasByCol(Idx1, Idx2: Integer; Col: Integer; Asc: Boolean): Integer;
+var
+  cmp, n1, n2: Integer;
+  diffCurr: Currency;
+begin
+  case Col of
+    0: cmp := CompareNaturalNomenclatura(DataParcelas[Idx1].Nomenclatura, DataParcelas[Idx2].Nomenclatura);
+    1: cmp := CompareText(DataParcelas[Idx1].SectorId, DataParcelas[Idx2].SectorId);
+    2:
+      begin
+        n1 := StrToIntDef(DataParcelas[Idx1].ManzanaFila, 0);
+        n2 := StrToIntDef(DataParcelas[Idx2].ManzanaFila, 0);
+        if n1 <> n2 then cmp := n1 - n2
+        else cmp := CompareText(DataParcelas[Idx1].ManzanaFila, DataParcelas[Idx2].ManzanaFila);
+      end;
+    3:
+      begin
+        n1 := StrToIntDef(DataParcelas[Idx1].NumeroParcela, 0);
+        n2 := StrToIntDef(DataParcelas[Idx2].NumeroParcela, 0);
+        if n1 <> n2 then cmp := n1 - n2
+        else cmp := CompareText(DataParcelas[Idx1].NumeroParcela, DataParcelas[Idx2].NumeroParcela);
+      end;
+    4: cmp := CompareText(EstadoParcelaToDisplay(DataParcelas[Idx1].Estado), EstadoParcelaToDisplay(DataParcelas[Idx2].Estado));
+    5: cmp := CompareText(DataParcelas[Idx1].TitularNombre, DataParcelas[Idx2].TitularNombre);
+    6: cmp := CompareText(DataParcelas[Idx1].FechaAdquisicion, DataParcelas[Idx2].FechaAdquisicion);
+    7:
+      begin
+        diffCurr := DataParcelas[Idx1].SaldoMantenimiento - DataParcelas[Idx2].SaldoMantenimiento;
+        if diffCurr > 0 then cmp := 1
+        else if diffCurr < 0 then cmp := -1
+        else cmp := 0;
+      end;
+  else
+    cmp := 0;
+  end;
+
+  if not Asc then Result := -cmp
+  else Result := cmp;
+end;
+
+procedure SortParcelaIndices(var Arr: array of Integer; L, R: Integer; Col: Integer; Asc: Boolean);
+var
+  i, j, pivot, tmp: Integer;
+begin
+  if L >= R then Exit;
+  i := L;
+  j := R;
+  pivot := Arr[(L + R) div 2];
+  while i <= j do
+  begin
+    while CompareParcelasByCol(Arr[i], pivot, Col, Asc) < 0 do Inc(i);
+    while CompareParcelasByCol(Arr[j], pivot, Col, Asc) > 0 do Dec(j);
+    if i <= j then
+    begin
+      tmp := Arr[i];
+      Arr[i] := Arr[j];
+      Arr[j] := tmp;
+      Inc(i);
+      Dec(j);
+    end;
+  end;
+  if L < j then SortParcelaIndices(Arr, L, j, Col, Asc);
+  if i < R then SortParcelaIndices(Arr, i, R, Col, Asc);
+end;
+
+// =============================================================
+// Rutinas de Comparacion y Ordenamiento: INHUMACIONES
+// =============================================================
+
+function CompareInhByCol(Idx1, Idx2: Integer; Col: Integer; Asc: Boolean): Integer;
+var
+  cmp: Integer;
+begin
+  case Col of
+    0: cmp := CompareText(DataInhumaciones[Idx1].FechaInhumacion, DataInhumaciones[Idx2].FechaInhumacion);
+    1: cmp := CompareText(DataInhumaciones[Idx1].NombreDifunto, DataInhumaciones[Idx2].NombreDifunto);
+    2: cmp := CompareText(DataInhumaciones[Idx1].DniDifunto, DataInhumaciones[Idx2].DniDifunto);
+    3: cmp := CompareNaturalNomenclatura(DataInhumaciones[Idx1].NomenclaturaParcela, DataInhumaciones[Idx2].NomenclaturaParcela);
+    4: cmp := DataInhumaciones[Idx1].NivelPosicion - DataInhumaciones[Idx2].NivelPosicion;
+    5: cmp := CompareText(DataInhumaciones[Idx1].EmpresaFunebrera, DataInhumaciones[Idx2].EmpresaFunebrera);
+    6: cmp := CompareText(BoolToTexto(DataInhumaciones[Idx1].EsCovid, 'COVID-19', 'Estandar'),
+                          BoolToTexto(DataInhumaciones[Idx2].EsCovid, 'COVID-19', 'Estandar'));
+  else
+    cmp := 0;
+  end;
+
+  if not Asc then Result := -cmp
+  else Result := cmp;
+end;
+
+procedure SortInhIndices(var Arr: array of Integer; L, R: Integer; Col: Integer; Asc: Boolean);
+var
+  i, j, pivot, tmp: Integer;
+begin
+  if L >= R then Exit;
+  i := L;
+  j := R;
+  pivot := Arr[(L + R) div 2];
+  while i <= j do
+  begin
+    while CompareInhByCol(Arr[i], pivot, Col, Asc) < 0 do Inc(i);
+    while CompareInhByCol(Arr[j], pivot, Col, Asc) > 0 do Dec(j);
+    if i <= j then
+    begin
+      tmp := Arr[i];
+      Arr[i] := Arr[j];
+      Arr[j] := tmp;
+      Inc(i);
+      Dec(j);
+    end;
+  end;
+  if L < j then SortInhIndices(Arr, L, j, Col, Asc);
+  if i < R then SortInhIndices(Arr, i, R, Col, Asc);
+end;
+
+// =============================================================
+// Rutinas de Comparacion y Ordenamiento: AFILIADOS
+// =============================================================
+
+function CompareAfilByCol(Idx1, Idx2: Integer; Col: Integer; Asc: Boolean): Integer;
+var
+  cmp: Integer;
+  diffCurr: Currency;
+begin
+  case Col of
+    0: cmp := DataAfiliados[Idx1].NumeroAfiliado - DataAfiliados[Idx2].NumeroAfiliado;
+    1: cmp := CompareText(DataAfiliados[Idx1].NombreCompleto, DataAfiliados[Idx2].NombreCompleto);
+    2: cmp := CompareText(DataAfiliados[Idx1].Dni, DataAfiliados[Idx2].Dni);
+    3: cmp := CompareText(DataAfiliados[Idx1].DireccionCobro, DataAfiliados[Idx2].DireccionCobro);
+    4:
+      begin
+        diffCurr := DataAfiliados[Idx1].MontoCuotaMensual - DataAfiliados[Idx2].MontoCuotaMensual;
+        if diffCurr > 0 then cmp := 1
+        else if diffCurr < 0 then cmp := -1
+        else cmp := 0;
+      end;
+    5: cmp := DataAfiliados[Idx1].MesesMora - DataAfiliados[Idx2].MesesMora;
+    6: cmp := CompareText(DataAfiliados[Idx1].Estado, DataAfiliados[Idx2].Estado);
+    7: cmp := Length(DataAfiliados[Idx1].CuotasPagadas) - Length(DataAfiliados[Idx2].CuotasPagadas);
+  else
+    cmp := 0;
+  end;
+
+  if not Asc then Result := -cmp
+  else Result := cmp;
+end;
+
+procedure SortAfilIndices(var Arr: array of Integer; L, R: Integer; Col: Integer; Asc: Boolean);
+var
+  i, j, pivot, tmp: Integer;
+begin
+  if L >= R then Exit;
+  i := L;
+  j := R;
+  pivot := Arr[(L + R) div 2];
+  while i <= j do
+  begin
+    while CompareAfilByCol(Arr[i], pivot, Col, Asc) < 0 do Inc(i);
+    while CompareAfilByCol(Arr[j], pivot, Col, Asc) > 0 do Dec(j);
+    if i <= j then
+    begin
+      tmp := Arr[i];
+      Arr[i] := Arr[j];
+      Arr[j] := tmp;
+      Inc(i);
+      Dec(j);
+    end;
+  end;
+  if L < j then SortAfilIndices(Arr, L, j, Col, Asc);
+  if i < R then SortAfilIndices(Arr, i, R, Col, Asc);
+end;
+
+// =============================================================
+// Rutinas de Comparacion y Ordenamiento: CAJA
+// =============================================================
+
+function CompareCajaByCol(Idx1, Idx2: Integer; Col: Integer; Asc: Boolean): Integer;
+var
+  cmp: Integer;
+  diffCurr: Currency;
+begin
+  case Col of
+    0: cmp := CompareText(DataPagos[Idx1].NroRecibo, DataPagos[Idx2].NroRecibo);
+    1: cmp := CompareText(DataPagos[Idx1].FechaPago, DataPagos[Idx2].FechaPago);
+    2: cmp := CompareText(DataPagos[Idx1].TitularNombre, DataPagos[Idx2].TitularNombre);
+    3: cmp := CompareText(DataPagos[Idx1].Observaciones, DataPagos[Idx2].Observaciones);
+    4: cmp := CompareText(MetodoPagoToStr(DataPagos[Idx1].MetodoPago), MetodoPagoToStr(DataPagos[Idx2].MetodoPago));
+    5:
+      begin
+        diffCurr := DataPagos[Idx1].MontoPagado - DataPagos[Idx2].MontoPagado;
+        if diffCurr > 0 then cmp := 1
+        else if diffCurr < 0 then cmp := -1
+        else cmp := 0;
+      end;
+  else
+    cmp := 0;
+  end;
+
+  if not Asc then Result := -cmp
+  else Result := cmp;
+end;
+
+procedure SortCajaIndices(var Arr: array of Integer; L, R: Integer; Col: Integer; Asc: Boolean);
+var
+  i, j, pivot, tmp: Integer;
+begin
+  if L >= R then Exit;
+  i := L;
+  j := R;
+  pivot := Arr[(L + R) div 2];
+  while i <= j do
+  begin
+    while CompareCajaByCol(Arr[i], pivot, Col, Asc) < 0 do Inc(i);
+    while CompareCajaByCol(Arr[j], pivot, Col, Asc) > 0 do Dec(j);
+    if i <= j then
+    begin
+      tmp := Arr[i];
+      Arr[i] := Arr[j];
+      Arr[j] := tmp;
+      Inc(i);
+      Dec(j);
+    end;
+  end;
+  if L < j then SortCajaIndices(Arr, L, j, Col, Asc);
+  if i < R then SortCajaIndices(Arr, i, R, Col, Asc);
+end;
+
+// =============================================================
+// Filtrado y Poblado de ListViews
+// =============================================================
+
 procedure FiltrarYMostrarParcelas;
 var
-  i, OutIdx, SecIdx, EstIdx: Integer;
-  PasaSec, PasaEst: Boolean;
+  i, count, SecIdx, EstIdx, SaldoIdx: Integer;
+  PasaSec, PasaEst, PasaSaldo, PasaText: Boolean;
+  Indices: array of Integer;
+  SearchText, NomU, TitU, FilaU, NroU: string;
 begin
   ClearListView(hLvParcelas);
   SecIdx := SendMessage(hCmbSector, CB_GETCURSEL, 0, 0);
   EstIdx := SendMessage(hCmbEstadoParc, CB_GETCURSEL, 0, 0);
+  SaldoIdx := SendMessage(hCmbSaldoParc, CB_GETCURSEL, 0, 0);
+  SearchText := UpperCase(Trim(GetWndText(hEdtBuscarParc)));
 
-  OutIdx := 0;
+  SetLength(Indices, Length(DataParcelas));
+  count := 0;
   for i := 0 to High(DataParcelas) do
   begin
     PasaSec := True;
@@ -406,34 +831,66 @@ begin
     else if EstIdx = 4 then PasaEst := (DataParcelas[i].Estado = epReservada)
     else if EstIdx = 5 then PasaEst := (DataParcelas[i].Estado = epBaja);
 
-    if PasaSec and PasaEst then
+    PasaSaldo := True;
+    if SaldoIdx = 1 then PasaSaldo := (DataParcelas[i].SaldoMantenimiento > 0)
+    else if SaldoIdx = 2 then PasaSaldo := (DataParcelas[i].SaldoMantenimiento <= 0)
+    else if SaldoIdx = 3 then PasaSaldo := (DataParcelas[i].SaldoMantenimiento >= 100000)
+    else if SaldoIdx = 4 then PasaSaldo := (DataParcelas[i].SaldoMantenimiento >= 300000);
+
+    PasaText := True;
+    if SearchText <> '' then
     begin
-      AddListViewItem(hLvParcelas, OutIdx, [
-        DataParcelas[i].Nomenclatura,
-        BoolToTexto(DataParcelas[i].SectorId <> '', DataParcelas[i].SectorId, '-'),
-        DataParcelas[i].ManzanaFila,
-        DataParcelas[i].NumeroParcela,
-        EstadoParcelaToDisplay(DataParcelas[i].Estado),
-        BoolToTexto(DataParcelas[i].TitularNombre <> '', DataParcelas[i].TitularNombre, '(Sin Titular Asignado)'),
-        FormatearFecha(DataParcelas[i].FechaAdquisicion),
-        FormatearMoneda(DataParcelas[i].SaldoMantenimiento)
-      ]);
-      Inc(OutIdx);
+      NomU := UpperCase(DataParcelas[i].Nomenclatura);
+      TitU := UpperCase(DataParcelas[i].TitularNombre);
+      FilaU := UpperCase(DataParcelas[i].ManzanaFila);
+      NroU := UpperCase(DataParcelas[i].NumeroParcela);
+      PasaText := (Pos(SearchText, NomU) > 0) or (Pos(SearchText, TitU) > 0) or
+                  (Pos(SearchText, FilaU) > 0) or (Pos(SearchText, NroU) > 0);
+    end;
+
+    if PasaSec and PasaEst and PasaSaldo and PasaText then
+    begin
+      Indices[count] := i;
+      Inc(count);
     end;
   end;
+  SetLength(Indices, count);
+
+  if count > 1 then
+    SortParcelaIndices(Indices, 0, count - 1, SortColParcelas, SortAscParcelas);
+
+  for i := 0 to count - 1 do
+  begin
+    AddListViewItemWithParam(hLvParcelas, i, Indices[i], [
+      DataParcelas[Indices[i]].Nomenclatura,
+      BoolToTexto(DataParcelas[Indices[i]].SectorId <> '', DataParcelas[Indices[i]].SectorId, '-'),
+      DataParcelas[Indices[i]].ManzanaFila,
+      DataParcelas[Indices[i]].NumeroParcela,
+      EstadoParcelaToDisplay(DataParcelas[Indices[i]].Estado),
+      BoolToTexto(DataParcelas[Indices[i]].TitularNombre <> '', DataParcelas[Indices[i]].TitularNombre, '(Sin Titular Asignado)'),
+      FormatearFecha(DataParcelas[Indices[i]].FechaAdquisicion),
+      FormatearMoneda(DataParcelas[Indices[i]].SaldoMantenimiento)
+    ]);
+  end;
+
+  UpdateListViewHeaderIndicators(hLvParcelas, ColNamesParcelas, SortColParcelas, SortAscParcelas);
+  SetStatusMessage(Format('Parcelas: %d registros mostrados (ordenado por %s)', [count, ColNamesParcelas[SortColParcelas]]));
 end;
 
 procedure FiltrarYMostrarAfiliados;
 var
-  i, k, mNum, OutIdx, MoraIdx, MesesM: Integer;
-  PasaMora: Boolean;
-  MoraLabel, PagadosStr: string;
+  i, k, mNum, count, MoraIdx, MesesM: Integer;
+  PasaMora, PasaText: Boolean;
+  Indices: array of Integer;
+  SearchText, NomU, DniU, DirU, MoraLabel, PagadosStr: string;
   MesesAbrev: array[1..12] of string = ('Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic');
 begin
   ClearListView(hLvAfiliados);
   MoraIdx := SendMessage(hCmbMora, CB_GETCURSEL, 0, 0);
+  SearchText := UpperCase(Trim(GetWndText(hEdtBuscarAfil)));
 
-  OutIdx := 0;
+  SetLength(Indices, Length(DataAfiliados));
+  count := 0;
   for i := 0 to High(DataAfiliados) do
   begin
     MesesM := DataAfiliados[i].MesesMora;
@@ -442,54 +899,79 @@ begin
     else if MoraIdx = 2 then PasaMora := (MesesM >= 3) and (MesesM < 36) and (DataAfiliados[i].Estado <> eaBaja)
     else if MoraIdx = 3 then PasaMora := (MesesM >= 36) or (DataAfiliados[i].Estado = eaBaja);
 
-    if PasaMora then
+    PasaText := True;
+    if SearchText <> '' then
     begin
-      if DataAfiliados[i].Estado = eaBaja then
-        MoraLabel := 'BAJA DEFINITIVA'
-      else if MesesM >= 36 then
-        MoraLabel := 'URGENTE: RIESGO DE BAJA (3 ANOS)'
-      else if MesesM >= 3 then
-        MoraLabel := 'AVISO: MORA 3 MESES'
-      else
-        MoraLabel := 'AL DIA (Habilitado)';
+      NomU := UpperCase(DataAfiliados[i].NombreCompleto);
+      DniU := UpperCase(DataAfiliados[i].Dni);
+      DirU := UpperCase(DataAfiliados[i].DireccionCobro);
+      PasaText := (Pos(SearchText, NomU) > 0) or (Pos(SearchText, DniU) > 0) or
+                  (Pos(SearchText, DirU) > 0) or (Pos(SearchText, IntToStr(DataAfiliados[i].NumeroAfiliado)) > 0);
+    end;
 
-      PagadosStr := '';
-      for k := 0 to High(DataAfiliados[i].CuotasPagadas) do
-      begin
-        mNum := DataAfiliados[i].CuotasPagadas[k];
-        if (mNum >= 1) and (mNum <= 12) then
-        begin
-          if PagadosStr <> '' then PagadosStr := PagadosStr + ', ';
-          PagadosStr := PagadosStr + MesesAbrev[mNum];
-        end;
-      end;
-      if PagadosStr = '' then PagadosStr := 'Ninguno';
-
-      AddListViewItem(hLvAfiliados, OutIdx, [
-        IntToStr(DataAfiliados[i].NumeroAfiliado),
-        DataAfiliados[i].NombreCompleto,
-        BoolToTexto(DataAfiliados[i].Dni <> '', DataAfiliados[i].Dni, 'S/D'),
-        DataAfiliados[i].DireccionCobro,
-        FormatearMoneda(DataAfiliados[i].MontoCuotaMensual),
-        IntToStr(MesesM) + ' meses',
-        MoraLabel,
-        PagadosStr
-      ]);
-      Inc(OutIdx);
+    if PasaMora and PasaText then
+    begin
+      Indices[count] := i;
+      Inc(count);
     end;
   end;
+  SetLength(Indices, count);
+
+  if count > 1 then
+    SortAfilIndices(Indices, 0, count - 1, SortColAfil, SortAscAfil);
+
+  for i := 0 to count - 1 do
+  begin
+    MesesM := DataAfiliados[Indices[i]].MesesMora;
+    if DataAfiliados[Indices[i]].Estado = eaBaja then
+      MoraLabel := 'BAJA DEFINITIVA'
+    else if MesesM >= 36 then
+      MoraLabel := 'URGENTE: RIESGO DE BAJA (3 ANOS)'
+    else if MesesM >= 3 then
+      MoraLabel := 'AVISO: MORA 3 MESES'
+    else
+      MoraLabel := 'AL DIA (Habilitado)';
+
+    PagadosStr := '';
+    for k := 0 to High(DataAfiliados[Indices[i]].CuotasPagadas) do
+    begin
+      mNum := DataAfiliados[Indices[i]].CuotasPagadas[k];
+      if (mNum >= 1) and (mNum <= 12) then
+      begin
+        if PagadosStr <> '' then PagadosStr := PagadosStr + ', ';
+        PagadosStr := PagadosStr + MesesAbrev[mNum];
+      end;
+    end;
+    if PagadosStr = '' then PagadosStr := 'Ninguno';
+
+    AddListViewItemWithParam(hLvAfiliados, i, Indices[i], [
+      IntToStr(DataAfiliados[Indices[i]].NumeroAfiliado),
+      DataAfiliados[Indices[i]].NombreCompleto,
+      BoolToTexto(DataAfiliados[Indices[i]].Dni <> '', DataAfiliados[Indices[i]].Dni, 'S/D'),
+      DataAfiliados[Indices[i]].DireccionCobro,
+      FormatearMoneda(DataAfiliados[Indices[i]].MontoCuotaMensual),
+      IntToStr(MesesM) + ' meses',
+      MoraLabel,
+      PagadosStr
+    ]);
+  end;
+
+  UpdateListViewHeaderIndicators(hLvAfiliados, ColNamesAfil, SortColAfil, SortAscAfil);
+  SetStatusMessage(Format('Afiliados: %d registros mostrados (ordenado por %s)', [count, ColNamesAfil[SortColAfil]]));
 end;
 
 procedure FiltrarYMostrarInhumaciones(const FiltroTexto: string);
 var
-  i, OutIdx: Integer;
-  FiltroUpper, NomUpper, DniUpper, ParcUpper: string;
+  i, count: Integer;
+  FiltroUpper, NomUpper, DniUpper, ParcUpper, EmpUpper: string;
   Pasa: Boolean;
+  Indices: array of Integer;
 begin
   ClearListView(hLvInh);
   FiltroUpper := UpperCase(Trim(FiltroTexto));
 
-  OutIdx := 0;
+  SetLength(Indices, Length(DataInhumaciones));
+  count := 0;
   for i := 0 to High(DataInhumaciones) do
   begin
     Pasa := True;
@@ -498,22 +980,117 @@ begin
       NomUpper := UpperCase(DataInhumaciones[i].NombreDifunto);
       DniUpper := UpperCase(DataInhumaciones[i].DniDifunto);
       ParcUpper := UpperCase(DataInhumaciones[i].NomenclaturaParcela);
-      Pasa := (Pos(FiltroUpper, NomUpper) > 0) or (Pos(FiltroUpper, DniUpper) > 0) or (Pos(FiltroUpper, ParcUpper) > 0);
+      EmpUpper := UpperCase(DataInhumaciones[i].EmpresaFunebrera);
+      Pasa := (Pos(FiltroUpper, NomUpper) > 0) or (Pos(FiltroUpper, DniUpper) > 0) or
+              (Pos(FiltroUpper, ParcUpper) > 0) or (Pos(FiltroUpper, EmpUpper) > 0);
     end;
 
     if Pasa then
     begin
-      AddListViewItem(hLvInh, OutIdx, [
-        FormatearFecha(DataInhumaciones[i].FechaInhumacion),
-        DataInhumaciones[i].NombreDifunto,
-        DataInhumaciones[i].DniDifunto,
-        DataInhumaciones[i].NomenclaturaParcela,
-        IntToStr(DataInhumaciones[i].NivelPosicion),
-        DataInhumaciones[i].EmpresaFunebrera,
-        BoolToTexto(DataInhumaciones[i].EsCovid, 'COVID-19', 'Estandar')
-      ]);
-      Inc(OutIdx);
+      Indices[count] := i;
+      Inc(count);
     end;
+  end;
+  SetLength(Indices, count);
+
+  if count > 1 then
+    SortInhIndices(Indices, 0, count - 1, SortColInh, SortAscInh);
+
+  for i := 0 to count - 1 do
+  begin
+    AddListViewItemWithParam(hLvInh, i, Indices[i], [
+      FormatearFecha(DataInhumaciones[Indices[i]].FechaInhumacion),
+      DataInhumaciones[Indices[i]].NombreDifunto,
+      DataInhumaciones[Indices[i]].DniDifunto,
+      DataInhumaciones[Indices[i]].NomenclaturaParcela,
+      IntToStr(DataInhumaciones[Indices[i]].NivelPosicion),
+      DataInhumaciones[Indices[i]].EmpresaFunebrera,
+      BoolToTexto(DataInhumaciones[Indices[i]].EsCovid, 'COVID-19', 'Estandar')
+    ]);
+  end;
+
+  UpdateListViewHeaderIndicators(hLvInh, ColNamesInh, SortColInh, SortAscInh);
+  SetStatusMessage(Format('Inhumaciones: %d actas mostradas (ordenado por %s)', [count, ColNamesInh[SortColInh]]));
+end;
+
+procedure FiltrarYMostrarCaja;
+var
+  i, count: Integer;
+  Indices: array of Integer;
+begin
+  ClearListView(hLvCaja);
+  count := Length(DataPagos);
+  SetLength(Indices, count);
+  for i := 0 to count - 1 do
+    Indices[i] := i;
+
+  if count > 1 then
+    SortCajaIndices(Indices, 0, count - 1, SortColCaja, SortAscCaja);
+
+  for i := 0 to count - 1 do
+  begin
+    AddListViewItemWithParam(hLvCaja, i, Indices[i], [
+      DataPagos[Indices[i]].NroRecibo,
+      FormatearFecha(DataPagos[Indices[i]].FechaPago),
+      DataPagos[Indices[i]].TitularNombre,
+      DataPagos[Indices[i]].Observaciones,
+      MetodoPagoToStr(DataPagos[Indices[i]].MetodoPago),
+      FormatearMoneda(DataPagos[Indices[i]].MontoPagado)
+    ]);
+  end;
+
+  UpdateListViewHeaderIndicators(hLvCaja, ColNamesCaja, SortColCaja, SortAscCaja);
+end;
+
+procedure HandleColumnClick(hLv: HWND; ColIndex: Integer);
+begin
+  if hLv = hLvParcelas then
+  begin
+    if SortColParcelas = ColIndex then
+      SortAscParcelas := not SortAscParcelas
+    else
+    begin
+      SortColParcelas := ColIndex;
+      if ColIndex = 7 then SortAscParcelas := False
+      else SortAscParcelas := True;
+    end;
+    FiltrarYMostrarParcelas;
+  end
+  else if hLv = hLvInh then
+  begin
+    if SortColInh = ColIndex then
+      SortAscInh := not SortAscInh
+    else
+    begin
+      SortColInh := ColIndex;
+      if ColIndex = 0 then SortAscInh := False
+      else SortAscInh := True;
+    end;
+    FiltrarYMostrarInhumaciones(GetWndText(hEdtBuscarInh));
+  end
+  else if hLv = hLvAfiliados then
+  begin
+    if SortColAfil = ColIndex then
+      SortAscAfil := not SortAscAfil
+    else
+    begin
+      SortColAfil := ColIndex;
+      if (ColIndex = 4) or (ColIndex = 5) then SortAscAfil := False
+      else SortAscAfil := True;
+    end;
+    FiltrarYMostrarAfiliados;
+  end
+  else if hLv = hLvCaja then
+  begin
+    if SortColCaja = ColIndex then
+      SortAscCaja := not SortAscCaja
+    else
+    begin
+      SortColCaja := ColIndex;
+      if (ColIndex = 1) or (ColIndex = 5) then SortAscCaja := False
+      else SortAscCaja := True;
+    end;
+    FiltrarYMostrarCaja;
   end;
 end;
 
@@ -619,18 +1196,7 @@ begin
   FiltrarYMostrarAfiliados;
 
   // Poblar ListView Caja
-  ClearListView(hLvCaja);
-  for i := 0 to High(DataPagos) do
-  begin
-    AddListViewItem(hLvCaja, i, [
-      DataPagos[i].NroRecibo,
-      FormatearFecha(DataPagos[i].FechaPago),
-      DataPagos[i].TitularNombre,
-      DataPagos[i].Observaciones,
-      MetodoPagoToStr(DataPagos[i].MetodoPago),
-      FormatearMoneda(DataPagos[i].MontoPagado)
-    ]);
-  end;
+  FiltrarYMostrarCaja;
 
   SetWindowText(hLblResumenCaja, PChar('TOTAL RECAUDADO HOY: ' + FormatearMoneda(TotalEfHoy + TotalDigHoy) +
     '   [ Efectivo en Caja: ' + FormatearMoneda(TotalEfHoy) + '  |  Transferencias / QR: ' + FormatearMoneda(TotalDigHoy) + ' ]'));
@@ -678,7 +1244,7 @@ var
   Idx: Integer;
   Inh: TInhumacion;
 begin
-  Idx := GetSelectedListViewIndex(hLvInh);
+  Idx := GetSelectedListViewDataIndex(hLvInh);
   if (Idx < 0) or (Idx > High(DataInhumaciones)) then
   begin
     MessageBox(hMainWnd, 'Seleccione un acta de inhumacion del listado para modificar.', 'Aviso', MB_ICONINFORMATION or MB_OK);
@@ -704,7 +1270,7 @@ var
   Idx: Integer;
   Inh: TInhumacion;
 begin
-  Idx := GetSelectedListViewIndex(hLvInh);
+  Idx := GetSelectedListViewDataIndex(hLvInh);
   if (Idx < 0) or (Idx > High(DataInhumaciones)) then
   begin
     MessageBox(hMainWnd, 'Seleccione un acta de inhumacion para eliminar.', 'Aviso', MB_ICONINFORMATION or MB_OK);
@@ -762,7 +1328,7 @@ var
   Idx: Integer;
   Parc: TParcela;
 begin
-  Idx := GetSelectedListViewIndex(hLvParcelas);
+  Idx := GetSelectedListViewDataIndex(hLvParcelas);
   if (Idx < 0) or (Idx > High(DataParcelas)) then
   begin
     MessageBox(hMainWnd, 'Seleccione una parcela del listado para modificar.', 'Aviso', MB_ICONINFORMATION or MB_OK);
@@ -788,7 +1354,7 @@ var
   Idx: Integer;
   Parc: TParcela;
 begin
-  Idx := GetSelectedListViewIndex(hLvParcelas);
+  Idx := GetSelectedListViewDataIndex(hLvParcelas);
   if (Idx < 0) or (Idx > High(DataParcelas)) then
   begin
     MessageBox(hMainWnd, 'Seleccione una parcela del listado para eliminar.', 'Aviso', MB_ICONINFORMATION or MB_OK);
@@ -822,7 +1388,7 @@ var
   Ruta: string;
   ParcId: string;
 begin
-  Idx := GetSelectedListViewIndex(hLvParcelas);
+  Idx := GetSelectedListViewDataIndex(hLvParcelas);
   if (Idx >= 0) and (Idx <= High(DataParcelas)) then
   begin
     Nomenclatura := DataParcelas[Idx].Nomenclatura;
@@ -900,7 +1466,7 @@ var
   Idx: Integer;
   Afil: TAfiliadoSeguro;
 begin
-  Idx := GetSelectedListViewIndex(hLvAfiliados);
+  Idx := GetSelectedListViewDataIndex(hLvAfiliados);
   if (Idx < 0) or (Idx > High(DataAfiliados)) then
   begin
     MessageBox(hMainWnd, 'Seleccione un afiliado del listado para modificar.', 'Aviso', MB_ICONINFORMATION or MB_OK);
@@ -926,7 +1492,7 @@ var
   Idx: Integer;
   Afil: TAfiliadoSeguro;
 begin
-  Idx := GetSelectedListViewIndex(hLvAfiliados);
+  Idx := GetSelectedListViewDataIndex(hLvAfiliados);
   if (Idx < 0) or (Idx > High(DataAfiliados)) then
   begin
     MessageBox(hMainWnd, 'Seleccione un afiliado para dar de baja o eliminar.', 'Aviso', MB_ICONINFORMATION or MB_OK);
@@ -965,7 +1531,7 @@ var
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   );
 begin
-  Idx := GetSelectedListViewIndex(hLvAfiliados);
+  Idx := GetSelectedListViewDataIndex(hLvAfiliados);
   if (Idx >= 0) and (Idx <= High(DataAfiliados)) then
     Afi := DataAfiliados[Idx]
   else if Length(DataAfiliados) > 0 then
@@ -1070,7 +1636,7 @@ var
   Idx: Integer;
   Pago: TPagoMantenimiento;
 begin
-  Idx := GetSelectedListViewIndex(hLvCaja);
+  Idx := GetSelectedListViewDataIndex(hLvCaja);
   if (Idx < 0) or (Idx > High(DataPagos)) then
   begin
     MessageBox(hMainWnd, 'Seleccione un movimiento de caja del listado para anular.', 'Aviso', MB_ICONINFORMATION or MB_OK);
@@ -1106,7 +1672,7 @@ var
   Inh: TInhumacion;
   Ruta: string;
 begin
-  Idx := GetSelectedListViewIndex(hLvInh);
+  Idx := GetSelectedListViewDataIndex(hLvInh);
   if (Idx >= 0) and (Idx <= High(DataInhumaciones)) then
     Inh := DataInhumaciones[Idx]
   else if Length(DataInhumaciones) > 0 then
@@ -1147,7 +1713,7 @@ var
   Pago: TPagoMantenimiento;
   Ruta: string;
 begin
-  Idx := GetSelectedListViewIndex(hLvCaja);
+  Idx := GetSelectedListViewDataIndex(hLvCaja);
   if (Idx >= 0) and (Idx <= High(DataPagos)) then
     Pago := DataPagos[Idx]
   else if Length(DataPagos) > 0 then
@@ -1308,19 +1874,19 @@ begin
   MoveWindow(hLvRecentInh, 15, 345, cxClient - 30, cyClient - 375, True);
 
   // ===========================================================
-  // Modulo 1: Catastro y Parcelas
+  // Modulo 1: Parcelas
   // ===========================================================
-  MoveWindow(hLvParcelas, 15, 150, cxClient - 30, cyClient - 180, True);
+  MoveWindow(hLvParcelas, 15, 175, cxClient - 30, cyClient - 205, True);
 
   // ===========================================================
   // Modulo 2: Inhumaciones
   // ===========================================================
-  MoveWindow(hLvInh, 15, 150, cxClient - 30, cyClient - 180, True);
+  MoveWindow(hLvInh, 15, 175, cxClient - 30, cyClient - 205, True);
 
   // ===========================================================
   // Modulo 3: Afiliados
   // ===========================================================
-  MoveWindow(hLvAfiliados, 15, 150, cxClient - 30, cyClient - 180, True);
+  MoveWindow(hLvAfiliados, 15, 175, cxClient - 30, cyClient - 205, True);
 
   // ===========================================================
   // Modulo 4: Caja Diaria
@@ -1432,11 +1998,11 @@ begin
   AddControlToModule(0, hLvRecentInh);
 
   // ===========================================================
-  // MODULO 1: PARCELAS (CRUD COMPLETO)
+  // MODULO 1: PARCELAS (CRUD COMPLETO Y FILTROS POR COLUMNA)
   // ===========================================================
-  hLblSector := CreateLabel(hWnd, 'Sector:', 15, 115, 50, 22, hBoldFont);
-  AddControlToModule(1, hLblSector);
-  hCmbSector := CreateComboBox(hWnd, 70, 112, 130, 140, IDC_CMB_SECTOR);
+  hLblFiltrosParc := CreateLabel(hWnd, 'Sector:', 15, 110, 50, 22, hBoldFont);
+  AddControlToModule(1, hLblFiltrosParc);
+  hCmbSector := CreateComboBox(hWnd, 68, 107, 105, 140, IDC_CMB_SECTOR);
   SendMessage(hCmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Todos los Sectores')));
   SendMessage(hCmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Sector A')));
   SendMessage(hCmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Sector B')));
@@ -1445,9 +2011,9 @@ begin
   SendMessage(hCmbSector, CB_SETCURSEL, 0, 0);
   AddControlToModule(1, hCmbSector);
 
-  hLblEstadoParc := CreateLabel(hWnd, 'Estado:', 210, 115, 50, 22, hBoldFont);
+  hLblEstadoParc := CreateLabel(hWnd, 'Estado:', 180, 110, 50, 22, hBoldFont);
   AddControlToModule(1, hLblEstadoParc);
-  hCmbEstadoParc := CreateComboBox(hWnd, 265, 112, 130, 140, IDC_CMB_ESTADO_PARC);
+  hCmbEstadoParc := CreateComboBox(hWnd, 235, 107, 115, 140, IDC_CMB_ESTADO_PARC);
   SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Todos los Estados')));
   SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Disponible')));
   SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Ocupada')));
@@ -1457,52 +2023,74 @@ begin
   SendMessage(hCmbEstadoParc, CB_SETCURSEL, 0, 0);
   AddControlToModule(1, hCmbEstadoParc);
 
-  hBtnNuevaParc := CreateButton(hWnd, '+ Nueva Parcela', 405, 110, 115, 30, IDC_BTN_NUEVA_PARC);
+  hLblSaldoParc := CreateLabel(hWnd, 'Saldo:', 358, 110, 45, 22, hBoldFont);
+  AddControlToModule(1, hLblSaldoParc);
+  hCmbSaldoParc := CreateComboBox(hWnd, 405, 107, 145, 140, IDC_CMB_SALDO_PARC);
+  SendMessage(hCmbSaldoParc, CB_ADDSTRING, 0, LPARAM(PChar('Todos los Saldos')));
+  SendMessage(hCmbSaldoParc, CB_ADDSTRING, 0, LPARAM(PChar('Solo con Deuda (> $0)')));
+  SendMessage(hCmbSaldoParc, CB_ADDSTRING, 0, LPARAM(PChar('Sin Deuda ($0)')));
+  SendMessage(hCmbSaldoParc, CB_ADDSTRING, 0, LPARAM(PChar('Deuda >= $100.000')));
+  SendMessage(hCmbSaldoParc, CB_ADDSTRING, 0, LPARAM(PChar('Deuda >= $300.000')));
+  SendMessage(hCmbSaldoParc, CB_SETCURSEL, 0, 0);
+  AddControlToModule(1, hCmbSaldoParc);
+
+  hLblBuscarParc := CreateLabel(hWnd, 'Buscar Parcela / Titular:', 558, 110, 150, 22, hBoldFont);
+  AddControlToModule(1, hLblBuscarParc);
+  hEdtBuscarParc := CreateEdit(hWnd, '', 710, 107, 175, 24, IDC_EDT_BUSCAR_PARC);
+  AddControlToModule(1, hEdtBuscarParc);
+  hBtnBuscarParc := CreateButton(hWnd, 'Filtrar', 890, 106, 75, 26, IDC_BTN_FILTRAR_PARC);
+  AddControlToModule(1, hBtnBuscarParc);
+
+  // Fila 2: Botones de Accion
+  hBtnNuevaParc := CreateButton(hWnd, '+ Nueva Parcela', 15, 140, 130, 28, IDC_BTN_NUEVA_PARC);
   AddControlToModule(1, hBtnNuevaParc);
-  hBtnEditParc := CreateButton(hWnd, '* Modificar', 525, 110, 90, 30, IDC_BTN_EDIT_PARC);
+  hBtnEditParc := CreateButton(hWnd, '* Modificar', 150, 140, 100, 28, IDC_BTN_EDIT_PARC);
   AddControlToModule(1, hBtnEditParc);
-  hBtnCobrarMantParc := CreateButton(hWnd, '$ Cobrar Mant.', 620, 110, 105, 30, IDC_BTN_COBRAR_MANT);
+  hBtnCobrarMantParc := CreateButton(hWnd, '$ Cobrar Mant.', 255, 140, 125, 28, IDC_BTN_COBRAR_MANT);
   AddControlToModule(1, hBtnCobrarMantParc);
-  hBtnRepPadronParc := CreateButton(hWnd, 'Padron (PDF)', 730, 110, 100, 30, IDC_BTN_PADRON_PARC_PDF);
+  hBtnRepPadronParc := CreateButton(hWnd, 'Padron (PDF)', 385, 140, 115, 28, IDC_BTN_PADRON_PARC_PDF);
   AddControlToModule(1, hBtnRepPadronParc);
-  hBtnDelParc := CreateButton(hWnd, '- Eliminar', 835, 110, 80, 30, IDC_BTN_DEL_PARC);
+  hBtnDelParc := CreateButton(hWnd, '- Eliminar', 505, 140, 95, 28, IDC_BTN_DEL_PARC);
   AddControlToModule(1, hBtnDelParc);
-  hBtnSyncParc := CreateButton(hWnd, 'Recargar', 920, 110, 70, 30, IDC_BTN_SYNC);
+  hBtnSyncParc := CreateButton(hWnd, 'Recargar', 605, 140, 85, 28, IDC_BTN_SYNC);
   AddControlToModule(1, hBtnSyncParc);
 
-  hLvParcelas := CreateListView(hWnd, 15, 150, 990, 460, IDC_LV_PARCELAS);
-  AddListViewColumn(hLvParcelas, 0, 'Nomenclatura', 120);
-  AddListViewColumn(hLvParcelas, 1, 'Sector', 90);
-  AddListViewColumn(hLvParcelas, 2, 'Fila / Mz', 90);
-  AddListViewColumn(hLvParcelas, 3, 'Parcela Nro', 90);
+  hLvParcelas := CreateListView(hWnd, 15, 175, 990, 435, IDC_LV_PARCELAS);
+  AddListViewColumn(hLvParcelas, 0, 'Parcela', 125);
+  AddListViewColumn(hLvParcelas, 1, 'Sector', 85);
+  AddListViewColumn(hLvParcelas, 2, 'Fila / Mz', 85);
+  AddListViewColumn(hLvParcelas, 3, 'Nro Parcela', 95);
   AddListViewColumn(hLvParcelas, 4, 'Estado Parcela', 110);
   AddListViewColumn(hLvParcelas, 5, 'Titular de Concesion', 260);
-  AddListViewColumn(hLvParcelas, 6, 'Ultimo Pago', 120);
-  AddListViewColumn(hLvParcelas, 7, 'Saldo', 100);
+  AddListViewColumn(hLvParcelas, 6, 'Ultimo Pago', 110);
+  AddListViewColumn(hLvParcelas, 7, 'Saldo', 120);
   AddControlToModule(1, hLvParcelas);
 
   // ===========================================================
   // MODULO 2: LIBRO PARROQUIAL DE INHUMACIONES (CRUD COMPLETO)
   // ===========================================================
-  hLblBuscarInh := CreateLabel(hWnd, 'Buscar Difunto / DNI:', 15, 115, 140, 22, hBoldFont);
+  hLblBuscarInh := CreateLabel(hWnd, 'Buscar Difunto / DNI / Parcela:', 15, 110, 205, 22, hBoldFont);
   AddControlToModule(2, hLblBuscarInh);
-  hEdtBuscarInh := CreateEdit(hWnd, '', 160, 112, 160, 24, IDC_EDT_BUSCAR_INH);
+  hEdtBuscarInh := CreateEdit(hWnd, '', 225, 107, 180, 24, IDC_EDT_BUSCAR_INH);
   AddControlToModule(2, hEdtBuscarInh);
-
-  hBtnBuscarInh := CreateButton(hWnd, 'Buscar', 325, 110, 70, 30, IDC_BTN_BUSCAR_INH);
+  hBtnBuscarInh := CreateButton(hWnd, 'Buscar', 410, 106, 75, 26, IDC_BTN_BUSCAR_INH);
   AddControlToModule(2, hBtnBuscarInh);
-  hBtnNuevaInh := CreateButton(hWnd, '+ Nueva Inhumacion', 400, 110, 150, 30, IDC_BTN_NUEVA_INH);
-  AddControlToModule(2, hBtnNuevaInh);
-  hBtnEditInh := CreateButton(hWnd, '* Modificar', 555, 110, 95, 30, IDC_BTN_EDIT_INH);
-  AddControlToModule(2, hBtnEditInh);
-  hBtnDelInh := CreateButton(hWnd, '- Eliminar', 655, 110, 85, 30, IDC_BTN_DEL_INH);
-  AddControlToModule(2, hBtnDelInh);
-  hBtnActaPdf := CreateButton(hWnd, 'Emitir Acta (PDF)', 745, 110, 130, 30, IDC_BTN_ACTA_PDF);
-  AddControlToModule(2, hBtnActaPdf);
-  hBtnFolioPdf := CreateButton(hWnd, 'Folio (PDF)', 880, 110, 100, 30, IDC_BTN_FOLIO_PDF);
-  AddControlToModule(2, hBtnFolioPdf);
 
-  hLvInh := CreateListView(hWnd, 15, 150, 990, 460, IDC_LV_INHUMACIONES);
+  // Fila 2: Acciones
+  hBtnNuevaInh := CreateButton(hWnd, '+ Nueva Inhumacion', 15, 140, 150, 28, IDC_BTN_NUEVA_INH);
+  AddControlToModule(2, hBtnNuevaInh);
+  hBtnEditInh := CreateButton(hWnd, '* Modificar', 170, 140, 100, 28, IDC_BTN_EDIT_INH);
+  AddControlToModule(2, hBtnEditInh);
+  hBtnActaPdf := CreateButton(hWnd, 'Emitir Acta (PDF)', 275, 140, 130, 28, IDC_BTN_ACTA_PDF);
+  AddControlToModule(2, hBtnActaPdf);
+  hBtnFolioPdf := CreateButton(hWnd, 'Folio (PDF)', 410, 140, 100, 28, IDC_BTN_FOLIO_PDF);
+  AddControlToModule(2, hBtnFolioPdf);
+  hBtnDelInh := CreateButton(hWnd, '- Eliminar', 515, 140, 95, 28, IDC_BTN_DEL_INH);
+  AddControlToModule(2, hBtnDelInh);
+  hBtnSyncInh := CreateButton(hWnd, 'Recargar', 615, 140, 85, 28, IDC_BTN_SYNC);
+  AddControlToModule(2, hBtnSyncInh);
+
+  hLvInh := CreateListView(hWnd, 15, 175, 990, 435, IDC_LV_INHUMACIONES);
   AddListViewColumn(hLvInh, 0, 'Fecha Inh.', 100);
   AddListViewColumn(hLvInh, 1, 'Nombre Completo del Difunto', 260);
   AddListViewColumn(hLvInh, 2, 'DNI', 110);
@@ -1515,9 +2103,9 @@ begin
   // ===========================================================
   // MODULO 3: SEGURO DE SEPELIO Y AFILIADOS (CRUD COMPLETO)
   // ===========================================================
-  hLblFiltroMora := CreateLabel(hWnd, 'Filtro Cobranza:', 15, 115, 105, 22, hBoldFont);
+  hLblFiltroMora := CreateLabel(hWnd, 'Filtro Cobranza:', 15, 110, 105, 22, hBoldFont);
   AddControlToModule(3, hLblFiltroMora);
-  hCmbMora := CreateComboBox(hWnd, 125, 112, 190, 140, IDC_CMB_MORA);
+  hCmbMora := CreateComboBox(hWnd, 125, 107, 210, 140, IDC_CMB_MORA);
   SendMessage(hCmbMora, CB_ADDSTRING, 0, LPARAM(PChar('Todos los Afiliados')));
   SendMessage(hCmbMora, CB_ADDSTRING, 0, LPARAM(PChar('Al Dia (Habilitados)')));
   SendMessage(hCmbMora, CB_ADDSTRING, 0, LPARAM(PChar('Aviso: Mora >= 3 Meses')));
@@ -1525,18 +2113,28 @@ begin
   SendMessage(hCmbMora, CB_SETCURSEL, 0, 0);
   AddControlToModule(3, hCmbMora);
 
-  hBtnNuevoAfil := CreateButton(hWnd, '+ Nuevo Afiliado', 320, 110, 125, 30, IDC_BTN_NUEVO_AFIL);
-  AddControlToModule(3, hBtnNuevoAfil);
-  hBtnEditAfil := CreateButton(hWnd, '* Modificar', 450, 110, 95, 30, IDC_BTN_EDIT_AFIL);
-  AddControlToModule(3, hBtnEditAfil);
-  hBtnCobrarAfil := CreateButton(hWnd, '$ Cobrar Cuota', 550, 110, 120, 30, IDC_BTN_COBRAR_CUOTA);
-  AddControlToModule(3, hBtnCobrarAfil);
-  hBtnDelAfil := CreateButton(hWnd, '- Eliminar / Baja', 675, 110, 125, 30, IDC_BTN_DEL_AFIL);
-  AddControlToModule(3, hBtnDelAfil);
-  hBtnPlanillaPdf := CreateButton(hWnd, 'Planilla Cobrador (PDF)', 805, 110, 175, 30, IDC_BTN_PLANILLA_PDF);
-  AddControlToModule(3, hBtnPlanillaPdf);
+  hLblBuscarAfil := CreateLabel(hWnd, 'Buscar Titular / DNI / Dir:', 345, 110, 170, 22, hBoldFont);
+  AddControlToModule(3, hLblBuscarAfil);
+  hEdtBuscarAfil := CreateEdit(hWnd, '', 520, 107, 180, 24, IDC_EDT_BUSCAR_AFIL);
+  AddControlToModule(3, hEdtBuscarAfil);
+  hBtnBuscarAfil := CreateButton(hWnd, 'Filtrar', 705, 106, 75, 26, IDC_BTN_FILTRAR_AFIL);
+  AddControlToModule(3, hBtnBuscarAfil);
 
-  hLvAfiliados := CreateListView(hWnd, 15, 150, 990, 460, IDC_LV_AFILIADOS);
+  // Fila 2: Botones de Accion
+  hBtnNuevoAfil := CreateButton(hWnd, '+ Nuevo Afiliado', 15, 140, 130, 28, IDC_BTN_NUEVO_AFIL);
+  AddControlToModule(3, hBtnNuevoAfil);
+  hBtnEditAfil := CreateButton(hWnd, '* Modificar', 150, 140, 100, 28, IDC_BTN_EDIT_AFIL);
+  AddControlToModule(3, hBtnEditAfil);
+  hBtnCobrarAfil := CreateButton(hWnd, '$ Cobrar Cuota', 255, 140, 125, 28, IDC_BTN_COBRAR_CUOTA);
+  AddControlToModule(3, hBtnCobrarAfil);
+  hBtnPlanillaPdf := CreateButton(hWnd, 'Planilla Cobrador (PDF)', 385, 140, 160, 28, IDC_BTN_PLANILLA_PDF);
+  AddControlToModule(3, hBtnPlanillaPdf);
+  hBtnDelAfil := CreateButton(hWnd, '- Eliminar / Baja', 550, 140, 125, 28, IDC_BTN_DEL_AFIL);
+  AddControlToModule(3, hBtnDelAfil);
+  hBtnSyncAfil := CreateButton(hWnd, 'Recargar', 680, 140, 85, 28, IDC_BTN_SYNC);
+  AddControlToModule(3, hBtnSyncAfil);
+
+  hLvAfiliados := CreateListView(hWnd, 15, 175, 990, 435, IDC_LV_AFILIADOS);
   AddListViewColumn(hLvAfiliados, 0, 'Nro Afiliado', 85);
   AddListViewColumn(hLvAfiliados, 1, 'Nombre Completo del Titular', 200);
   AddListViewColumn(hLvAfiliados, 2, 'DNI', 95);
@@ -1670,8 +2268,22 @@ var
   hCtrl: HWND;
   SearchBuf: string;
   Len: Integer;
+  pnm: PNMHDR;
+  pnmv: PNMListView;
 begin
   case uMsg of
+    WM_NOTIFY:
+      begin
+        pnm := PNMHDR(lParam);
+        if (pnm <> nil) and (pnm^.code = LVN_COLUMNCLICK) then
+        begin
+          pnmv := PNMListView(lParam);
+          HandleColumnClick(pnm^.hwndFrom, pnmv^.iSubItem);
+          Result := 0;
+          Exit;
+        end;
+      end;
+
     WM_CTLCOLORSTATIC:
       begin
         hCtrl := HWND(lParam);
@@ -1774,7 +2386,7 @@ begin
         // Notificaciones de Seleccion de ComboBox
         if HIWORD(wParam) = CBN_SELCHANGE then
         begin
-          if (CmdId = IDC_CMB_SECTOR) or (CmdId = IDC_CMB_ESTADO_PARC) then
+          if (CmdId = IDC_CMB_SECTOR) or (CmdId = IDC_CMB_ESTADO_PARC) or (CmdId = IDC_CMB_SALDO_PARC) then
             FiltrarYMostrarParcelas
           else if CmdId = IDC_CMB_MORA then
             FiltrarYMostrarAfiliados;
@@ -1782,15 +2394,27 @@ begin
           Exit;
         end;
 
-        // Busqueda en tiempo real al tipear en el cuadro de busqueda
-        if (HIWORD(wParam) = EN_CHANGE) and (CmdId = IDC_EDT_BUSCAR_INH) then
+        // Busqueda en tiempo real al tipear en cuadros de busqueda
+        if HIWORD(wParam) = EN_CHANGE then
         begin
-          SetLength(SearchBuf, 256);
-          Len := GetWindowText(hEdtBuscarInh, PChar(SearchBuf), 255);
-          SetLength(SearchBuf, Len);
-          FiltrarYMostrarInhumaciones(SearchBuf);
-          Result := 0;
-          Exit;
+          if CmdId = IDC_EDT_BUSCAR_PARC then
+          begin
+            FiltrarYMostrarParcelas;
+            Result := 0;
+            Exit;
+          end
+          else if CmdId = IDC_EDT_BUSCAR_AFIL then
+          begin
+            FiltrarYMostrarAfiliados;
+            Result := 0;
+            Exit;
+          end
+          else if CmdId = IDC_EDT_BUSCAR_INH then
+          begin
+            FiltrarYMostrarInhumaciones(GetWndText(hEdtBuscarInh));
+            Result := 0;
+            Exit;
+          end;
         end;
 
         case CmdId of
@@ -1814,9 +2438,7 @@ begin
           IDC_BTN_FOLIO_PDF:    AccionGenerarFolioPDF;
           IDC_BTN_BUSCAR_INH:
             begin
-              SetLength(SearchBuf, 256);
-              Len := GetWindowText(hEdtBuscarInh, PChar(SearchBuf), 255);
-              SetLength(SearchBuf, Len);
+              SearchBuf := GetWndText(hEdtBuscarInh);
               FiltrarYMostrarInhumaciones(SearchBuf);
               SetStatusMessage('Busqueda aplicada: ' + SearchBuf);
             end;
@@ -1827,6 +2449,7 @@ begin
           IDC_BTN_DEL_PARC:     AccionEliminarParcela;
           IDC_BTN_COBRAR_MANT:  AccionCobrarMantenimientoParcela;
           IDC_BTN_PADRON_PARC_PDF: AccionGenerarPadronParcelasPDF;
+          IDC_BTN_FILTRAR_PARC: FiltrarYMostrarParcelas;
 
           // CRUD Afiliados
           IDC_BTN_NUEVO_AFIL:   AccionNuevoAfiliado;
@@ -1834,6 +2457,7 @@ begin
           IDC_BTN_DEL_AFIL:     AccionEliminarAfiliado;
           IDC_BTN_COBRAR_CUOTA: AccionCobrarCuotaSeguro;
           IDC_BTN_PLANILLA_PDF: AccionGenerarPlanillaRutaPDF;
+          IDC_BTN_FILTRAR_AFIL: FiltrarYMostrarAfiliados;
 
           // CRUD Caja
           IDC_BTN_NUEVO_COBRO:  AccionNuevoCobroCaja;

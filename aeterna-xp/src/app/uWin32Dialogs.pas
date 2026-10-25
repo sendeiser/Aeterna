@@ -355,7 +355,7 @@ begin
 
                 if pData^.ParcPtr^.Nomenclatura = '' then
                 begin
-                  MessageBox(hWnd, 'Por favor ingrese la Nomenclatura de la Parcela (ej. A-25-96).', 'Campo Requerido', MB_ICONWARNING or MB_OK);
+                  MessageBox(hWnd, 'Por favor ingrese la Parcela (ej. A-25-96).', 'Campo Requerido', MB_ICONWARNING or MB_OK);
                   SetFocus(pData^.EdtNomenclatura);
                   Exit(0);
                 end;
@@ -416,7 +416,7 @@ begin
   DlgData.ParcPtr := @Parc;
   DlgData.Confirmed := False;
 
-  CreateDlgLabel(hDlg, 'Nomenclatura (ej. A-25-96) (*):', 20, 15, 200, 18);
+  CreateDlgLabel(hDlg, 'Parcela (ej. A-25-96) (*):', 20, 15, 200, 18);
   DlgData.EdtNomenclatura := CreateDlgEdit(hDlg, Parc.Nomenclatura, 20, 35, 200, 24, 201);
 
   CreateDlgLabel(hDlg, 'Sector:', 240, 15, 200, 18);

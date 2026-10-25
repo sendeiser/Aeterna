@@ -57,7 +57,7 @@ procedure TfrmParcelas.FormCreate(Sender: TObject);
 begin
   gridParcelas.ColCount := 7;
   gridParcelas.RowCount := 1;
-  gridParcelas.Cells[0, 0] := 'Nomenclatura';
+  gridParcelas.Cells[0, 0] := 'Parcela';
   gridParcelas.Cells[1, 0] := 'Sector';
   gridParcelas.Cells[2, 0] := 'Titular';
   gridParcelas.Cells[3, 0] := 'Estado';

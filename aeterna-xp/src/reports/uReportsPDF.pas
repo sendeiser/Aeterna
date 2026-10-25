@@ -947,7 +947,7 @@ begin
     Section.AddPage(Page);
 
     ConfigurarEncabezadoInstitucional(Page, FontH, FontN, FontH,
-      'Padron General de Parcelas y Catastro',
+      'Padron General de Parcelas',
       'Registro Notarial de Concesiones, Estado Ocupacional y Mantenimiento');
 
     // Barra de Resumen Estadistico Ejecutivo (TopY: 41..49)
@@ -961,7 +961,7 @@ begin
     PDFDrawRectTop(Page, 15, 51, 180, 7, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
     Page.SetColor(COL_WHITE, False);
     Page.SetFont(FontH, 8);
-    PDFWriteTextTop(Page, 17, 56, 'NOMENCL.');
+    PDFWriteTextTop(Page, 17, 56, 'PARCELA');
     PDFWriteTextTop(Page, 40, 56, 'SEC');
     PDFWriteTextTop(Page, 50, 56, 'MZ/FIL');
     PDFWriteTextTop(Page, 65, 56, 'NRO');
@@ -1032,7 +1032,7 @@ begin
         PDFDrawLineTop(Page, 15, 278, 195, 278, 0.5, COL_SLATE_LIGHT);
         Page.SetColor(COL_SLATE_MED, False);
         Page.SetFont(FontN, 7);
-        PDFWriteTextTop(Page, 15, 283, 'Aeterna Suite XP - Padron Oficial del Catastro Parroquial');
+        PDFWriteTextTop(Page, 15, 283, 'Aeterna Suite XP - Padron Oficial de Parcelas');
         PDFWriteTextTop(Page, 170, 283, 'Pagina ' + IntToStr(PaginaActual));
 
         Inc(PaginaActual);
@@ -1043,14 +1043,14 @@ begin
         Section.AddPage(Page);
 
         ConfigurarEncabezadoInstitucional(Page, FontH, FontN, FontH,
-          'Padron General de Parcelas y Catastro (Cont.)',
+          'Padron General de Parcelas (Cont.)',
           'Registro Notarial de Concesiones, Estado Ocupacional y Mantenimiento');
 
         // Cabecera repetida en nueva pagina
         PDFDrawRectTop(Page, 15, 41, 180, 7, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
         Page.SetColor(COL_WHITE, False);
         Page.SetFont(FontH, 8);
-        PDFWriteTextTop(Page, 17, 46, 'NOMENCL.');
+        PDFWriteTextTop(Page, 17, 46, 'PARCELA');
         PDFWriteTextTop(Page, 40, 46, 'SEC');
         PDFWriteTextTop(Page, 50, 46, 'MZ/FIL');
         PDFWriteTextTop(Page, 65, 46, 'NRO');
@@ -1067,7 +1067,7 @@ begin
     PDFDrawLineTop(Page, 15, 278, 195, 278, 0.5, COL_SLATE_LIGHT);
     Page.SetColor(COL_SLATE_MED, False);
     Page.SetFont(FontN, 7);
-    PDFWriteTextTop(Page, 15, 283, 'Aeterna Suite XP - Padron Oficial del Catastro Parroquial');
+    PDFWriteTextTop(Page, 15, 283, 'Aeterna Suite XP - Padron Oficial de Parcelas');
     PDFWriteTextTop(Page, 170, 283, 'Pagina ' + IntToStr(PaginaActual));
 
     Doc.SaveToFile(OutputPath);
