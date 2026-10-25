@@ -1,0 +1,442 @@
+object frmMain: TfrmMain
+  Left = 180
+  Height = 650
+  Top = 100
+  Width = 980
+  Caption = 'Aeterna - Gestion Funeraria y Cementerio Parque San Nicolas'
+  ClientHeight = 650
+  ClientWidth = 980
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Menu = MainMenu1
+  OnCreate = FormCreate
+  OnShow = FormShow
+  Position = poScreenCenter
+  LCLVersion = '2.2.6.0'
+  object pnlHeader: TPanel
+    Left = 0
+    Height = 65
+    Top = 0
+    Width = 980
+    Align = alTop
+    BevelOuter = bvNone
+    Color = 3022342
+    TabOrder = 0
+    object lblTitle: TLabel
+      Left = 16
+      Height = 22
+      Top = 10
+      Width = 460
+      Caption = 'CEMENTERIO PARQUE SAN NICOLAS · AETERNA'
+      Font.Color = clWhite
+      Font.Height = -16
+      Font.Name = 'Tahoma'
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object lblSubtitle: TLabel
+      Left = 16
+      Height = 14
+      Top = 36
+      Width = 350
+      Caption = 'Sistema Integral de Gestion Parroquial, Catastro y Mutual'
+      Font.Color = 14474460
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      ParentColor = False
+      ParentFont = False
+    end
+    object pnlQuickActions: TPanel
+      Left = 520
+      Height = 45
+      Top = 10
+      Width = 450
+      Align = alRight
+      BevelOuter = bvNone
+      Color = 3022342
+      TabOrder = 0
+      object btnAccionInhumacion: TButton
+        Left = 10
+        Height = 32
+        Top = 6
+        Width = 100
+        Caption = '+ Inhumacion'
+        Font.Style = [fsBold]
+        OnClick = btnAccionInhumacionClick
+        ParentFont = False
+        TabOrder = 0
+      end
+      object btnAccionAfiliado: TButton
+        Left = 118
+        Height = 32
+        Top = 6
+        Width = 105
+        Caption = '+ Afiliado Seguro'
+        Font.Style = [fsBold]
+        OnClick = btnAccionAfiliadoClick
+        ParentFont = False
+        TabOrder = 1
+      end
+      object btnAccionCobranza: TButton
+        Left = 230
+        Height = 32
+        Top = 6
+        Width = 100
+        Caption = 'Cobranzas'
+        Font.Style = [fsBold]
+        OnClick = btnAccionCobranzaClick
+        ParentFont = False
+        TabOrder = 2
+      end
+      object btnAccionCierreCaja: TButton
+        Left = 338
+        Height = 32
+        Top = 6
+        Width = 105
+        Caption = 'Cierre de Caja'
+        Font.Style = [fsBold]
+        OnClick = btnAccionCierreCajaClick
+        ParentFont = False
+        TabOrder = 3
+      end
+    end
+  end
+  object pnlKpiCards: TPanel
+    Left = 0
+    Height = 90
+    Top = 65
+    Width = 980
+    Align = alTop
+    BevelOuter = bvNone
+    Color = 15724527
+    TabOrder = 1
+    object pnlCardOcupacion: TPanel
+      Left = 10
+      Height = 74
+      Top = 8
+      Width = 230
+      BevelOuter = bvLowered
+      Color = clWhite
+      TabOrder = 0
+      object lblKpiOcupacionTit: TLabel
+        Left = 10
+        Height = 13
+        Top = 6
+        Width = 105
+        Caption = 'OCUPACION TOTAL'
+        Font.Style = [fsBold]
+        ParentFont = False
+      end
+      object lblKpiOcupacionVal: TLabel
+        Left = 10
+        Height = 19
+        Top = 22
+        Width = 120
+        Caption = '52% (205 / 398)'
+        Font.Color = 131328
+        Font.Height = -16
+        Font.Style = [fsBold]
+        ParentColor = False
+        ParentFont = False
+      end
+      object lblKpiOcupacionSub: TLabel
+        Left = 10
+        Height = 13
+        Top = 44
+        Width = 130
+        Caption = '193 parcelas disponibles'
+        Font.Color = clGray
+        ParentColor = False
+        ParentFont = False
+      end
+      object pbOcupacion: TProgressBar
+        Left = 10
+        Height = 10
+        Top = 58
+        Width = 208
+        Position = 52
+        TabOrder = 0
+      end
+    end
+    object pnlCardMora: TPanel
+      Left = 250
+      Height = 74
+      Top = 8
+      Width = 230
+      BevelOuter = bvLowered
+      Color = clWhite
+      TabOrder = 1
+      object lblKpiMoraTit: TLabel
+        Left = 10
+        Height = 13
+        Top = 6
+        Width = 135
+        Caption = 'MORA MANTENIMIENTO'
+        Font.Style = [fsBold]
+        ParentFont = False
+      end
+      object lblKpiMoraVal: TLabel
+        Left = 10
+        Height = 19
+        Top = 22
+        Width = 110
+        Caption = '$ 12,450,000'
+        Font.Color = clMaroon
+        Font.Height = -16
+        Font.Style = [fsBold]
+        ParentColor = False
+        ParentFont = False
+      end
+      object lblKpiMoraSub: TLabel
+        Left = 10
+        Height = 13
+        Top = 46
+        Width = 180
+        Caption = '178 en caducidad legal (>3 a)'
+        Font.Color = clMaroon
+        ParentColor = False
+        ParentFont = False
+      end
+    end
+    object pnlCardSeguro: TPanel
+      Left = 490
+      Height = 74
+      Top = 8
+      Width = 230
+      BevelOuter = bvLowered
+      Color = clWhite
+      TabOrder = 2
+      object lblKpiSeguroTit: TLabel
+        Left = 10
+        Height = 13
+        Top = 6
+        Width = 125
+        Caption = 'SEGURO DE SEPELIO'
+        Font.Style = [fsBold]
+        ParentFont = False
+      end
+      object lblKpiSeguroVal: TLabel
+        Left = 10
+        Height = 19
+        Top = 22
+        Width = 90
+        Caption = '28 Afiliados'
+        Font.Color = 9384704
+        Font.Height = -16
+        Font.Style = [fsBold]
+        ParentColor = False
+        ParentFont = False
+      end
+      object lblKpiSeguroSub: TLabel
+        Left = 10
+        Height = 13
+        Top = 46
+        Width = 140
+        Caption = '23 al dia - 5 en mora'
+        Font.Color = clGray
+        ParentColor = False
+        ParentFont = False
+      end
+    end
+    object pnlCardCaja: TPanel
+      Left = 730
+      Height = 74
+      Top = 8
+      Width = 240
+      BevelOuter = bvLowered
+      Color = clWhite
+      TabOrder = 3
+      object lblKpiCajaTit: TLabel
+        Left = 10
+        Height = 13
+        Top = 6
+        Width = 95
+        Caption = 'CAJA DEL DIA'
+        Font.Style = [fsBold]
+        ParentFont = False
+      end
+      object lblKpiCajaVal: TLabel
+        Left = 10
+        Height = 19
+        Top = 22
+        Width = 95
+        Caption = '$ 145,000'
+        Font.Color = 32768
+        Font.Height = -16
+        Font.Style = [fsBold]
+        ParentColor = False
+        ParentFont = False
+      end
+      object lblKpiCajaSub: TLabel
+        Left = 10
+        Height = 13
+        Top = 46
+        Width = 160
+        Caption = 'Efvo: $ 65,000 | Dig: $ 80,000'
+        Font.Color = clGray
+        ParentColor = False
+        ParentFont = False
+      end
+    end
+  end
+  object PageControl1: TPageControl
+    Left = 0
+    Height = 472
+    Top = 155
+    Width = 980
+    ActivePage = tabDashboard
+    Align = alClient
+    TabIndex = 0
+    TabOrder = 2
+    OnChange = PageControl1Change
+    object tabDashboard: TTabSheet
+      Caption = '  Dashboard y Actividad  '
+      ClientHeight = 444
+      ClientWidth = 972
+      object pnlDashTableTools: TPanel
+        Left = 0
+        Height = 42
+        Top = 0
+        Width = 972
+        Align = alTop
+        BevelOuter = bvNone
+        Color = 15724527
+        TabOrder = 0
+        object lblFiltroDash: TLabel
+          Left = 12
+          Height = 13
+          Top = 14
+          Width = 90
+          Caption = 'Buscar Actividad:'
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object edtBuscarDash: TEdit
+          Left = 110
+          Height = 22
+          Top = 10
+          Width = 280
+          OnChange = edtBuscarDashChange
+          TabOrder = 0
+        end
+        object btnRefrescarDash: TButton
+          Left = 400
+          Height = 25
+          Top = 9
+          Width = 110
+          Caption = 'Actualizar Datos'
+          OnClick = btnRefrescarDashClick
+          TabOrder = 1
+        end
+      end
+      object gridActividadDash: TStringGrid
+        Left = 0
+        Height = 402
+        Top = 42
+        Width = 972
+        Align = alClient
+        FixedCols = 0
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect, goSmoothScroll]
+        TabOrder = 1
+      end
+    end
+    object tabParcelas: TTabSheet
+      Caption = '  Catastro y Parcelas  '
+      ClientHeight = 444
+      ClientWidth = 972
+    end
+    object tabInhumaciones: TTabSheet
+      Caption = '  Libro de Inhumaciones  '
+      ClientHeight = 444
+      ClientWidth = 972
+    end
+    object tabAfiliados: TTabSheet
+      Caption = '  Afiliados a Seguro  '
+      ClientHeight = 444
+      ClientWidth = 972
+    end
+    object tabCaja: TTabSheet
+      Caption = '  Caja y Arqueo  '
+      ClientHeight = 444
+      ClientWidth = 972
+    end
+  end
+  object StatusBar1: TStatusBar
+    Left = 0
+    Height = 23
+    Top = 627
+    Width = 980
+    Panels = <    
+      item
+        Text = 'Conectando a Supabase Cloud...'
+        Width = 260
+      end    
+      item
+        Text = 'Operador: Administrador'
+        Width = 240
+      end    
+      item
+        Text = 'Fecha: --/--/----'
+        Width = 200
+      end    
+      item
+        Text = 'RAM: ~22 MB / 2048 MB'
+        Width = 180
+      end>
+    SimplePanel = False
+  end
+  object MainMenu1: TMainMenu
+    Left = 60
+    Top = 200
+    object miArchivo: TMenuItem
+      Caption = '&Archivo'
+      object miSalir: TMenuItem
+        Caption = '&Salir'
+        OnClick = miSalirClick
+      end
+    end
+    object miModulos: TMenuItem
+      Caption = '&Modulos'
+      object miCatastro: TMenuItem
+        Caption = '&Catastro de Parcelas'
+      end
+      object miInhumaciones: TMenuItem
+        Caption = '&Libro de Inhumaciones'
+      end
+      object miSeguro: TMenuItem
+        Caption = '&Seguro de Sepelio'
+      end
+      object miCaja: TMenuItem
+        Caption = '&Caja Diaria'
+      end
+    end
+    object miReportes: TMenuItem
+      Caption = '&Reportes PDF'
+      object miRepActas: TMenuItem
+        Caption = 'Actas de Inhumacion'
+      end
+      object miRepFolios: TMenuItem
+        Caption = 'Folio del Libro'
+      end
+      object miRepRuta: TMenuItem
+        Caption = 'Planilla de Ruta para Cobrador'
+      end
+      object miRepRecibos: TMenuItem
+        Caption = 'Recibo Oficial'
+      end
+      object miRepCierre: TMenuItem
+        Caption = 'Cierre de Caja Diario'
+      end
+    end
+    object miAyuda: TMenuItem
+      Caption = 'A&yuda'
+      object miAcercaDe: TMenuItem
+        Caption = '&Acerca de Aeterna XP'
+        OnClick = miAcercaDeClick
+      end
+    end
+  end
+end
