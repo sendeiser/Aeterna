@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Parcela, Inhumacion, EstadoTitular } from '../../types/database'
 import { formatCurrency } from '../../lib/formatters'
 import { reactivarParcelaStandby, liberarParcelaStandby } from '../../services/dataService'
@@ -34,6 +34,9 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('')
   const [pageSize, setPageSize] = useState<'todas' | 50 | 100>('todas')
   const [currentPage, setCurrentPage] = useState(1)
+  const [sortOption, setSortOption] = useState<
+    'nomenclatura-asc' | 'alfa-asc' | 'alfa-desc' | 'fecha-desc' | 'fecha-asc' | 'deuda-desc'
+  >('nomenclatura-asc')
   const [selectedParcelaId, setSelectedParcelaId] = useState<string | null>(
     parcelas.length > 0 ? parcelas[0].id : null
   )
@@ -191,16 +194,46 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   // Reset de página al cambiar filtros
   useEffect(() => {
     setCurrentPage(1)
-  }, [filterSector, filterTitularVital, searchTerm, pageSize])
+  }, [filterSector, filterTitularVital, searchTerm, pageSize, sortOption])
 
-  const totalPages = pageSize === 'todas' ? 1 : Math.ceil(filteredParcelas.length / pageSize)
+  // Ordenamiento dinámico de parcelas por alfabeto o fecha
+  const sortedParcelas: Parcela[] = useMemo(() => {
+    return [...filteredParcelas].sort((a, b) => {
+      if (sortOption === 'alfa-asc') {
+        const nomA = a.titular?.nombre_completo || 'ZZZ'
+        const nomB = b.titular?.nombre_completo || 'ZZZ'
+        return nomA.localeCompare(nomB)
+      }
+      if (sortOption === 'alfa-desc') {
+        const nomA = a.titular?.nombre_completo || ''
+        const nomB = b.titular?.nombre_completo || ''
+        return nomB.localeCompare(nomA)
+      }
+      if (sortOption === 'fecha-desc') {
+        const dateA = a.fecha_adquisicion ? new Date(a.fecha_adquisicion).getTime() : 0
+        const dateB = b.fecha_adquisicion ? new Date(b.fecha_adquisicion).getTime() : 0
+        return dateB - dateA
+      }
+      if (sortOption === 'fecha-asc') {
+        const dateA = a.fecha_adquisicion ? new Date(a.fecha_adquisicion).getTime() : 0
+        const dateB = b.fecha_adquisicion ? new Date(b.fecha_adquisicion).getTime() : 0
+        return dateA - dateB
+      }
+      if (sortOption === 'deuda-desc') {
+        return (b.saldo_mantenimiento || 0) - (a.saldo_mantenimiento || 0)
+      }
+      return a.nomenclatura.localeCompare(b.nomenclatura)
+    })
+  }, [filteredParcelas, sortOption])
+
+  const totalPages = pageSize === 'todas' ? 1 : Math.ceil(sortedParcelas.length / pageSize)
   const displayedParcelas =
     pageSize === 'todas'
-      ? filteredParcelas
-      : filteredParcelas.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+      ? sortedParcelas
+      : sortedParcelas.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   // Selected Parcela Object
-  const selectedParcela = parcelas.find((p) => p.id === selectedParcelaId) || filteredParcelas[0] || parcelas[0]
+  const selectedParcela = parcelas.find((p) => p.id === selectedParcelaId) || sortedParcelas[0] || parcelas[0]
 
   // Difuntos asociados a la parcela seleccionada
   const difuntosEnParcela = inhumaciones.filter((inh) => {
@@ -421,6 +454,23 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                   <span className="material-symbols-outlined text-[14px]">close</span>
                 </button>
               )}
+            </div>
+
+            {/* Ordenar por Alfabeto o Fecha */}
+            <div className="flex items-center gap-1 text-xs">
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value as any)}
+                className="h-8 text-xs bg-white border border-outline-variant rounded px-2 py-1 focus:border-secondary font-medium text-slate-800 cursor-pointer"
+                title="Ordenar parcelas por alfabeto o fecha"
+              >
+                <option value="nomenclatura-asc">📍 Nomenclatura (A → Z)</option>
+                <option value="alfa-asc">🔤 Titular: A → Z</option>
+                <option value="alfa-desc">🔤 Titular: Z → A</option>
+                <option value="fecha-desc">📅 Fecha Adquisición: Más reciente</option>
+                <option value="fecha-asc">📅 Fecha Adquisición: Más antiguo</option>
+                <option value="deuda-desc">💰 Mayor deuda</option>
+              </select>
             </div>
 
             {onNuevaParcela && (
@@ -873,12 +923,41 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
           <div className="hidden md:block overflow-x-auto flex-1 min-h-0 custom-scroll">
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
-                <tr className="text-label-caps font-label-caps text-slate-700 uppercase bg-slate-100">
-                  <th className="py-2.5 px-3 bg-slate-100">Parcela</th>
-                  <th className="py-2.5 px-3 bg-slate-100">Titular Actual</th>
+                <tr className="text-label-caps font-label-caps text-slate-700 uppercase bg-slate-100 select-none">
+                  <th
+                    onClick={() => setSortOption((prev) => (prev === 'nomenclatura-asc' ? 'fecha-desc' : 'nomenclatura-asc'))}
+                    className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
+                    title="Ordenar por Nomenclatura / Fecha"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Parcela</span>
+                      {sortOption === 'nomenclatura-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                      {sortOption === 'fecha-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => setSortOption((prev) => (prev === 'alfa-asc' ? 'alfa-desc' : 'alfa-asc'))}
+                    className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
+                    title="Ordenar por Alfabeto A-Z / Z-A"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Titular Actual</span>
+                      {sortOption === 'alfa-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                      {sortOption === 'alfa-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                    </div>
+                  </th>
                   <th className="py-2.5 px-3 bg-slate-100 text-center">Ocupación / Niveles</th>
                   <th className="py-2.5 px-3 bg-slate-100">Estado</th>
-                  <th className="py-2.5 px-3 bg-slate-100 text-right">Saldo</th>
+                  <th
+                    onClick={() => setSortOption((prev) => (prev === 'deuda-desc' ? 'nomenclatura-asc' : 'deuda-desc'))}
+                    className="py-2.5 px-3 bg-slate-100 text-right cursor-pointer hover:bg-slate-200 transition-colors"
+                    title="Ordenar por Mayor Deuda"
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      <span>Saldo</span>
+                      {sortOption === 'deuda-desc' && <span className="material-symbols-outlined text-[13px] text-red-600">arrow_downward</span>}
+                    </div>
+                  </th>
                   <th className="py-2.5 px-2 bg-slate-100 text-center">Acción</th>
                 </tr>
               </thead>

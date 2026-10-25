@@ -1,6 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { SoporteMunicipalModal } from '../modals/SoporteMunicipalModal'
 import { AuditoriaModal } from '../modals/AuditoriaModal'
+import { Parcela, AfiliadoSeguro } from '../../types/database'
+import { evaluarMoraAfiliado, evaluarMoraParcela } from '../../lib/reglasNegocio'
 
 export type TabType = 'dashboard' | 'parcelas' | 'inhumaciones' | 'seguro' | 'configuracion'
 
@@ -16,6 +18,8 @@ interface NavbarProps {
   onToggleCollapse?: () => void
   currentUser?: { username: string; name: string; role: string } | null
   onLogout?: () => void
+  afiliados?: (AfiliadoSeguro & { cuotasPagadas?: number[] })[]
+  parcelas?: Parcela[]
 }
 
 interface NotificationItem {
@@ -25,6 +29,7 @@ interface NotificationItem {
   time: string
   type: 'info' | 'success' | 'warning' | 'error'
   read: boolean
+  actionTab?: TabType
 }
 
 const INITIAL_NOTIFICATIONS: NotificationItem[] = [
@@ -74,13 +79,104 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleCollapse,
   currentUser,
   onLogout,
+  afiliados = [],
+  parcelas = [],
 }) => {
   const [soporteOpen, setSoporteOpen] = useState(false)
   const [auditoriaOpen, setAuditoriaOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
-  const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS)
+  const [readNotifIds, setReadNotifIds] = useState<Set<string>>(new Set())
+  const [dismissedNotifIds, setDismissedNotifIds] = useState<Set<string>>(new Set())
 
   const notifRef = useRef<HTMLDivElement>(null)
+
+  // Generación dinámica de notificaciones basada en datos reales
+  const dynamicNotifications = useMemo<NotificationItem[]>(() => {
+    const list: NotificationItem[] = []
+
+    // 1. Detección de Afiliados con 3 o más meses de mora (Pase a Stand-by)
+    const afiliadosMora3Meses = (afiliados || []).filter((a) => {
+      const mora = evaluarMoraAfiliado(a, 3, 2026)
+      return mora.enStandby || mora.mesesMora >= 3
+    })
+
+    if (afiliadosMora3Meses.length > 0) {
+      list.push({
+        id: 'notif-mora-3meses-resumen',
+        title: `⚠️ Mora 3 Meses: ${afiliadosMora3Meses.length} en Stand-by`,
+        message: `Afiliados (${afiliadosMora3Meses.map((a) => a.nombre_completo).slice(0, 3).join(', ')}${
+          afiliadosMora3Meses.length > 3 ? '...' : ''
+        }) adeudan 3+ meses. Servicios de sepelio suspendidos. Clic para regularizar.`,
+        time: 'Alerta Crítica',
+        type: 'error',
+        read: false,
+        actionTab: 'seguro',
+      })
+
+      afiliadosMora3Meses.forEach((af) => {
+        list.push({
+          id: `notif-af-${af.id}`,
+          title: `Mora Trimestral: ${af.nombre_completo}`,
+          message: `Afiliado #${af.numero_afiliado} (${af.zona_cobro || 'Zona 1'}). Adeuda cuotas 1, 2 y 3. Clic para cobrar con QR.`,
+          time: 'Stand-by',
+          type: 'warning',
+          read: false,
+          actionTab: 'seguro',
+        })
+      })
+    }
+
+    // 2. Detección de Parcelas con 3 o más años de mora (Caducidad de titularidad)
+    const parcelasMora3Anios = (parcelas || []).filter((p) => {
+      const mora = evaluarMoraParcela(p)
+      return mora.enStandby || mora.aniosMora >= 3
+    })
+
+    if (parcelasMora3Anios.length > 0) {
+      list.push({
+        id: 'notif-mora-3anios-resumen',
+        title: `🚨 Mora 3 Años: ${parcelasMora3Anios.length} Parcelas en Caducidad`,
+        message: `Parcelas (${parcelasMora3Anios.map((p) => p.nomenclatura).slice(0, 4).join(', ')}${
+          parcelasMora3Anios.length > 4 ? '...' : ''
+        }) superan 3 años de mora en mantenimiento. Aplica caducidad municipal.`,
+        time: 'Auditoría Legal',
+        type: 'error',
+        read: false,
+        actionTab: 'parcelas',
+      })
+
+      parcelasMora3Anios.slice(0, 5).forEach((p) => {
+        list.push({
+          id: `notif-parc-${p.id}`,
+          title: `Caducidad: Parcela ${p.nomenclatura}`,
+          message: `Titular: ${p.titular?.nombre_completo || 'Sin titular'}. Deuda acumulada: $ ${(p.saldo_mantenimiento || 0).toLocaleString('es-AR')}.`,
+          time: '3+ Años',
+          type: 'error',
+          read: false,
+          actionTab: 'parcelas',
+        })
+      })
+    }
+
+    // Notificaciones base del sistema
+    list.push({
+      id: 'notif-sync',
+      title: 'Sincronización Supabase Cloud',
+      message: 'Base de datos en la nube conectada y operando en tiempo real con chamical_prod.',
+      time: 'Hace 5 min',
+      type: 'success',
+      read: true,
+    })
+
+    return list
+  }, [afiliados, parcelas])
+
+  const notifications = dynamicNotifications
+    .filter((n) => !dismissedNotifIds.has(n.id))
+    .map((n) => ({
+      ...n,
+      read: n.read || readNotifIds.has(n.id),
+    }))
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
@@ -107,11 +203,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, [notifOpen])
 
   const handleMarkAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+    setReadNotifIds(new Set(dynamicNotifications.map((n) => n.id)))
   }
 
   const handleDismissNotif = (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id))
+    setDismissedNotifIds((prev) => new Set([...prev, id]))
   }
 
   const navItems = [
@@ -378,30 +474,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             />
           </div>
 
-          <div className="h-5 w-px bg-outline-variant mx-0.5 hidden md:block"></div>
 
-          {/* Icon Actions */}
-          <button
-            type="button"
-            onClick={onCobroRapidoQR}
-            className="w-8 h-8 flex items-center justify-center rounded hover:bg-surface-container-low text-on-surface-variant transition-colors"
-            title="Escanear Código QR"
-          >
-            <span className="material-symbols-outlined text-[18px]" data-icon="qr_code_scanner">
-              qr_code_scanner
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="w-8 h-8 flex items-center justify-center rounded hover:bg-surface-container-low text-on-surface-variant transition-colors hidden sm:flex"
-            title="Imprimir Registro Oficial"
-          >
-            <span className="material-symbols-outlined text-[18px]" data-icon="print">
-              print
-            </span>
-          </button>
 
           {/* Notificaciones Interactivas Popover */}
           <div className="relative" ref={notifRef}>
@@ -458,7 +531,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                     notifications.map((item) => (
                       <div
                         key={item.id}
+                        onClick={() => {
+                          if (item.actionTab) {
+                            onSelectTab(item.actionTab)
+                            setNotifOpen(false)
+                            setReadNotifIds((prev) => new Set([...prev, item.id]))
+                          }
+                        }}
                         className={`p-2.5 rounded-lg border text-left transition-all ${
+                          item.actionTab ? 'cursor-pointer hover:border-primary/50 hover:shadow-xs' : ''
+                        } ${
                           item.read
                             ? 'bg-surface border-outline-variant/50 opacity-75'
                             : 'bg-primary/5 border-primary/20 shadow-xs'

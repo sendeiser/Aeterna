@@ -771,6 +771,8 @@ export default function App() {
         isOnline={isSupabaseConfigured}
         currentUser={currentUser}
         onLogout={handleLogout}
+        afiliados={afiliados}
+        parcelas={parcelas}
       />
 
       {/* Canvas Principal */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Inhumacion, Parcela } from '../../types/database'
 import { ActaInhumacionModal } from '../modals/ActaInhumacionModal'
 import { InhumacionForm } from '../forms/InhumacionForm'
@@ -23,6 +23,9 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('')
   const [filterProtocol, setFilterProtocol] = useState<'all' | 'covid' | 'standard' | 'judicial'>('all')
   const [yearFilter, setYearFilter] = useState<string>('2026')
+  const [sortOption, setSortOption] = useState<
+    'fecha-desc' | 'fecha-asc' | 'alfa-asc' | 'alfa-desc' | 'parcela-asc'
+  >('fecha-desc')
   const [actaModal, setActaModal] = useState<{
     isOpen: boolean
     inhumacion: Inhumacion | null
@@ -61,6 +64,31 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
     }
     return true
   })
+
+  // Ordenamiento dinámico de actas de inhumación
+  const sortedInhumaciones = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      if (sortOption === 'alfa-asc') {
+        return (a.nombre_difunto || '').localeCompare(b.nombre_difunto || '')
+      }
+      if (sortOption === 'alfa-desc') {
+        return (b.nombre_difunto || '').localeCompare(a.nombre_difunto || '')
+      }
+      if (sortOption === 'fecha-desc') {
+        const dateA = a.fecha_inhumacion ? new Date(a.fecha_inhumacion).getTime() : 0
+        const dateB = b.fecha_inhumacion ? new Date(b.fecha_inhumacion).getTime() : 0
+        return dateB - dateA
+      }
+      if (sortOption === 'fecha-asc') {
+        const dateA = a.fecha_inhumacion ? new Date(a.fecha_inhumacion).getTime() : 0
+        const dateB = b.fecha_inhumacion ? new Date(b.fecha_inhumacion).getTime() : 0
+        return dateA - dateB
+      }
+      const parcA = typeof a.parcela === 'object' ? a.parcela?.nomenclatura : a.parcela
+      const parcB = typeof b.parcela === 'object' ? b.parcela?.nomenclatura : b.parcela
+      return (parcA || '').localeCompare(parcB || '')
+    })
+  }, [filtered, sortOption])
 
   const totalCovid = inhumaciones.filter((i) => i.es_covid).length
 
@@ -205,6 +233,20 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
               <option value="standard">Inhumación Estándar</option>
               <option value="judicial">Intervención Judicial / Morgue</option>
             </select>
+
+            {/* Ordenar por Alfabeto o Fecha */}
+            <select
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value as any)}
+              className="h-[34px] px-2.5 text-body-sm bg-surface-container-lowest border border-outline-variant rounded text-on-surface-variant focus:border-secondary outline-none shrink-0 cursor-pointer font-medium"
+              title="Ordenar actas de inhumación por alfabeto o fecha"
+            >
+              <option value="fecha-desc">📅 Fecha: Más reciente</option>
+              <option value="fecha-asc">📅 Fecha: Más antiguo</option>
+              <option value="alfa-asc">🔤 Difunto: A → Z</option>
+              <option value="alfa-desc">🔤 Difunto: Z → A</option>
+              <option value="parcela-asc">📍 Parcela (A → Z)</option>
+            </select>
           </div>
 
           {/* Quick export tools */}
@@ -223,10 +265,10 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
 
         {/* MOBILE VIEW (< md): Responsive Inhumaciones Cards */}
         <div className="md:hidden divide-y divide-outline-variant/40 p-2 space-y-2 flex-1 min-h-0 overflow-y-auto custom-scroll">
-          {filtered.length === 0 ? (
+          {sortedInhumaciones.length === 0 ? (
             <div className="p-4 text-center text-outline text-sm">No se encontraron actas de inhumación.</div>
           ) : (
-            filtered.map((inh, index) => {
+            sortedInhumaciones.map((inh, index) => {
               const parcNom = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela
               const fechaInh = inh.fecha_inhumacion?.slice(0, 10) || '2026-03-30'
               const hora = inh.fecha_inhumacion?.includes('T')
@@ -355,14 +397,43 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
               <tr className="bg-slate-100 text-[11px] font-label-caps uppercase text-slate-700 tracking-wider select-none">
-                <th className="py-2.5 px-3 bg-slate-100">Fecha Inhumación</th>
-                <th className="py-2.5 px-3 bg-slate-100">Difunto / DNI</th>
-                <th className="py-2.5 px-3 bg-slate-100">Parcela y Nivel</th>
+                <th
+                  onClick={() => setSortOption((prev) => (prev === 'fecha-desc' ? 'fecha-asc' : 'fecha-desc'))}
+                  className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
+                  title="Ordenar por Fecha Más reciente / Más antiguo"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Fecha Inhumación</span>
+                    {sortOption === 'fecha-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                    {sortOption === 'fecha-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                  </div>
+                </th>
+                <th
+                  onClick={() => setSortOption((prev) => (prev === 'alfa-asc' ? 'alfa-desc' : 'alfa-asc'))}
+                  className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
+                  title="Ordenar por Difunto A-Z / Z-A"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Difunto / DNI</span>
+                    {sortOption === 'alfa-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                    {sortOption === 'alfa-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                  </div>
+                </th>
+                <th
+                  onClick={() => setSortOption((prev) => (prev === 'parcela-asc' ? 'fecha-desc' : 'parcela-asc'))}
+                  className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
+                  title="Ordenar por Parcela"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Parcela y Nivel</span>
+                    {sortOption === 'parcela-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                  </div>
+                </th>
                 <th className="py-2.5 px-3 bg-slate-100 text-right">Acciones Registrales</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/40 text-body-md font-body-md">
-              {filtered.map((inh, index) => {
+              {sortedInhumaciones.map((inh, index) => {
                 const parcNom = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela
                 const fechaInh = inh.fecha_inhumacion?.slice(0, 10) || '2026-03-30'
                 const hora = inh.fecha_inhumacion?.includes('T')

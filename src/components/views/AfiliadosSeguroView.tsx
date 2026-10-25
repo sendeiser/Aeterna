@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { AfiliadoSeguro } from '../../types/database'
 import { formatCurrency } from '../../lib/formatters'
 import { DetalleCuotaModal } from '../modals/DetalleCuotaModal'
@@ -30,6 +30,9 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('')
   const [zoneFilter, setZoneFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'deuda' | 'aldia' | 'standby'>('all')
+  const [sortOption, setSortOption] = useState<
+    'numero-asc' | 'alfa-asc' | 'alfa-desc' | 'fecha-desc' | 'fecha-asc' | 'deuda-desc'
+  >('numero-asc')
   const [isTalonarioModalOpen, setIsTalonarioModalOpen] = useState(false)
   const [isPlanillaModalOpen, setIsPlanillaModalOpen] = useState(false)
 
@@ -143,25 +146,52 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
   const afiliadosDeuda = totalAfiliados - afiliadosAlDia
   const afiliadosStandby = afiliados.filter((a) => evaluarMoraAfiliado(a, mesActual, 2026).enStandby).length
 
-  // Filtrado
-  const filtered = afiliados.filter((a) => {
-    if (zoneFilter !== 'all') {
-      if (!a.zona_cobro?.toLowerCase().includes(zoneFilter.toLowerCase())) return false
-    }
-    if (statusFilter === 'deuda' && a.estado === 'activo') return false
-    if (statusFilter === 'aldia' && a.estado !== 'activo') return false
-    if (statusFilter === 'standby' && !evaluarMoraAfiliado(a, mesActual, 2026).enStandby) return false
+  // Filtrado y ordenamiento dinámico
+  const filtered: (AfiliadoSeguro & { cuotasPagadas?: number[] })[] = useMemo(() => {
+    let list = afiliados.filter((a) => {
+      if (zoneFilter !== 'all') {
+        if (!a.zona_cobro?.toLowerCase().includes(zoneFilter.toLowerCase())) return false
+      }
+      if (statusFilter === 'deuda' && a.estado === 'activo') return false
+      if (statusFilter === 'aldia' && a.estado !== 'activo') return false
+      if (statusFilter === 'standby' && !evaluarMoraAfiliado(a, mesActual, 2026).enStandby) return false
 
-    if (searchTerm.trim()) {
-      const q = searchTerm.toLowerCase()
-      const nro = a.numero_afiliado.toString()
-      const nom = a.nombre_completo.toLowerCase()
-      const dir = (a.direccion_cobro || '').toLowerCase()
-      const dni = (a.dni || '').toLowerCase()
-      return nro.includes(q) || nom.includes(q) || dir.includes(q) || dni.includes(q)
-    }
-    return true
-  })
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase()
+        const nro = a.numero_afiliado.toString()
+        const nom = a.nombre_completo.toLowerCase()
+        const dir = (a.direccion_cobro || '').toLowerCase()
+        const dni = (a.dni || '').toLowerCase()
+        return nro.includes(q) || nom.includes(q) || dir.includes(q) || dni.includes(q)
+      }
+      return true
+    })
+
+    return list.sort((a, b) => {
+      if (sortOption === 'alfa-asc') {
+        return a.nombre_completo.localeCompare(b.nombre_completo)
+      }
+      if (sortOption === 'alfa-desc') {
+        return b.nombre_completo.localeCompare(a.nombre_completo)
+      }
+      if (sortOption === 'fecha-desc') {
+        const timeA = a.fecha_alta ? new Date(a.fecha_alta).getTime() : (Number(a.numero_afiliado) || 0)
+        const timeB = b.fecha_alta ? new Date(b.fecha_alta).getTime() : (Number(b.numero_afiliado) || 0)
+        return timeB - timeA
+      }
+      if (sortOption === 'fecha-asc') {
+        const timeA = a.fecha_alta ? new Date(a.fecha_alta).getTime() : (Number(a.numero_afiliado) || 0)
+        const timeB = b.fecha_alta ? new Date(b.fecha_alta).getTime() : (Number(b.numero_afiliado) || 0)
+        return timeA - timeB
+      }
+      if (sortOption === 'deuda-desc') {
+        const moraA = [1, 2, 3].filter((m) => !(a.cuotasPagadas || []).includes(m)).length * a.monto_cuota_mensual
+        const moraB = [1, 2, 3].filter((m) => !(b.cuotasPagadas || []).includes(m)).length * b.monto_cuota_mensual
+        return moraB - moraA
+      }
+      return (Number(a.numero_afiliado) || 0) - (Number(b.numero_afiliado) || 0)
+    })
+  }, [afiliados, zoneFilter, statusFilter, searchTerm, sortOption])
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden space-y-1 sm:space-y-2">
@@ -325,10 +355,10 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
       {/* ===================================================================== */}
       {/* DESKTOP TOOLBAR (>= sm): Single-row compact bar                       */}
       {/* ===================================================================== */}
-      <div className="hidden sm:flex items-center justify-between gap-2.5 bg-surface-container-lowest p-2 rounded-xl border border-outline-variant shadow-xs shrink-0 flex-wrap">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+      <div className="hidden sm:flex items-center justify-between gap-2 bg-surface-container-lowest p-2 rounded-xl border border-outline-variant shadow-xs shrink-0 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
           {/* Live Input Search */}
-          <div className="relative min-w-[200px] max-w-sm flex-1">
+          <div className="relative w-44 md:w-52">
             <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-on-surface-variant">
               <span className="material-symbols-outlined text-[17px]">search</span>
             </span>
@@ -368,6 +398,23 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
               <option value="Zona 1">Zona 1 (Flores)</option>
               <option value="Zona 2">Zona 2 (Gómez)</option>
               <option value="Zona 3">Zona 3 (Mercado)</option>
+            </select>
+          </div>
+
+          {/* Ordenar por Alfabeto o Fecha */}
+          <div className="flex items-center gap-1 text-xs">
+            <select
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value as any)}
+              className="h-8 text-xs bg-white border border-outline-variant rounded-lg px-2 py-1 focus:border-secondary font-medium text-slate-800 cursor-pointer"
+              title="Filtro de ordenamiento en la tabla"
+            >
+              <option value="numero-asc">🔢 N° Afiliado (1 → N)</option>
+              <option value="alfa-asc">🔤 Alfabeto: A → Z (Titular)</option>
+              <option value="alfa-desc">🔤 Alfabeto: Z → A (Titular)</option>
+              <option value="fecha-desc">📅 Fecha: Más reciente</option>
+              <option value="fecha-asc">📅 Fecha: Más antiguo</option>
+              <option value="deuda-desc">💰 Mayor deuda</option>
             </select>
           </div>
 
@@ -787,17 +834,46 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
 
         {/* DESKTOP VIEW (>= md): Ledger Table with 12-Month Matrix */}
         <div className="hidden md:block overflow-x-auto flex-1 min-h-0 custom-scroll">
-          <table className="w-full min-w-[1060px] text-left border-collapse table-fixed">
+          <table className="w-full min-w-[1040px] text-left border-collapse table-fixed">
             <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
               <tr className="bg-slate-100 text-[11px] font-label-caps text-slate-700 uppercase tracking-wider h-8 select-none whitespace-nowrap">
-                <th className="px-2 py-2 w-[48px] text-left font-semibold bg-slate-100 whitespace-nowrap">N°</th>
-                <th className="px-2.5 py-2 w-[205px] font-semibold bg-slate-100">Afiliado / Titular & Domicilio</th>
+                <th
+                  onClick={() => setSortOption((prev) => (prev === 'numero-asc' ? 'fecha-desc' : 'numero-asc'))}
+                  className="px-2 py-2 w-[46px] text-left font-semibold bg-slate-100 whitespace-nowrap cursor-pointer hover:bg-slate-200 transition-colors"
+                  title="Ordenar por N° / Fecha"
+                >
+                  <div className="flex items-center gap-0.5">
+                    <span>N°</span>
+                    {sortOption === 'numero-asc' && <span className="material-symbols-outlined text-[12px] text-primary">arrow_upward</span>}
+                    {sortOption === 'fecha-desc' && <span className="material-symbols-outlined text-[12px] text-primary">arrow_downward</span>}
+                  </div>
+                </th>
+                <th
+                  onClick={() => setSortOption((prev) => (prev === 'alfa-asc' ? 'alfa-desc' : 'alfa-asc'))}
+                  className="px-2.5 py-2 w-[215px] font-semibold bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
+                  title="Ordenar por Alfabeto A-Z / Z-A"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Afiliado / Titular & Domicilio</span>
+                    {sortOption === 'alfa-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                    {sortOption === 'alfa-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                  </div>
+                </th>
                 <th className="px-2 py-2 w-[110px] font-semibold bg-slate-100 whitespace-nowrap">Cuota Base</th>
-                <th className="px-1 py-2 w-[375px] text-center font-semibold bg-slate-100 whitespace-nowrap">
+                <th className="px-1 py-2 w-[340px] text-center font-semibold bg-slate-100 whitespace-nowrap">
                   <span>Cuotas Ejercicio 2026 (Ene - Dic)</span>
                 </th>
-                <th className="px-2 py-2 w-[110px] text-right font-semibold bg-slate-100 whitespace-nowrap">Saldo Deuda</th>
-                <th className="px-2 py-2 w-[212px] text-right font-semibold bg-slate-100 whitespace-nowrap">Acciones Rápidas</th>
+                <th
+                  onClick={() => setSortOption((prev) => (prev === 'deuda-desc' ? 'numero-asc' : 'deuda-desc'))}
+                  className="px-2 py-2 w-[115px] text-right font-semibold bg-slate-100 whitespace-nowrap cursor-pointer hover:bg-slate-200 transition-colors"
+                  title="Ordenar por Mayor Deuda"
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    <span>Saldo Deuda</span>
+                    {sortOption === 'deuda-desc' && <span className="material-symbols-outlined text-[13px] text-red-600">arrow_downward</span>}
+                  </div>
+                </th>
+                <th className="px-2 py-2 w-[214px] text-right font-semibold bg-slate-100 whitespace-nowrap">Acciones Rápidas</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/40 font-body-md text-on-surface">
@@ -923,7 +999,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                     }`}
                   >
                     {/* Col 1: N° Afiliado */}
-                    <td className="px-2 py-2 align-middle">
+                    <td className="px-2.5 py-2 align-middle">
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-surface-container text-primary font-code-cadastral text-code-cadastral font-bold border border-outline-variant">
                         #{afiliado.numero_afiliado}
                       </span>
@@ -933,8 +1009,8 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                     </td>
 
                     {/* Col 2: Info Afiliado */}
-                    <td className="px-2.5 py-2 align-middle">
-                      <div className="font-semibold text-primary text-body-md truncate max-w-[210px]">
+                    <td className="px-3 py-2 align-middle">
+                      <div className="font-semibold text-primary text-body-md truncate max-w-[250px]">
                         {afiliado.nombre_completo}
                       </div>
                       <div className="text-body-sm text-on-surface-variant flex items-center gap-1.5 mt-0.5">
@@ -942,7 +1018,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                           DNI {afiliado.dni || '14.882.109'}
                         </span>
                         <span>•</span>
-                        <span className="flex items-center gap-0.5 truncate text-xs text-outline max-w-[120px]">
+                        <span className="flex items-center gap-0.5 truncate text-xs text-outline max-w-[160px]">
                           <span className="material-symbols-outlined text-xs">location_on</span>
                           <span className="truncate">{afiliado.direccion_cobro || 'Chamical'}</span>
                         </span>
@@ -968,7 +1044,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
 
                     {/* Col 3: Cuota Mensual */}
                     <td className="px-2 py-2 align-middle whitespace-nowrap">
-                      <div className="font-code-cadastral font-bold text-on-surface text-base whitespace-nowrap">
+                      <div className="font-code-cadastral font-bold text-on-surface text-[13.5px] whitespace-nowrap">
                         {formatCurrency(afiliado.monto_cuota_mensual)}
                       </div>
                       <span className="text-[10px] text-on-surface-variant block uppercase font-medium whitespace-nowrap">
@@ -978,7 +1054,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
 
                     {/* Col 4: Matriz 12 Cuotas (Stitch Verbatim Cells) */}
                     <td className="px-1 py-2 align-middle">
-                      <div className="flex items-center justify-center gap-[3px]">
+                      <div className="flex items-center justify-center gap-0.5">
                         {meses.map((m) => {
                           const isPagada = cuotasPagadas.includes(m.num)
                           const isVencida = !isPagada && m.num <= mesActual
@@ -989,13 +1065,13 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                                 key={m.num}
                                 type="button"
                                 onClick={() => handleVerDetalleCuota(afiliado, m.num)}
-                                className="w-7 h-7 rounded bg-emerald-600 hover:bg-emerald-700 text-white flex flex-col items-center justify-center shadow-xs transition-transform hover:scale-110 active:scale-95 cursor-pointer shrink-0"
+                                className="w-6 h-6 rounded bg-emerald-600 hover:bg-emerald-700 text-white flex flex-col items-center justify-center shadow-xs transition-transform hover:scale-110 active:scale-95 cursor-pointer shrink-0"
                                 title={`${m.label} 2026: Pagada (${formatCurrency(
                                   afiliado.monto_cuota_mensual
                                 )}) - Clic para ver recibo`}
                               >
-                                <span className="text-xs leading-none font-black">{m.num}</span>
-                                <span className="text-[8px] leading-none font-bold text-emerald-200 mt-0.5">✓</span>
+                                <span className="text-[11px] leading-none font-black">{m.num}</span>
+                                <span className="text-[7px] leading-none font-bold text-emerald-200 mt-0.5">✓</span>
                               </button>
                             )
                           }
@@ -1006,11 +1082,11 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                                 key={m.num}
                                 type="button"
                                 onClick={() => onCobrarCuota(afiliado, m.num)}
-                                className="w-7 h-7 rounded bg-red-600 hover:bg-red-700 text-white flex flex-col items-center justify-center shadow-xs border border-red-300 animate-pulse transition-transform hover:scale-110 active:scale-95 cursor-pointer shrink-0"
+                                className="w-6 h-6 rounded bg-red-600 hover:bg-red-700 text-white flex flex-col items-center justify-center shadow-xs border border-red-300 animate-pulse transition-transform hover:scale-110 active:scale-95 cursor-pointer shrink-0"
                                 title={`${m.label} 2026: VENCIDA - Clic para cobrar con QR`}
                               >
-                                <span className="text-xs leading-none font-black">{m.num}</span>
-                                <span className="text-[8px] leading-none font-black text-red-200 mt-0.5">!</span>
+                                <span className="text-[11px] leading-none font-black">{m.num}</span>
+                                <span className="text-[7px] leading-none font-black text-red-200 mt-0.5">!</span>
                               </button>
                             )
                           }
@@ -1020,7 +1096,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                               key={m.num}
                               type="button"
                               onClick={() => onCobrarCuota(afiliado, m.num)}
-                              className="w-7 h-7 rounded bg-slate-100 border border-slate-300 text-slate-800 hover:bg-slate-200 hover:text-slate-950 flex items-center justify-center text-xs font-black font-code-cadastral transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+                              className="w-6 h-6 rounded bg-slate-100 border border-slate-300 text-slate-800 hover:bg-slate-200 hover:text-slate-950 flex items-center justify-center text-[11px] font-black font-code-cadastral transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
                               title={`${m.label} 2026: A vencer - Clic para adelantar cobro`}
                             >
                               {m.num}
@@ -1034,15 +1110,15 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                     <td className="px-2 py-2 align-middle text-right whitespace-nowrap">
                       {saldoDeuda > 0 ? (
                         <div className="flex flex-col items-end whitespace-nowrap">
-                          <div className="font-code-cadastral font-bold text-red-700 text-base whitespace-nowrap">
+                          <div className="font-code-cadastral font-bold text-red-700 text-[13.5px] whitespace-nowrap">
                             {formatCurrency(saldoDeuda)}
                           </div>
-                          <span className="inline-flex items-center text-[10px] font-bold text-red-800 bg-red-100 px-1.5 py-0.5 rounded border border-red-200 whitespace-nowrap mt-0.5">
+                          <span className="inline-flex items-center text-[9.5px] font-bold text-red-800 bg-red-100 px-1 py-0.5 rounded border border-red-200 whitespace-nowrap mt-0.5">
                             {mesesVencidos.length} cuota{mesesVencidos.length > 1 ? 's' : ''} en mora
                           </span>
                         </div>
                       ) : (
-                        <div className="font-code-cadastral font-semibold text-emerald-700 text-sm whitespace-nowrap">
+                        <div className="font-code-cadastral font-semibold text-emerald-700 text-xs whitespace-nowrap">
                           Al día
                         </div>
                       )}
