@@ -685,11 +685,11 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                               key={m.num}
                               type="button"
                               onClick={() => handleVerDetalleCuota(afiliado, m.num)}
-                              className="h-8 rounded bg-emerald-600 hover:bg-emerald-700 text-white flex flex-col items-center justify-center text-[10px] font-bold shadow-xs active:scale-95 transition-transform"
+                              className="h-8 rounded bg-emerald-600 hover:bg-emerald-700 text-white flex flex-col items-center justify-center text-[11px] font-bold shadow-xs active:scale-95 transition-transform"
                               title={`${m.label}: Pagada - Tocar para ver comprobante`}
                             >
-                              <span className="text-[9px] leading-tight">{m.label}</span>
-                              <span className="text-[10px] leading-none">✓</span>
+                              <span className="text-[10px] leading-tight font-bold">{m.label}</span>
+                              <span className="text-[11px] leading-none font-black">✓</span>
                             </button>
                           )
                         }
@@ -700,11 +700,11 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                               key={m.num}
                               type="button"
                               onClick={() => onCobrarCuota(afiliado, m.num)}
-                              className="h-8 rounded bg-red-600 hover:bg-red-700 text-white flex flex-col items-center justify-center text-[10px] font-bold shadow-xs border border-red-300 animate-pulse active:scale-95"
+                              className="h-8 rounded bg-red-600 hover:bg-red-700 text-white flex flex-col items-center justify-center text-[11px] font-bold shadow-xs border border-red-300 animate-pulse active:scale-95"
                               title={`${m.label}: Vencida - Tocar para cobrar`}
                             >
-                              <span className="text-[9px] leading-tight">{m.label}</span>
-                              <span className="text-[10px] leading-none">!</span>
+                              <span className="text-[10px] leading-tight font-bold">{m.label}</span>
+                              <span className="text-[11px] leading-none font-black">!</span>
                             </button>
                           )
                         }
@@ -714,11 +714,11 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                             key={m.num}
                             type="button"
                             onClick={() => onCobrarCuota(afiliado, m.num)}
-                            className="h-8 rounded bg-surface border border-outline-variant text-outline hover:text-on-surface hover:bg-surface-container flex flex-col items-center justify-center text-[10px] font-medium active:scale-95"
+                            className="h-8 rounded bg-surface border border-outline-variant text-on-surface hover:bg-surface-container flex flex-col items-center justify-center text-[11px] font-semibold active:scale-95"
                             title={`${m.label}: Adelantar`}
                           >
-                            <span className="text-[9px] leading-tight">{m.label}</span>
-                            <span className="text-[10px] leading-none text-outline-variant">·</span>
+                            <span className="text-[10px] leading-tight font-semibold">{m.label}</span>
+                            <span className="text-[11px] leading-none text-outline-variant">·</span>
                           </button>
                         )
                       })}
@@ -783,17 +783,17 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
 
         {/* DESKTOP VIEW (>= md): Ledger Table with 12-Month Matrix */}
         <div className="hidden md:block overflow-x-auto flex-1 min-h-0 custom-scroll">
-          <table className="w-full min-w-[960px] text-left border-collapse">
+          <table className="w-full min-w-[1060px] text-left border-collapse table-fixed">
             <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
               <tr className="bg-slate-100 text-[11px] font-label-caps text-slate-700 uppercase tracking-wider h-8 select-none whitespace-nowrap">
-                <th className="px-2 py-2 w-12 min-w-[48px] text-left font-semibold bg-slate-100 whitespace-nowrap">N°</th>
-                <th className="px-2 py-2 min-w-[170px] font-semibold bg-slate-100">Afiliado / Titular & Domicilio</th>
-                <th className="px-2 py-2 w-24 min-w-[95px] font-semibold bg-slate-100 whitespace-nowrap">Cuota Base</th>
-                <th className="px-2 py-2 min-w-[330px] text-center font-semibold bg-slate-100 whitespace-nowrap">
+                <th className="px-2 py-2 w-[48px] text-left font-semibold bg-slate-100 whitespace-nowrap">N°</th>
+                <th className="px-2.5 py-2 w-[205px] font-semibold bg-slate-100">Afiliado / Titular & Domicilio</th>
+                <th className="px-2 py-2 w-[110px] font-semibold bg-slate-100 whitespace-nowrap">Cuota Base</th>
+                <th className="px-1 py-2 w-[375px] text-center font-semibold bg-slate-100 whitespace-nowrap">
                   <span>Cuotas Ejercicio 2026 (Ene - Dic)</span>
                 </th>
-                <th className="px-2 py-2 w-28 min-w-[105px] text-right font-semibold bg-slate-100 whitespace-nowrap">Saldo Deuda</th>
-                <th className="px-2 py-2 w-52 min-w-[215px] text-right font-semibold bg-slate-100 whitespace-nowrap">Acciones Rápidas</th>
+                <th className="px-2 py-2 w-[110px] text-right font-semibold bg-slate-100 whitespace-nowrap">Saldo Deuda</th>
+                <th className="px-2 py-2 w-[212px] text-right font-semibold bg-slate-100 whitespace-nowrap">Acciones Rápidas</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/40 font-body-md text-on-surface">
@@ -964,16 +964,16 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
 
                     {/* Col 3: Cuota Mensual */}
                     <td className="px-2 py-2 align-middle whitespace-nowrap">
-                      <div className="font-code-cadastral font-bold text-on-surface text-sm whitespace-nowrap">
+                      <div className="font-code-cadastral font-bold text-on-surface text-base whitespace-nowrap">
                         {formatCurrency(afiliado.monto_cuota_mensual)}
                       </div>
-                      <span className="text-[9px] text-on-surface-variant block uppercase font-medium whitespace-nowrap">
+                      <span className="text-[10px] text-on-surface-variant block uppercase font-medium whitespace-nowrap">
                         Mensual Fijo
                       </span>
                     </td>
 
                     {/* Col 4: Matriz 12 Cuotas (Stitch Verbatim Cells) */}
-                    <td className="px-2 py-2 align-middle">
+                    <td className="px-1 py-2 align-middle">
                       <div className="flex items-center justify-center gap-[3px]">
                         {meses.map((m) => {
                           const isPagada = cuotasPagadas.includes(m.num)
@@ -985,13 +985,13 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                                 key={m.num}
                                 type="button"
                                 onClick={() => handleVerDetalleCuota(afiliado, m.num)}
-                                className="w-6 h-6 rounded bg-emerald-600 hover:bg-emerald-700 text-white flex flex-col items-center justify-center shadow-xs transition-transform hover:scale-110 active:scale-95 cursor-pointer shrink-0"
+                                className="w-7 h-7 rounded bg-emerald-600 hover:bg-emerald-700 text-white flex flex-col items-center justify-center shadow-xs transition-transform hover:scale-110 active:scale-95 cursor-pointer shrink-0"
                                 title={`${m.label} 2026: Pagada (${formatCurrency(
                                   afiliado.monto_cuota_mensual
                                 )}) - Clic para ver recibo`}
                               >
-                                <span className="text-[7.5px] leading-none font-bold">{m.num}</span>
-                                <span className="text-[8.5px] leading-none font-black">✓</span>
+                                <span className="text-xs leading-none font-black">{m.num}</span>
+                                <span className="text-[8px] leading-none font-bold text-emerald-200 mt-0.5">✓</span>
                               </button>
                             )
                           }
@@ -1002,11 +1002,11 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                                 key={m.num}
                                 type="button"
                                 onClick={() => onCobrarCuota(afiliado, m.num)}
-                                className="w-6 h-6 rounded bg-red-600 hover:bg-red-700 text-white flex flex-col items-center justify-center shadow-xs border border-red-300 animate-pulse transition-transform hover:scale-110 active:scale-95 cursor-pointer shrink-0"
+                                className="w-7 h-7 rounded bg-red-600 hover:bg-red-700 text-white flex flex-col items-center justify-center shadow-xs border border-red-300 animate-pulse transition-transform hover:scale-110 active:scale-95 cursor-pointer shrink-0"
                                 title={`${m.label} 2026: VENCIDA - Clic para cobrar con QR`}
                               >
-                                <span className="text-[7.5px] leading-none font-bold">{m.num}</span>
-                                <span className="text-[8.5px] leading-none font-bold">!</span>
+                                <span className="text-xs leading-none font-black">{m.num}</span>
+                                <span className="text-[8px] leading-none font-black text-red-200 mt-0.5">!</span>
                               </button>
                             )
                           }
@@ -1016,7 +1016,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                               key={m.num}
                               type="button"
                               onClick={() => onCobrarCuota(afiliado, m.num)}
-                              className="w-6 h-6 rounded bg-slate-100 border border-slate-200 text-slate-500 hover:bg-slate-200 hover:text-slate-900 flex items-center justify-center text-[9.5px] font-code-cadastral transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+                              className="w-7 h-7 rounded bg-slate-100 border border-slate-300 text-slate-800 hover:bg-slate-200 hover:text-slate-950 flex items-center justify-center text-xs font-black font-code-cadastral transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
                               title={`${m.label} 2026: A vencer - Clic para adelantar cobro`}
                             >
                               {m.num}
@@ -1030,10 +1030,10 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                     <td className="px-2 py-2 align-middle text-right whitespace-nowrap">
                       {saldoDeuda > 0 ? (
                         <div className="flex flex-col items-end whitespace-nowrap">
-                          <div className="font-code-cadastral font-bold text-red-700 text-sm whitespace-nowrap">
+                          <div className="font-code-cadastral font-bold text-red-700 text-base whitespace-nowrap">
                             {formatCurrency(saldoDeuda)}
                           </div>
-                          <span className="inline-flex items-center text-[9px] font-bold text-red-800 bg-red-100 px-1.5 py-0.2 rounded border border-red-200 whitespace-nowrap mt-0.5">
+                          <span className="inline-flex items-center text-[10px] font-bold text-red-800 bg-red-100 px-1.5 py-0.5 rounded border border-red-200 whitespace-nowrap mt-0.5">
                             {mesesVencidos.length} cuota{mesesVencidos.length > 1 ? 's' : ''} en mora
                           </span>
                         </div>
