@@ -30,53 +30,124 @@ const
   COL_GREEN_DARK  = (6 shl 16) or (95 shl 8) or 70;      // #065F46 - Esmeralda
 
 // ----------------------------------------------------------------------------
-// Primitivas Graficas Vectoriales PDF
+// Sanitizacion de Caracteres para PDF Type 1 Standard (Evita '?' y mojibake)
 // ----------------------------------------------------------------------------
 
-procedure PDFDrawLine(Page: TPDFPage; X1, Y1, X2, Y2: Single; LineWidth: Single; Color: LongWord);
+function SanitizePDFText(const S: string): string;
+var
+  i: Integer;
+  c: Char;
+  Res: string;
 begin
-  Page.SetColor(Color, True);
-  Page.DrawLine(X1, Y1, X2, Y2, LineWidth, True);
+  Res := '';
+  i := 1;
+  while i <= Length(S) do
+  begin
+    // Reemplazo de caracteres multi-byte UTF-8 acentuados
+    if (i < Length(S)) and (Byte(S[i]) = $C3) then
+    begin
+      case Byte(S[i+1]) of
+        $A1: Res := Res + 'a'; // á
+        $A9: Res := Res + 'e'; // é
+        $AD: Res := Res + 'i'; // í
+        $B3: Res := Res + 'o'; // ó
+        $BA: Res := Res + 'u'; // ú
+        $BC: Res := Res + 'u'; // ü
+        $B1: Res := Res + 'n'; // ñ
+        $81: Res := Res + 'A'; // Á
+        $89: Res := Res + 'E'; // É
+        $8D: Res := Res + 'I'; // Í
+        $93: Res := Res + 'O'; // Ó
+        $9A: Res := Res + 'U'; // Ú
+        $9C: Res := Res + 'U'; // Ü
+        $91: Res := Res + 'N'; // Ñ
+      else
+        Res := Res + ' ';
+      end;
+      Inc(i, 2);
+    end
+    else
+    begin
+      c := S[i];
+      case Byte(c) of
+        $E1, $E0, $E2, $E4: Res := Res + 'a';
+        $E9, $E8, $EA, $EB: Res := Res + 'e';
+        $ED, $EC, $EE, $EF: Res := Res + 'i';
+        $F3, $F2, $F4, $F6: Res := Res + 'o';
+        $FA, $F9, $FB, $FC: Res := Res + 'u';
+        $F1: Res := Res + 'n';
+        $C1, $C0, $C2, $C4: Res := Res + 'A';
+        $C9, $C8, $CA, $CB: Res := Res + 'E';
+        $CD, $CC, $CE, $CF: Res := Res + 'I';
+        $D3, $D2, $D4, $D6: Res := Res + 'O';
+        $DA, $D9, $DB, $DC: Res := Res + 'U';
+        $D1: Res := Res + 'N';
+        32..126: Res := Res + c;
+      else
+        // Omitir bytes no imprimibles
+      end;
+      Inc(i);
+    end;
+  end;
+  Result := Trim(Res);
 end;
 
-procedure PDFDrawRect(Page: TPDFPage; X, Y, W, H: Single; LineWidth: Single; DoFill, DoStroke: Boolean; StrokeColor, FillColor: LongWord);
+function BoolToTexto(Cond: Boolean; const Si, No: string): string;
 begin
-  if DoStroke then
-    Page.SetColor(StrokeColor, True);
-  if DoFill then
-    Page.SetColor(FillColor, False);
-  Page.DrawRect(X, Y, W, H, LineWidth, DoFill, DoStroke, 0);
+  if Cond then Result := Si else Result := No;
+end;
+
+// ----------------------------------------------------------------------------
+// Primitivas Graficas Vectoriales PDF con Coordenadas Naturales Top-Down
+// ----------------------------------------------------------------------------
+
+procedure PDFDrawLineTop(Page: TPDFPage; X1, TopY1, X2, TopY2: Single; LineWidth: Single; Color: LongWord);
+begin
+  Page.SetColor(Color, True);
+  Page.DrawLine(X1, 297.0 - TopY1, X2, 297.0 - TopY2, LineWidth, True);
+end;
+
+procedure PDFDrawRectTop(Page: TPDFPage; X, TopY, W, H: Single; LineWidth: Single; DoFill, DoStroke: Boolean; StrokeColor, FillColor: LongWord);
+begin
+  if DoStroke then Page.SetColor(StrokeColor, True);
+  if DoFill then Page.SetColor(FillColor, False);
+  Page.DrawRect(X, 297.0 - TopY - H, W, H, LineWidth, DoFill, DoStroke, 0);
+end;
+
+procedure PDFWriteTextTop(Page: TPDFPage; X, TopY: Single; const Text: string);
+begin
+  Page.WriteText(X, 297.0 - TopY, SanitizePDFText(Text));
 end;
 
 procedure ConfigurarEncabezadoInstitucional(Page: TPDFPage; FontTitle, FontNormal, FontBold: Integer; const TituloDoc, SubtituloDoc: string);
 begin
-  // Barra Superior Azul Marino Institucional
-  PDFDrawRect(Page, 15, 10, 180, 12, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
+  // Barra Superior Azul Marino Institucional (TopY: 10 a 22 mm)
+  PDFDrawRectTop(Page, 15, 10, 180, 12, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
   Page.SetColor(COL_WHITE, False);
   Page.SetFont(FontBold, 8);
-  Page.WriteText(18, 15, 'DIOCESIS DE SAN NICOLAS DE LOS ARROYOS - PARROQUIA SAN NICOLAS DE BARI');
+  PDFWriteTextTop(Page, 18, 15, 'DIOCESIS DE SAN NICOLAS DE LOS ARROYOS - PARROQUIA SAN NICOLAS DE BARI');
   Page.SetFont(FontNormal, 7);
-  Page.WriteText(18, 19, 'Cementerio Parque San Nicolas - Sistema Integrado de Administracion General');
+  PDFWriteTextTop(Page, 18, 19, 'Cementerio Parque San Nicolas - Sistema Integrado de Administracion General');
 
   // Linea Dorada de Acento
-  PDFDrawLine(Page, 15, 22, 195, 22, 1.2, COL_GOLD);
+  PDFDrawLineTop(Page, 15, 22.5, 195, 22.5, 1.2, COL_GOLD);
 
-  // Recuadro del Titulo del Documento
-  PDFDrawRect(Page, 15, 23, 180, 14, 0.5, True, True, COL_SLATE_LIGHT, COL_BG_HEADER);
+  // Recuadro del Titulo del Documento (TopY: 24 a 38 mm)
+  PDFDrawRectTop(Page, 15, 24, 180, 14, 0.5, True, True, COL_SLATE_LIGHT, COL_BG_HEADER);
   Page.SetColor(COL_NAVY_DARK, False);
   Page.SetFont(FontTitle, 12);
-  Page.WriteText(18, 29, UpperCase(TituloDoc));
+  PDFWriteTextTop(Page, 18, 30, UpperCase(TituloDoc));
 
   Page.SetColor(COL_SLATE_MED, False);
   Page.SetFont(FontNormal, 8);
-  Page.WriteText(18, 34, SubtituloDoc);
+  PDFWriteTextTop(Page, 18, 35, SubtituloDoc);
 
   Page.SetFont(FontBold, 8);
-  Page.WriteText(145, 29, 'FECHA: ' + FormatDateTime('dd/mm/yyyy', Now));
+  PDFWriteTextTop(Page, 145, 30, 'FECHA: ' + FormatDateTime('dd/mm/yyyy', Now));
   Page.SetFont(FontNormal, 7);
-  Page.WriteText(145, 34, 'DOCUMENTO OFICIAL VALIDO');
+  PDFWriteTextTop(Page, 145, 35, 'DOCUMENTO OFICIAL VALIDO');
 
-  PDFDrawLine(Page, 15, 37.5, 195, 37.5, 0.5, COL_SLATE_MED);
+  PDFDrawLineTop(Page, 15, 38.5, 195, 38.5, 0.5, COL_SLATE_MED);
 end;
 
 // ----------------------------------------------------------------------------
@@ -105,173 +176,159 @@ begin
     Page.UnitOfMeasure := uomMillimeters;
     Section.AddPage(Page);
 
-    // Encabezado Institucional
+    // Encabezado Institucional en el TOP
     ConfigurarEncabezadoInstitucional(Page, FontH, FontN, FontH,
       'Acta Notarial de Inhumacion y Registro Eclesiastico',
       'Libro Oficial Parroquial de Defunciones e Inhumaciones');
 
     // ---------------------------------------------------------
-    // SECCION 1: DATOS CIVILES DEL DIFUNTO
+    // SECCION 1: DATOS CIVILES DEL DIFUNTO (TopY: 42..88)
     // ---------------------------------------------------------
-    PDFDrawRect(Page, 15, 42, 180, 6, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
+    PDFDrawRectTop(Page, 15, 42, 180, 6, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
     Page.SetColor(COL_WHITE, False);
     Page.SetFont(FontH, 8);
-    Page.WriteText(18, 46.5, '1. IDENTIFICACION REGISTRAL Y CIVIL DEL DIFUNTO');
+    PDFWriteTextTop(Page, 18, 46.5, '1. IDENTIFICACION REGISTRAL Y CIVIL DEL DIFUNTO');
 
-    PDFDrawRect(Page, 15, 48, 180, 42, 0.5, True, True, COL_SLATE_LIGHT, COL_WHITE);
+    PDFDrawRectTop(Page, 15, 48, 180, 40, 0.5, True, True, COL_SLATE_LIGHT, COL_WHITE);
 
     Page.SetColor(COL_TEXT_BLACK, False);
     Page.SetFont(FontH, 9);
-    Page.WriteText(20, 55, 'Apellidos y Nombres:');
+    PDFWriteTextTop(Page, 20, 55, 'Apellidos y Nombres:');
     Page.SetFont(FontH, 11);
     Page.SetColor(COL_NAVY_DARK, False);
-    Page.WriteText(62, 55, Inh.NombreDifunto);
+    PDFWriteTextTop(Page, 62, 55, Inh.NombreDifunto);
 
     Page.SetColor(COL_TEXT_BLACK, False);
     Page.SetFont(FontH, 9);
-    Page.WriteText(20, 63, 'DNI / Documento:');
+    PDFWriteTextTop(Page, 20, 63, 'Documento Nacional (DNI):');
     Page.SetFont(FontN, 9);
-    Page.WriteText(62, 63, Inh.DniDifunto);
+    PDFWriteTextTop(Page, 62, 63, BoolToTexto(Trim(Inh.DniDifunto) <> '', Inh.DniDifunto, 'S/D (Sin Documento)'));
 
     Page.SetFont(FontH, 9);
-    Page.WriteText(115, 63, 'Fecha Defuncion:');
+    PDFWriteTextTop(Page, 20, 71, 'Fecha de Fallecimiento:');
     Page.SetFont(FontN, 9);
-    Page.WriteText(150, 63, FormatearFecha(Inh.FechaFallecimiento));
+    PDFWriteTextTop(Page, 62, 71, FormatearFecha(Inh.FechaFallecimiento));
 
     Page.SetFont(FontH, 9);
-    Page.WriteText(20, 71, 'Causa de Defuncion:');
+    PDFWriteTextTop(Page, 115, 71, 'Fecha Inhumacion:');
     Page.SetFont(FontN, 9);
-    if Inh.CausaDefuncion <> '' then
-      Page.WriteText(62, 71, Inh.CausaDefuncion)
-    else
-      Page.WriteText(62, 71, 'Causa Natural / Certificado Medico de Defuncion en Regla');
+    PDFWriteTextTop(Page, 150, 71, FormatearFecha(Inh.FechaInhumacion));
 
     Page.SetFont(FontH, 9);
-    Page.WriteText(20, 79, 'Fecha Inhumacion:');
+    PDFWriteTextTop(Page, 20, 79, 'Causa de Defuncion:');
     Page.SetFont(FontN, 9);
-    Page.WriteText(62, 79, FormatearFecha(Inh.FechaInhumacion));
+    PDFWriteTextTop(Page, 62, 79, BoolToTexto(Trim(Inh.CausaDefuncion) <> '', Inh.CausaDefuncion, 'Consta en Certificado Medico'));
+
+    // ---------------------------------------------------------
+    // SECCION 2: UBICACION CATASTRAL (TopY: 92..136)
+    // ---------------------------------------------------------
+    PDFDrawRectTop(Page, 15, 92, 180, 6, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
+    Page.SetColor(COL_WHITE, False);
+    Page.SetFont(FontH, 8);
+    PDFWriteTextTop(Page, 18, 96.5, '2. ASIGNACION CATASTRAL Y DESTINO FINAL EN CEMENTERIO PARQUE');
+
+    PDFDrawRectTop(Page, 15, 98, 180, 36, 0.5, True, True, COL_SLATE_LIGHT, COL_WHITE);
+
+    // Badge Parcela
+    PDFDrawRectTop(Page, 20, 103, 62, 26, 0.8, True, True, COL_NAVY_DARK, COL_BG_HEADER);
+    Page.SetColor(COL_SLATE_MED, False);
+    Page.SetFont(FontH, 7);
+    PDFWriteTextTop(Page, 23, 108, 'PARCELA ASIGNADA:');
+    Page.SetColor(COL_NAVY_DARK, False);
+    Page.SetFont(FontH, 14);
+    PDFWriteTextTop(Page, 23, 120, BoolToTexto(Trim(Inh.NomenclaturaParcela) <> '', Inh.NomenclaturaParcela, 'S/P (A Asignar)'));
+
+    // Datos Ubicación
+    Page.SetColor(COL_TEXT_BLACK, False);
+    Page.SetFont(FontH, 9);
+    PDFWriteTextTop(Page, 90, 108, 'Nivel / Posicion:');
+    Page.SetFont(FontN, 9);
+    PDFWriteTextTop(Page, 130, 108, 'Nivel ' + IntToStr(Inh.NivelPosicion) + ' (Bajo Tierra)');
 
     Page.SetFont(FontH, 9);
-    Page.WriteText(115, 79, 'Protocolo COVID:');
+    PDFWriteTextTop(Page, 90, 116, 'Sector Asignado:');
+    Page.SetFont(FontN, 9);
+    PDFWriteTextTop(Page, 130, 116, 'Sector General Parque San Nicolas');
+
+    Page.SetFont(FontH, 9);
+    PDFWriteTextTop(Page, 90, 124, 'Regimen Juridico:');
+    Page.SetFont(FontN, 9);
+    PDFWriteTextTop(Page, 130, 124, 'Concesion a Perpetuidad / Notarial');
+
+    // ---------------------------------------------------------
+    // SECCION 3: OPERACION FUNERARIA (TopY: 138..180)
+    // ---------------------------------------------------------
+    PDFDrawRectTop(Page, 15, 138, 180, 6, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
+    Page.SetColor(COL_WHITE, False);
+    Page.SetFont(FontH, 8);
+    PDFWriteTextTop(Page, 18, 142.5, '3. OPERACION FUNERARIA Y RESPONSABILIDAD REGISTRAL');
+
+    PDFDrawRectTop(Page, 15, 144, 180, 36, 0.5, True, True, COL_SLATE_LIGHT, COL_WHITE);
+
+    Page.SetColor(COL_TEXT_BLACK, False);
+    Page.SetFont(FontH, 9);
+    PDFWriteTextTop(Page, 20, 152, 'Empresa de Sepelios:');
+    Page.SetFont(FontN, 9);
+    PDFWriteTextTop(Page, 62, 152, BoolToTexto(Trim(Inh.EmpresaFunebrera) <> '', Inh.EmpresaFunebrera, 'Aeterna Sepelios'));
+
+    Page.SetFont(FontH, 9);
+    PDFWriteTextTop(Page, 20, 160, 'Familiar / Declarante:');
+    Page.SetFont(FontN, 9);
+    PDFWriteTextTop(Page, 62, 160, BoolToTexto(Trim(Inh.NombreResponsable) <> '', Inh.NombreResponsable, 'Familiar Directo'));
+
+    Page.SetFont(FontH, 9);
+    PDFWriteTextTop(Page, 115, 160, 'Telefono:');
+    Page.SetFont(FontN, 9);
+    PDFWriteTextTop(Page, 145, 160, BoolToTexto(Trim(Inh.TelefonoResponsable) <> '', Inh.TelefonoResponsable, '-'));
+
+    Page.SetFont(FontH, 9);
+    PDFWriteTextTop(Page, 20, 168, 'Protocolo Sanitario:');
     if Inh.EsCovid then
     begin
       Page.SetFont(FontH, 9);
       Page.SetColor(COL_GOLD, False);
-      Page.WriteText(150, 79, 'SI (Protocolo Sanitario)');
+      PDFWriteTextTop(Page, 62, 168, 'PROTOCOLO ESPECIAL COVID-19 (Fallecido Infeccioso)');
     end
     else
     begin
       Page.SetFont(FontN, 9);
       Page.SetColor(COL_GREEN_DARK, False);
-      Page.WriteText(150, 79, 'No (Sepelio Estandar)');
+      PDFWriteTextTop(Page, 62, 168, 'Protocolo Sanitario Ordinario Cumplimentado');
     end;
 
     // ---------------------------------------------------------
-    // SECCION 2: UBICACION CATASTRAL EN EL CEMENTERIO PARQUE
+    // SECCION 4: CONSTANCIA Y CERTIFICACION (TopY: 184..212)
     // ---------------------------------------------------------
-    PDFDrawRect(Page, 15, 94, 180, 6, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
-    Page.SetColor(COL_WHITE, False);
-    Page.SetFont(FontH, 8);
-    Page.WriteText(18, 98.5, '2. ASIGNACION CATASTRAL DE FOSA EN CEMENTERIO PARQUE');
-
-    PDFDrawRect(Page, 15, 100, 180, 36, 0.5, True, True, COL_SLATE_LIGHT, COL_BG_ROW);
-
-    // Tarjeta Destacada de Parcela
-    PDFDrawRect(Page, 20, 104, 65, 28, 0.8, True, True, COL_NAVY_DARK, COL_WHITE);
-    Page.SetColor(COL_SLATE_MED, False);
-    Page.SetFont(FontH, 8);
-    Page.WriteText(24, 109, 'PARCELA DESIGNADA:');
-    Page.SetColor(COL_NAVY_DARK, False);
-    Page.SetFont(FontH, 13);
-    Page.WriteText(24, 117, Inh.NomenclaturaParcela);
-    Page.SetColor(COL_GOLD, False);
-    Page.SetFont(FontH, 8);
-    Page.WriteText(24, 126, 'NIVEL EN FOSA: ' + IntToStr(Inh.NivelPosicion));
-
-    // Detalles adicionales
-    Page.SetColor(COL_TEXT_BLACK, False);
-    Page.SetFont(FontH, 9);
-    Page.WriteText(92, 108, 'Sector del Parque:');
-    Page.SetFont(FontN, 9);
-    Page.WriteText(130, 108, 'Sector Parquizado A / E / Salinas');
-
-    Page.SetFont(FontH, 9);
-    Page.WriteText(92, 116, 'Profundidad / Posicion:');
-    Page.SetFont(FontN, 9);
-    case Inh.NivelPosicion of
-      1: Page.WriteText(130, 116, 'Nivel 1 (Superior / Cabecera)');
-      2: Page.WriteText(130, 116, 'Nivel 2 (Intermedio)');
-      3: Page.WriteText(130, 116, 'Nivel 3 (Fondo)');
-    else
-      Page.WriteText(130, 116, 'Nivel Estandar');
-    end;
-
-    Page.SetFont(FontH, 9);
-    Page.WriteText(92, 124, 'Estado de Concesion:');
-    Page.SetFont(FontN, 9);
-    Page.WriteText(130, 124, 'Asentado en Registro General de Concesiones');
-
-    // ---------------------------------------------------------
-    // SECCION 3: EMPRESA FUNEBRERA Y RESPONSABLE FAMILIAR
-    // ---------------------------------------------------------
-    PDFDrawRect(Page, 15, 140, 180, 6, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
-    Page.SetColor(COL_WHITE, False);
-    Page.SetFont(FontH, 8);
-    Page.WriteText(18, 144.5, '3. EMPRESA FUNEBRERA RESPONSABLE Y FAMILIAR DECLARANTE');
-
-    PDFDrawRect(Page, 15, 146, 180, 32, 0.5, True, True, COL_SLATE_LIGHT, COL_WHITE);
-
-    Page.SetColor(COL_TEXT_BLACK, False);
-    Page.SetFont(FontH, 9);
-    Page.WriteText(20, 153, 'Empresa Funebrera:');
-    Page.SetFont(FontN, 9);
-    Page.WriteText(62, 153, Inh.EmpresaFunebrera);
-
-    Page.SetFont(FontH, 9);
-    Page.WriteText(20, 161, 'Familiar / Declarante:');
-    Page.SetFont(FontN, 9);
-    Page.WriteText(62, 161, Inh.NombreResponsable);
-
-    Page.SetFont(FontH, 9);
-    Page.WriteText(20, 169, 'Telefono de Contacto:');
-    Page.SetFont(FontN, 9);
-    Page.WriteText(62, 169, Inh.TelefonoResponsable);
-
-    // ---------------------------------------------------------
-    // SECCION 4: CONSTANCIA Y CERTIFICACION
-    // ---------------------------------------------------------
-    PDFDrawRect(Page, 15, 182, 180, 24, 0.5, True, True, COL_SLATE_LIGHT, COL_BG_HEADER);
+    PDFDrawRectTop(Page, 15, 184, 180, 26, 0.5, True, True, COL_SLATE_LIGHT, COL_BG_HEADER);
     Page.SetColor(COL_SLATE_DARK, False);
     Page.SetFont(FontI, 8);
-    Page.WriteText(18, 188, 'Certifico que en el dia de la fecha se ha procedido a la cristiana sepultura de los restos mortales');
-    Page.WriteText(18, 192, 'individualizados en la presente acta en el predio del Cementerio Parque San Nicolas, habiendose');
-    Page.WriteText(18, 196, 'cumplimentado todas las disposiciones civiles, eclesiasticas y sanitarias pertinentes.');
-    Page.WriteText(18, 200, 'Expedido para constancia del Archivo Parroquial de San Nicolas de Bari.');
+    PDFWriteTextTop(Page, 18, 190, 'Certifico que en el dia de la fecha se ha procedido a la cristiana sepultura de los restos mortales');
+    PDFWriteTextTop(Page, 18, 195, 'individualizados en la presente acta en el predio del Cementerio Parque San Nicolas, habiendose');
+    PDFWriteTextTop(Page, 18, 200, 'cumplimentado todas las disposiciones civiles, eclesiasticas y sanitarias pertinentes.');
+    PDFWriteTextTop(Page, 18, 205, 'Expedido para constancia del Archivo Parroquial de San Nicolas de Bari.');
 
     // ---------------------------------------------------------
-    // AREA DE FIRMAS Y SELLOS
+    // AREA DE FIRMAS Y SELLOS (TopY: 232..255)
     // ---------------------------------------------------------
-    // Firma Declarante
-    PDFDrawLine(Page, 25, 238, 85, 238, 0.8, COL_SLATE_MED);
+    PDFDrawLineTop(Page, 25, 235, 85, 235, 0.8, COL_SLATE_MED);
     Page.SetColor(COL_TEXT_BLACK, False);
     Page.SetFont(FontH, 8);
-    Page.WriteText(28, 243, 'Firma Familiar / Declarante');
+    PDFWriteTextTop(Page, 28, 240, 'Firma Familiar / Declarante');
     Page.SetFont(FontN, 8);
-    Page.WriteText(33, 247, 'Aclaracion y Documento DNI');
+    PDFWriteTextTop(Page, 33, 245, 'Aclaracion y Documento DNI');
 
-    // Firma Administracion
-    PDFDrawLine(Page, 125, 238, 185, 238, 0.8, COL_SLATE_MED);
+    PDFDrawLineTop(Page, 125, 235, 185, 235, 0.8, COL_SLATE_MED);
     Page.SetFont(FontH, 8);
-    Page.WriteText(128, 243, 'Administracion y Archivo Parroquial');
+    PDFWriteTextTop(Page, 128, 240, 'Administracion y Archivo Parroquial');
     Page.SetFont(FontN, 8);
-    Page.WriteText(135, 247, 'Sello Oficial Cementerio Parque');
+    PDFWriteTextTop(Page, 135, 245, 'Sello Oficial Cementerio Parque');
 
     // Pie de Pagina
-    PDFDrawLine(Page, 15, 275, 195, 275, 0.5, COL_SLATE_LIGHT);
+    PDFDrawLineTop(Page, 15, 280, 195, 280, 0.5, COL_SLATE_LIGHT);
     Page.SetColor(COL_SLATE_MED, False);
     Page.SetFont(FontN, 7);
-    Page.WriteText(15, 279, 'Aeterna Suite XP - Parroquia San Nicolas de Bari - Sistema Registral Certificado');
-    Page.WriteText(160, 279, 'Pagina 1 de 1 - Original');
+    PDFWriteTextTop(Page, 15, 284, 'Aeterna Suite XP - Parroquia San Nicolas de Bari - Sistema Registral Certificado');
+    PDFWriteTextTop(Page, 160, 284, 'Pagina 1 de 1 - Original');
 
     Doc.SaveToFile(OutputPath);
   finally
@@ -289,7 +346,8 @@ var
   Section: TPDFSection;
   Page: TPDFPage;
   FontH, FontN: Integer;
-  i, Y, PaginaActual: Integer;
+  i, PaginaActual: Integer;
+  TopY: Single;
 begin
   Doc := TPDFDocument.Create(nil);
   try
@@ -311,71 +369,72 @@ begin
       'Folio Cronologico de Asientos Funerarios y Catastrales');
 
     // Barra de Resumen del Folio
-    PDFDrawRect(Page, 15, 40, 180, 7, 0.5, True, True, COL_SLATE_LIGHT, COL_BG_HEADER);
+    PDFDrawRectTop(Page, 15, 41, 180, 7, 0.5, True, True, COL_SLATE_LIGHT, COL_BG_HEADER);
     Page.SetColor(COL_TEXT_BLACK, False);
     Page.SetFont(FontH, 8);
-    Page.WriteText(18, 44.5, 'Total de Actas en este Registro: ' + IntToStr(Length(Lista)) + ' difuntos asentados.');
-    Page.WriteText(145, 44.5, 'Folio Oficial Nro: ' + FormatDateTime('yyyy', Now) + '-01');
+    PDFWriteTextTop(Page, 18, 46, 'Total de Actas en este Registro: ' + IntToStr(Length(Lista)) + ' difuntos asentados.');
+    PDFWriteTextTop(Page, 145, 46, 'Folio Oficial Nro: ' + FormatDateTime('yyyy', Now) + '-01');
 
     // Cabecera Tabla Principal
-    PDFDrawRect(Page, 15, 49, 180, 8, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
+    PDFDrawRectTop(Page, 15, 49, 180, 8, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
     Page.SetColor(COL_WHITE, False);
     Page.SetFont(FontH, 8);
-    Page.WriteText(17, 54, 'FECHA');
-    Page.WriteText(38, 54, 'APELLIDOS Y NOMBRES DEL DIFUNTO');
-    Page.WriteText(106, 54, 'DNI');
-    Page.WriteText(130, 54, 'PARCELA');
-    Page.WriteText(154, 54, 'NIVEL');
-    Page.WriteText(170, 54, 'PROTOCOLO');
+    PDFWriteTextTop(Page, 17, 54.5, 'FECHA');
+    PDFWriteTextTop(Page, 38, 54.5, 'APELLIDOS Y NOMBRES DEL DIFUNTO');
+    PDFWriteTextTop(Page, 106, 54.5, 'DNI');
+    PDFWriteTextTop(Page, 130, 54.5, 'PARCELA');
+    PDFWriteTextTop(Page, 154, 54.5, 'NIVEL');
+    PDFWriteTextTop(Page, 170, 54.5, 'PROTOCOLO');
 
-    Y := 63;
+    TopY := 58;
     for i := Low(Lista) to High(Lista) do
     begin
       // Fondo alterno
       if (i mod 2 = 1) then
-        PDFDrawRect(Page, 15, Y - 4.5, 180, 6.5, 0.3, True, False, COL_BG_ROW, COL_BG_ROW);
+        PDFDrawRectTop(Page, 15, TopY, 180, 6.5, 0.3, True, False, COL_BG_ROW, COL_BG_ROW);
 
       Page.SetColor(COL_TEXT_BLACK, False);
       Page.SetFont(FontN, 7);
-      Page.WriteText(17, Y, FormatearFecha(Lista[i].FechaInhumacion));
+      PDFWriteTextTop(Page, 17, TopY + 4.8, FormatearFecha(Lista[i].FechaInhumacion));
 
       Page.SetFont(FontH, 7);
-      Page.WriteText(38, Y, Copy(Lista[i].NombreDifunto, 1, 35));
+      PDFWriteTextTop(Page, 38, TopY + 4.8, Copy(SanitizePDFText(Lista[i].NombreDifunto), 1, 35));
 
       Page.SetFont(FontN, 7);
-      Page.WriteText(106, Y, Lista[i].DniDifunto);
+      PDFWriteTextTop(Page, 106, TopY + 4.8, BoolToTexto(Trim(Lista[i].DniDifunto) <> '', Lista[i].DniDifunto, 'S/D'));
 
       Page.SetFont(FontH, 7);
       Page.SetColor(COL_NAVY_DARK, False);
-      Page.WriteText(130, Y, Lista[i].NomenclaturaParcela);
+      PDFWriteTextTop(Page, 130, TopY + 4.8, BoolToTexto(Trim(Lista[i].NomenclaturaParcela) <> '', Lista[i].NomenclaturaParcela, 'S/P'));
 
       Page.SetFont(FontN, 7);
       Page.SetColor(COL_TEXT_BLACK, False);
-      Page.WriteText(157, Y, IntToStr(Lista[i].NivelPosicion));
+      PDFWriteTextTop(Page, 157, TopY + 4.8, IntToStr(Lista[i].NivelPosicion));
 
       if Lista[i].EsCovid then
       begin
         Page.SetFont(FontH, 7);
         Page.SetColor(COL_GOLD, False);
-        Page.WriteText(170, Y, 'COVID-19');
+        PDFWriteTextTop(Page, 170, TopY + 4.8, 'COVID-19');
       end
       else
       begin
         Page.SetFont(FontN, 7);
         Page.SetColor(COL_GREEN_DARK, False);
-        Page.WriteText(170, Y, 'Estandar');
+        PDFWriteTextTop(Page, 170, TopY + 4.8, 'Estandar');
       end;
 
-      PDFDrawLine(Page, 15, Y + 2, 195, Y + 2, 0.3, COL_SLATE_LIGHT);
-      Inc(Y, 7);
+      PDFDrawLineTop(Page, 15, TopY + 6.5, 195, TopY + 6.5, 0.3, COL_SLATE_LIGHT);
+      TopY := TopY + 6.5;
 
-      if Y > 270 then
+      if TopY > 265 then
       begin
         // Pie de pagina
+        PDFDrawLineTop(Page, 15, 278, 195, 278, 0.5, COL_SLATE_LIGHT);
         Page.SetColor(COL_SLATE_MED, False);
         Page.SetFont(FontN, 7);
-        Page.WriteText(15, 282, 'Aeterna Suite XP - Libro Parroquial de Inhumaciones');
-        Page.WriteText(170, 282, 'Pagina ' + IntToStr(PaginaActual));
+        PDFWriteTextTop(Page, 15, 283, 'Aeterna Suite XP - Libro Parroquial de Inhumaciones');
+        PDFWriteTextTop(Page, 170, 283, 'Pagina ' + IntToStr(PaginaActual));
 
         Inc(PaginaActual);
         Page := Doc.Pages.AddPage;
@@ -389,25 +448,26 @@ begin
           'Folio Cronologico de Asientos Funerarios y Catastrales');
 
         // Repetir Cabecera Tabla
-        PDFDrawRect(Page, 15, 42, 180, 8, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
+        PDFDrawRectTop(Page, 15, 41, 180, 8, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
         Page.SetColor(COL_WHITE, False);
         Page.SetFont(FontH, 8);
-        Page.WriteText(17, 47, 'FECHA');
-        Page.WriteText(38, 47, 'APELLIDOS Y NOMBRES DEL DIFUNTO');
-        Page.WriteText(106, 47, 'DNI');
-        Page.WriteText(130, 47, 'PARCELA');
-        Page.WriteText(154, 47, 'NIVEL');
-        Page.WriteText(170, 47, 'PROTOCOLO');
+        PDFWriteTextTop(Page, 17, 46.5, 'FECHA');
+        PDFWriteTextTop(Page, 38, 46.5, 'APELLIDOS Y NOMBRES DEL DIFUNTO');
+        PDFWriteTextTop(Page, 106, 46.5, 'DNI');
+        PDFWriteTextTop(Page, 130, 46.5, 'PARCELA');
+        PDFWriteTextTop(Page, 154, 46.5, 'NIVEL');
+        PDFWriteTextTop(Page, 170, 46.5, 'PROTOCOLO');
 
-        Y := 56;
+        TopY := 51;
       end;
     end;
 
     // Pie de pagina final
+    PDFDrawLineTop(Page, 15, 278, 195, 278, 0.5, COL_SLATE_LIGHT);
     Page.SetColor(COL_SLATE_MED, False);
     Page.SetFont(FontN, 7);
-    Page.WriteText(15, 282, 'Aeterna Suite XP - Libro Parroquial de Inhumaciones');
-    Page.WriteText(170, 282, 'Pagina ' + IntToStr(PaginaActual));
+    PDFWriteTextTop(Page, 15, 283, 'Aeterna Suite XP - Libro Parroquial de Inhumaciones');
+    PDFWriteTextTop(Page, 170, 283, 'Pagina ' + IntToStr(PaginaActual));
 
     Doc.SaveToFile(OutputPath);
   finally
@@ -419,87 +479,87 @@ end;
 // 3. RECIBO OFICIAL DE COBRANZA (DUPLICADO ORIGINAL + TALON)
 // ----------------------------------------------------------------------------
 
-procedure DibujarCuerpoRecibo(Page: TPDFPage; FontH, FontN: Integer; const Pago: TPagoMantenimiento; YBase: Single; const TituloCopia: string);
+procedure DibujarCuerpoRecibo(Page: TPDFPage; FontH, FontN: Integer; const Pago: TPagoMantenimiento; TopYBase: Single; const TituloCopia: string);
 begin
   // Recuadro Principal
-  PDFDrawRect(Page, 15, YBase, 180, 115, 0.8, True, True, COL_NAVY_DARK, COL_WHITE);
+  PDFDrawRectTop(Page, 15, TopYBase, 180, 115, 0.8, True, True, COL_NAVY_DARK, COL_WHITE);
 
   // Barra Superior
-  PDFDrawRect(Page, 15, YBase, 180, 10, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
+  PDFDrawRectTop(Page, 15, TopYBase, 180, 10, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
   Page.SetColor(COL_WHITE, False);
   Page.SetFont(FontH, 8);
-  Page.WriteText(18, YBase + 6, 'PARROQUIA SAN NICOLAS DE BARI - CEMENTERIO PARQUE SAN NICOLAS');
+  PDFWriteTextTop(Page, 18, TopYBase + 6.5, 'PARROQUIA SAN NICOLAS DE BARI - CEMENTERIO PARQUE SAN NICOLAS');
   Page.SetFont(FontH, 8);
-  Page.WriteText(150, YBase + 6, '[' + TituloCopia + ']');
+  PDFWriteTextTop(Page, 150, TopYBase + 6.5, '[' + TituloCopia + ']');
 
   // Linea Dorada
-  PDFDrawLine(Page, 15, YBase + 10, 195, YBase + 10, 1.0, COL_GOLD);
+  PDFDrawLineTop(Page, 15, TopYBase + 10, 195, TopYBase + 10, 1.0, COL_GOLD);
 
   // Titulo y Numero de Recibo
   Page.SetColor(COL_NAVY_DARK, False);
   Page.SetFont(FontH, 11);
-  Page.WriteText(20, YBase + 18, 'RECIBO OFICIAL DE COBRANZA');
+  PDFWriteTextTop(Page, 20, TopYBase + 18, 'RECIBO OFICIAL DE COBRANZA');
 
   Page.SetColor(COL_TEXT_BLACK, False);
   Page.SetFont(FontH, 9);
-  Page.WriteText(20, YBase + 25, 'Comprobante Nro: ' + Pago.NroRecibo);
+  PDFWriteTextTop(Page, 20, TopYBase + 25, 'Comprobante Nro: ' + Pago.NroRecibo);
   Page.SetFont(FontN, 9);
-  Page.WriteText(85, YBase + 25, 'Fecha: ' + FormatDateTime('dd/mm/yyyy', Now));
+  PDFWriteTextTop(Page, 85, TopYBase + 25, 'Fecha: ' + FormatDateTime('dd/mm/yyyy', Now));
 
   // Tarjeta Destacada de Importe
-  PDFDrawRect(Page, 130, YBase + 14, 60, 16, 0.8, True, True, COL_NAVY_DARK, COL_BG_HEADER);
+  PDFDrawRectTop(Page, 130, TopYBase + 14, 60, 16, 0.8, True, True, COL_NAVY_DARK, COL_BG_HEADER);
   Page.SetColor(COL_SLATE_MED, False);
   Page.SetFont(FontH, 7);
-  Page.WriteText(134, YBase + 19, 'TOTAL COBRADO:');
+  PDFWriteTextTop(Page, 134, TopYBase + 19, 'TOTAL COBRADO:');
   Page.SetColor(COL_NAVY_DARK, False);
   Page.SetFont(FontH, 12);
-  Page.WriteText(134, YBase + 27, FormatearMoneda(Pago.MontoPagado));
+  PDFWriteTextTop(Page, 134, TopYBase + 27, FormatearMoneda(Pago.MontoPagado));
 
-  PDFDrawLine(Page, 20, YBase + 33, 190, YBase + 33, 0.5, COL_SLATE_LIGHT);
+  PDFDrawLineTop(Page, 20, TopYBase + 33, 190, TopYBase + 33, 0.5, COL_SLATE_LIGHT);
 
   // Datos del Pago
   Page.SetColor(COL_TEXT_BLACK, False);
   Page.SetFont(FontH, 9);
-  Page.WriteText(20, YBase + 42, 'Recibimos de:');
+  PDFWriteTextTop(Page, 20, TopYBase + 42, 'Recibimos de:');
   Page.SetFont(FontH, 10);
   Page.SetColor(COL_NAVY_DARK, False);
-  Page.WriteText(55, YBase + 42, Pago.TitularNombre);
+  PDFWriteTextTop(Page, 55, TopYBase + 42, Pago.TitularNombre);
 
   Page.SetColor(COL_TEXT_BLACK, False);
   Page.SetFont(FontH, 9);
-  Page.WriteText(20, YBase + 51, 'En Concepto de:');
+  PDFWriteTextTop(Page, 20, TopYBase + 51, 'En Concepto de:');
   Page.SetFont(FontN, 9);
-  Page.WriteText(55, YBase + 51, Pago.Observaciones);
+  PDFWriteTextTop(Page, 55, TopYBase + 51, Pago.Observaciones);
 
   Page.SetFont(FontH, 9);
-  Page.WriteText(20, YBase + 60, 'Periodo Imputado:');
+  PDFWriteTextTop(Page, 20, TopYBase + 60, 'Periodo Imputado:');
   Page.SetFont(FontN, 9);
-  Page.WriteText(55, YBase + 60, Pago.PeriodoCubierto);
+  PDFWriteTextTop(Page, 55, TopYBase + 60, Pago.PeriodoCubierto);
 
   Page.SetFont(FontH, 9);
-  Page.WriteText(20, YBase + 69, 'Metodo de Cobro:');
+  PDFWriteTextTop(Page, 20, TopYBase + 69, 'Metodo de Cobro:');
   Page.SetFont(FontN, 9);
-  Page.WriteText(55, YBase + 69, MetodoPagoToStr(Pago.MetodoPago));
+  PDFWriteTextTop(Page, 55, TopYBase + 69, MetodoPagoToStr(Pago.MetodoPago));
 
   Page.SetFont(FontH, 9);
-  Page.WriteText(120, YBase + 69, 'Operador / Caja:');
+  PDFWriteTextTop(Page, 120, TopYBase + 69, 'Operador / Caja:');
   Page.SetFont(FontN, 9);
-  Page.WriteText(150, YBase + 69, Pago.OperadorNombre);
+  PDFWriteTextTop(Page, 150, TopYBase + 69, Pago.OperadorNombre);
 
   // Recuadro de Validez
-  PDFDrawRect(Page, 20, YBase + 78, 100, 16, 0.3, True, True, COL_SLATE_LIGHT, COL_BG_ROW);
+  PDFDrawRectTop(Page, 20, TopYBase + 78, 100, 16, 0.3, True, True, COL_SLATE_LIGHT, COL_BG_ROW);
   Page.SetColor(COL_SLATE_MED, False);
   Page.SetFont(FontN, 7);
-  Page.WriteText(23, YBase + 83, 'Comprobante valido de pago emitido por el Sistema Integrado Aeterna.');
-  Page.WriteText(23, YBase + 88, 'Conserve este comprobante como constancia oficial ante la Parroquia.');
+  PDFWriteTextTop(Page, 23, TopYBase + 84, 'Comprobante valido de pago emitido por el Sistema Integrado Aeterna.');
+  PDFWriteTextTop(Page, 23, TopYBase + 89, 'Conserve este comprobante como constancia oficial ante la Parroquia.');
 
   // Area de Firma
-  PDFDrawLine(Page, 135, YBase + 98, 185, YBase + 98, 0.8, COL_SLATE_MED);
+  PDFDrawLineTop(Page, 135, TopYBase + 98, 185, TopYBase + 98, 0.8, COL_SLATE_MED);
   Page.SetColor(COL_TEXT_BLACK, False);
   Page.SetFont(FontH, 8);
-  Page.WriteText(140, YBase + 102, 'Firma y Sello Caja Central');
+  PDFWriteTextTop(Page, 140, TopYBase + 103, 'Firma y Sello Caja Central');
   Page.SetFont(FontN, 7);
-  Page.WriteText(142, YBase + 106, 'Cementerio Parque San Nicolas');
+  PDFWriteTextTop(Page, 142, TopYBase + 107, 'Cementerio Parque San Nicolas');
 end;
 
 procedure GenerarReciboPagoPDF(const Pago: TPagoMantenimiento; const OutputPath: string);
@@ -526,11 +586,11 @@ begin
     // 1. ORIGINAL (Para el Titular / Afiliado)
     DibujarCuerpoRecibo(Page, FontH, FontN, Pago, 12, 'ORIGINAL CONTRIBUYENTE');
 
-    // Linea de Corte Perforada
-    PDFDrawLine(Page, 15, 138, 195, 138, 0.6, COL_SLATE_MED);
+    // Linea de Corte Perforada (TopY: 138 mm)
+    PDFDrawLineTop(Page, 15, 138, 195, 138, 0.6, COL_SLATE_MED);
     Page.SetColor(COL_SLATE_MED, False);
     Page.SetFont(FontH, 7);
-    Page.WriteText(75, 137, '- - - - - CORTE TALON ADMINISTRATIVO - - - - -');
+    PDFWriteTextTop(Page, 75, 136.5, '- - - - - CORTE TALON ADMINISTRATIVO - - - - -');
 
     // 2. DUPLICADO (Para Archivo y Caja Parroquial)
     DibujarCuerpoRecibo(Page, FontH, FontN, Pago, 148, 'TALON ARCHIVO PARROQUIAL');
@@ -551,7 +611,8 @@ var
   Section: TPDFSection;
   Page: TPDFPage;
   FontH, FontN: Integer;
-  i, Y, PaginaActual: Integer;
+  i, PaginaActual: Integer;
+  TopY: Single;
   TotalCuotasRuta: Currency;
 begin
   Doc := TPDFDocument.Create(nil);
@@ -577,57 +638,58 @@ begin
       'Planilla de Ruta y Cobranza Domiciliaria',
       'Seguro Parroquial de Sepelios - Cobranza Mensual en Calle');
 
-    // Resumen de Cobrador
-    PDFDrawRect(Page, 15, 40, 180, 8, 0.5, True, True, COL_SLATE_LIGHT, COL_BG_HEADER);
+    // Resumen de Cobrador (TopY: 41..48 mm)
+    PDFDrawRectTop(Page, 15, 41, 180, 8, 0.5, True, True, COL_SLATE_LIGHT, COL_BG_HEADER);
     Page.SetColor(COL_TEXT_BLACK, False);
     Page.SetFont(FontH, 8);
-    Page.WriteText(18, 45, 'Cobrador Asignado: General / Oficial');
-    Page.WriteText(85, 45, 'Zona: Rutas y Domicilios Chamical');
-    Page.WriteText(150, 45, 'Total a Cobrar: ' + FormatearMoneda(TotalCuotasRuta));
+    PDFWriteTextTop(Page, 18, 46, 'Cobrador Asignado: General / Oficial');
+    PDFWriteTextTop(Page, 85, 46, 'Zona: Rutas y Domicilios Chamical');
+    PDFWriteTextTop(Page, 150, 46, 'Total a Cobrar: ' + FormatearMoneda(TotalCuotasRuta));
 
-    // Cabecera Tabla
-    PDFDrawRect(Page, 15, 50, 180, 8, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
+    // Cabecera Tabla (TopY: 50..58 mm)
+    PDFDrawRectTop(Page, 15, 50, 180, 8, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
     Page.SetColor(COL_WHITE, False);
     Page.SetFont(FontH, 8);
-    Page.WriteText(17, 55, 'NRO');
-    Page.WriteText(32, 55, 'TITULAR DE AFILIACION');
-    Page.WriteText(85, 55, 'DIRECCION DE COBRO');
-    Page.WriteText(140, 55, 'ZONA');
-    Page.WriteText(165, 55, 'CUOTA');
-    Page.WriteText(182, 55, 'FIRMA');
+    PDFWriteTextTop(Page, 17, 55.5, 'NRO');
+    PDFWriteTextTop(Page, 32, 55.5, 'TITULAR DE AFILIACION');
+    PDFWriteTextTop(Page, 85, 55.5, 'DIRECCION DE COBRO');
+    PDFWriteTextTop(Page, 140, 55.5, 'ZONA');
+    PDFWriteTextTop(Page, 165, 55.5, 'CUOTA');
+    PDFWriteTextTop(Page, 182, 55.5, 'FIRMA');
 
-    Y := 64;
+    TopY := 59;
     for i := Low(Afiliados) to High(Afiliados) do
     begin
       if (i mod 2 = 1) then
-        PDFDrawRect(Page, 15, Y - 4.5, 180, 7.0, 0.3, True, False, COL_BG_ROW, COL_BG_ROW);
+        PDFDrawRectTop(Page, 15, TopY, 180, 7.0, 0.3, True, False, COL_BG_ROW, COL_BG_ROW);
 
       Page.SetColor(COL_TEXT_BLACK, False);
       Page.SetFont(FontH, 7);
-      Page.WriteText(17, Y, IntToStr(Afiliados[i].NumeroAfiliado));
+      PDFWriteTextTop(Page, 17, TopY + 5, IntToStr(Afiliados[i].NumeroAfiliado));
 
-      Page.WriteText(32, Y, Copy(Afiliados[i].NombreCompleto, 1, 30));
+      PDFWriteTextTop(Page, 32, TopY + 5, Copy(SanitizePDFText(Afiliados[i].NombreCompleto), 1, 30));
 
       Page.SetFont(FontN, 7);
-      Page.WriteText(85, Y, Copy(Afiliados[i].DireccionCobro, 1, 32));
-      Page.WriteText(140, Y, Copy(Afiliados[i].ZonaCobro, 1, 14));
+      PDFWriteTextTop(Page, 85, TopY + 5, Copy(SanitizePDFText(Afiliados[i].DireccionCobro), 1, 32));
+      PDFWriteTextTop(Page, 140, TopY + 5, Copy(SanitizePDFText(Afiliados[i].ZonaCobro), 1, 14));
 
       Page.SetFont(FontH, 7);
       Page.SetColor(COL_NAVY_DARK, False);
-      Page.WriteText(165, Y, FormatearMoneda(Afiliados[i].MontoCuotaMensual));
+      PDFWriteTextTop(Page, 165, TopY + 5, FormatearMoneda(Afiliados[i].MontoCuotaMensual));
 
       // Casilla para firma / tilde
-      PDFDrawRect(Page, 182, Y - 3.5, 10, 5, 0.5, True, True, COL_SLATE_MED, COL_WHITE);
+      PDFDrawRectTop(Page, 182, TopY + 1, 10, 5, 0.5, True, True, COL_SLATE_MED, COL_WHITE);
 
-      PDFDrawLine(Page, 15, Y + 2.5, 195, Y + 2.5, 0.3, COL_SLATE_LIGHT);
-      Inc(Y, 7);
+      PDFDrawLineTop(Page, 15, TopY + 7, 195, TopY + 7, 0.3, COL_SLATE_LIGHT);
+      TopY := TopY + 7;
 
-      if Y > 265 then
+      if TopY > 248 then
       begin
+        PDFDrawLineTop(Page, 15, 278, 195, 278, 0.5, COL_SLATE_LIGHT);
         Page.SetColor(COL_SLATE_MED, False);
         Page.SetFont(FontN, 7);
-        Page.WriteText(15, 282, 'Aeterna Suite XP - Planilla Oficial de Cobranza');
-        Page.WriteText(170, 282, 'Pagina ' + IntToStr(PaginaActual));
+        PDFWriteTextTop(Page, 15, 283, 'Aeterna Suite XP - Planilla Oficial de Cobranza');
+        PDFWriteTextTop(Page, 170, 283, 'Pagina ' + IntToStr(PaginaActual));
 
         Inc(PaginaActual);
         Page := Doc.Pages.AddPage;
@@ -640,35 +702,36 @@ begin
           'Planilla de Ruta y Cobranza Domiciliaria (Cont.)',
           'Seguro Parroquial de Sepelios - Cobranza Mensual en Calle');
 
-        PDFDrawRect(Page, 15, 42, 180, 8, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
+        PDFDrawRectTop(Page, 15, 41, 180, 8, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
         Page.SetColor(COL_WHITE, False);
         Page.SetFont(FontH, 8);
-        Page.WriteText(17, 47, 'NRO');
-        Page.WriteText(32, 47, 'TITULAR DE AFILIACION');
-        Page.WriteText(85, 47, 'DIRECCION DE COBRO');
-        Page.WriteText(140, 47, 'ZONA');
-        Page.WriteText(165, 47, 'CUOTA');
-        Page.WriteText(182, 47, 'FIRMA');
+        PDFWriteTextTop(Page, 17, 46.5, 'NRO');
+        PDFWriteTextTop(Page, 32, 46.5, 'TITULAR DE AFILIACION');
+        PDFWriteTextTop(Page, 85, 46.5, 'DIRECCION DE COBRO');
+        PDFWriteTextTop(Page, 140, 46.5, 'ZONA');
+        PDFWriteTextTop(Page, 165, 46.5, 'CUOTA');
+        PDFWriteTextTop(Page, 182, 46.5, 'FIRMA');
 
-        Y := 56;
+        TopY := 51;
       end;
     end;
 
     // Firmas de Cierre
-    PDFDrawLine(Page, 25, 255, 80, 255, 0.8, COL_SLATE_MED);
+    PDFDrawLineTop(Page, 25, 258, 80, 258, 0.8, COL_SLATE_MED);
     Page.SetColor(COL_TEXT_BLACK, False);
     Page.SetFont(FontH, 8);
-    Page.WriteText(28, 260, 'Firma y Aclaracion Cobrador');
+    PDFWriteTextTop(Page, 28, 263, 'Firma y Aclaracion Cobrador');
 
-    PDFDrawLine(Page, 130, 255, 185, 255, 0.8, COL_SLATE_MED);
+    PDFDrawLineTop(Page, 130, 258, 185, 258, 0.8, COL_SLATE_MED);
     Page.SetFont(FontH, 8);
-    Page.WriteText(133, 260, 'Recepcion y Control Tesoreria');
+    PDFWriteTextTop(Page, 133, 263, 'Recepcion y Control Tesoreria');
 
     // Pie
+    PDFDrawLineTop(Page, 15, 278, 195, 278, 0.5, COL_SLATE_LIGHT);
     Page.SetColor(COL_SLATE_MED, False);
     Page.SetFont(FontN, 7);
-    Page.WriteText(15, 282, 'Aeterna Suite XP - Planilla Oficial de Cobranza');
-    Page.WriteText(170, 282, 'Pagina ' + IntToStr(PaginaActual));
+    PDFWriteTextTop(Page, 15, 283, 'Aeterna Suite XP - Planilla Oficial de Cobranza');
+    PDFWriteTextTop(Page, 170, 283, 'Pagina ' + IntToStr(PaginaActual));
 
     Doc.SaveToFile(OutputPath);
   finally
@@ -686,7 +749,8 @@ var
   Section: TPDFSection;
   Page: TPDFPage;
   FontH, FontN: Integer;
-  i, Y, PaginaActual: Integer;
+  i, PaginaActual: Integer;
+  TopY: Single;
 begin
   Doc := TPDFDocument.Create(nil);
   try
@@ -708,77 +772,78 @@ begin
       'Control de Fondos y Rendicion de Cuentas - Cementerio Parque');
 
     // ---------------------------------------------------------
-    // 3 TARJETAS KPI DE CIERRE FINANCIERO
+    // 3 TARJETAS KPI DE CIERRE FINANCIERO (TopY: 41..61 mm)
     // ---------------------------------------------------------
     // Tarjeta 1: Efectivo
-    PDFDrawRect(Page, 15, 41, 56, 20, 0.6, True, True, COL_GREEN_DARK, COL_BG_HEADER);
+    PDFDrawRectTop(Page, 15, 41, 56, 20, 0.6, True, True, COL_GREEN_DARK, COL_BG_HEADER);
     Page.SetColor(COL_GREEN_DARK, False);
     Page.SetFont(FontH, 8);
-    Page.WriteText(18, 46, 'EFECTIVO EN CAJA:');
+    PDFWriteTextTop(Page, 18, 47, 'EFECTIVO EN CAJA:');
     Page.SetFont(FontH, 11);
-    Page.WriteText(18, 54, FormatearMoneda(TotalEf));
+    PDFWriteTextTop(Page, 18, 56, FormatearMoneda(TotalEf));
 
     // Tarjeta 2: Digital / Transferencias
-    PDFDrawRect(Page, 77, 41, 56, 20, 0.6, True, True, COL_NAVY_MED, COL_BG_HEADER);
+    PDFDrawRectTop(Page, 77, 41, 56, 20, 0.6, True, True, COL_NAVY_MED, COL_BG_HEADER);
     Page.SetColor(COL_NAVY_MED, False);
     Page.SetFont(FontH, 8);
-    Page.WriteText(80, 46, 'TRANSFERENCIAS / QR:');
+    PDFWriteTextTop(Page, 80, 47, 'TRANSFERENCIAS / QR:');
     Page.SetFont(FontH, 11);
-    Page.WriteText(80, 54, FormatearMoneda(TotalDig));
+    PDFWriteTextTop(Page, 80, 56, FormatearMoneda(TotalDig));
 
     // Tarjeta 3: Total General
-    PDFDrawRect(Page, 139, 41, 56, 20, 0.8, True, True, COL_NAVY_DARK, COL_BG_HEADER);
+    PDFDrawRectTop(Page, 139, 41, 56, 20, 0.8, True, True, COL_NAVY_DARK, COL_BG_HEADER);
     Page.SetColor(COL_GOLD, False);
     Page.SetFont(FontH, 8);
-    Page.WriteText(142, 46, 'TOTAL GENERAL RENDIDO:');
+    PDFWriteTextTop(Page, 142, 47, 'TOTAL GENERAL RENDIDO:');
     Page.SetColor(COL_NAVY_DARK, False);
     Page.SetFont(FontH, 11);
-    Page.WriteText(142, 54, FormatearMoneda(TotalEf + TotalDig));
+    PDFWriteTextTop(Page, 142, 56, FormatearMoneda(TotalEf + TotalDig));
 
-    // Detalle de Comprobantes
-    PDFDrawRect(Page, 15, 66, 180, 6, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
+    // Detalle de Comprobantes (TopY: 64..70 mm)
+    PDFDrawRectTop(Page, 15, 64, 180, 6, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
     Page.SetColor(COL_WHITE, False);
     Page.SetFont(FontH, 8);
-    Page.WriteText(18, 70.5, 'DETALLE DE COMPROBANTES ASENTADOS EN LA FECHA:');
+    PDFWriteTextTop(Page, 18, 68.5, 'DETALLE DE COMPROBANTES ASENTADOS EN LA FECHA:');
 
-    // Cabecera Tabla
-    PDFDrawRect(Page, 15, 72, 180, 7, 0.5, True, True, COL_SLATE_LIGHT, COL_BG_HEADER);
+    // Cabecera Tabla (TopY: 71..78 mm)
+    PDFDrawRectTop(Page, 15, 71, 180, 7, 0.5, True, True, COL_SLATE_LIGHT, COL_BG_HEADER);
     Page.SetColor(COL_TEXT_BLACK, False);
     Page.SetFont(FontH, 8);
-    Page.WriteText(17, 76.5, 'RECIBO');
-    Page.WriteText(42, 76.5, 'TITULAR / PAGADOR');
-    Page.WriteText(100, 76.5, 'CONCEPTO IMPUTADO');
-    Page.WriteText(150, 76.5, 'METODO');
-    Page.WriteText(175, 76.5, 'IMPORTE');
+    PDFWriteTextTop(Page, 17, 76, 'RECIBO');
+    PDFWriteTextTop(Page, 42, 76, 'TITULAR / PAGADOR');
+    PDFWriteTextTop(Page, 100, 76, 'CONCEPTO IMPUTADO');
+    PDFWriteTextTop(Page, 150, 76, 'METODO');
+    PDFWriteTextTop(Page, 175, 76, 'IMPORTE');
 
-    Y := 85;
+    TopY := 80;
     for i := Low(Pagos) to High(Pagos) do
     begin
       if (i mod 2 = 1) then
-        PDFDrawRect(Page, 15, Y - 4.5, 180, 6.5, 0.3, True, False, COL_BG_ROW, COL_BG_ROW);
+        PDFDrawRectTop(Page, 15, TopY, 180, 6.5, 0.3, True, False, COL_BG_ROW, COL_BG_ROW);
 
       Page.SetColor(COL_TEXT_BLACK, False);
       Page.SetFont(FontH, 7);
-      Page.WriteText(17, Y, Pagos[i].NroRecibo);
+      PDFWriteTextTop(Page, 17, TopY + 4.8, Pagos[i].NroRecibo);
 
       Page.SetFont(FontN, 7);
-      Page.WriteText(42, Y, Copy(Pagos[i].TitularNombre, 1, 30));
-      Page.WriteText(100, Y, Copy(Pagos[i].Observaciones, 1, 28));
-      Page.WriteText(150, Y, MetodoPagoToStr(Pagos[i].MetodoPago));
+      PDFWriteTextTop(Page, 42, TopY + 4.8, Copy(SanitizePDFText(Pagos[i].TitularNombre), 1, 30));
+      PDFWriteTextTop(Page, 100, TopY + 4.8, Copy(SanitizePDFText(Pagos[i].Observaciones), 1, 28));
+      PDFWriteTextTop(Page, 150, TopY + 4.8, MetodoPagoToStr(Pagos[i].MetodoPago));
 
       Page.SetFont(FontH, 7);
       Page.SetColor(COL_NAVY_DARK, False);
-      Page.WriteText(175, Y, FormatearMoneda(Pagos[i].MontoPagado));
+      PDFWriteTextTop(Page, 175, TopY + 4.8, FormatearMoneda(Pagos[i].MontoPagado));
 
-      PDFDrawLine(Page, 15, Y + 2, 195, Y + 2, 0.3, COL_SLATE_LIGHT);
-      Inc(Y, 7);
+      PDFDrawLineTop(Page, 15, TopY + 6.5, 195, TopY + 6.5, 0.3, COL_SLATE_LIGHT);
+      TopY := TopY + 6.5;
 
-      if Y > 245 then
+      if TopY > 230 then
       begin
+        PDFDrawLineTop(Page, 15, 278, 195, 278, 0.5, COL_SLATE_LIGHT);
         Page.SetColor(COL_SLATE_MED, False);
         Page.SetFont(FontN, 7);
-        Page.WriteText(15, 282, 'Aeterna Suite XP - Acta Notarial de Cierre de Caja');
-        Page.WriteText(170, 282, 'Pagina ' + IntToStr(PaginaActual));
+        PDFWriteTextTop(Page, 15, 283, 'Aeterna Suite XP - Acta Notarial de Cierre de Caja');
+        PDFWriteTextTop(Page, 170, 283, 'Pagina ' + IntToStr(PaginaActual));
 
         Inc(PaginaActual);
         Page := Doc.Pages.AddPage;
@@ -791,41 +856,42 @@ begin
           'Acta Notarial de Cierre Diario de Caja (Cont.)',
           'Control de Fondos y Rendicion de Cuentas - Cementerio Parque');
 
-        PDFDrawRect(Page, 15, 42, 180, 7, 0.5, True, True, COL_SLATE_LIGHT, COL_BG_HEADER);
+        PDFDrawRectTop(Page, 15, 41, 180, 7, 0.5, True, True, COL_SLATE_LIGHT, COL_BG_HEADER);
         Page.SetColor(COL_TEXT_BLACK, False);
         Page.SetFont(FontH, 8);
-        Page.WriteText(17, 46.5, 'RECIBO');
-        Page.WriteText(42, 46.5, 'TITULAR / PAGADOR');
-        Page.WriteText(100, 46.5, 'CONCEPTO IMPUTADO');
-        Page.WriteText(150, 46.5, 'METODO');
-        Page.WriteText(175, 46.5, 'IMPORTE');
+        PDFWriteTextTop(Page, 17, 46, 'RECIBO');
+        PDFWriteTextTop(Page, 42, 46, 'TITULAR / PAGADOR');
+        PDFWriteTextTop(Page, 100, 46, 'CONCEPTO IMPUTADO');
+        PDFWriteTextTop(Page, 150, 46, 'METODO');
+        PDFWriteTextTop(Page, 175, 46, 'IMPORTE');
 
-        Y := 55;
+        TopY := 50;
       end;
     end;
 
-    // Declaracion de Arqueo
-    PDFDrawRect(Page, 15, 246, 180, 14, 0.5, True, True, COL_SLATE_LIGHT, COL_BG_ROW);
+    // Declaracion de Arqueo (TopY: 238..252 mm)
+    PDFDrawRectTop(Page, 15, 238, 180, 14, 0.5, True, True, COL_SLATE_LIGHT, COL_BG_ROW);
     Page.SetColor(COL_SLATE_DARK, False);
     Page.SetFont(FontN, 7);
-    Page.WriteText(18, 251, 'Se certifica que en el dia de la fecha se ha realizado el arqueo fisico y digital de caja,');
-    Page.WriteText(18, 256, 'coincidiendo los valores rendidos con los comprobantes asentados en el sistema.');
+    PDFWriteTextTop(Page, 18, 243, 'Se certifica que en el dia de la fecha se ha realizado el arqueo fisico y digital de caja,');
+    PDFWriteTextTop(Page, 18, 248, 'coincidiendo los valores rendidos con los comprobantes asentados en el sistema.');
 
-    // Firmas
-    PDFDrawLine(Page, 25, 273, 85, 273, 0.8, COL_SLATE_MED);
+    // Firmas (TopY: 258..272 mm)
+    PDFDrawLineTop(Page, 25, 260, 85, 260, 0.8, COL_SLATE_MED);
     Page.SetColor(COL_TEXT_BLACK, False);
     Page.SetFont(FontH, 8);
-    Page.WriteText(30, 277, 'Firma Cajero de Turno');
+    PDFWriteTextTop(Page, 30, 265, 'Firma Cajero de Turno');
 
-    PDFDrawLine(Page, 125, 273, 185, 273, 0.8, COL_SLATE_MED);
+    PDFDrawLineTop(Page, 125, 260, 185, 260, 0.8, COL_SLATE_MED);
     Page.SetFont(FontH, 8);
-    Page.WriteText(130, 277, 'Firma Tesoreria / Parroquia');
+    PDFWriteTextTop(Page, 130, 265, 'Firma Tesoreria / Parroquia');
 
     // Pie
+    PDFDrawLineTop(Page, 15, 278, 195, 278, 0.5, COL_SLATE_LIGHT);
     Page.SetColor(COL_SLATE_MED, False);
     Page.SetFont(FontN, 7);
-    Page.WriteText(15, 283, 'Aeterna Suite XP - Acta Notarial de Cierre de Caja');
-    Page.WriteText(170, 283, 'Pagina ' + IntToStr(PaginaActual));
+    PDFWriteTextTop(Page, 15, 283, 'Aeterna Suite XP - Acta Notarial de Cierre de Caja');
+    PDFWriteTextTop(Page, 170, 283, 'Pagina ' + IntToStr(PaginaActual));
 
     Doc.SaveToFile(OutputPath);
   finally
