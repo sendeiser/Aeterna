@@ -12,6 +12,7 @@ procedure GenerarFolioInhumacionesPDF(const Lista: TInhumacionArray; const Outpu
 procedure GenerarReciboPagoPDF(const Pago: TPagoMantenimiento; const OutputPath: string);
 procedure GenerarPlanillaRutaPDF(const Afiliados: TAfiliadoArray; const OutputPath: string);
 procedure GenerarCierreCajaPDF(const Pagos: TPagoArray; TotalEf, TotalDig: Currency; const OutputPath: string);
+procedure GenerarListadoParcelasPDF(const Parcelas: TParcelaArray; const OutputPath: string);
 
 implementation
 
@@ -125,9 +126,15 @@ begin
   PDFDrawRectTop(Page, 15, 10, 180, 12, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
   Page.SetColor(COL_WHITE, False);
   Page.SetFont(FontBold, 8);
-  PDFWriteTextTop(Page, 18, 15, 'DIOCESIS DE SAN NICOLAS DE LOS ARROYOS - PARROQUIA SAN NICOLAS DE BARI');
+  PDFWriteTextTop(Page, 18, 14.5, 'DIOCESIS DE SAN NICOLAS DE LOS ARROYOS - PARROQUIA SAN NICOLAS DE BARI');
   Page.SetFont(FontNormal, 7);
-  PDFWriteTextTop(Page, 18, 19, 'Cementerio Parque San Nicolas - Sistema Integrado de Administracion General');
+  PDFWriteTextTop(Page, 18, 18.5, 'Cementerio Parque San Nicolas - Sistema Integrado de Administracion General');
+
+  // Fecha y Estado Oficial en el extremo derecho superior (sin interferir con el titulo)
+  Page.SetFont(FontBold, 8);
+  PDFWriteTextTop(Page, 148, 14.5, 'FECHA: ' + FormatDateTime('dd/mm/yyyy', Now));
+  Page.SetFont(FontNormal, 7);
+  PDFWriteTextTop(Page, 148, 18.5, 'DOCUMENTO OFICIAL VALIDO');
 
   // Linea Dorada de Acento
   PDFDrawLineTop(Page, 15, 22.5, 195, 22.5, 1.2, COL_GOLD);
@@ -135,17 +142,12 @@ begin
   // Recuadro del Titulo del Documento (TopY: 24 a 38 mm)
   PDFDrawRectTop(Page, 15, 24, 180, 14, 0.5, True, True, COL_SLATE_LIGHT, COL_BG_HEADER);
   Page.SetColor(COL_NAVY_DARK, False);
-  Page.SetFont(FontTitle, 12);
+  Page.SetFont(FontTitle, 10);
   PDFWriteTextTop(Page, 18, 30, UpperCase(TituloDoc));
 
   Page.SetColor(COL_SLATE_MED, False);
-  Page.SetFont(FontNormal, 8);
-  PDFWriteTextTop(Page, 18, 35, SubtituloDoc);
-
-  Page.SetFont(FontBold, 8);
-  PDFWriteTextTop(Page, 145, 30, 'FECHA: ' + FormatDateTime('dd/mm/yyyy', Now));
   Page.SetFont(FontNormal, 7);
-  PDFWriteTextTop(Page, 145, 35, 'DOCUMENTO OFICIAL VALIDO');
+  PDFWriteTextTop(Page, 18, 35, SubtituloDoc);
 
   PDFDrawLineTop(Page, 15, 38.5, 195, 38.5, 0.5, COL_SLATE_MED);
 end;
@@ -891,6 +893,181 @@ begin
     Page.SetColor(COL_SLATE_MED, False);
     Page.SetFont(FontN, 7);
     PDFWriteTextTop(Page, 15, 283, 'Aeterna Suite XP - Acta Notarial de Cierre de Caja');
+    PDFWriteTextTop(Page, 170, 283, 'Pagina ' + IntToStr(PaginaActual));
+
+    Doc.SaveToFile(OutputPath);
+  finally
+    Doc.Free;
+  end;
+end;
+
+// ----------------------------------------------------------------------------
+// 6. PADRON GENERAL DE PARCELAS Y CATASTRO COMPLETO
+// ----------------------------------------------------------------------------
+
+procedure GenerarListadoParcelasPDF(const Parcelas: TParcelaArray; const OutputPath: string);
+var
+  Doc: TPDFDocument;
+  Section: TPDFSection;
+  Page: TPDFPage;
+  FontH, FontN: Integer;
+  i, Total, PaginaActual, Ocupadas, EnMora, Disponibles: Integer;
+  TotalDeuda: Currency;
+  TopY: Single;
+  NomTitular, EstadoStr: string;
+begin
+  Doc := TPDFDocument.Create(nil);
+  try
+    Doc.StartDocument;
+    Section := Doc.Sections.AddSection;
+
+    FontH := Doc.AddFont('Helvetica-Bold');
+    FontN := Doc.AddFont('Helvetica');
+
+    Total := Length(Parcelas);
+    Ocupadas := 0;
+    EnMora := 0;
+    Disponibles := 0;
+    TotalDeuda := 0;
+    for i := 0 to Total - 1 do
+    begin
+      case Parcelas[i].Estado of
+        epOcupada: Inc(Ocupadas);
+        epEnMora: Inc(EnMora);
+        epDisponible: Inc(Disponibles);
+      end;
+      TotalDeuda := TotalDeuda + Parcelas[i].SaldoMantenimiento;
+    end;
+
+    PaginaActual := 1;
+    Page := Doc.Pages.AddPage;
+    Page.PaperType := ptA4;
+    Page.Orientation := ppoPortrait;
+    Page.UnitOfMeasure := uomMillimeters;
+    Section.AddPage(Page);
+
+    ConfigurarEncabezadoInstitucional(Page, FontH, FontN, FontH,
+      'Padron General de Parcelas y Catastro',
+      'Registro Notarial de Concesiones, Estado Ocupacional y Mantenimiento');
+
+    // Barra de Resumen Estadistico Ejecutivo (TopY: 41..49)
+    PDFDrawRectTop(Page, 15, 41, 180, 8, 0.5, True, True, COL_SLATE_MED, COL_BG_ROW);
+    Page.SetColor(COL_TEXT_BLACK, False);
+    Page.SetFont(FontH, 8);
+    PDFWriteTextTop(Page, 18, 46, Format('TOTAL: %d Parcelas  |  Ocupadas: %d  |  En Mora: %d  |  Disponibles: %d  |  Deuda Mantenimiento: %s',
+      [Total, Ocupadas, EnMora, Disponibles, FormatearMoneda(TotalDeuda)]));
+
+    // Cabecera de la Tabla (TopY: 51..58)
+    PDFDrawRectTop(Page, 15, 51, 180, 7, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
+    Page.SetColor(COL_WHITE, False);
+    Page.SetFont(FontH, 8);
+    PDFWriteTextTop(Page, 17, 56, 'NOMENCL.');
+    PDFWriteTextTop(Page, 40, 56, 'SEC');
+    PDFWriteTextTop(Page, 50, 56, 'MZ/FIL');
+    PDFWriteTextTop(Page, 65, 56, 'NRO');
+    PDFWriteTextTop(Page, 78, 56, 'ESTADO');
+    PDFWriteTextTop(Page, 98, 56, 'CAPAC.');
+    PDFWriteTextTop(Page, 114, 56, 'TITULAR DE LA CONCESION');
+    PDFWriteTextTop(Page, 168, 56, 'SALDO DEUDA');
+
+    TopY := 58;
+
+    for i := 0 to Total - 1 do
+    begin
+      // Filas alternas
+      if (i mod 2 = 1) then
+        PDFDrawRectTop(Page, 15, TopY, 180, 6, 0, True, False, 0, COL_BG_ROW);
+
+      Page.SetColor(COL_TEXT_BLACK, False);
+      Page.SetFont(FontH, 8);
+      PDFWriteTextTop(Page, 17, TopY + 4.5, Parcelas[i].Nomenclatura);
+
+      Page.SetFont(FontN, 7);
+      PDFWriteTextTop(Page, 41, TopY + 4.5, Parcelas[i].SectorId);
+      PDFWriteTextTop(Page, 52, TopY + 4.5, Parcelas[i].ManzanaFila);
+      PDFWriteTextTop(Page, 66, TopY + 4.5, Parcelas[i].NumeroParcela);
+
+      EstadoStr := EstadoParcelaToStr(Parcelas[i].Estado);
+      if Parcelas[i].Estado = epEnMora then
+        Page.SetColor(COL_GOLD, False)
+      else if Parcelas[i].Estado = epOcupada then
+        Page.SetColor(COL_NAVY_DARK, False)
+      else if Parcelas[i].Estado = epDisponible then
+        Page.SetColor(COL_GREEN_DARK, False)
+      else
+        Page.SetColor(COL_SLATE_MED, False);
+      Page.SetFont(FontH, 7);
+      PDFWriteTextTop(Page, 78, TopY + 4.5, UpperCase(EstadoStr));
+
+      Page.SetColor(COL_TEXT_BLACK, False);
+      Page.SetFont(FontN, 7);
+      PDFWriteTextTop(Page, 100, TopY + 4.5, Format('%d/%d', [Parcelas[i].EspaciosOcupados, Parcelas[i].CapacidadTotal]));
+
+      NomTitular := Parcelas[i].TitularNombre;
+      if NomTitular = '' then
+        NomTitular := 'Sin Titular Asignado';
+      if Length(NomTitular) > 34 then
+        NomTitular := Copy(NomTitular, 1, 32) + '..';
+      PDFWriteTextTop(Page, 114, TopY + 4.5, NomTitular);
+
+      if Parcelas[i].SaldoMantenimiento > 0 then
+      begin
+        Page.SetColor(COL_GOLD, False);
+        Page.SetFont(FontH, 7);
+        PDFWriteTextTop(Page, 168, TopY + 4.5, FormatearMoneda(Parcelas[i].SaldoMantenimiento));
+      end
+      else
+      begin
+        Page.SetColor(COL_SLATE_MED, False);
+        Page.SetFont(FontN, 7);
+        PDFWriteTextTop(Page, 168, TopY + 4.5, '$ 0,00');
+      end;
+
+      PDFDrawLineTop(Page, 15, TopY + 6, 195, TopY + 6, 0.2, COL_SLATE_LIGHT);
+      TopY := TopY + 6;
+
+      if TopY > 268 then
+      begin
+        // Pie de Pagina
+        PDFDrawLineTop(Page, 15, 278, 195, 278, 0.5, COL_SLATE_LIGHT);
+        Page.SetColor(COL_SLATE_MED, False);
+        Page.SetFont(FontN, 7);
+        PDFWriteTextTop(Page, 15, 283, 'Aeterna Suite XP - Padron Oficial del Catastro Parroquial');
+        PDFWriteTextTop(Page, 170, 283, 'Pagina ' + IntToStr(PaginaActual));
+
+        Inc(PaginaActual);
+        Page := Doc.Pages.AddPage;
+        Page.PaperType := ptA4;
+        Page.Orientation := ppoPortrait;
+        Page.UnitOfMeasure := uomMillimeters;
+        Section.AddPage(Page);
+
+        ConfigurarEncabezadoInstitucional(Page, FontH, FontN, FontH,
+          'Padron General de Parcelas y Catastro (Cont.)',
+          'Registro Notarial de Concesiones, Estado Ocupacional y Mantenimiento');
+
+        // Cabecera repetida en nueva pagina
+        PDFDrawRectTop(Page, 15, 41, 180, 7, 0.5, True, False, COL_NAVY_DARK, COL_NAVY_DARK);
+        Page.SetColor(COL_WHITE, False);
+        Page.SetFont(FontH, 8);
+        PDFWriteTextTop(Page, 17, 46, 'NOMENCL.');
+        PDFWriteTextTop(Page, 40, 46, 'SEC');
+        PDFWriteTextTop(Page, 50, 46, 'MZ/FIL');
+        PDFWriteTextTop(Page, 65, 46, 'NRO');
+        PDFWriteTextTop(Page, 78, 46, 'ESTADO');
+        PDFWriteTextTop(Page, 98, 46, 'CAPAC.');
+        PDFWriteTextTop(Page, 114, 46, 'TITULAR DE LA CONCESION');
+        PDFWriteTextTop(Page, 168, 46, 'SALDO DEUDA');
+
+        TopY := 48;
+      end;
+    end;
+
+    // Pie final
+    PDFDrawLineTop(Page, 15, 278, 195, 278, 0.5, COL_SLATE_LIGHT);
+    Page.SetColor(COL_SLATE_MED, False);
+    Page.SetFont(FontN, 7);
+    PDFWriteTextTop(Page, 15, 283, 'Aeterna Suite XP - Padron Oficial del Catastro Parroquial');
     PDFWriteTextTop(Page, 170, 283, 'Pagina ' + IntToStr(PaginaActual));
 
     Doc.SaveToFile(OutputPath);

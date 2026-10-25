@@ -344,7 +344,7 @@ object frmMain: TfrmMain
       end
     end
     object tabParcelas: TTabSheet
-      Caption = '  Catastro y Parcelas  '
+      Caption = '  Parcelas  '
       ClientHeight = 444
       ClientWidth = 972
     end
@@ -401,7 +401,7 @@ object frmMain: TfrmMain
     object miModulos: TMenuItem
       Caption = '&Modulos'
       object miCatastro: TMenuItem
-        Caption = '&Catastro de Parcelas'
+        Caption = '&Parcelas'
       end
       object miInhumaciones: TMenuItem
         Caption = '&Libro de Inhumaciones'

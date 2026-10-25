@@ -116,28 +116,39 @@ end;
 class function TAfiliadosService.RegistrarPagoCuota(const AAfiliadoId: string; Anio, NroCuota: Integer; AMonto: Currency; AMetodo: TMetodoPago; const ARecibo: string): Boolean;
 var
   Data, Resp: TJSONObject;
+  ExistingArr: TJSONArray;
   FechaHoy: string;
 begin
   Result := False;
-  FechaHoy := FormatDateTime('yyyy-mm-dd', Now);
+  FechaHoy := FormatDateTime('yyyy-mm-dd"T"hh:nn:ss"+00:00"', Now);
+
+  ExistingArr := Supabase.Select('cuotas_seguro', Format('afiliado_id=eq.%s&anio=eq.%d&mes=eq.%d&select=id', [AAfiliadoId, Anio, NroCuota]));
   Data := TJSONObject.Create;
   try
-    Data.Add('afiliado_id', AAfiliadoId);
-    Data.Add('anio', Anio);
-    Data.Add('mes', NroCuota);
     Data.Add('monto', Double(AMonto));
     Data.Add('estado_cuota', 'pagada');
     Data.Add('fecha_pago', FechaHoy);
     Data.Add('metodo_pago', MetodoPagoToStr(AMetodo));
     Data.Add('nro_recibo', ARecibo);
 
-    Resp := Supabase.Insert('cuotas_seguro', Data);
-    if Resp <> nil then
+    if (ExistingArr <> nil) and (ExistingArr.Count > 0) then
     begin
-      Result := True;
-      Resp.Free;
+      Result := Supabase.Update('cuotas_seguro', 'id=eq.' + TJSONObject(ExistingArr.Items[0]).Get('id', ''), Data);
+    end
+    else
+    begin
+      Data.Add('afiliado_id', AAfiliadoId);
+      Data.Add('anio', Anio);
+      Data.Add('mes', NroCuota);
+      Resp := Supabase.Insert('cuotas_seguro', Data);
+      if Resp <> nil then
+      begin
+        Result := True;
+        Resp.Free;
+      end;
     end;
   finally
+    if ExistingArr <> nil then ExistingArr.Free;
     Data.Free;
   end;
 end;

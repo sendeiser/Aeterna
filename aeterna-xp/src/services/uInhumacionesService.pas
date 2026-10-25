@@ -51,14 +51,21 @@ begin
       Result[i].TelefonoResponsable := Item.Get('telefono_responsable', '');
       Result[i].Observaciones := Item.Get('observaciones', '');
 
-      Result[i].NomenclaturaParcela := '';
-      if Item.Find('parcela') <> nil then
+      Result[i].NomenclaturaParcela := Item.Get('parcela_nomenclatura', '');
+      if Result[i].NomenclaturaParcela = '' then
       begin
-        if Item.Types['parcela'] = jtObject then
+        if Item.Find('parcela') <> nil then
         begin
-          ParcelaObj := Item.Objects['parcela'];
-          Result[i].NomenclaturaParcela := ParcelaObj.Get('nomenclatura', '');
+          if Item.Types['parcela'] = jtObject then
+          begin
+            ParcelaObj := Item.Objects['parcela'];
+            Result[i].NomenclaturaParcela := ParcelaObj.Get('nomenclatura', '');
+          end;
         end;
+      end;
+      if (Result[i].NomenclaturaParcela = '') and (Pos('Parcela asignada:', Result[i].Observaciones) > 0) then
+      begin
+        Result[i].NomenclaturaParcela := Trim(Copy(Result[i].Observaciones, Pos('Parcela asignada:', Result[i].Observaciones) + 17, 50));
       end;
     end;
   finally
@@ -74,7 +81,10 @@ begin
   Result := False;
   Data := TJSONObject.Create;
   try
-    Data.Add('parcela_id', AInhumacion.ParcelaId);
+    if AInhumacion.ParcelaId <> '' then
+      Data.Add('parcela_id', AInhumacion.ParcelaId);
+    if AInhumacion.NomenclaturaParcela <> '' then
+      Data.Add('parcela_nomenclatura', AInhumacion.NomenclaturaParcela);
     Data.Add('nombre_difunto', AInhumacion.NombreDifunto);
     if AInhumacion.DniDifunto <> '' then
       Data.Add('dni_difunto', AInhumacion.DniDifunto);
@@ -87,7 +97,10 @@ begin
     Data.Add('empresa_funebrera', AInhumacion.EmpresaFunebrera);
     Data.Add('nombre_responsable', AInhumacion.NombreResponsable);
     Data.Add('telefono_responsable', AInhumacion.TelefonoResponsable);
-    Data.Add('observaciones', AInhumacion.Observaciones);
+    if AInhumacion.NomenclaturaParcela <> '' then
+      Data.Add('observaciones', 'Parcela asignada: ' + AInhumacion.NomenclaturaParcela)
+    else
+      Data.Add('observaciones', AInhumacion.Observaciones);
 
     Resp := Supabase.Insert('inhumaciones', Data);
     if Resp <> nil then

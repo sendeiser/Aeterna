@@ -3,7 +3,7 @@ object frmParcelas: TfrmParcelas
   Height = 520
   Top = 150
   Width = 920
-  Caption = 'Catastro y Mapa de Parcelas'
+  Caption = 'Parcelas'
   ClientHeight = 520
   ClientWidth = 920
   Color = clBtnFace

@@ -12,6 +12,7 @@ var
   Pago: TPagoMantenimiento;
   ListaPagos: TPagoArray;
   ListaAfiliados: TAfiliadoArray;
+  ListaParc: TParcelaArray;
   Fichero: string;
 begin
   WriteLn('=== Test de Generacion de Reportes PDF Nativos (fpPDF) ===');
@@ -90,6 +91,35 @@ begin
     WriteLn('[PASS] GenerarPlanillaRutaPDF produjo archivo: ', Fichero)
   else
     WriteLn('[FAIL] No se creo la planilla de ruta');
+
+  // 5. Test Padron General de Parcelas
+  SetLength(ListaParc, 2);
+  ListaParc[0].Nomenclatura := 'A-25-96';
+  ListaParc[0].SectorId := 'A';
+  ListaParc[0].ManzanaFila := '25';
+  ListaParc[0].NumeroParcela := '96';
+  ListaParc[0].Estado := epOcupada;
+  ListaParc[0].CapacidadTotal := 3;
+  ListaParc[0].EspaciosOcupados := 2;
+  ListaParc[0].TitularNombre := 'Vazquez Donoso, Marcelo Ignacio';
+  ListaParc[0].SaldoMantenimiento := 0;
+
+  ListaParc[1].Nomenclatura := 'A-19-85';
+  ListaParc[1].SectorId := 'A';
+  ListaParc[1].ManzanaFila := '19';
+  ListaParc[1].NumeroParcela := '85';
+  ListaParc[1].Estado := epEnMora;
+  ListaParc[1].CapacidadTotal := 3;
+  ListaParc[1].EspaciosOcupados := 1;
+  ListaParc[1].TitularNombre := 'Abdala, Carla Vanesa';
+  ListaParc[1].SaldoMantenimiento := 100000;
+
+  Fichero := 'test_padron_parcelas_output.pdf';
+  GenerarListadoParcelasPDF(ListaParc, Fichero);
+  if FileExists(Fichero) then
+    WriteLn('[PASS] GenerarListadoParcelasPDF produjo archivo: ', Fichero)
+  else
+    WriteLn('[FAIL] No se creo el padron de parcelas');
 
   WriteLn('=== Todos los generadores de reportes PDF evaluados exitosamente ===');
 end;

@@ -75,6 +75,13 @@ begin
           Result[i].TitularDni := TitularObj.Get('dni', '');
         end;
       end;
+      if (Result[i].TitularNombre = '') and (Pos('Titular:', Result[i].Notas) > 0) then
+      begin
+        Result[i].TitularNombre := Copy(Result[i].Notas, Pos('Titular:', Result[i].Notas) + 8, Length(Result[i].Notas));
+        if Pos('.', Result[i].TitularNombre) > 0 then
+          Result[i].TitularNombre := Copy(Result[i].TitularNombre, 1, Pos('.', Result[i].TitularNombre) - 1);
+        Result[i].TitularNombre := Trim(Result[i].TitularNombre);
+      end;
     end;
   finally
     JsonArr.Free;

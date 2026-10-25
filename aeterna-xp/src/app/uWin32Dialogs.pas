@@ -6,13 +6,14 @@ interface
 
 uses
   Classes, SysUtils, CommCtrl, Windows, Messages,
-  uDataModels;
+  uDataModels, uBusinessRules;
 
 function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion): Boolean;
 function ShowDlgParcela(ParentWnd: HWND; IsEdit: Boolean; var Parc: TParcela): Boolean;
 function ShowDlgAfiliado(ParentWnd: HWND; IsEdit: Boolean; var Afil: TAfiliadoSeguro): Boolean;
 function ShowDlgCobroCaja(ParentWnd: HWND; var Titular, Concepto: string; var Monto: Currency; var Metodo: TMetodoPago; var Recibo: string): Boolean;
 function ShowDlgCobroMantenimiento(ParentWnd: HWND; const Nomenclatura, TitularDef: string; var Monto: Currency; var Metodo: TMetodoPago; var Periodo, Recibo: string): Boolean;
+function ShowDlgCobroCuotaMes(ParentWnd: HWND; const Afiliado: TAfiliadoSeguro; var MesSeleccionado, AnioSeleccionado: Integer; var Monto: Currency; var Metodo: TMetodoPago; var Recibo: string): Boolean;
 
 implementation
 
@@ -34,6 +35,11 @@ begin
     lf.lfWeight := FW_BOLD;
     hDlgBoldFont := CreateFontIndirect(lf);
   end;
+end;
+
+function BoolToTexto(Cond: Boolean; const Si, No: string): string;
+begin
+  if Cond then Result := Si else Result := No;
 end;
 
 function CreateDlgLabel(hParent: HWND; const Caption: string; X, Y, W, H: Integer): HWND;
@@ -399,7 +405,7 @@ begin
   if IsEdit then
     Title := 'Modificar Parcela / Titular - Supabase Cloud'
   else
-    Title := 'Nueva Parcela - Catastro Cementerio Parque';
+    Title := 'Nueva Parcela - Cementerio Parque';
 
   hDlg := CreateWindowEx(WS_EX_DLGMODALFRAME, 'AeternaParcDlgClass', PChar(Title),
     WS_POPUP or WS_CAPTION or WS_SYSMENU or WS_VISIBLE,
@@ -787,6 +793,186 @@ begin
   Concep := 'Mantenimiento Parcela ' + Nomenclatura + ' (' + Periodo + ')';
 
   Result := ShowDlgCobroCaja(ParentWnd, Tit, Concep, Monto, Metodo, Recibo);
+end;
+
+// ============================================================================
+// DIALOGO 6: COBRO DE CUOTA MENSUAL (SEGURO DE SEPELIO)
+// ============================================================================
+
+type
+  TCuotaMesDlgData = record
+    MesPtr: PInteger;
+    AnioPtr: PInteger;
+    MontoPtr: PCurrency;
+    MetodoPtr: ^TMetodoPago;
+    ReciboPtr: PString;
+    Confirmed: Boolean;
+    CmbMes: HWND;
+    EdtAnio: HWND;
+    EdtMonto: HWND;
+    CmbMetodo: HWND;
+    EdtRecibo: HWND;
+  end;
+  PCuotaMesDlgData = ^TCuotaMesDlgData;
+
+function CuotaMesDlgProc(hWnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
+var
+  pData: PCuotaMesDlgData;
+  CurSel: Integer;
+begin
+  pData := PCuotaMesDlgData(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+  case uMsg of
+    WM_COMMAND:
+      begin
+        case LOWORD(wParam) of
+          1: // Asentar Pago
+            begin
+              if pData <> nil then
+              begin
+                CurSel := SendMessage(pData^.CmbMes, CB_GETCURSEL, 0, 0);
+                if CurSel < 0 then CurSel := 0;
+                pData^.MesPtr^ := CurSel + 1;
+                pData^.AnioPtr^ := StrToIntDef(GetEditText(pData^.EdtAnio), 2026);
+                pData^.MontoPtr^ := StrToCurrDef(GetEditText(pData^.EdtMonto), 18000);
+                if SendMessage(pData^.CmbMetodo, CB_GETCURSEL, 0, 0) = 1 then
+                  pData^.MetodoPtr^ := mpTransferenciaQR
+                else
+                  pData^.MetodoPtr^ := mpEfectivo;
+                pData^.ReciboPtr^ := Trim(GetEditText(pData^.EdtRecibo));
+                if pData^.ReciboPtr^ = '' then
+                  pData^.ReciboPtr^ := 'REC-2026-' + FormatDateTime('hhnnss', Now);
+                pData^.Confirmed := True;
+              end;
+              DestroyWindow(hWnd);
+              Exit(0);
+            end;
+          2: // Cancelar
+            begin
+              if pData <> nil then pData^.Confirmed := False;
+              DestroyWindow(hWnd);
+              Exit(0);
+            end;
+        end;
+      end;
+    WM_CLOSE:
+      begin
+        if pData <> nil then pData^.Confirmed := False;
+        DestroyWindow(hWnd);
+        Exit(0);
+      end;
+  end;
+  Result := DefWindowProc(hWnd, uMsg, wParam, lParam);
+end;
+
+function ShowDlgCobroCuotaMes(ParentWnd: HWND; const Afiliado: TAfiliadoSeguro; var MesSeleccionado, AnioSeleccionado: Integer; var Monto: Currency; var Metodo: TMetodoPago; var Recibo: string): Boolean;
+var
+  wc: TWndClass;
+  hDlg: HWND;
+  DlgData: TCuotaMesDlgData;
+  m, k, FirstUnpaid: Integer;
+  EstaPagada: Boolean;
+  ItemTxt, HeaderTxt: string;
+  MesesNombres: array[1..12] of string = (
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  );
+begin
+  EnsureDlgFonts;
+  FillChar(wc, SizeOf(wc), 0);
+  wc.style := CS_HREDRAW or CS_VREDRAW;
+  wc.lpfnWndProc := @CuotaMesDlgProc;
+  wc.hInstance := hInstance;
+  wc.hCursor := LoadCursor(0, IDC_ARROW);
+  wc.hbrBackground := HBRUSH(COLOR_BTNFACE + 1);
+  wc.lpszClassName := 'AeternaCuotaMesDlgClass';
+  RegisterClass(wc);
+
+  hDlg := CreateWindowEx(WS_EX_DLGMODALFRAME, 'AeternaCuotaMesDlgClass', 'Cobro de Cuota Mensual - Seguro de Sepelio',
+    WS_POPUP or WS_CAPTION or WS_SYSMENU or WS_VISIBLE,
+    0, 0, 520, 420, ParentWnd, 0, hInstance, nil);
+
+  CenterWindow(hDlg, ParentWnd);
+
+  if Recibo = '' then
+    Recibo := 'REC-2026-' + FormatDateTime('hhnnss', Now);
+  if Monto = 0 then
+    Monto := Afiliado.MontoCuotaMensual;
+  if Monto = 0 then
+    Monto := 18000;
+  if AnioSeleccionado = 0 then
+    AnioSeleccionado := 2026;
+
+  DlgData.MesPtr := @MesSeleccionado;
+  DlgData.AnioPtr := @AnioSeleccionado;
+  DlgData.MontoPtr := @Monto;
+  DlgData.MetodoPtr := @Metodo;
+  DlgData.ReciboPtr := @Recibo;
+  DlgData.Confirmed := False;
+
+  // Encabezado institucional del afiliado
+  CreateDlgLabel(hDlg, 'TITULAR DE AFILIACION:', 20, 15, 200, 16);
+  HeaderTxt := Afiliado.NombreCompleto + ' (Afiliado N° ' + IntToStr(Afiliado.NumeroAfiliado) + ')';
+  CreateDlgLabel(hDlg, HeaderTxt, 20, 32, 460, 20);
+  CreateDlgLabel(hDlg, 'DNI: ' + BoolToTexto(Afiliado.Dni <> '', Afiliado.Dni, 'S/D') + '   -   Zona: ' + Afiliado.ZonaCobro + '   -   Dir: ' + Afiliado.DireccionCobro, 20, 54, 460, 16);
+
+  // Selector de Mes y Año
+  CreateDlgLabel(hDlg, 'Mes a Cobrar (*):', 20, 85, 320, 18);
+  DlgData.CmbMes := CreateDlgCombo(hDlg, 20, 105, 330, 220, 501);
+
+  FirstUnpaid := -1;
+  for m := 1 to 12 do
+  begin
+    EstaPagada := False;
+    for k := 0 to High(Afiliado.CuotasPagadas) do
+      if Afiliado.CuotasPagadas[k] = m then
+      begin
+        EstaPagada := True;
+        Break;
+      end;
+
+    if EstaPagada then
+      ItemTxt := Format('%d. %s (Mes %d) - [PAGADA]', [m, MesesNombres[m], m])
+    else
+    begin
+      ItemTxt := Format('%d. %s (Mes %d) - [PENDIENTE DE PAGO]', [m, MesesNombres[m], m]);
+      if FirstUnpaid = -1 then
+        FirstUnpaid := m - 1;
+    end;
+    SendMessage(DlgData.CmbMes, CB_ADDSTRING, 0, LPARAM(PChar(ItemTxt)));
+  end;
+
+  if FirstUnpaid < 0 then FirstUnpaid := 0;
+  SendMessage(DlgData.CmbMes, CB_SETCURSEL, FirstUnpaid, 0);
+
+  CreateDlgLabel(hDlg, 'Año:', 370, 85, 110, 18);
+  DlgData.EdtAnio := CreateDlgEdit(hDlg, IntToStr(AnioSeleccionado), 370, 105, 110, 24, 502);
+
+  // Importe y Metodo de Cobro
+  CreateDlgLabel(hDlg, 'Importe Cuota Mensual ($) (*):', 20, 145, 220, 18);
+  DlgData.EdtMonto := CreateDlgEdit(hDlg, CurrToStr(Monto), 20, 165, 210, 24, 503);
+
+  CreateDlgLabel(hDlg, 'Metodo de Cobro (*):', 250, 145, 230, 18);
+  DlgData.CmbMetodo := CreateDlgCombo(hDlg, 250, 165, 230, 100, 504);
+  SendMessage(DlgData.CmbMetodo, CB_ADDSTRING, 0, LPARAM(PChar('Efectivo en Caja')));
+  SendMessage(DlgData.CmbMetodo, CB_ADDSTRING, 0, LPARAM(PChar('Transferencia Bancaria / QR')));
+  if Metodo = mpTransferenciaQR then
+    SendMessage(DlgData.CmbMetodo, CB_SETCURSEL, 1, 0)
+  else
+    SendMessage(DlgData.CmbMetodo, CB_SETCURSEL, 0, 0);
+
+  // Recibo Oficial
+  CreateDlgLabel(hDlg, 'Nro de Recibo Oficial (*):', 20, 205, 460, 18);
+  DlgData.EdtRecibo := CreateDlgEdit(hDlg, Recibo, 20, 225, 460, 24, 505);
+
+  // Botones de Accion
+  CreateDlgButton(hDlg, 'Asentar Pago de Cuota y Emitir Recibo', 130, 310, 250, 38, 1, True);
+  CreateDlgButton(hDlg, 'Cancelar', 395, 310, 85, 38, 2);
+
+  SetWindowLongPtr(hDlg, GWLP_USERDATA, LONG_PTR(@DlgData));
+  SetFocus(DlgData.CmbMes);
+
+  RunModalLoop(hDlg, ParentWnd);
+  Result := DlgData.Confirmed;
 end;
 
 end.
