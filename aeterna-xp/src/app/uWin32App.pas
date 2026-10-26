@@ -347,9 +347,11 @@ end;
 function CreateListView(Parent: HWND; X, Y, W, H, Id: Integer): HWND;
 begin
   Result := CreateWindowEx(WS_EX_CLIENTEDGE, WC_LISTVIEW, '',
-    WS_CHILD or WS_VISIBLE or LVS_REPORT or LVS_SINGLESEL or LVS_SHOWSELALWAYS,
+    WS_CHILD or WS_VISIBLE or WS_TABSTOP or LVS_REPORT or LVS_SINGLESEL or LVS_SHOWSELALWAYS,
     X, Y, W, H, Parent, HMENU(Id), hInstance, nil);
-  SendMessage(Result, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT or LVS_EX_GRIDLINES);
+  SendMessage(Result, LVM_SETEXTENDEDLISTVIEWSTYLE,
+    LVS_EX_FULLROWSELECT or LVS_EX_GRIDLINES or LVS_EX_DOUBLEBUFFER,
+    LVS_EX_FULLROWSELECT or LVS_EX_GRIDLINES or LVS_EX_DOUBLEBUFFER);
   SendMessage(Result, WM_SETFONT, WPARAM(hGuiFont), 1);
 end;
 
@@ -421,6 +423,22 @@ begin
   SendMessage(hLv, LVM_DELETEALLITEMS, 0, 0);
 end;
 
+function GetListViewItemData(hLv: HWND; ItemIdx: Integer): Integer;
+var
+  Item: TLVItem;
+begin
+  Result := -1;
+  if (hLv = 0) or (ItemIdx < 0) then Exit;
+  FillChar(Item, SizeOf(Item), 0);
+  Item.mask := LVIF_PARAM;
+  Item.iItem := ItemIdx;
+  Item.iSubItem := 0;
+  if SendMessage(hLv, LVM_GETITEM, 0, LPARAM(@Item)) <> 0 then
+    Result := Item.lParam
+  else
+    Result := ItemIdx;
+end;
+
 function GetSelectedListViewIndex(hLv: HWND): Integer;
 begin
   Result := SendMessage(hLv, LVM_GETNEXTITEM, -1, LVNI_SELECTED);
@@ -429,18 +447,23 @@ end;
 function GetSelectedListViewDataIndex(hLv: HWND): Integer;
 var
   ItemIdx: Integer;
+begin
+  ItemIdx := SendMessage(hLv, LVM_GETNEXTITEM, -1, LVNI_SELECTED);
+  Result := GetListViewItemData(hLv, ItemIdx);
+end;
+
+procedure SetListViewSelectedIndex(hLv: HWND; ItemIdx: Integer);
+var
   Item: TLVItem;
 begin
-  Result := -1;
-  ItemIdx := SendMessage(hLv, LVM_GETNEXTITEM, -1, LVNI_SELECTED);
-  if ItemIdx < 0 then Exit;
+  if (hLv = 0) or (ItemIdx < 0) then Exit;
   FillChar(Item, SizeOf(Item), 0);
-  Item.mask := LVIF_PARAM;
+  Item.mask := LVIF_STATE;
   Item.iItem := ItemIdx;
-  if SendMessage(hLv, LVM_GETITEM, 0, LPARAM(@Item)) <> 0 then
-    Result := Item.lParam
-  else
-    Result := ItemIdx;
+  Item.state := LVIS_SELECTED or LVIS_FOCUSED;
+  Item.stateMask := LVIS_SELECTED or LVIS_FOCUSED;
+  SendMessage(hLv, LVM_SETITEMSTATE, ItemIdx, LPARAM(@Item));
+  SendMessage(hLv, LVM_ENSUREVISIBLE, ItemIdx, 0);
 end;
 
 function GetWndText(hCtrl: HWND): string;
@@ -1240,12 +1263,16 @@ begin
   end;
 end;
 
-procedure AccionModificarInhumacion;
+procedure AccionModificarInhumacion(ExplicitDataIdx: Integer = -1);
 var
   Idx: Integer;
   Inh: TInhumacion;
 begin
-  Idx := GetSelectedListViewDataIndex(hLvInh);
+  if ExplicitDataIdx >= 0 then
+    Idx := ExplicitDataIdx
+  else
+    Idx := GetSelectedListViewDataIndex(hLvInh);
+
   if (Idx < 0) or (Idx > High(DataInhumaciones)) then
   begin
     MessageBox(hMainWnd, 'Seleccione un acta de inhumacion del listado para modificar.', 'Aviso', MB_ICONINFORMATION or MB_OK);
@@ -1324,12 +1351,16 @@ begin
   end;
 end;
 
-procedure AccionModificarParcela;
+procedure AccionModificarParcela(ExplicitDataIdx: Integer = -1);
 var
   Idx: Integer;
   Parc: TParcela;
 begin
-  Idx := GetSelectedListViewDataIndex(hLvParcelas);
+  if ExplicitDataIdx >= 0 then
+    Idx := ExplicitDataIdx
+  else
+    Idx := GetSelectedListViewDataIndex(hLvParcelas);
+
   if (Idx < 0) or (Idx > High(DataParcelas)) then
   begin
     MessageBox(hMainWnd, 'Seleccione una parcela del listado para modificar.', 'Aviso', MB_ICONINFORMATION or MB_OK);
@@ -1462,12 +1493,16 @@ begin
   end;
 end;
 
-procedure AccionModificarAfiliado;
+procedure AccionModificarAfiliado(ExplicitDataIdx: Integer = -1);
 var
   Idx: Integer;
   Afil: TAfiliadoSeguro;
 begin
-  Idx := GetSelectedListViewDataIndex(hLvAfiliados);
+  if ExplicitDataIdx >= 0 then
+    Idx := ExplicitDataIdx
+  else
+    Idx := GetSelectedListViewDataIndex(hLvAfiliados);
+
   if (Idx < 0) or (Idx > High(DataAfiliados)) then
   begin
     MessageBox(hMainWnd, 'Seleccione un afiliado del listado para modificar.', 'Aviso', MB_ICONINFORMATION or MB_OK);
@@ -1708,13 +1743,17 @@ begin
   OpenFileWithShell(Ruta);
 end;
 
-procedure AccionGenerarReciboPDF;
+procedure AccionGenerarReciboPDF(ExplicitDataIdx: Integer = -1);
 var
   Idx: Integer;
   Pago: TPagoMantenimiento;
   Ruta: string;
 begin
-  Idx := GetSelectedListViewDataIndex(hLvCaja);
+  if ExplicitDataIdx >= 0 then
+    Idx := ExplicitDataIdx
+  else
+    Idx := GetSelectedListViewDataIndex(hLvCaja);
+
   if (Idx >= 0) and (Idx <= High(DataPagos)) then
     Pago := DataPagos[Idx]
   else if Length(DataPagos) > 0 then
@@ -2263,42 +2302,61 @@ end;
 // Manejador de Doble Clic en Registros de Tablas (Modificacion Directa)
 // -------------------------------------------------------------
 
-procedure HandleListViewDoubleClick(hLv: HWND);
+type
+  tagNMITEMACTIVATE_REC = record
+    hdr: NMHDR;
+    iItem: Integer;
+    iSubItem: Integer;
+    uNewState: UINT;
+    uOldState: UINT;
+    uChanged: UINT;
+    ptAction: Windows.POINT;
+    lParam: LPARAM;
+    uKeyFlags: UINT;
+  end;
+  PNMITEMACTIVATE_REC = ^tagNMITEMACTIVATE_REC;
+
+procedure HandleListViewDoubleClick(hLv: HWND; ClickedItem: Integer = -1);
 var
   Idx: Integer;
 begin
+  if (ClickedItem >= 0) and (hLv <> 0) then
+  begin
+    SetListViewSelectedIndex(hLv, ClickedItem);
+    Idx := GetListViewItemData(hLv, ClickedItem);
+  end
+  else
+    Idx := GetSelectedListViewDataIndex(hLv);
+
+  if Idx < 0 then Exit;
+
   if hLv = hLvParcelas then
   begin
-    Idx := GetSelectedListViewDataIndex(hLvParcelas);
     if (Idx >= 0) and (Idx <= High(DataParcelas)) then
-      AccionModificarParcela;
+      AccionModificarParcela(Idx);
   end
   else if hLv = hLvInh then
   begin
-    Idx := GetSelectedListViewDataIndex(hLvInh);
     if (Idx >= 0) and (Idx <= High(DataInhumaciones)) then
-      AccionModificarInhumacion;
+      AccionModificarInhumacion(Idx);
   end
   else if hLv = hLvAfiliados then
   begin
-    Idx := GetSelectedListViewDataIndex(hLvAfiliados);
     if (Idx >= 0) and (Idx <= High(DataAfiliados)) then
-      AccionModificarAfiliado;
+      AccionModificarAfiliado(Idx);
   end
   else if hLv = hLvRecentInh then
   begin
-    Idx := GetSelectedListViewDataIndex(hLvRecentInh);
     if (Idx >= 0) and (Idx <= High(DataInhumaciones)) then
     begin
       SwitchModule(2); // Cambiar al modulo de Inhumaciones
-      AccionModificarInhumacion;
+      AccionModificarInhumacion(Idx);
     end;
   end
   else if hLv = hLvCaja then
   begin
-    Idx := GetSelectedListViewDataIndex(hLvCaja);
     if (Idx >= 0) and (Idx <= High(DataPagos)) then
-      AccionGenerarReciboPDF;
+      AccionGenerarReciboPDF(Idx);
   end;
 end;
 
@@ -2314,6 +2372,7 @@ var
   Len: Integer;
   pnm: PNMHDR;
   pnmv: PNMListView;
+  pnmia: PNMITEMACTIVATE_REC;
 begin
   case uMsg of
     WM_NOTIFY:
@@ -2330,11 +2389,28 @@ begin
           end
           else if (Integer(pnm^.code) = NM_DBLCLK) or (Integer(pnm^.code) = NM_RETURN) then
           begin
-            HandleListViewDoubleClick(pnm^.hwndFrom);
+            pnmia := PNMITEMACTIVATE_REC(lParam);
+            if (pnmia <> nil) and (pnmia^.iItem >= 0) then
+              HandleListViewDoubleClick(pnm^.hwndFrom, pnmia^.iItem)
+            else
+              HandleListViewDoubleClick(pnm^.hwndFrom, -1);
+            Result := 0;
+            Exit;
+          end
+          else if Integer(pnm^.code) = NM_CLICK then
+          begin
+            pnmia := PNMITEMACTIVATE_REC(lParam);
+            if (pnmia <> nil) and (pnmia^.iItem >= 0) then
+            begin
+              SetListViewSelectedIndex(pnm^.hwndFrom, pnmia^.iItem);
+              SetFocus(pnm^.hwndFrom);
+            end;
             Result := 0;
             Exit;
           end;
         end;
+        Result := 0;
+        Exit;
       end;
 
     WM_CTLCOLORSTATIC:
