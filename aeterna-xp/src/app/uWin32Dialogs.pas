@@ -10,6 +10,7 @@ uses
 
 function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion): Boolean; overload;
 function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion; const ParcelasRef: TParcelaArray): Boolean; overload;
+function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion; const ParcelasRef: TParcelaArray; const InhumacionesRef: TInhumacionArray): Boolean; overload;
 function ShowDlgParcela(ParentWnd: HWND; IsEdit: Boolean; var Parc: TParcela): Boolean;
 function ShowDlgAfiliado(ParentWnd: HWND; IsEdit: Boolean; var Afil: TAfiliadoSeguro): Boolean;
 function ShowDlgCobroCaja(ParentWnd: HWND; var Titular, Concepto: string; var Monto: Currency; var Metodo: TMetodoPago; var Recibo: string): Boolean;
@@ -160,7 +161,101 @@ type
     InhPtr: ^TInhumacion;
     Confirmed: Boolean;
     EdtNombre, EdtDni, EdtParcela, CmbNivel, EdtFecha, EdtEmpresa, EdtResp, EdtTel, CmbCovid, EdtObs: HWND;
+    LblInfoNivel: HWND;
+    InhumacionesPtr: ^TInhumacionArray;
   end;
+
+procedure ActualizarNivelesFosaDlg(pData: PInhDlgData);
+var
+  rawNom, cleanNom, inhClean, infoStr: string;
+  pDash, k, curLvl, firstFree: Integer;
+  OcupadoPor: array[1..3] of string;
+  hasOccupied, isFull: Boolean;
+begin
+  if (pData = nil) or (pData^.CmbNivel = 0) then Exit;
+
+  rawNom := GetEditText(pData^.EdtParcela);
+  pDash := Pos(' - ', rawNom);
+  if pDash > 0 then
+    rawNom := Copy(rawNom, 1, pDash - 1);
+  cleanNom := UpperCase(StringReplace(StringReplace(Trim(rawNom), ' ', '', [rfReplaceAll]), '-', '', [rfReplaceAll]));
+
+  OcupadoPor[1] := '';
+  OcupadoPor[2] := '';
+  OcupadoPor[3] := '';
+
+  if (cleanNom <> '') and (pData^.InhumacionesPtr <> nil) then
+  begin
+    for k := 0 to High(pData^.InhumacionesPtr^) do
+    begin
+      // Ignorar el propio registro si se está editando
+      if (pData^.InhPtr^.Id <> '') and (pData^.InhumacionesPtr^[k].Id = pData^.InhPtr^.Id) then
+        Continue;
+
+      inhClean := UpperCase(StringReplace(StringReplace(Trim(pData^.InhumacionesPtr^[k].NomenclaturaParcela), ' ', '', [rfReplaceAll]), '-', '', [rfReplaceAll]));
+      if (inhClean <> '') and (inhClean = cleanNom) then
+      begin
+        curLvl := pData^.InhumacionesPtr^[k].NivelPosicion;
+        if curLvl in [1..3] then
+          OcupadoPor[curLvl] := pData^.InhumacionesPtr^[k].NombreDifunto;
+      end;
+    end;
+  end;
+
+  // Repoblar CmbNivel con estado de cada nivel (Nivel 1 Fondo, Nivel 2 Medio, Nivel 3 Superior)
+  SendMessage(pData^.CmbNivel, CB_RESETCONTENT, 0, 0);
+
+  if OcupadoPor[1] <> '' then
+    SendMessage(pData^.CmbNivel, CB_ADDSTRING, 0, LPARAM(PChar('1 - Nivel 1 [OCUPADO: ' + OcupadoPor[1] + ']')))
+  else
+    SendMessage(pData^.CmbNivel, CB_ADDSTRING, 0, LPARAM(PChar('1 - Nivel 1 [DISPONIBLE - Fondo de fosa]')));
+
+  if OcupadoPor[2] <> '' then
+    SendMessage(pData^.CmbNivel, CB_ADDSTRING, 0, LPARAM(PChar('2 - Nivel 2 [OCUPADO: ' + OcupadoPor[2] + ']')))
+  else
+    SendMessage(pData^.CmbNivel, CB_ADDSTRING, 0, LPARAM(PChar('2 - Nivel 2 [DISPONIBLE - Nivel medio]')));
+
+  if OcupadoPor[3] <> '' then
+    SendMessage(pData^.CmbNivel, CB_ADDSTRING, 0, LPARAM(PChar('3 - Nivel 3 [OCUPADO: ' + OcupadoPor[3] + ']')))
+  else
+    SendMessage(pData^.CmbNivel, CB_ADDSTRING, 0, LPARAM(PChar('3 - Nivel 3 [DISPONIBLE - Superficie]')));
+
+  // Encontrar el primer nivel libre (1..3)
+  firstFree := 0;
+  if OcupadoPor[1] = '' then firstFree := 1
+  else if OcupadoPor[2] = '' then firstFree := 2
+  else if OcupadoPor[3] = '' then firstFree := 3;
+
+  if (pData^.InhPtr^.NivelPosicion in [1..3]) and (pData^.InhPtr^.Id <> '') then
+    SendMessage(pData^.CmbNivel, CB_SETCURSEL, pData^.InhPtr^.NivelPosicion - 1, 0)
+  else if firstFree > 0 then
+    SendMessage(pData^.CmbNivel, CB_SETCURSEL, firstFree - 1, 0)
+  else
+    SendMessage(pData^.CmbNivel, CB_SETCURSEL, 0, 0);
+
+  // Armar texto informativo para la etiqueta de fosa
+  hasOccupied := (OcupadoPor[1] <> '') or (OcupadoPor[2] <> '') or (OcupadoPor[3] <> '');
+  isFull := (OcupadoPor[1] <> '') and (OcupadoPor[2] <> '') and (OcupadoPor[3] <> '');
+
+  if cleanNom = '' then
+    infoStr := 'Seleccione una parcela para ver los niveles de la fosa.'
+  else if isFull then
+    infoStr := 'ALERTA: Fosa completa (3/3 niveles ocupados). Solo reasignar en caso de reduccion.'
+  else if hasOccupied then
+  begin
+    infoStr := 'Niveles ocupados: ';
+    if OcupadoPor[1] <> '' then infoStr := infoStr + '[N1: ' + OcupadoPor[1] + '] ';
+    if OcupadoPor[2] <> '' then infoStr := infoStr + '[N2: ' + OcupadoPor[2] + '] ';
+    if OcupadoPor[3] <> '' then infoStr := infoStr + '[N3: ' + OcupadoPor[3] + '] ';
+    if firstFree > 0 then
+      infoStr := infoStr + '-> Asignando Nivel ' + IntToStr(firstFree) + ' libre';
+  end
+  else
+    infoStr := 'Fosa completamente disponible (Niveles 1, 2 y 3 libres).';
+
+  if pData^.LblInfoNivel <> 0 then
+    SetWindowText(pData^.LblInfoNivel, PChar(infoStr));
+end;
 
 function InhDlgProc(hWnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
 var
@@ -175,6 +270,14 @@ begin
 
     WM_COMMAND:
       begin
+        // Al cambiar de parcela en el ComboBox, recalcular niveles ocupados en tiempo real
+        if (LOWORD(wParam) = 103) and ((HIWORD(wParam) = CBN_SELCHANGE) or (HIWORD(wParam) = CBN_EDITCHANGE)) then
+        begin
+          if pData <> nil then
+            ActualizarNivelesFosaDlg(pData);
+          Exit(0);
+        end;
+
         case LOWORD(wParam) of
           1: // Guardar (IDOK)
             begin
@@ -230,7 +333,7 @@ begin
   Result := DefWindowProc(hWnd, uMsg, wParam, lParam);
 end;
 
-function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion; const ParcelasRef: TParcelaArray): Boolean;
+function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion; const ParcelasRef: TParcelaArray; const InhumacionesRef: TInhumacionArray): Boolean;
 var
   wc: TWndClass;
   hDlg: HWND;
@@ -255,22 +358,23 @@ begin
 
   hDlg := CreateWindowEx(WS_EX_DLGMODALFRAME, 'AeternaInhDlgClass', PChar(Title),
     WS_POPUP or WS_CAPTION or WS_SYSMENU or WS_VISIBLE,
-    0, 0, 520, 500, ParentWnd, 0, hInstance, nil);
+    0, 0, 600, 510, ParentWnd, 0, hInstance, nil);
 
   CenterWindow(hDlg, ParentWnd);
 
   DlgData.InhPtr := @Inh;
+  DlgData.InhumacionesPtr := @InhumacionesRef;
   DlgData.Confirmed := False;
 
   // Controles
   CreateDlgLabel(hDlg, 'Nombre Completo Difunto (*):', 20, 15, 200, 18);
-  DlgData.EdtNombre := CreateDlgEdit(hDlg, Inh.NombreDifunto, 20, 35, 460, 24, 101);
+  DlgData.EdtNombre := CreateDlgEdit(hDlg, Inh.NombreDifunto, 20, 35, 540, 24, 101);
 
-  CreateDlgLabel(hDlg, 'DNI Difunto:', 20, 70, 140, 18);
-  DlgData.EdtDni := CreateDlgEdit(hDlg, Inh.DniDifunto, 20, 90, 140, 24, 102);
+  CreateDlgLabel(hDlg, 'DNI Difunto:', 20, 68, 110, 18);
+  DlgData.EdtDni := CreateDlgEdit(hDlg, Inh.DniDifunto, 20, 88, 110, 24, 102);
 
-  CreateDlgLabel(hDlg, 'Buscar / Elegir Parcela (*):', 180, 70, 160, 18);
-  DlgData.EdtParcela := CreateDlgEditableCombo(hDlg, 180, 90, 160, 200, 103);
+  CreateDlgLabel(hDlg, 'Buscar / Elegir Parcela (*):', 140, 68, 190, 18);
+  DlgData.EdtParcela := CreateDlgEditableCombo(hDlg, 140, 88, 190, 220, 103);
   for i := 0 to High(ParcelasRef) do
   begin
     SendMessage(DlgData.EdtParcela, CB_ADDSTRING, 0, LPARAM(PChar(ParcelasRef[i].Nomenclatura + ' - ' + ParcelasRef[i].TitularNombre)));
@@ -278,34 +382,30 @@ begin
   if Inh.NomenclaturaParcela <> '' then
     SetWindowText(DlgData.EdtParcela, PChar(Inh.NomenclaturaParcela));
 
-  CreateDlgLabel(hDlg, 'Nivel / Posicion:', 360, 70, 120, 18);
-  DlgData.CmbNivel := CreateDlgCombo(hDlg, 360, 90, 120, 100, 104);
-  SendMessage(DlgData.CmbNivel, CB_ADDSTRING, 0, LPARAM(PChar('Nivel 1 (Superior)')));
-  SendMessage(DlgData.CmbNivel, CB_ADDSTRING, 0, LPARAM(PChar('Nivel 2 (Medio)')));
-  SendMessage(DlgData.CmbNivel, CB_ADDSTRING, 0, LPARAM(PChar('Nivel 3 (Fondo)')));
-  if Inh.NivelPosicion in [1..3] then
-    SendMessage(DlgData.CmbNivel, CB_SETCURSEL, Inh.NivelPosicion - 1, 0)
-  else
-    SendMessage(DlgData.CmbNivel, CB_SETCURSEL, 0, 0);
+  CreateDlgLabel(hDlg, 'Nivel / Posicion en Fosa:', 340, 68, 220, 18);
+  DlgData.CmbNivel := CreateDlgCombo(hDlg, 340, 88, 220, 140, 104);
 
-  CreateDlgLabel(hDlg, 'Fecha Inhumacion (YYYY-MM-DD):', 20, 125, 220, 18);
+  // Etiqueta de Inspeccion de Niveles en Fosa
+  DlgData.LblInfoNivel := CreateDlgLabel(hDlg, 'Inspeccionando fosa subterranea...', 20, 118, 540, 18);
+
+  CreateDlgLabel(hDlg, 'Fecha Inhumacion (YYYY-MM-DD):', 20, 142, 260, 18);
   if Inh.FechaInhumacion = '' then
     Inh.FechaInhumacion := FormatDateTime('yyyy-mm-dd', Now);
-  DlgData.EdtFecha := CreateDlgEdit(hDlg, Inh.FechaInhumacion, 20, 145, 220, 24, 105);
+  DlgData.EdtFecha := CreateDlgEdit(hDlg, Inh.FechaInhumacion, 20, 162, 260, 24, 105);
 
-  CreateDlgLabel(hDlg, 'Empresa Funebrera Responsable:', 260, 125, 220, 18);
+  CreateDlgLabel(hDlg, 'Empresa Funebrera Responsable:', 300, 142, 260, 18);
   if Inh.EmpresaFunebrera = '' then
     Inh.EmpresaFunebrera := 'Servicios Sociales Chamical - Mat. Fun. 104';
-  DlgData.EdtEmpresa := CreateDlgEdit(hDlg, Inh.EmpresaFunebrera, 260, 145, 220, 24, 106);
+  DlgData.EdtEmpresa := CreateDlgEdit(hDlg, Inh.EmpresaFunebrera, 300, 162, 260, 24, 106);
 
-  CreateDlgLabel(hDlg, 'Nombre Familiar Responsable:', 20, 180, 220, 18);
-  DlgData.EdtResp := CreateDlgEdit(hDlg, Inh.NombreResponsable, 20, 200, 220, 24, 107);
+  CreateDlgLabel(hDlg, 'Nombre Familiar Responsable:', 20, 194, 260, 18);
+  DlgData.EdtResp := CreateDlgEdit(hDlg, Inh.NombreResponsable, 20, 214, 260, 24, 107);
 
-  CreateDlgLabel(hDlg, 'Telefono Contacto:', 260, 180, 220, 18);
-  DlgData.EdtTel := CreateDlgEdit(hDlg, Inh.TelefonoResponsable, 260, 200, 220, 24, 108);
+  CreateDlgLabel(hDlg, 'Telefono Contacto:', 300, 194, 260, 18);
+  DlgData.EdtTel := CreateDlgEdit(hDlg, Inh.TelefonoResponsable, 300, 214, 260, 24, 108);
 
-  CreateDlgLabel(hDlg, 'Protocolo Sanitario COVID-19:', 20, 235, 220, 18);
-  DlgData.CmbCovid := CreateDlgCombo(hDlg, 20, 255, 220, 80, 109);
+  CreateDlgLabel(hDlg, 'Protocolo Sanitario COVID-19:', 20, 246, 260, 18);
+  DlgData.CmbCovid := CreateDlgCombo(hDlg, 20, 266, 260, 80, 109);
   SendMessage(DlgData.CmbCovid, CB_ADDSTRING, 0, LPARAM(PChar('No (Sepelio Estandar)')));
   SendMessage(DlgData.CmbCovid, CB_ADDSTRING, 0, LPARAM(PChar('Si (Protocolo Sanitario)')));
   if Inh.EsCovid then
@@ -313,26 +413,40 @@ begin
   else
     SendMessage(DlgData.CmbCovid, CB_SETCURSEL, 0, 0);
 
-  CreateDlgLabel(hDlg, 'Observaciones / Causa:', 20, 290, 460, 18);
-  DlgData.EdtObs := CreateDlgEdit(hDlg, Inh.Observaciones, 20, 310, 460, 24, 110);
+  CreateDlgLabel(hDlg, 'Observaciones / Causa:', 20, 298, 540, 18);
+  DlgData.EdtObs := CreateDlgEdit(hDlg, Inh.Observaciones, 20, 318, 540, 24, 110);
 
   // Botones
-  CreateDlgButton(hDlg, 'Guardar en Supabase', 230, 395, 150, 36, 1, True);
-  CreateDlgButton(hDlg, 'Cancelar', 390, 395, 90, 36, 2);
+  CreateDlgButton(hDlg, 'Guardar en Supabase', 280, 410, 170, 36, 1, True);
+  CreateDlgButton(hDlg, 'Cancelar', 460, 410, 100, 36, 2);
 
   SetWindowLongPtr(hDlg, GWLP_USERDATA, LONG_PTR(@DlgData));
+
+  // Inicializar estado de niveles para la parcela elegida
+  ActualizarNivelesFosaDlg(@DlgData);
+
   SetFocus(DlgData.EdtNombre);
 
   RunModalLoop(hDlg, ParentWnd);
   Result := DlgData.Confirmed;
 end;
 
+function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion; const ParcelasRef: TParcelaArray): Boolean;
+var
+  DummyInh: TInhumacionArray;
+begin
+  SetLength(DummyInh, 0);
+  Result := ShowDlgInhumacion(ParentWnd, IsEdit, Inh, ParcelasRef, DummyInh);
+end;
+
 function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion): Boolean;
 var
-  Dummy: TParcelaArray;
+  DummyParc: TParcelaArray;
+  DummyInh: TInhumacionArray;
 begin
-  SetLength(Dummy, 0);
-  Result := ShowDlgInhumacion(ParentWnd, IsEdit, Inh, Dummy);
+  SetLength(DummyParc, 0);
+  SetLength(DummyInh, 0);
+  Result := ShowDlgInhumacion(ParentWnd, IsEdit, Inh, DummyParc, DummyInh);
 end;
 
 // ============================================================================

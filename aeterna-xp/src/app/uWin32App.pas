@@ -154,7 +154,7 @@ var
   hBtnRepActa, hBtnRepFolio, hBtnRepRecibo, hBtnRepPlanilla, hBtnRepCierre, hBtnRepCarpeta, hBtnRepPadronParcMod5: HWND;
 
   // Estado de Ordenamiento de Columnas
-  SortColParcelas: Integer = 0;   // 0: Titular, 1: Parcela, 2: Sector, 3: Fila, 4: Nro, 5: Estado, 6: Fecha/Reg, 7: Ultimo Pago, 8: Saldo
+  SortColParcelas: Integer = 0;   // 0: Titular, 1: Difuntos, 2: Parcela, 3: Sector, 4: Fila, 5: Nro, 6: Estado, 7: Fecha/Reg, 8: Ultimo Pago, 9: Saldo
   SortAscParcelas: Boolean = True;
 
   SortColInh: Integer = 0;        // 0: Fecha/Hora Inh, 1: Difunto, 2: DNI, 3: Parcela, 4: Nivel, 5: Empresa, 6: Protocolo
@@ -167,8 +167,8 @@ var
   SortAscCaja: Boolean = False;
 
 const
-  ColNamesParcelas: array[0..8] of string = (
-    'Titular de Concesion', 'Parcela', 'Sector', 'Fila / Mz', 'Nro Parcela',
+  ColNamesParcelas: array[0..9] of string = (
+    'Titular (Condicion)', 'Difuntos en Fosa (Fallecidos)', 'Parcela', 'Sector', 'Fila / Mz', 'Nro Parcela',
     'Estado Parcela', 'Fecha / Registro', 'Ultimo Pago', 'Saldo'
   );
   ColNamesInh: array[0..6] of string = (
@@ -571,17 +571,56 @@ begin
   end;
 end;
 
+function NormalizarNomenclatura(const S: string): string;
+begin
+  Result := UpperCase(Trim(S));
+  Result := StringReplace(Result, ' ', '', [rfReplaceAll]);
+  Result := StringReplace(Result, '-', '', [rfReplaceAll]);
+end;
+
+function ObtenerDifuntosDeParcela(const Nom: string): string;
+var
+  k: Integer;
+  TargetNorm, InhNorm, NivelStr, NombreStr: string;
+begin
+  Result := '';
+  TargetNorm := NormalizarNomenclatura(Nom);
+  if TargetNorm = '' then Exit;
+
+  for k := 0 to High(DataInhumaciones) do
+  begin
+    InhNorm := NormalizarNomenclatura(DataInhumaciones[k].NomenclaturaParcela);
+    if (InhNorm <> '') and (InhNorm = TargetNorm) then
+    begin
+      NombreStr := Trim(DataInhumaciones[k].NombreDifunto);
+      if NombreStr = '' then NombreStr := 'Difunto sin nombre';
+      if DataInhumaciones[k].NivelPosicion > 0 then
+        NivelStr := '[N' + IntToStr(DataInhumaciones[k].NivelPosicion) + '] '
+      else
+        NivelStr := '';
+
+      if Result <> '' then
+        Result := Result + ' / ';
+      Result := Result + NivelStr + NombreStr;
+    end;
+  end;
+
+  if Result = '' then
+    Result := 'Sin difuntos (Libre)';
+end;
+
 function ParcelaTieneInhumados(const Nom: string): Boolean;
 var
   k: Integer;
-  NomTrim: string;
+  NomTrim, InhTrim: string;
 begin
   Result := False;
-  NomTrim := UpperCase(Trim(Nom));
+  NomTrim := NormalizarNomenclatura(Nom);
   if NomTrim = '' then Exit;
   for k := 0 to High(DataInhumaciones) do
   begin
-    if UpperCase(Trim(DataInhumaciones[k].NomenclaturaParcela)) = NomTrim then
+    InhTrim := NormalizarNomenclatura(DataInhumaciones[k].NomenclaturaParcela);
+    if InhTrim = NomTrim then
     begin
       Result := True;
       Exit;
@@ -672,33 +711,40 @@ function CompareParcelasByCol(Idx1, Idx2: Integer; Col: Integer; Asc: Boolean): 
 var
   cmp, n1, n2: Integer;
   diffCurr: Currency;
+  s1, s2: string;
 begin
   case Col of
     0: cmp := CompareText(DataParcelas[Idx1].TitularNombre, DataParcelas[Idx2].TitularNombre);
-    1: cmp := CompareNaturalNomenclatura(DataParcelas[Idx1].Nomenclatura, DataParcelas[Idx2].Nomenclatura);
-    2: cmp := CompareText(DataParcelas[Idx1].SectorId, DataParcelas[Idx2].SectorId);
-    3:
+    1:
+      begin
+        s1 := ObtenerDifuntosDeParcela(DataParcelas[Idx1].Nomenclatura);
+        s2 := ObtenerDifuntosDeParcela(DataParcelas[Idx2].Nomenclatura);
+        cmp := CompareText(s1, s2);
+      end;
+    2: cmp := CompareNaturalNomenclatura(DataParcelas[Idx1].Nomenclatura, DataParcelas[Idx2].Nomenclatura);
+    3: cmp := CompareText(DataParcelas[Idx1].SectorId, DataParcelas[Idx2].SectorId);
+    4:
       begin
         n1 := StrToIntDef(DataParcelas[Idx1].ManzanaFila, 0);
         n2 := StrToIntDef(DataParcelas[Idx2].ManzanaFila, 0);
         if n1 <> n2 then cmp := n1 - n2
         else cmp := CompareText(DataParcelas[Idx1].ManzanaFila, DataParcelas[Idx2].ManzanaFila);
       end;
-    4:
+    5:
       begin
         n1 := StrToIntDef(DataParcelas[Idx1].NumeroParcela, 0);
         n2 := StrToIntDef(DataParcelas[Idx2].NumeroParcela, 0);
         if n1 <> n2 then cmp := n1 - n2
         else cmp := CompareText(DataParcelas[Idx1].NumeroParcela, DataParcelas[Idx2].NumeroParcela);
       end;
-    5: cmp := CompareText(EstadoParcelaToDisplay(DataParcelas[Idx1].Estado), EstadoParcelaToDisplay(DataParcelas[Idx2].Estado));
-    6:
+    6: cmp := CompareText(EstadoParcelaToDisplay(DataParcelas[Idx1].Estado), EstadoParcelaToDisplay(DataParcelas[Idx2].Estado));
+    7:
       begin
         cmp := CompareText(DataParcelas[Idx1].CreatedAt, DataParcelas[Idx2].CreatedAt);
         if cmp = 0 then cmp := CompareText(DataParcelas[Idx1].FechaAdquisicion, DataParcelas[Idx2].FechaAdquisicion);
       end;
-    7: cmp := CompareText(DataParcelas[Idx1].FechaUltimoPago, DataParcelas[Idx2].FechaUltimoPago);
-    8:
+    8: cmp := CompareText(DataParcelas[Idx1].FechaUltimoPago, DataParcelas[Idx2].FechaUltimoPago);
+    9:
       begin
         diffCurr := DataParcelas[Idx1].SaldoMantenimiento - DataParcelas[Idx2].SaldoMantenimiento;
         if diffCurr > 0 then cmp := 1
@@ -914,7 +960,7 @@ var
   i, count, SecIdx, EstIdx, SaldoIdx: Integer;
   PasaSec, PasaEst, PasaSaldo, PasaText, PasaFecha: Boolean;
   Indices: array of Integer;
-  SearchText, NomU, TitU, FilaU, NroU, FechaDesde, FechaHasta, FechaRegComp, FechaRegStr: string;
+  SearchText, NomU, TitU, FilaU, NroU, DifU, FechaDesde, FechaHasta, FechaRegComp, FechaRegStr, TitularStr, DifuntosStr: string;
 begin
   ClearListView(hLvParcelas);
   SecIdx := SendMessage(hCmbSector, CB_GETCURSEL, 0, 0);
@@ -958,8 +1004,10 @@ begin
       TitU := UpperCase(DataParcelas[i].TitularNombre);
       FilaU := UpperCase(DataParcelas[i].ManzanaFila);
       NroU := UpperCase(DataParcelas[i].NumeroParcela);
+      DifU := UpperCase(ObtenerDifuntosDeParcela(DataParcelas[i].Nomenclatura));
       PasaText := (Pos(SearchText, NomU) > 0) or (Pos(SearchText, TitU) > 0) or
-                  (Pos(SearchText, FilaU) > 0) or (Pos(SearchText, NroU) > 0);
+                  (Pos(SearchText, FilaU) > 0) or (Pos(SearchText, NroU) > 0) or
+                  (Pos(SearchText, DifU) > 0);
     end;
 
     PasaFecha := True;
@@ -999,8 +1047,21 @@ begin
     else
       FechaRegStr := '-';
 
+    if Trim(DataParcelas[Indices[i]].TitularNombre) <> '' then
+    begin
+      if SameText(Trim(DataParcelas[Indices[i]].TitularEstadoVital), 'fallecido') then
+        TitularStr := DataParcelas[Indices[i]].TitularNombre + ' [FALLECIDO]'
+      else
+        TitularStr := DataParcelas[Indices[i]].TitularNombre + ' [VIVO]';
+    end
+    else
+      TitularStr := '(Sin Titular Asignado)';
+
+    DifuntosStr := ObtenerDifuntosDeParcela(DataParcelas[Indices[i]].Nomenclatura);
+
     AddListViewItemWithParam(hLvParcelas, i, Indices[i], [
-      BoolToTexto(DataParcelas[Indices[i]].TitularNombre <> '', DataParcelas[Indices[i]].TitularNombre, '(Sin Titular Asignado)'),
+      TitularStr,
+      DifuntosStr,
       DataParcelas[Indices[i]].Nomenclatura,
       BoolToTexto(DataParcelas[Indices[i]].SectorId <> '', DataParcelas[Indices[i]].SectorId, '-'),
       DataParcelas[Indices[i]].ManzanaFila,
@@ -1274,7 +1335,7 @@ begin
     else
     begin
       SortColParcelas := ColIndex;
-      if ColIndex = 8 then SortAscParcelas := False
+      if ColIndex = 9 then SortAscParcelas := False
       else SortAscParcelas := True;
     end;
     FiltrarYMostrarParcelas;
@@ -1439,7 +1500,7 @@ begin
   Inh.NivelPosicion := 1;
   Inh.EmpresaFunebrera := 'Servicios Sociales Chamical - Mat. Fun. 104';
 
-  if ShowDlgInhumacion(hMainWnd, False, Inh, DataParcelas) then
+  if ShowDlgInhumacion(hMainWnd, False, Inh, DataParcelas, DataInhumaciones) then
   begin
     SetStatusMessage('Guardando nueva inhumacion en Supabase Cloud...');
     if TInhumacionesService.CrearInhumacion(Inh) then
@@ -1482,7 +1543,7 @@ begin
   end;
 
   Inh := DataInhumaciones[Idx];
-  if ShowDlgInhumacion(hMainWnd, True, Inh, DataParcelas) then
+  if ShowDlgInhumacion(hMainWnd, True, Inh, DataParcelas, DataInhumaciones) then
   begin
     SetStatusMessage('Actualizando acta de inhumacion en Supabase...');
     if TInhumacionesService.ActualizarInhumacion(Inh.Id, Inh) then
@@ -2449,15 +2510,16 @@ begin
   AddControlToModule(1, hBtnFiltrarFechaParc);
 
   hLvParcelas := CreateListView(hWnd, 15, 175, 990, 435, IDC_LV_PARCELAS);
-  AddListViewColumn(hLvParcelas, 0, 'Titular de Concesion', 220);
-  AddListViewColumn(hLvParcelas, 1, 'Parcela', 105);
-  AddListViewColumn(hLvParcelas, 2, 'Sector', 70);
-  AddListViewColumn(hLvParcelas, 3, 'Fila / Mz', 70);
-  AddListViewColumn(hLvParcelas, 4, 'Nro Parcela', 80);
-  AddListViewColumn(hLvParcelas, 5, 'Estado Parcela', 100);
-  AddListViewColumn(hLvParcelas, 6, 'Fecha / Registro', 120);
-  AddListViewColumn(hLvParcelas, 7, 'Ultimo Pago', 100);
-  AddListViewColumn(hLvParcelas, 8, 'Saldo', 110);
+  AddListViewColumn(hLvParcelas, 0, 'Titular (Condicion)', 190);
+  AddListViewColumn(hLvParcelas, 1, 'Difuntos en Fosa (Fallecidos)', 240);
+  AddListViewColumn(hLvParcelas, 2, 'Parcela', 95);
+  AddListViewColumn(hLvParcelas, 3, 'Sector', 60);
+  AddListViewColumn(hLvParcelas, 4, 'Fila / Mz', 65);
+  AddListViewColumn(hLvParcelas, 5, 'Nro Parcela', 75);
+  AddListViewColumn(hLvParcelas, 6, 'Estado Parcela', 100);
+  AddListViewColumn(hLvParcelas, 7, 'Fecha / Registro', 110);
+  AddListViewColumn(hLvParcelas, 8, 'Ultimo Pago', 95);
+  AddListViewColumn(hLvParcelas, 9, 'Saldo', 100);
   AddControlToModule(1, hLvParcelas);
 
   // ===========================================================

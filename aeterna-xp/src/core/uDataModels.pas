@@ -58,6 +58,7 @@ type
     TitularId: string;
     TitularNombre: string;
     TitularDni: string;
+    TitularEstadoVital: string; // 'vivo' | 'fallecido'
     Estado: TEstadoParcela;
     SaldoMantenimiento: Currency;
     FechaAdquisicion: string;

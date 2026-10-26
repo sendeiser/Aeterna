@@ -64,10 +64,10 @@ begin
       Result[i].CreatedAt := Item.Get('created_at', '');
       Result[i].Notas := Item.Get('notas', '');
 
-      // Parse titular
       Result[i].TitularNombre := '';
       Result[i].TitularDni := '';
       Result[i].TitularId := '';
+      Result[i].TitularEstadoVital := 'vivo';
       if Item.Find('titular') <> nil then
       begin
         if Item.Types['titular'] = jtObject then
@@ -76,6 +76,9 @@ begin
           Result[i].TitularId := TitularObj.Get('id', '');
           Result[i].TitularNombre := TitularObj.Get('nombre_completo', '');
           Result[i].TitularDni := TitularObj.Get('dni', '');
+          Result[i].TitularEstadoVital := TitularObj.Get('estado_vital', '');
+          if Result[i].TitularEstadoVital = '' then
+            Result[i].TitularEstadoVital := TitularObj.Get('estado_titular', 'vivo');
         end;
       end;
       if (Result[i].TitularNombre = '') and (Pos('Titular:', Result[i].Notas) > 0) then
