@@ -32,6 +32,7 @@ import {
   upsertParcelaSupabase,
   deleteParcelaSupabase,
   insertInhumacionSupabase,
+  updateInhumacionSupabase,
   deleteInhumacionSupabase,
   upsertAfiliadoSupabase,
   deleteAfiliadoSupabase,
@@ -648,7 +649,11 @@ export default function App() {
 
     // Supabase Cloud Sync
     if (isSupabaseConfigured && inhumacionTarget) {
-      await insertInhumacionSupabase(inhumacionTarget)
+      if (datos.id || editingInhumacion) {
+        await updateInhumacionSupabase(inhumacionTarget)
+      } else {
+        await insertInhumacionSupabase(inhumacionTarget)
+      }
     }
   }
 
@@ -711,9 +716,10 @@ export default function App() {
   }
 
   const handleDeleteInhumacion = async (inhId: string) => {
+    const target = inhumaciones.find((i) => i.id === inhId)
     setInhumaciones((prev) => prev.filter((i) => i.id !== inhId))
     if (isSupabaseConfigured) {
-      await deleteInhumacionSupabase(inhId)
+      await deleteInhumacionSupabase(inhId, target)
     }
   }
 

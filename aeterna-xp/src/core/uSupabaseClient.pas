@@ -12,6 +12,7 @@ type
   TSupabaseClient = class
   private
     FHttpClient: TSimpleHttpClient;
+    FLastErrorMessage: string;
   public
     constructor Create;
     destructor Destroy; override;
@@ -20,6 +21,8 @@ type
     function Insert(const ATable: string; AData: TJSONObject): TJSONObject;
     function Update(const ATable: string; const AFilter: string; AData: TJSONObject): Boolean;
     function Delete(const ATable: string; const AFilter: string): Boolean;
+
+    property LastErrorMessage: string read FLastErrorMessage;
   end;
 
 function Supabase: TSupabaseClient;
@@ -45,6 +48,7 @@ begin
   inherited Create;
   Cfg := AppConfig;
   FHttpClient := TSimpleHttpClient.Create(Cfg.SupabaseUrl, Cfg.SupabaseAnonKey);
+  FLastErrorMessage := '';
 end;
 
 destructor TSupabaseClient.Destroy;
@@ -61,6 +65,7 @@ var
   Data: TJSONData;
 begin
   Result := nil;
+  FLastErrorMessage := '';
   Resp := FHttpClient.Get(ATable, AQueryParams);
   if Resp.Success and (Resp.Body <> '') then
   begin
@@ -79,7 +84,9 @@ begin
     finally
       Parser.Free;
     end;
-  end;
+  end
+  else if not Resp.Success then
+    FLastErrorMessage := Resp.ErrorMessage;
 end;
 
 function TSupabaseClient.Insert(const ATable: string; AData: TJSONObject): TJSONObject;
@@ -89,6 +96,7 @@ var
   Data: TJSONData;
 begin
   Result := nil;
+  FLastErrorMessage := '';
   if AData = nil then Exit;
 
   Resp := FHttpClient.Post(ATable, AData.AsJSON);
@@ -109,7 +117,9 @@ begin
     finally
       Parser.Free;
     end;
-  end;
+  end
+  else if not Resp.Success then
+    FLastErrorMessage := Resp.ErrorMessage;
 end;
 
 function TSupabaseClient.Update(const ATable: string; const AFilter: string; AData: TJSONObject): Boolean;
@@ -117,18 +127,24 @@ var
   Resp: THttpResponse;
 begin
   Result := False;
+  FLastErrorMessage := '';
   if AData = nil then Exit;
 
   Resp := FHttpClient.Patch(ATable, AFilter, AData.AsJSON);
   Result := Resp.Success;
+  if not Result then
+    FLastErrorMessage := Resp.ErrorMessage;
 end;
 
 function TSupabaseClient.Delete(const ATable: string; const AFilter: string): Boolean;
 var
   Resp: THttpResponse;
 begin
+  FLastErrorMessage := '';
   Resp := FHttpClient.Delete(ATable, AFilter);
   Result := Resp.Success;
+  if not Result then
+    FLastErrorMessage := Resp.ErrorMessage;
 end;
 
 initialization

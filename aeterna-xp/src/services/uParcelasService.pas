@@ -167,29 +167,54 @@ end;
 class function TParcelasService.ActualizarParcela(const AId: string; const AParcela: TParcela): Boolean;
 var
   Data: TJSONObject;
+  Filter, NotasFinales: string;
 begin
   Result := False;
-  if AId = '' then Exit;
+  if (AId <> '') and (Pos('-', AId) > 0) then
+    Filter := 'id=eq.' + AId
+  else if AParcela.Nomenclatura <> '' then
+    Filter := 'nomenclatura=eq.' + AParcela.Nomenclatura
+  else
+    Exit;
+
+  NotasFinales := AParcela.Notas;
+  if (AParcela.TitularNombre <> '') and (Pos(AParcela.TitularNombre, NotasFinales) = 0) then
+  begin
+    if NotasFinales <> '' then
+      NotasFinales := 'Titular: ' + AParcela.TitularNombre + '. ' + NotasFinales
+    else
+      NotasFinales := 'Titular: ' + AParcela.TitularNombre;
+  end;
+
   Data := TJSONObject.Create;
   try
     Data.Add('nomenclatura', AParcela.Nomenclatura);
-    Data.Add('sector_id', AParcela.SectorId);
-    Data.Add('manzana_fila', AParcela.ManzanaFila);
-    Data.Add('numero_parcela', AParcela.NumeroParcela);
+    if AParcela.SectorId <> '' then
+      Data.Add('sector_id', AParcela.SectorId);
+    if AParcela.ManzanaFila <> '' then
+      Data.Add('manzana_fila', AParcela.ManzanaFila);
+    if AParcela.NumeroParcela <> '' then
+      Data.Add('numero_parcela', AParcela.NumeroParcela);
     Data.Add('estado', EstadoParcelaToStr(AParcela.Estado));
     Data.Add('saldo_mantenimiento', Double(AParcela.SaldoMantenimiento));
-    Data.Add('notas', AParcela.Notas);
-    Result := Supabase.Update('parcelas', 'id=eq.' + AId, Data);
+    Data.Add('notas', NotasFinales);
+    Result := Supabase.Update('parcelas', Filter, Data);
   finally
     Data.Free;
   end;
 end;
 
 class function TParcelasService.EliminarParcela(const AId: string): Boolean;
+var
+  Filter: string;
 begin
   Result := False;
   if AId = '' then Exit;
-  Result := Supabase.Delete('parcelas', 'id=eq.' + AId);
+  if Pos('-', AId) > 0 then
+    Filter := 'id=eq.' + AId
+  else
+    Filter := 'nomenclatura=eq.' + AId;
+  Result := Supabase.Delete('parcelas', Filter);
 end;
 
 end.

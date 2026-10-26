@@ -1326,7 +1326,12 @@ begin
       CargarDatosIniciales;
     end
     else
-      MessageBox(hMainWnd, 'Error al asentar la inhumacion en Supabase. Verifique la conexion a Internet.', 'Error', MB_ICONERROR or MB_OK);
+    begin
+      if Supabase.LastErrorMessage <> '' then
+        MessageBox(hMainWnd, PChar('Error al asentar la inhumacion en Supabase:'#13#10 + Supabase.LastErrorMessage), 'Error', MB_ICONERROR or MB_OK)
+      else
+        MessageBox(hMainWnd, 'Error al asentar la inhumacion en Supabase. Verifique la conexion a Internet.', 'Error', MB_ICONERROR or MB_OK);
+    end;
   end;
 end;
 
@@ -1356,7 +1361,12 @@ begin
       CargarDatosIniciales;
     end
     else
-      MessageBox(hMainWnd, 'Error al actualizar en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+    begin
+      if Supabase.LastErrorMessage <> '' then
+        MessageBox(hMainWnd, PChar('Error al actualizar en Supabase:'#13#10 + Supabase.LastErrorMessage), 'Error', MB_ICONERROR or MB_OK)
+      else
+        MessageBox(hMainWnd, 'Error al actualizar en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+    end;
   end;
 end;
 
@@ -1388,7 +1398,12 @@ begin
       CargarDatosIniciales;
     end
     else
-      MessageBox(hMainWnd, 'Error al eliminar el registro en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+    begin
+      if Supabase.LastErrorMessage <> '' then
+        MessageBox(hMainWnd, PChar('Error al eliminar el registro en Supabase:'#13#10 + Supabase.LastErrorMessage), 'Error', MB_ICONERROR or MB_OK)
+      else
+        MessageBox(hMainWnd, 'Error al eliminar el registro en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+    end;
   end;
 end;
 
@@ -1414,7 +1429,12 @@ begin
       CargarDatosIniciales;
     end
     else
-      MessageBox(hMainWnd, 'Error al crear la parcela en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+    begin
+      if Supabase.LastErrorMessage <> '' then
+        MessageBox(hMainWnd, PChar('Error al crear la parcela en Supabase:'#13#10 + Supabase.LastErrorMessage), 'Error', MB_ICONERROR or MB_OK)
+      else
+        MessageBox(hMainWnd, 'Error al crear la parcela en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+    end;
   end;
 end;
 
@@ -1444,7 +1464,12 @@ begin
       CargarDatosIniciales;
     end
     else
-      MessageBox(hMainWnd, 'Error al actualizar la parcela en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+    begin
+      if Supabase.LastErrorMessage <> '' then
+        MessageBox(hMainWnd, PChar('Error al actualizar la parcela en Supabase:'#13#10 + Supabase.LastErrorMessage), 'Error', MB_ICONERROR or MB_OK)
+      else
+        MessageBox(hMainWnd, 'Error al actualizar la parcela en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+    end;
   end;
 end;
 
@@ -1473,7 +1498,12 @@ begin
       CargarDatosIniciales;
     end
     else
-      MessageBox(hMainWnd, 'Error al eliminar la parcela.', 'Error', MB_ICONERROR or MB_OK);
+    begin
+      if Supabase.LastErrorMessage <> '' then
+        MessageBox(hMainWnd, PChar('Error al eliminar la parcela en Supabase:'#13#10 + Supabase.LastErrorMessage), 'Error', MB_ICONERROR or MB_OK)
+      else
+        MessageBox(hMainWnd, 'Error al eliminar la parcela.', 'Error', MB_ICONERROR or MB_OK);
+    end;
   end;
 end;
 
@@ -1572,7 +1602,12 @@ begin
       CargarDatosIniciales;
     end
     else
-      MessageBox(hMainWnd, 'Error al registrar afiliado en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+    begin
+      if Supabase.LastErrorMessage <> '' then
+        MessageBox(hMainWnd, PChar('Error al registrar afiliado en Supabase:'#13#10 + Supabase.LastErrorMessage), 'Error', MB_ICONERROR or MB_OK)
+      else
+        MessageBox(hMainWnd, 'Error al registrar afiliado en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+    end;
   end;
 end;
 
@@ -1602,7 +1637,12 @@ begin
       CargarDatosIniciales;
     end
     else
-      MessageBox(hMainWnd, 'Error al actualizar afiliado en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+    begin
+      if Supabase.LastErrorMessage <> '' then
+        MessageBox(hMainWnd, PChar('Error al actualizar afiliado en Supabase:'#13#10 + Supabase.LastErrorMessage), 'Error', MB_ICONERROR or MB_OK)
+      else
+        MessageBox(hMainWnd, 'Error al actualizar afiliado en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+    end;
   end;
 end;
 
@@ -1633,7 +1673,12 @@ begin
       CargarDatosIniciales;
     end
     else
-      MessageBox(hMainWnd, 'Error al eliminar el afiliado.', 'Error', MB_ICONERROR or MB_OK);
+    begin
+      if Supabase.LastErrorMessage <> '' then
+        MessageBox(hMainWnd, PChar('Error al eliminar el afiliado en Supabase:'#13#10 + Supabase.LastErrorMessage), 'Error', MB_ICONERROR or MB_OK)
+      else
+        MessageBox(hMainWnd, 'Error al eliminar el afiliado.', 'Error', MB_ICONERROR or MB_OK);
+    end;
   end;
 end;
 
@@ -1814,7 +1859,12 @@ begin
       CargarDatosIniciales;
     end
     else
-      MessageBox(hMainWnd, 'Error al registrar el egreso en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+    begin
+      if Supabase.LastErrorMessage <> '' then
+        MessageBox(hMainWnd, PChar('Error al registrar el egreso en Supabase:'#13#10 + Supabase.LastErrorMessage), 'Error', MB_ICONERROR or MB_OK)
+      else
+        MessageBox(hMainWnd, 'Error al registrar el egreso en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+    end;
   end;
 end;
 
@@ -1822,6 +1872,7 @@ procedure AccionEliminarCobroCaja;
 var
   Idx: Integer;
   Pago: TPagoMantenimiento;
+  IdToDelete: string;
 begin
   Idx := GetSelectedListViewDataIndex(hLvCaja);
   if (Idx < 0) or (Idx > High(DataPagos)) then
@@ -1839,13 +1890,21 @@ begin
     'Confirmar Anulacion', MB_ICONQUESTION or MB_YESNO) = IDYES then
   begin
     SetStatusMessage('Anulando movimiento de caja en Supabase...');
-    if TCajaService.EliminarPago(Pago.Id) then
+    IdToDelete := Pago.Id;
+    if IdToDelete = '' then
+      IdToDelete := Pago.NroRecibo;
+    if TCajaService.EliminarPago(IdToDelete) then
     begin
       MessageBox(hMainWnd, 'Movimiento anulado exitosamente.', 'Operacion Completada', MB_ICONINFORMATION or MB_OK);
       CargarDatosIniciales;
     end
     else
-      MessageBox(hMainWnd, 'Error al anular el movimiento en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+    begin
+      if Supabase.LastErrorMessage <> '' then
+        MessageBox(hMainWnd, PChar('Error al anular el movimiento en Supabase:'#13#10 + Supabase.LastErrorMessage), 'Error', MB_ICONERROR or MB_OK)
+      else
+        MessageBox(hMainWnd, 'Error al anular el movimiento en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+    end;
   end;
 end;
 
@@ -2459,32 +2518,12 @@ end;
 // Manejador de Doble Clic en Registros de Tablas (Modificacion Directa)
 // -------------------------------------------------------------
 
-type
-  tagNMITEMACTIVATE_REC = record
-    hdr: NMHDR;
-    iItem: Integer;
-    iSubItem: Integer;
-    uNewState: UINT;
-    uOldState: UINT;
-    uChanged: UINT;
-    ptAction: Windows.POINT;
-    lParam: LPARAM;
-    uKeyFlags: UINT;
-  end;
-  PNMITEMACTIVATE_REC = ^tagNMITEMACTIVATE_REC;
-
-procedure HandleListViewDoubleClick(hLv: HWND; ClickedItem: Integer = -1);
+procedure HandleListViewDoubleClick(hLv: HWND);
 var
   Idx: Integer;
 begin
-  if (ClickedItem >= 0) and (hLv <> 0) then
-  begin
-    SetListViewSelectedIndex(hLv, ClickedItem);
-    Idx := GetListViewItemData(hLv, ClickedItem);
-  end
-  else
-    Idx := GetSelectedListViewDataIndex(hLv);
-
+  if hLv = 0 then Exit;
+  Idx := GetSelectedListViewDataIndex(hLv);
   if Idx < 0 then Exit;
 
   if hLv = hLvParcelas then
@@ -2529,7 +2568,6 @@ var
   Len: Integer;
   pnm: PNMHDR;
   pnmv: PNMListView;
-  pnmia: PNMITEMACTIVATE_REC;
 begin
   case uMsg of
     WM_NOTIFY:
@@ -2546,28 +2584,11 @@ begin
           end
           else if (Integer(pnm^.code) = NM_DBLCLK) or (Integer(pnm^.code) = NM_RETURN) then
           begin
-            pnmia := PNMITEMACTIVATE_REC(lParam);
-            if (pnmia <> nil) and (pnmia^.iItem >= 0) then
-              HandleListViewDoubleClick(pnm^.hwndFrom, pnmia^.iItem)
-            else
-              HandleListViewDoubleClick(pnm^.hwndFrom, -1);
-            Result := 0;
-            Exit;
-          end
-          else if Integer(pnm^.code) = NM_CLICK then
-          begin
-            pnmia := PNMITEMACTIVATE_REC(lParam);
-            if (pnmia <> nil) and (pnmia^.iItem >= 0) then
-            begin
-              SetListViewSelectedIndex(pnm^.hwndFrom, pnmia^.iItem);
-              SetFocus(pnm^.hwndFrom);
-            end;
+            HandleListViewDoubleClick(pnm^.hwndFrom);
             Result := 0;
             Exit;
           end;
         end;
-        Result := 0;
-        Exit;
       end;
 
     WM_CTLCOLORSTATIC:

@@ -501,43 +501,72 @@ export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
 export async function upsertParcelaSupabase(parcela: Parcela): Promise<boolean> {
   if (!isSupabaseConfigured) return false
   try {
-    let titularId: string | null = null
+    let titularId: string | null = (parcela as any).titular_id || null
 
-    // 1. Upsert titular si existe
+    // 1. Vincular titular si existe
     if (parcela.titular?.nombre_completo) {
-      const { data: titData } = await supabase
+      const titNombre = parcela.titular.nombre_completo.trim()
+      const { data: existingTit } = await supabase
         .from('titulares')
-        .upsert(
-          {
-            nombre_completo: parcela.titular.nombre_completo,
+        .select('id')
+        .eq('nombre_completo', titNombre)
+        .maybeSingle()
+
+      if (existingTit?.id) {
+        titularId = existingTit.id
+        // Actualizar datos de contacto si cambiaron
+        if (parcela.titular.dni || parcela.titular.telefono || parcela.titular.direccion) {
+          await supabase
+            .from('titulares')
+            .update({
+              dni: parcela.titular.dni || null,
+              telefono: parcela.titular.telefono || null,
+              direccion: parcela.titular.direccion || 'Chamical',
+            })
+            .eq('id', titularId)
+        }
+      } else {
+        const { data: newTit } = await supabase
+          .from('titulares')
+          .insert({
+            nombre_completo: titNombre,
             dni: parcela.titular.dni || null,
             telefono: parcela.titular.telefono || null,
             direccion: parcela.titular.direccion || 'Chamical',
             estado_titular: 'activo',
-          },
-          { onConflict: 'nombre_completo' }
-        )
-        .select('id')
-        .single()
+          })
+          .select('id')
+          .single()
 
-      if (titData) titularId = titData.id
+        if (newTit?.id) titularId = newTit.id
+      }
     }
 
+    const titularNombreTexto = parcela.titular?.nombre_completo || ''
+    let notasTexto = parcela.notas || ''
+    if (titularNombreTexto && !notasTexto.includes(titularNombreTexto)) {
+      notasTexto = `Titular: ${titularNombreTexto}. ${notasTexto}`.trim()
+    }
+
+    const sectorId = parcela.sector_id || (parcela.nomenclatura ? parcela.nomenclatura.split('-')[0] : 'A')
+    const fila = parcela.manzana_fila || (parcela.nomenclatura ? parcela.nomenclatura.split('-')[1] || '01' : '01')
+    const num = parcela.numero_parcela ? String(parcela.numero_parcela) : (parcela.nomenclatura ? parcela.nomenclatura.split('-')[2] || '1' : '1')
+
     // 2. Upsert parcela
-    const { error } = await supabase.from('parcelas').upsert(
-      {
-        nomenclatura: parcela.nomenclatura,
-        manzana_fila: parcela.manzana_fila,
-        numero_parcela: parcela.numero_parcela ? String(parcela.numero_parcela) : null,
-        capacidad_total: parcela.capacidad_total || 3,
-        espacios_ocupados: parcela.espacios_ocupados || 0,
-        estado: parcela.estado,
-        saldo_mantenimiento: parcela.saldo_mantenimiento || 0,
-        titular_id: titularId,
-        notas: parcela.notas || '',
-      },
-      { onConflict: 'nomenclatura' }
-    )
+    const payload: any = {
+      nomenclatura: parcela.nomenclatura,
+      sector_id: sectorId,
+      manzana_fila: fila,
+      numero_parcela: num,
+      capacidad_total: parcela.capacidad_total || 3,
+      espacios_ocupados: parcela.espacios_ocupados || 0,
+      estado: parcela.estado,
+      saldo_mantenimiento: parcela.saldo_mantenimiento || 0,
+      notas: notasTexto,
+    }
+    if (titularId) payload.titular_id = titularId
+
+    const { error } = await supabase.from('parcelas').upsert(payload, { onConflict: 'nomenclatura' })
 
     return !error
   } catch (err) {
@@ -621,19 +650,76 @@ export async function insertInhumacionSupabase(inhumacion: Inhumacion): Promise<
 
     const { error } = await supabase.from('inhumaciones').insert({
       parcela_id: pId,
+      parcela_nomenclatura: parcNom || null,
       nombre_difunto: inhumacion.nombre_difunto,
-      dni_difunto: inhumacion.dni_difunto,
+      dni_difunto: inhumacion.dni_difunto || null,
       fecha_fallecimiento: inhumacion.fecha_fallecimiento || null,
       fecha_inhumacion: inhumacion.fecha_inhumacion?.slice(0, 10) || new Date().toISOString().slice(0, 10),
       nivel_posicion: inhumacion.nivel_posicion || 1,
-      es_covid: inhumacion.es_covid,
-      causa_defuncion: inhumacion.causa_defuncion,
+      es_covid: Boolean(inhumacion.es_covid),
+      causa_defuncion: inhumacion.causa_defuncion || 'Causa general',
       empresa_funebrera: inhumacion.empresa_funebrera || 'Aeterna Sepelios',
+      responsable_contacto: (inhumacion as any).responsable_contacto || (inhumacion as any).nombre_responsable || null,
+      telefono_responsable: (inhumacion as any).telefono_responsable || null,
+      observaciones: (inhumacion as any).observaciones || (parcNom ? `Parcela asignada: ${parcNom}` : null),
     })
 
     return !error
   } catch (err) {
     console.error('Error insertando inhumación en Supabase:', err)
+    return false
+  }
+}
+
+export async function updateInhumacionSupabase(inhumacion: Inhumacion): Promise<boolean> {
+  if (!isSupabaseConfigured) return false
+  try {
+    const parcNom =
+      typeof inhumacion.parcela === 'object'
+        ? inhumacion.parcela?.nomenclatura
+        : inhumacion.parcela
+
+    let pId: string | null = null
+    if (parcNom) {
+      const { data } = await supabase
+        .from('parcelas')
+        .select('id, espacios_ocupados, capacidad_total')
+        .eq('nomenclatura', parcNom)
+        .maybeSingle()
+
+      if (data) pId = data.id
+    }
+
+    const payload: any = {
+      nombre_difunto: inhumacion.nombre_difunto,
+      dni_difunto: inhumacion.dni_difunto || null,
+      fecha_fallecimiento: inhumacion.fecha_fallecimiento || null,
+      fecha_inhumacion: inhumacion.fecha_inhumacion?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+      nivel_posicion: inhumacion.nivel_posicion || 1,
+      es_covid: Boolean(inhumacion.es_covid),
+      causa_defuncion: inhumacion.causa_defuncion || 'Causa general',
+      empresa_funebrera: inhumacion.empresa_funebrera || 'Aeterna Sepelios',
+      responsable_contacto: (inhumacion as any).responsable_contacto || (inhumacion as any).nombre_responsable || null,
+      telefono_responsable: (inhumacion as any).telefono_responsable || null,
+      observaciones: (inhumacion as any).observaciones || (parcNom ? `Parcela asignada: ${parcNom}` : null),
+    }
+
+    if (pId) payload.parcela_id = pId
+    if (parcNom) payload.parcela_nomenclatura = parcNom
+
+    let query = supabase.from('inhumaciones').update(payload)
+    if (inhumacion.id && isUuid(inhumacion.id)) {
+      query = query.eq('id', inhumacion.id)
+    } else if (inhumacion.dni_difunto) {
+      query = query.eq('dni_difunto', inhumacion.dni_difunto)
+    } else {
+      query = query.eq('nombre_difunto', inhumacion.nombre_difunto)
+    }
+
+    const { error } = await query
+    return !error
+  } catch (err) {
+    console.error('Error actualizando inhumación en Supabase:', err)
     return false
   }
 }
@@ -894,11 +980,26 @@ export async function crearCuotasAnualesSupabase(
 export async function deleteParcelaSupabase(idOrNomenclatura: string): Promise<boolean> {
   if (!isSupabaseConfigured) return false
   try {
-    const isUuid = idOrNomenclatura.length === 36 && idOrNomenclatura.includes('-')
+    const isUu = isUuid(idOrNomenclatura)
+    let parcId: string | null = null
+    let nom: string = idOrNomenclatura
+
+    if (isUu) {
+      parcId = idOrNomenclatura
+      const { data } = await supabase.from('parcelas').select('nomenclatura').eq('id', parcId).maybeSingle()
+      if (data?.nomenclatura) nom = data.nomenclatura
+    } else {
+      const { data } = await supabase.from('parcelas').select('id').eq('nomenclatura', idOrNomenclatura).maybeSingle()
+      if (data?.id) parcId = data.id
+    }
+
+    // Desvincular de inhumaciones si existieran para evitar violación de FK
+    if (parcId) {
+      await supabase.from('inhumaciones').update({ parcela_id: null }).eq('parcela_id', parcId)
+    }
+
     const query = supabase.from('parcelas').delete()
-    const { error } = isUuid
-      ? await query.eq('id', idOrNomenclatura)
-      : await query.eq('nomenclatura', idOrNomenclatura)
+    const { error } = parcId ? await query.eq('id', parcId) : await query.eq('nomenclatura', nom)
     return !error
   } catch (err) {
     console.error('Error al eliminar parcela en Supabase:', err)
@@ -906,10 +1007,24 @@ export async function deleteParcelaSupabase(idOrNomenclatura: string): Promise<b
   }
 }
 
-export async function deleteInhumacionSupabase(id: string): Promise<boolean> {
+export async function deleteInhumacionSupabase(idOrKey: string, item?: Partial<Inhumacion>): Promise<boolean> {
   if (!isSupabaseConfigured) return false
   try {
-    const { error } = await supabase.from('inhumaciones').delete().eq('id', id)
+    const isUu = isUuid(idOrKey)
+    if (isUu) {
+      const { error } = await supabase.from('inhumaciones').delete().eq('id', idOrKey)
+      return !error
+    }
+    // Si no es UUID, buscar por DNI o Nombre
+    if (item?.dni_difunto) {
+      const { error } = await supabase.from('inhumaciones').delete().eq('dni_difunto', item.dni_difunto)
+      return !error
+    }
+    if (item?.nombre_difunto) {
+      const { error } = await supabase.from('inhumaciones').delete().eq('nombre_difunto', item.nombre_difunto)
+      return !error
+    }
+    const { error } = await supabase.from('inhumaciones').delete().eq('nombre_difunto', idOrKey)
     return !error
   } catch (err) {
     console.error('Error al eliminar inhumación en Supabase:', err)
@@ -920,10 +1035,27 @@ export async function deleteInhumacionSupabase(id: string): Promise<boolean> {
 export async function deleteAfiliadoSupabase(idOrNumero: string | number): Promise<boolean> {
   if (!isSupabaseConfigured) return false
   try {
+    const isNum = typeof idOrNumero === 'number' || /^\d+$/.test(String(idOrNumero))
+    const isUu = typeof idOrNumero === 'string' && isUuid(idOrNumero)
+
+    // Eliminar cuotas hijas primero para evitar restricción de clave foránea
+    if (isUu) {
+      await supabase.from('cuotas_seguro').delete().eq('afiliado_id', idOrNumero)
+    } else if (isNum) {
+      const { data } = await supabase
+        .from('afiliados_seguro')
+        .select('id')
+        .eq('numero_afiliado', Number(idOrNumero))
+        .maybeSingle()
+      if (data?.id) {
+        await supabase.from('cuotas_seguro').delete().eq('afiliado_id', data.id)
+      }
+    }
+
     const query = supabase.from('afiliados_seguro').delete()
-    const { error } = typeof idOrNumero === 'number'
-      ? await query.eq('numero_afiliado', idOrNumero)
-      : await query.eq('id', idOrNumero)
+    const { error } = isUu
+      ? await query.eq('id', idOrNumero)
+      : await query.eq('numero_afiliado', Number(idOrNumero))
     return !error
   } catch (err) {
     console.error('Error al eliminar afiliado en Supabase:', err)

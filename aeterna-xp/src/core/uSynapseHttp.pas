@@ -68,7 +68,7 @@ end;
 
 function TSimpleHttpClient.BuildFullUrl(const AEndpoint, AParams: string): string;
 var
-  CleanEp: string;
+  CleanEp, ParamStr: string;
 begin
   CleanEp := AEndpoint;
   if (CleanEp <> '') and (CleanEp[1] = '/') then
@@ -77,10 +77,11 @@ begin
   Result := FBaseUrl + '/rest/v1/' + CleanEp;
   if AParams <> '' then
   begin
-    if AParams[1] = '?' then
-      Result := Result + AParams
+    ParamStr := StringReplace(AParams, ' ', '%20', [rfReplaceAll]);
+    if ParamStr[1] = '?' then
+      Result := Result + ParamStr
     else
-      Result := Result + '?' + AParams;
+      Result := Result + '?' + ParamStr;
   end;
 end;
 
@@ -128,12 +129,12 @@ begin
           RequestBodyStream := TStringStream.Create(ABody);
           Client.RequestBody := RequestBodyStream;
           // HTTP PATCH
-          Client.HTTPMethod('PATCH', FullUrl, ResponseBodyStream, [200, 204]);
+          Client.HTTPMethod('PATCH', FullUrl, ResponseBodyStream, [200, 201, 204]);
         end;
 
         hmDELETE:
         begin
-          Client.HTTPMethod('DELETE', FullUrl, ResponseBodyStream, [200, 204]);
+          Client.HTTPMethod('DELETE', FullUrl, ResponseBodyStream, [200, 201, 204]);
         end;
       end;
 

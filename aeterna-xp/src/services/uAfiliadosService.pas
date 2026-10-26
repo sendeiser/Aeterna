@@ -189,11 +189,19 @@ end;
 class function TAfiliadosService.ActualizarAfiliado(const AId: string; const AAfiliado: TAfiliadoSeguro): Boolean;
 var
   Data: TJSONObject;
+  Filter: string;
 begin
   Result := False;
-  if AId = '' then Exit;
+  if (AId <> '') and (Pos('-', AId) > 0) then
+    Filter := 'id=eq.' + AId
+  else if AAfiliado.NumeroAfiliado > 0 then
+    Filter := 'numero_afiliado=eq.' + IntToStr(AAfiliado.NumeroAfiliado)
+  else
+    Exit;
+
   Data := TJSONObject.Create;
   try
+    Data.Add('numero_afiliado', AAfiliado.NumeroAfiliado);
     Data.Add('nombre_completo', AAfiliado.NombreCompleto);
     if AAfiliado.Dni <> '' then
       Data.Add('notas', 'DNI: ' + AAfiliado.Dni);
@@ -203,7 +211,7 @@ begin
     Data.Add('monto_cuota_mensual', Double(AAfiliado.MontoCuotaMensual));
     Data.Add('estado', EstadoAfiliadoToStr(AAfiliado.Estado));
 
-    Result := Supabase.Update('afiliados_seguro', 'id=eq.' + AId, Data);
+    Result := Supabase.Update('afiliados_seguro', Filter, Data);
   finally
     Data.Free;
   end;
@@ -230,10 +238,20 @@ begin
 end;
 
 class function TAfiliadosService.EliminarAfiliado(const AId: string): Boolean;
+var
+  Filter: string;
 begin
   Result := False;
   if AId = '' then Exit;
-  Result := Supabase.Delete('afiliados_seguro', 'id=eq.' + AId);
+  if Pos('-', AId) > 0 then
+    Filter := 'id=eq.' + AId
+  else
+    Filter := 'numero_afiliado=eq.' + AId;
+
+  // Eliminar cuotas hijas asociadas para evitar restriccion FK
+  Supabase.Delete('cuotas_seguro', 'afiliado_id=eq.' + AId);
+
+  Result := Supabase.Delete('afiliados_seguro', Filter);
 end;
 
 end.

@@ -77,12 +77,38 @@ class function TInhumacionesService.CrearInhumacion(const AInhumacion: TInhumaci
 var
   Data: TJSONObject;
   Resp: TJSONObject;
+  ParcArr: TJSONArray;
+  ParcObj, ParcUpd: TJSONObject;
+  ParcId: string;
 begin
   Result := False;
   Data := TJSONObject.Create;
   try
-    if AInhumacion.ParcelaId <> '' then
+    if (AInhumacion.ParcelaId = '') and (AInhumacion.NomenclaturaParcela <> '') then
+    begin
+      ParcArr := Supabase.Select('parcelas', 'nomenclatura=eq.' + AInhumacion.NomenclaturaParcela + '&select=id,capacidad_total,espacios_ocupados');
+      if (ParcArr <> nil) and (ParcArr.Count > 0) then
+      begin
+        ParcObj := TJSONObject(ParcArr.Items[0]);
+        ParcId := ParcObj.Get('id', '');
+        if ParcId <> '' then
+        begin
+          Data.Add('parcela_id', ParcId);
+          ParcUpd := TJSONObject.Create;
+          try
+            ParcUpd.Add('estado', 'ocupada');
+            ParcUpd.Add('espacios_ocupados', ParcObj.Get('espacios_ocupados', 0) + 1);
+            Supabase.Update('parcelas', 'id=eq.' + ParcId, ParcUpd);
+          finally
+            ParcUpd.Free;
+          end;
+        end;
+      end;
+      if ParcArr <> nil then ParcArr.Free;
+    end
+    else if AInhumacion.ParcelaId <> '' then
       Data.Add('parcela_id', AInhumacion.ParcelaId);
+
     if AInhumacion.NomenclaturaParcela <> '' then
       Data.Add('parcela_nomenclatura', AInhumacion.NomenclaturaParcela);
     Data.Add('nombre_difunto', AInhumacion.NombreDifunto);
@@ -95,7 +121,7 @@ begin
     Data.Add('es_covid', AInhumacion.EsCovid);
     Data.Add('causa_defuncion', AInhumacion.CausaDefuncion);
     Data.Add('empresa_funebrera', AInhumacion.EmpresaFunebrera);
-    Data.Add('nombre_responsable', AInhumacion.NombreResponsable);
+    Data.Add('responsable_contacto', AInhumacion.NombreResponsable);
     Data.Add('telefono_responsable', AInhumacion.TelefonoResponsable);
     if AInhumacion.NomenclaturaParcela <> '' then
       Data.Add('observaciones', 'Parcela asignada: ' + AInhumacion.NomenclaturaParcela)
@@ -116,9 +142,18 @@ end;
 class function TInhumacionesService.ActualizarInhumacion(const AId: string; const AInhumacion: TInhumacion): Boolean;
 var
   Data: TJSONObject;
+  Filter: string;
 begin
   Result := False;
-  if AId = '' then Exit;
+  if (AId <> '') and (Pos('-', AId) > 0) then
+    Filter := 'id=eq.' + AId
+  else if AInhumacion.DniDifunto <> '' then
+    Filter := 'dni_difunto=eq.' + AInhumacion.DniDifunto
+  else if AInhumacion.NombreDifunto <> '' then
+    Filter := 'nombre_difunto=eq.' + AInhumacion.NombreDifunto
+  else
+    Exit;
+
   Data := TJSONObject.Create;
   try
     if AInhumacion.ParcelaId <> '' then
@@ -138,17 +173,23 @@ begin
     Data.Add('telefono_responsable', AInhumacion.TelefonoResponsable);
     Data.Add('observaciones', AInhumacion.Observaciones);
 
-    Result := Supabase.Update('inhumaciones', 'id=eq.' + AId, Data);
+    Result := Supabase.Update('inhumaciones', Filter, Data);
   finally
     Data.Free;
   end;
 end;
 
 class function TInhumacionesService.EliminarInhumacion(const AId: string): Boolean;
+var
+  Filter: string;
 begin
   Result := False;
   if AId = '' then Exit;
-  Result := Supabase.Delete('inhumaciones', 'id=eq.' + AId);
+  if Pos('-', AId) > 0 then
+    Filter := 'id=eq.' + AId
+  else
+    Filter := 'nombre_difunto=eq.' + AId;
+  Result := Supabase.Delete('inhumaciones', Filter);
 end;
 
 end.

@@ -130,10 +130,16 @@ begin
 end;
 
 class function TCajaService.EliminarPago(const AId: string): Boolean;
+var
+  Filter: string;
 begin
   Result := False;
   if AId = '' then Exit;
-  Result := Supabase.Delete('pagos_recibos', 'id=eq.' + AId);
+  if (Length(AId) = 36) and (AId[9] = '-') then
+    Filter := 'id=eq.' + AId
+  else
+    Filter := 'numero_recibo=eq.' + AId;
+  Result := Supabase.Delete('pagos_recibos', Filter);
 end;
 
 class function TCajaService.CalcularTotalesHoy(out TotalEfectivo, TotalDigital: Currency): Currency;
