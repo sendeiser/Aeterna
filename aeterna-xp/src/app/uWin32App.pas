@@ -59,6 +59,7 @@ const
   IDC_BTN_DEL_COBRO   = 2029;
   IDC_BTN_PADRON_PARC_PDF = 2030;
   IDC_BTN_FILTRAR_AFIL    = 2031;
+  IDC_BTN_CUOTA_MASIVA    = 2032;
 
   // Controles de Datos
   IDC_LV_PARCELAS     = 3001;
@@ -128,7 +129,7 @@ var
   // Controles Modulo 3 (Afiliados)
   hLblFiltroMora, hCmbMora: HWND;
   hLblBuscarAfil, hEdtBuscarAfil, hBtnBuscarAfil: HWND;
-  hBtnNuevoAfil, hBtnEditAfil, hBtnCobrarAfil, hBtnDelAfil, hBtnPlanillaPdf, hBtnSyncAfil: HWND;
+  hBtnNuevoAfil, hBtnEditAfil, hBtnCobrarAfil, hBtnDelAfil, hBtnPlanillaPdf, hBtnCuotaMasivaAfil, hBtnSyncAfil: HWND;
 
   // Controles Modulo 4 (Caja)
   hBtnNuevoCobroCaja, hBtnDelCobroCaja, hBtnCierreCaja, hBtnSyncCaja: HWND;
@@ -1680,6 +1681,43 @@ begin
   end;
 end;
 
+procedure AccionActualizarCuotaMasiva;
+var
+  NuevoMonto: Currency;
+  SoloActivos: Boolean;
+  i, Cantidad: Integer;
+begin
+  NuevoMonto := 18000;
+  if Length(DataAfiliados) > 0 then
+    NuevoMonto := DataAfiliados[0].MontoCuotaMensual;
+  SoloActivos := True;
+
+  if ShowDlgCuotaMasiva(hMainWnd, NuevoMonto, SoloActivos) then
+  begin
+    SetStatusMessage('Actualizando cuota masiva en Supabase...');
+    if TAfiliadosService.ActualizarCuotaMasiva(NuevoMonto, SoloActivos) then
+    begin
+      Cantidad := 0;
+      for i := 0 to High(DataAfiliados) do
+      begin
+        if (not SoloActivos) or (DataAfiliados[i].Estado <> eaBaja) then
+        begin
+          DataAfiliados[i].MontoCuotaMensual := NuevoMonto;
+          Inc(Cantidad);
+        end;
+      end;
+      MessageBox(hMainWnd,
+        PChar('Cuota actualizada exitosamente.'#13#10#13#10 +
+          'Nuevo valor: $' + CurrToStr(NuevoMonto) + #13#10 +
+          'Afiliados actualizados: ' + IntToStr(Cantidad)),
+        'Operacion Completada', MB_ICONINFORMATION or MB_OK);
+      FiltrarYMostrarAfiliados;
+    end
+    else
+      MessageBox(hMainWnd, 'Error al actualizar cuota masiva en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+  end;
+end;
+
 // -------------------------------------------------------------
 // Operaciones CRUD: CAJA DIARIA
 // -------------------------------------------------------------
@@ -2228,9 +2266,11 @@ begin
   AddControlToModule(3, hBtnCobrarAfil);
   hBtnPlanillaPdf := CreateButton(hWnd, 'Planilla Cobrador (PDF)', 385, 140, 160, 28, IDC_BTN_PLANILLA_PDF);
   AddControlToModule(3, hBtnPlanillaPdf);
-  hBtnDelAfil := CreateButton(hWnd, '- Eliminar / Baja', 550, 140, 125, 28, IDC_BTN_DEL_AFIL);
+  hBtnCuotaMasivaAfil := CreateButton(hWnd, '$ Cuota Masiva', 550, 140, 120, 28, IDC_BTN_CUOTA_MASIVA);
+  AddControlToModule(3, hBtnCuotaMasivaAfil);
+  hBtnDelAfil := CreateButton(hWnd, '- Eliminar / Baja', 675, 140, 125, 28, IDC_BTN_DEL_AFIL);
   AddControlToModule(3, hBtnDelAfil);
-  hBtnSyncAfil := CreateButton(hWnd, 'Recargar', 680, 140, 85, 28, IDC_BTN_SYNC);
+  hBtnSyncAfil := CreateButton(hWnd, 'Recargar', 805, 140, 85, 28, IDC_BTN_SYNC);
   AddControlToModule(3, hBtnSyncAfil);
 
   hLvAfiliados := CreateListView(hWnd, 15, 175, 990, 435, IDC_LV_AFILIADOS);
@@ -2644,6 +2684,7 @@ begin
           IDC_BTN_EDIT_AFIL:    AccionModificarAfiliado;
           IDC_BTN_DEL_AFIL:     AccionEliminarAfiliado;
           IDC_BTN_COBRAR_CUOTA: AccionCobrarCuotaSeguro;
+          IDC_BTN_CUOTA_MASIVA: AccionActualizarCuotaMasiva;
           IDC_BTN_PLANILLA_PDF: AccionGenerarPlanillaRutaPDF;
           IDC_BTN_FILTRAR_AFIL: FiltrarYMostrarAfiliados;
 

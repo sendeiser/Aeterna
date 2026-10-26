@@ -5,6 +5,7 @@ import { DetalleCuotaModal } from '../modals/DetalleCuotaModal'
 import { TalonarioRecibosModal } from '../modals/TalonarioRecibosModal'
 import { PlanillaRutaModal } from '../modals/PlanillaRutaModal'
 import { evaluarMoraAfiliado } from '../../lib/reglasNegocio'
+import { actualizarCuotaMasivaSupabase } from '../../services/dataService'
 
 interface AfiliadosSeguroViewProps {
   afiliados: (AfiliadoSeguro & { cuotasPagadas?: number[] })[]
@@ -33,6 +34,40 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
   const [sortOption, setSortOption] = useState<string>('numero-asc')
   const [isTalonarioModalOpen, setIsTalonarioModalOpen] = useState(false)
   const [isPlanillaModalOpen, setIsPlanillaModalOpen] = useState(false)
+
+  // Modal Cuota Masiva
+  const [modalCuotaMasivaOpen, setModalCuotaMasivaOpen] = useState(false)
+  const [nuevaCuotaInput, setNuevaCuotaInput] = useState<number>(18000)
+  const [soloActivos, setSoloActivos] = useState(true)
+  const [guardandoCuotaMasiva, setGuardandoCuotaMasiva] = useState(false)
+
+  const handleAplicarCuotaMasiva = async () => {
+    if (nuevaCuotaInput <= 0) {
+      alert('Por favor ingrese un monto de cuota válido mayor a $0.')
+      return
+    }
+    setGuardandoCuotaMasiva(true)
+    try {
+      const res = await actualizarCuotaMasivaSupabase(nuevaCuotaInput, soloActivos)
+      if (res.success) {
+        if (onSaveAfiliado) {
+          for (const a of afiliados) {
+            if (!soloActivos || a.estado !== 'baja') {
+              onSaveAfiliado({ ...a, monto_cuota_mensual: nuevaCuotaInput })
+            }
+          }
+        }
+        alert(`¡Cuota actualizada con éxito! Se aplicó el nuevo monto de ${formatCurrency(nuevaCuotaInput)} a ${res.count} afiliados.`)
+        setModalCuotaMasivaOpen(false)
+      } else {
+        alert('Hubo un error al actualizar las cuotas en el servidor.')
+      }
+    } catch (e: any) {
+      alert(`Error al actualizar cuota masiva: ${e.message}`)
+    } finally {
+      setGuardandoCuotaMasiva(false)
+    }
+  }
 
   const [modalDetalleCuota, setModalDetalleCuota] = useState<{
     isOpen: boolean
@@ -333,6 +368,16 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             <span className="material-symbols-outlined text-[13px]">receipt_long</span>
             <span>Talonario</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setModalCuotaMasivaOpen(true)}
+            className="h-6 px-1.5 rounded border border-secondary/40 bg-secondary/5 hover:bg-secondary/10 text-secondary text-[10px] font-semibold flex items-center gap-0.5 shrink-0 whitespace-nowrap cursor-pointer"
+            title="Cambiar cuota a todos los afiliados"
+          >
+            <span className="material-symbols-outlined text-[13px]">price_change</span>
+            <span>Cuota Masiva</span>
+          </button>
         </div>
       </div>
 
@@ -509,6 +554,16 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
           >
             <span className="material-symbols-outlined text-[15px] text-primary">route</span>
             <span>Planilla</span>
+          </button>
+          <button
+            id="btn-cuota-masiva"
+            type="button"
+            onClick={() => setModalCuotaMasivaOpen(true)}
+            className="h-8 px-2.5 rounded-lg border border-secondary/40 bg-secondary/10 hover:bg-secondary/20 text-secondary-dark font-semibold text-xs transition-colors active:scale-[0.99] flex items-center justify-center gap-1 shadow-xs cursor-pointer"
+            title="Actualizar el monto de la cuota mensual a todos los afiliados a la vez"
+          >
+            <span className="material-symbols-outlined text-[16px] text-secondary">price_change</span>
+            <span>Cuota Masiva</span>
           </button>
           <button
             type="button"
@@ -1255,6 +1310,113 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
         onClose={() => setIsPlanillaModalOpen(false)}
         afiliados={afiliados}
       />
+
+      {/* Modal Cambio Masivo de Cuota del Seguro */}
+      {modalCuotaMasivaOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-outline-variant w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-4 sm:p-5 border-b border-outline-variant flex items-center justify-between bg-surface-container-low">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-secondary text-2xl">price_change</span>
+                <div>
+                  <h3 className="font-bold text-on-surface text-base">Actualización Masiva de Cuota</h3>
+                  <p className="text-xs text-on-surface-variant">Aplica el nuevo valor mensual a todos los afiliados</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalCuotaMasivaOpen(false)}
+                className="text-on-surface-variant hover:text-on-surface p-1 rounded-lg"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 flex items-start gap-2">
+                <span className="material-symbols-outlined text-amber-600 text-lg shrink-0">info</span>
+                <span>
+                  Esta acción modificará el valor de la cuota mensual en Supabase y localmente para todos los afiliados seleccionados de una sola vez.
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-on-surface mb-1">
+                  Nuevo Monto de Cuota Mensual ($)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-on-surface-variant text-sm">$</span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="100"
+                    value={nuevaCuotaInput}
+                    onChange={(e) => setNuevaCuotaInput(Number(e.target.value))}
+                    className="w-full pl-8 pr-3 py-2 border border-outline-variant rounded-xl text-base font-bold text-on-surface focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary/30"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  id="chk-solo-activos"
+                  type="checkbox"
+                  checked={soloActivos}
+                  onChange={(e) => setSoloActivos(e.target.checked)}
+                  className="rounded border-outline text-secondary focus:ring-secondary h-4 w-4"
+                />
+                <label htmlFor="chk-solo-activos" className="text-xs text-on-surface font-medium cursor-pointer">
+                  Aplicar solo a afiliados activos (ignorar dados de baja)
+                </label>
+              </div>
+
+              <div className="bg-surface-container-low p-3 rounded-xl border border-outline-variant/60 text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-on-surface-variant">Afiliados a actualizar:</span>
+                  <span className="font-bold text-on-surface font-code-cadastral">
+                    {soloActivos ? afiliados.filter((a) => a.estado !== 'baja').length : afiliados.length}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-on-surface-variant">Nuevo valor propuesto:</span>
+                  <span className="font-bold text-secondary font-code-cadastral">
+                    {formatCurrency(nuevaCuotaInput || 0)} / mes
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-surface-container-low border-t border-outline-variant flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setModalCuotaMasivaOpen(false)}
+                disabled={guardandoCuotaMasiva}
+                className="px-3 py-2 text-xs font-semibold text-on-surface-variant hover:text-on-surface rounded-lg cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleAplicarCuotaMasiva}
+                disabled={guardandoCuotaMasiva || nuevaCuotaInput <= 0}
+                className="px-4 py-2 text-xs font-bold text-white bg-secondary hover:bg-secondary-dark rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {guardandoCuotaMasiva ? (
+                  <>
+                    <span className="animate-spin material-symbols-outlined text-[16px]">progress_activity</span>
+                    <span>Actualizando...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[16px]">check</span>
+                    <span>Confirmar y Actualizar Todos</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

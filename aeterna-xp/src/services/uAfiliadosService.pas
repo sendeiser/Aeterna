@@ -16,6 +16,7 @@ type
     class function RegistrarPagoCuota(const AAfiliadoId: string; Anio, NroCuota: Integer; AMonto: Currency; AMetodo: TMetodoPago; const ARecibo: string): Boolean;
     class function CrearAfiliado(const AAfiliado: TAfiliadoSeguro): Boolean;
     class function ActualizarAfiliado(const AId: string; const AAfiliado: TAfiliadoSeguro): Boolean;
+    class function ActualizarCuotaMasiva(NuevoMonto: Currency; SoloActivos: Boolean = True): Boolean;
     class function EliminarAfiliado(const AId: string): Boolean;
   end;
 
@@ -203,6 +204,26 @@ begin
     Data.Add('estado', EstadoAfiliadoToStr(AAfiliado.Estado));
 
     Result := Supabase.Update('afiliados_seguro', 'id=eq.' + AId, Data);
+  finally
+    Data.Free;
+  end;
+end;
+
+class function TAfiliadosService.ActualizarCuotaMasiva(NuevoMonto: Currency; SoloActivos: Boolean = True): Boolean;
+var
+  Data: TJSONObject;
+  Filter: string;
+begin
+  Result := False;
+  if NuevoMonto <= 0 then Exit;
+  Data := TJSONObject.Create;
+  try
+    Data.Add('monto_cuota_mensual', Double(NuevoMonto));
+    if SoloActivos then
+      Filter := 'estado=neq.baja'
+    else
+      Filter := 'id=neq.00000000-0000-0000-0000-000000000000';
+    Result := Supabase.Update('afiliados_seguro', Filter, Data);
   finally
     Data.Free;
   end;

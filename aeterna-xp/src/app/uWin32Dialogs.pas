@@ -15,6 +15,7 @@ function ShowDlgAfiliado(ParentWnd: HWND; IsEdit: Boolean; var Afil: TAfiliadoSe
 function ShowDlgCobroCaja(ParentWnd: HWND; var Titular, Concepto: string; var Monto: Currency; var Metodo: TMetodoPago; var Recibo: string): Boolean;
 function ShowDlgCobroMantenimiento(ParentWnd: HWND; const Nomenclatura, TitularDef: string; var Monto: Currency; var Metodo: TMetodoPago; var Periodo, Recibo: string): Boolean;
 function ShowDlgCobroCuotaMes(ParentWnd: HWND; const Afiliado: TAfiliadoSeguro; var MesSeleccionado, AnioSeleccionado: Integer; var Monto: Currency; var Metodo: TMetodoPago; var Recibo: string): Boolean;
+function ShowDlgCuotaMasiva(ParentWnd: HWND; var NuevoMonto: Currency; var SoloActivos: Boolean): Boolean;
 
 implementation
 
@@ -1004,6 +1005,108 @@ begin
 
   SetWindowLongPtr(hDlg, GWLP_USERDATA, LONG_PTR(@DlgData));
   SetFocus(DlgData.CmbMes);
+
+  RunModalLoop(hDlg, ParentWnd);
+  Result := DlgData.Confirmed;
+end;
+
+type
+  TCuotaMasivaDlgData = record
+    MontoPtr: PCurrency;
+    SoloActivosPtr: PBoolean;
+    EdtMonto: HWND;
+    ChkSoloActivos: HWND;
+    Confirmed: Boolean;
+  end;
+  PCuotaMasivaDlgData = ^TCuotaMasivaDlgData;
+
+function CuotaMasivaDlgProc(hWnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
+var
+  pData: PCuotaMasivaDlgData;
+begin
+  pData := PCuotaMasivaDlgData(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+  case uMsg of
+    WM_COMMAND:
+      begin
+        case LOWORD(wParam) of
+          1: // Aceptar
+            begin
+              if pData <> nil then
+              begin
+                pData^.MontoPtr^ := StrToCurrDef(GetEditText(pData^.EdtMonto), 18000);
+                pData^.SoloActivosPtr^ := SendMessage(pData^.ChkSoloActivos, BM_GETCHECK, 0, 0) = BST_CHECKED;
+                if pData^.MontoPtr^ <= 0 then
+                begin
+                  MessageBox(hWnd, 'Por favor ingrese un monto de cuota mayor a $0.', 'Monto Invalido', MB_ICONWARNING or MB_OK);
+                  Exit(0);
+                end;
+                pData^.Confirmed := True;
+              end;
+              DestroyWindow(hWnd);
+              Exit(0);
+            end;
+          2: // Cancelar
+            begin
+              if pData <> nil then pData^.Confirmed := False;
+              DestroyWindow(hWnd);
+              Exit(0);
+            end;
+        end;
+      end;
+    WM_CLOSE:
+      begin
+        if pData <> nil then pData^.Confirmed := False;
+        DestroyWindow(hWnd);
+        Exit(0);
+      end;
+  end;
+  Result := DefWindowProc(hWnd, uMsg, wParam, lParam);
+end;
+
+function ShowDlgCuotaMasiva(ParentWnd: HWND; var NuevoMonto: Currency; var SoloActivos: Boolean): Boolean;
+var
+  wc: TWndClass;
+  hDlg: HWND;
+  DlgData: TCuotaMasivaDlgData;
+begin
+  EnsureDlgFonts;
+  FillChar(wc, SizeOf(wc), 0);
+  wc.style := CS_HREDRAW or CS_VREDRAW;
+  wc.lpfnWndProc := @CuotaMasivaDlgProc;
+  wc.hInstance := hInstance;
+  wc.hCursor := LoadCursor(0, IDC_ARROW);
+  wc.hbrBackground := HBRUSH(COLOR_BTNFACE + 1);
+  wc.lpszClassName := 'AeternaCuotaMasivaDlgClass';
+  RegisterClass(wc);
+
+  hDlg := CreateWindowEx(WS_EX_DLGMODALFRAME, 'AeternaCuotaMasivaDlgClass', 'Actualización Masiva de Cuota - Seguro de Sepelio',
+    WS_POPUP or WS_CAPTION or WS_SYSMENU or WS_VISIBLE,
+    0, 0, 440, 240, ParentWnd, 0, hInstance, nil);
+
+  CenterWindow(hDlg, ParentWnd);
+
+  if NuevoMonto <= 0 then NuevoMonto := 18000;
+
+  DlgData.MontoPtr := @NuevoMonto;
+  DlgData.SoloActivosPtr := @SoloActivos;
+  DlgData.Confirmed := False;
+
+  CreateDlgLabel(hDlg, 'Se modificará el valor de la cuota mensual a todos los afiliados:', 20, 15, 390, 18);
+  CreateDlgLabel(hDlg, 'Nuevo Monto Mensual ($):', 20, 48, 200, 18);
+  DlgData.EdtMonto := CreateDlgEdit(hDlg, CurrToStr(NuevoMonto), 20, 70, 180, 24, 601);
+
+  DlgData.ChkSoloActivos := CreateWindow('BUTTON', 'Aplicar solo a afiliados activos (no bajas)',
+    WS_CHILD or WS_VISIBLE or BS_AUTOCHECKBOX,
+    20, 110, 380, 20, hDlg, HMENU(602), hInstance, nil);
+  SendMessage(DlgData.ChkSoloActivos, WM_SETFONT, WPARAM(hDlgFont), 1);
+  if SoloActivos then
+    SendMessage(DlgData.ChkSoloActivos, BM_SETCHECK, BST_CHECKED, 0);
+
+  CreateDlgButton(hDlg, 'Actualizar Todos', 180, 155, 140, 32, 1, True);
+  CreateDlgButton(hDlg, 'Cancelar', 330, 155, 80, 32, 2);
+
+  SetWindowLongPtr(hDlg, GWLP_USERDATA, LONG_PTR(@DlgData));
+  SetFocus(DlgData.EdtMonto);
 
   RunModalLoop(hDlg, ParentWnd);
   Result := DlgData.Confirmed;
