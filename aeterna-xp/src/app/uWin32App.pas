@@ -1611,7 +1611,7 @@ begin
   Parc.CapacidadTotal := 3;
   Parc.Estado := epDisponible;
 
-  if ShowDlgParcela(hMainWnd, False, Parc) then
+  if ShowDlgParcela(hMainWnd, False, Parc, DataInhumaciones) then
   begin
     SetStatusMessage('Guardando nueva parcela en Supabase...');
     if TParcelasService.CrearParcela(Parc) then
@@ -1646,7 +1646,7 @@ begin
   end;
 
   Parc := DataParcelas[Idx];
-  if ShowDlgParcela(hMainWnd, True, Parc) then
+  if ShowDlgParcela(hMainWnd, True, Parc, DataInhumaciones) then
   begin
     SetStatusMessage('Actualizando parcela en Supabase...');
     if TParcelasService.ActualizarParcela(Parc.Id, Parc, DataParcelas[Idx].Nomenclatura) then

@@ -11,7 +11,8 @@ uses
 function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion): Boolean; overload;
 function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion; const ParcelasRef: TParcelaArray): Boolean; overload;
 function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion; const ParcelasRef: TParcelaArray; const InhumacionesRef: TInhumacionArray): Boolean; overload;
-function ShowDlgParcela(ParentWnd: HWND; IsEdit: Boolean; var Parc: TParcela): Boolean;
+function ShowDlgParcela(ParentWnd: HWND; IsEdit: Boolean; var Parc: TParcela): Boolean; overload;
+function ShowDlgParcela(ParentWnd: HWND; IsEdit: Boolean; var Parc: TParcela; const InhumacionesRef: TInhumacionArray): Boolean; overload;
 function ShowDlgAfiliado(ParentWnd: HWND; IsEdit: Boolean; var Afil: TAfiliadoSeguro): Boolean;
 function ShowDlgCobroCaja(ParentWnd: HWND; var Titular, Concepto: string; var Monto: Currency; var Metodo: TMetodoPago; var Recibo: string): Boolean;
 function ShowDlgCobroMantenimiento(ParentWnd: HWND; const Nomenclatura, TitularDef: string; var Monto: Currency; var Metodo: TMetodoPago; var Periodo, Recibo: string): Boolean;
@@ -459,7 +460,71 @@ type
     ParcPtr: ^TParcela;
     Confirmed: Boolean;
     EdtNomenclatura, CmbSector, EdtFila, EdtNumero, CmbEstado, EdtTitular, EdtSaldo, EdtNotas: HWND;
+    EdtNivelesFosa: HWND;
   end;
+
+function InspeccionarNivelesFosaStr(const NomParc: string; Capacidad: Integer; const InhumacionesRef: TInhumacionArray): string;
+var
+  TargetNorm, InhNorm, Linea, DifNom, DniStr, FechaStr, EmpStr: string;
+  lvl, k, TotalCap, OcupadosCount: Integer;
+  Encontrado: Boolean;
+begin
+  Result := '';
+  TargetNorm := UpperCase(Trim(NomParc));
+  TargetNorm := StringReplace(TargetNorm, ' ', '', [rfReplaceAll]);
+  TargetNorm := StringReplace(TargetNorm, '-', '', [rfReplaceAll]);
+
+  TotalCap := Capacidad;
+  if TotalCap <= 0 then TotalCap := 3;
+
+  OcupadosCount := 0;
+
+  for lvl := 1 to TotalCap do
+  begin
+    Encontrado := False;
+    if TargetNorm <> '' then
+    begin
+      for k := 0 to High(InhumacionesRef) do
+      begin
+        InhNorm := UpperCase(Trim(InhumacionesRef[k].NomenclaturaParcela));
+        InhNorm := StringReplace(InhNorm, ' ', '', [rfReplaceAll]);
+        InhNorm := StringReplace(InhNorm, '-', '', [rfReplaceAll]);
+
+        if (InhNorm = TargetNorm) and (InhumacionesRef[k].NivelPosicion = lvl) then
+        begin
+          Encontrado := True;
+          Inc(OcupadosCount);
+          DifNom := Trim(InhumacionesRef[k].NombreDifunto);
+          if DifNom = '' then DifNom := 'Difunto sin nombre asentado';
+
+          DniStr := Trim(InhumacionesRef[k].DniDifunto);
+          if DniStr <> '' then DniStr := ' [DNI: ' + DniStr + ']' else DniStr := '';
+
+          FechaStr := Trim(InhumacionesRef[k].FechaInhumacion);
+          if FechaStr <> '' then FechaStr := ' - Inhumado: ' + FechaStr else FechaStr := '';
+
+          EmpStr := Trim(InhumacionesRef[k].EmpresaFunebrera);
+          if EmpStr <> '' then EmpStr := ' (' + EmpStr + ')' else EmpStr := '';
+
+          Linea := Format('NIVEL %d: [OCUPADO] %s%s%s%s', [lvl, DifNom, DniStr, FechaStr, EmpStr]);
+          Break;
+        end;
+      end;
+    end;
+
+    if not Encontrado then
+      Linea := Format('NIVEL %d: [DISPONIBLE] Espacio libre en fosa', [lvl]);
+
+    if Result <> '' then
+      Result := Result + #13#10;
+    Result := Result + Linea;
+  end;
+
+  if OcupadosCount = 0 then
+    Result := 'ESTADO DE LA FOSA: TOTALMENTE LIBRE (0 de ' + IntToStr(TotalCap) + ' niveles ocupados)'#13#10#13#10 + Result
+  else
+    Result := Format('ESTADO DE LA FOSA: %d de %d niveles ocupados'#13#10#13#10 + Result, [OcupadosCount, TotalCap]);
+end;
 
 function ParcDlgProc(hWnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
 var
@@ -536,12 +601,12 @@ begin
   Result := DefWindowProc(hWnd, uMsg, wParam, lParam);
 end;
 
-function ShowDlgParcela(ParentWnd: HWND; IsEdit: Boolean; var Parc: TParcela): Boolean;
+function ShowDlgParcela(ParentWnd: HWND; IsEdit: Boolean; var Parc: TParcela; const InhumacionesRef: TInhumacionArray): Boolean;
 var
   wc: TWndClass;
   hDlg: HWND;
   DlgData: TParcDlgData;
-  Title: string;
+  Title, NivelesFosaStr: string;
 begin
   EnsureDlgFonts;
   FillChar(wc, SizeOf(wc), 0);
@@ -560,18 +625,18 @@ begin
 
   hDlg := CreateWindowEx(WS_EX_DLGMODALFRAME, 'AeternaParcDlgClass', PChar(Title),
     WS_POPUP or WS_CAPTION or WS_SYSMENU or WS_VISIBLE,
-    0, 0, 480, 430, ParentWnd, 0, hInstance, nil);
+    0, 0, 530, 560, ParentWnd, 0, hInstance, nil);
 
   CenterWindow(hDlg, ParentWnd);
 
   DlgData.ParcPtr := @Parc;
   DlgData.Confirmed := False;
 
-  CreateDlgLabel(hDlg, 'Parcela (ej. A-25-96) (*):', 20, 15, 200, 18);
-  DlgData.EdtNomenclatura := CreateDlgEdit(hDlg, Parc.Nomenclatura, 20, 35, 200, 24, 201);
+  CreateDlgLabel(hDlg, 'Parcela (ej. A-25-96) (*):', 20, 15, 220, 18);
+  DlgData.EdtNomenclatura := CreateDlgEdit(hDlg, Parc.Nomenclatura, 20, 35, 220, 24, 201);
 
-  CreateDlgLabel(hDlg, 'Sector:', 240, 15, 200, 18);
-  DlgData.CmbSector := CreateDlgCombo(hDlg, 240, 35, 200, 120, 202);
+  CreateDlgLabel(hDlg, 'Sector:', 260, 15, 230, 18);
+  DlgData.CmbSector := CreateDlgCombo(hDlg, 260, 35, 230, 120, 202);
   SendMessage(DlgData.CmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Sector A')));
   SendMessage(DlgData.CmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Sector E')));
   SendMessage(DlgData.CmbSector, CB_ADDSTRING, 0, LPARAM(PChar('Sector Salinas')));
@@ -585,11 +650,11 @@ begin
   CreateDlgLabel(hDlg, 'Fila / Manzana:', 20, 70, 130, 18);
   DlgData.EdtFila := CreateDlgEdit(hDlg, Parc.ManzanaFila, 20, 90, 130, 24, 203);
 
-  CreateDlgLabel(hDlg, 'Numero Parcela:', 160, 70, 130, 18);
-  DlgData.EdtNumero := CreateDlgEdit(hDlg, Parc.NumeroParcela, 160, 90, 130, 24, 204);
+  CreateDlgLabel(hDlg, 'Numero Parcela:', 170, 70, 130, 18);
+  DlgData.EdtNumero := CreateDlgEdit(hDlg, Parc.NumeroParcela, 170, 90, 130, 24, 204);
 
-  CreateDlgLabel(hDlg, 'Estado Parcela:', 300, 70, 140, 18);
-  DlgData.CmbEstado := CreateDlgCombo(hDlg, 300, 90, 140, 120, 205);
+  CreateDlgLabel(hDlg, 'Estado Parcela:', 320, 70, 170, 18);
+  DlgData.CmbEstado := CreateDlgCombo(hDlg, 320, 90, 170, 120, 205);
   SendMessage(DlgData.CmbEstado, CB_ADDSTRING, 0, LPARAM(PChar('Disponible')));
   SendMessage(DlgData.CmbEstado, CB_ADDSTRING, 0, LPARAM(PChar('Ocupada')));
   SendMessage(DlgData.CmbEstado, CB_ADDSTRING, 0, LPARAM(PChar('Reservada')));
@@ -606,24 +671,40 @@ begin
     SendMessage(DlgData.CmbEstado, CB_SETCURSEL, 0, 0);
   end;
 
-  CreateDlgLabel(hDlg, 'Titular Concesion (Nombre Completo):', 20, 125, 420, 18);
-  DlgData.EdtTitular := CreateDlgEdit(hDlg, Parc.TitularNombre, 20, 145, 420, 24, 206);
+  CreateDlgLabel(hDlg, 'Titular Concesion (Nombre Completo):', 20, 125, 470, 18);
+  DlgData.EdtTitular := CreateDlgEdit(hDlg, Parc.TitularNombre, 20, 145, 470, 24, 206);
 
-  CreateDlgLabel(hDlg, 'Saldo Mantenimiento ($):', 20, 180, 200, 18);
-  DlgData.EdtSaldo := CreateDlgEdit(hDlg, CurrToStr(Parc.SaldoMantenimiento), 20, 200, 200, 24, 207);
+  CreateDlgLabel(hDlg, 'Saldo Mantenimiento ($):', 20, 180, 220, 18);
+  DlgData.EdtSaldo := CreateDlgEdit(hDlg, CurrToStr(Parc.SaldoMantenimiento), 20, 200, 220, 24, 207);
 
-  CreateDlgLabel(hDlg, 'Notas / Observaciones:', 20, 235, 420, 18);
-  DlgData.EdtNotas := CreateDlgEdit(hDlg, Parc.Notas, 20, 255, 420, 24, 208);
+  CreateDlgLabel(hDlg, 'Notas / Observaciones:', 20, 235, 470, 18);
+  DlgData.EdtNotas := CreateDlgEdit(hDlg, Parc.Notas, 20, 255, 470, 24, 208);
+
+  // Seccion: Ocupacion Subterranea de la Fosa (Niveles y Difuntos)
+  CreateDlgLabel(hDlg, 'Ocupacion Subterranea de la Fosa (Niveles y Difuntos):', 20, 290, 470, 18);
+  NivelesFosaStr := InspeccionarNivelesFosaStr(Parc.Nomenclatura, Parc.CapacidadTotal, InhumacionesRef);
+  DlgData.EdtNivelesFosa := CreateWindowEx(WS_EX_CLIENTEDGE, 'EDIT', PChar(NivelesFosaStr),
+    WS_CHILD or WS_VISIBLE or WS_VSCROLL or ES_MULTILINE or ES_READONLY or ES_AUTOVSCROLL,
+    20, 310, 470, 135, hDlg, HMENU(209), hInstance, nil);
+  SendMessage(DlgData.EdtNivelesFosa, WM_SETFONT, WPARAM(hDlgFont), 1);
 
   // Botones
-  CreateDlgButton(hDlg, 'Guardar en Supabase', 200, 330, 150, 36, 1, True);
-  CreateDlgButton(hDlg, 'Cancelar', 360, 330, 80, 36, 2);
+  CreateDlgButton(hDlg, 'Guardar en Supabase', 230, 465, 150, 36, 1, True);
+  CreateDlgButton(hDlg, 'Cancelar', 390, 465, 100, 36, 2);
 
   SetWindowLongPtr(hDlg, GWLP_USERDATA, LONG_PTR(@DlgData));
   SetFocus(DlgData.EdtNomenclatura);
 
   RunModalLoop(hDlg, ParentWnd);
   Result := DlgData.Confirmed;
+end;
+
+function ShowDlgParcela(ParentWnd: HWND; IsEdit: Boolean; var Parc: TParcela): Boolean;
+var
+  DummyInh: TInhumacionArray;
+begin
+  SetLength(DummyInh, 0);
+  Result := ShowDlgParcela(ParentWnd, IsEdit, Parc, DummyInh);
 end;
 
 // ============================================================================

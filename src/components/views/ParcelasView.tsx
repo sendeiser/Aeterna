@@ -1713,11 +1713,13 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
       {modalEditParcela && (
         <ParcelaForm
           initialData={modalEditParcela}
+          inhumaciones={inhumaciones}
           onSave={(updated) => {
             onSaveParcela(updated)
             setModalEditParcela(null)
           }}
           onCancel={() => setModalEditParcela(null)}
+          onNuevaInhumacionParaParcela={onNuevaInhumacionParaParcela}
         />
       )}
     </div>

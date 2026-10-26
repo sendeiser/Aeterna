@@ -1127,6 +1127,7 @@ export default function App() {
           <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <ParcelaForm
               initialData={editingParcela}
+              inhumaciones={inhumaciones}
               onSave={handleSaveParcela}
               onCancel={() => {
                 setFormParcelaOpen(false)

@@ -1,15 +1,23 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { Parcela, EstadoParcela, EstadoTitular } from '../../types/database'
+import { Parcela, Inhumacion, EstadoParcela, EstadoTitular } from '../../types/database'
 import { formatNomenclatura } from '../../lib/formatters'
 
 interface ParcelaFormProps {
   initialData?: Parcela | null
+  inhumaciones?: Inhumacion[]
   onSave: (parcela: Partial<Parcela>) => void
   onCancel: () => void
+  onNuevaInhumacionParaParcela?: (nomenclatura: string) => void
 }
 
-export const ParcelaForm: React.FC<ParcelaFormProps> = ({ initialData, onSave, onCancel }) => {
+export const ParcelaForm: React.FC<ParcelaFormProps> = ({
+  initialData,
+  inhumaciones = [],
+  onSave,
+  onCancel,
+  onNuevaInhumacionParaParcela,
+}) => {
   const [sector, setSector] = useState(initialData?.sector_id || 'A')
   const [manzana, setManzana] = useState(initialData?.manzana_fila || '25')
   const [numero, setNumero] = useState(initialData?.numero_parcela?.toString() || '96')
@@ -27,6 +35,18 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({ initialData, onSave, o
   const [notas, setNotas] = useState(initialData?.notas || '')
 
   const previewNomenclatura = formatNomenclatura(sector, manzana || '00', numero || '00')
+  const nomActual = initialData?.nomenclatura || previewNomenclatura
+
+  const difuntosEnParcela = useMemo(() => {
+    if (!inhumaciones || !nomActual) return []
+    const norm = nomActual.trim().toUpperCase()
+    return inhumaciones
+      .filter((inh) => {
+        const inhParc = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela
+        return (inhParc || '').trim().toUpperCase() === norm
+      })
+      .sort((a, b) => (a.nivel_posicion || 1) - (b.nivel_posicion || 1))
+  }, [inhumaciones, nomActual])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -274,6 +294,101 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({ initialData, onSave, o
                 ))}
               </div>
             </div>
+          </div>
+        </fieldset>
+
+        {/* Sección: Inspección de Niveles Subterráneos de la Fosa */}
+        <fieldset className="border border-outline-variant/70 rounded-xl p-4 bg-surface/50 space-y-3">
+          <legend className="text-label-caps font-label-caps text-primary uppercase px-2 font-bold flex items-center gap-1.5 bg-surface-container-low rounded py-0.5">
+            <span className="material-symbols-outlined text-[15px]">layers</span>
+            <span>Ocupación Subterránea de la Fosa (Niveles y Difuntos)</span>
+          </legend>
+
+          <div className="text-xs text-on-surface-variant flex items-center justify-between pb-1 border-b border-outline-variant/40">
+            <span>
+              Parcela <strong>{nomActual}</strong> · Capacidad asignada: {capacidad} niveles
+            </span>
+            <span className="font-semibold text-primary">
+              {difuntosEnParcela.length} de {capacidad} niveles ocupados
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            {Array.from({ length: Math.max(capacidad, difuntosEnParcela.length) }, (_, i) => i + 1).map((lvl) => {
+              const difunto = difuntosEnParcela.find((d) => (d.nivel_posicion || 1) === lvl)
+              const isOccupied = !!difunto
+
+              return (
+                <div
+                  key={lvl}
+                  className={`p-3 rounded-lg border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+                    isOccupied
+                      ? 'bg-slate-50/95 border-slate-300 shadow-2xs'
+                      : 'bg-emerald-50/40 border-emerald-200/80'
+                  }`}
+                >
+                  <div className="flex items-start sm:items-center gap-3">
+                    <div
+                      className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                        isOccupied ? 'bg-primary text-white shadow-xs' : 'bg-emerald-600 text-white shadow-xs'
+                      }`}
+                    >
+                      N{lvl}
+                    </div>
+
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className={`text-xs font-bold uppercase px-2 py-0.5 rounded-full ${
+                            isOccupied
+                              ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                              : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          }`}
+                        >
+                          {isOccupied ? 'Ocupado' : 'Disponible / Libre'}
+                        </span>
+                        {isOccupied && (
+                          <span className="font-semibold text-sm text-on-surface">
+                            {difunto.nombre_difunto}
+                          </span>
+                        )}
+                      </div>
+
+                      {isOccupied ? (
+                        <div className="text-[11px] text-on-surface-variant flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5 font-code-cadastral">
+                          {difunto.dni_difunto && <span>DNI: {difunto.dni_difunto}</span>}
+                          {difunto.fecha_inhumacion && (
+                            <span>Inhumación: {difunto.fecha_inhumacion.slice(0, 10)}</span>
+                          )}
+                          {difunto.empresa_funebrera && (
+                            <span className="font-sans text-slate-500">({difunto.empresa_funebrera})</span>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-emerald-800 mt-0.5">
+                          Espacio libre en fosa para futura inhumación.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {!isOccupied && onNuevaInhumacionParaParcela && initialData && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onCancel()
+                        onNuevaInhumacionParaParcela(nomActual)
+                      }}
+                      className="px-2.5 py-1 text-xs font-semibold bg-emerald-700 hover:bg-emerald-800 text-white rounded-md flex items-center gap-1 shrink-0 shadow-xs cursor-pointer self-start sm:self-auto"
+                      title="Registrar nueva inhumación en este nivel de la parcela"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">add</span>
+                      <span>Asentar Inhumación</span>
+                    </button>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </fieldset>
 
