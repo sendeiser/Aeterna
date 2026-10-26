@@ -381,6 +381,7 @@ begin
                   2: pData^.ParcPtr^.Estado := epReservada;
                   3: pData^.ParcPtr^.Estado := epEnMora;
                   4: pData^.ParcPtr^.Estado := epBaja;
+                  5: pData^.ParcPtr^.Estado := epStandby;
                 else
                   pData^.ParcPtr^.Estado := epDisponible;
                 end;
@@ -480,11 +481,13 @@ begin
   SendMessage(DlgData.CmbEstado, CB_ADDSTRING, 0, LPARAM(PChar('Reservada')));
   SendMessage(DlgData.CmbEstado, CB_ADDSTRING, 0, LPARAM(PChar('En Mora')));
   SendMessage(DlgData.CmbEstado, CB_ADDSTRING, 0, LPARAM(PChar('Baja')));
+  SendMessage(DlgData.CmbEstado, CB_ADDSTRING, 0, LPARAM(PChar('Stand-by')));
   case Parc.Estado of
     epOcupada: SendMessage(DlgData.CmbEstado, CB_SETCURSEL, 1, 0);
     epReservada: SendMessage(DlgData.CmbEstado, CB_SETCURSEL, 2, 0);
     epEnMora: SendMessage(DlgData.CmbEstado, CB_SETCURSEL, 3, 0);
     epBaja: SendMessage(DlgData.CmbEstado, CB_SETCURSEL, 4, 0);
+    epStandby: SendMessage(DlgData.CmbEstado, CB_SETCURSEL, 5, 0);
   else
     SendMessage(DlgData.CmbEstado, CB_SETCURSEL, 0, 0);
   end;

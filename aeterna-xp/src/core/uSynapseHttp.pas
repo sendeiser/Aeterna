@@ -85,10 +85,51 @@ begin
   end;
 end;
 
+function IsValidUtf8(const S: string): Boolean;
+var
+  i, len: Integer;
+  c: Byte;
+begin
+  Result := True;
+  len := Length(S);
+  i := 1;
+  while i <= len do
+  begin
+    c := Byte(S[i]);
+    if c <= $7F then
+      Inc(i)
+    else if (c and $E0) = $C0 then
+    begin
+      if (i + 1 > len) or ((Byte(S[i + 1]) and $C0) <> $80) then Exit(False);
+      Inc(i, 2);
+    end
+    else if (c and $F0) = $E0 then
+    begin
+      if (i + 2 > len) or ((Byte(S[i + 1]) and $C0) <> $80) or ((Byte(S[i + 2]) and $C0) <> $80) then Exit(False);
+      Inc(i, 3);
+    end
+    else if (c and $F8) = $F0 then
+    begin
+      if (i + 3 > len) or ((Byte(S[i + 1]) and $C0) <> $80) or ((Byte(S[i + 2]) and $C0) <> $80) or ((Byte(S[i + 3]) and $C0) <> $80) then Exit(False);
+      Inc(i, 4);
+    end
+    else
+      Exit(False);
+  end;
+end;
+
+function EnsureUtf8(const S: string): string;
+begin
+  if IsValidUtf8(S) then
+    Result := S
+  else
+    Result := AnsiToUtf8(S);
+end;
+
 function TSimpleHttpClient.ExecuteRequest(AMethod: THttpMethod; const AEndpoint: string; const ABody: string; const AParams: string): THttpResponse;
 var
   Client: TFPHTTPClient;
-  FullUrl: string;
+  FullUrl, Payload: string;
   RequestBodyStream: TStringStream;
   ResponseBodyStream: TStringStream;
 begin
@@ -107,7 +148,7 @@ begin
       // Headers requeridos por Supabase PostgREST
       Client.AddHeader('apikey', FApiKey);
       Client.AddHeader('Authorization', 'Bearer ' + FAuthToken);
-      Client.AddHeader('Content-Type', 'application/json');
+      Client.AddHeader('Content-Type', 'application/json; charset=utf-8');
       Client.AddHeader('Prefer', 'return=representation');
       Client.AllowRedirect := True;
 
@@ -119,22 +160,24 @@ begin
 
         hmPOST:
         begin
-          RequestBodyStream := TStringStream.Create(ABody);
+          Payload := EnsureUtf8(ABody);
+          RequestBodyStream := TStringStream.Create(Payload);
           Client.RequestBody := RequestBodyStream;
           Client.Post(FullUrl, ResponseBodyStream);
         end;
 
         hmPATCH:
         begin
-          RequestBodyStream := TStringStream.Create(ABody);
+          Payload := EnsureUtf8(ABody);
+          RequestBodyStream := TStringStream.Create(Payload);
           Client.RequestBody := RequestBodyStream;
-          // HTTP PATCH
-          Client.HTTPMethod('PATCH', FullUrl, ResponseBodyStream, [200, 201, 204]);
+          // Permitir codigos estandar para leer el cuerpo de error de PostgREST sin excepciones prematuras
+          Client.HTTPMethod('PATCH', FullUrl, ResponseBodyStream, [200, 201, 204, 400, 401, 403, 404, 409, 422, 500]);
         end;
 
         hmDELETE:
         begin
-          Client.HTTPMethod('DELETE', FullUrl, ResponseBodyStream, [200, 201, 204]);
+          Client.HTTPMethod('DELETE', FullUrl, ResponseBodyStream, [200, 201, 204, 400, 401, 403, 404, 409, 422, 500]);
         end;
       end;
 
@@ -143,13 +186,22 @@ begin
       Result.Success := (Result.StatusCode >= 200) and (Result.StatusCode < 300);
 
       if not Result.Success then
-        Result.ErrorMessage := Format('HTTP Error %d: %s', [Result.StatusCode, Result.Body]);
+      begin
+        if Result.Body <> '' then
+          Result.ErrorMessage := Format('HTTP Error %d: %s', [Result.StatusCode, Result.Body])
+        else
+          Result.ErrorMessage := Format('HTTP Error %d', [Result.StatusCode]);
+      end;
 
     except
       on E: Exception do
       begin
         Result.Success := False;
-        Result.ErrorMessage := E.Message;
+        Result.StatusCode := Client.ResponseStatusCode;
+        if ResponseBodyStream.DataString <> '' then
+          Result.ErrorMessage := Format('HTTP Error %d: %s', [Result.StatusCode, ResponseBodyStream.DataString])
+        else
+          Result.ErrorMessage := E.Message;
         if Result.StatusCode = 0 then
           Result.StatusCode := 500;
       end;
