@@ -861,17 +861,6 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
               <tr className="bg-slate-100 text-[11px] font-label-caps text-slate-700 uppercase tracking-wider h-8 select-none whitespace-nowrap">
                 <th
-                  onClick={() => setSortOption((prev) => (prev === 'numero-asc' ? 'numero-desc' : 'numero-asc'))}
-                  className="px-2 py-2 w-[52px] text-left font-semibold bg-slate-100 whitespace-nowrap cursor-pointer hover:bg-slate-200 transition-colors"
-                  title="Ordenar por N° Afiliado (Asc / Desc)"
-                >
-                  <div className="flex items-center gap-0.5">
-                    <span>N°</span>
-                    {sortOption === 'numero-asc' && <span className="material-symbols-outlined text-[12px] text-primary">arrow_upward</span>}
-                    {sortOption === 'numero-desc' && <span className="material-symbols-outlined text-[12px] text-primary">arrow_downward</span>}
-                  </div>
-                </th>
-                <th
                   onClick={() => setSortOption((prev) => (prev === 'alfa-asc' ? 'alfa-desc' : 'alfa-asc'))}
                   className="px-2.5 py-2 w-[225px] font-semibold bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
                   title="Ordenar por Nombre A-Z / Z-A"
@@ -880,6 +869,17 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                     <span>Afiliado / Titular & Domicilio</span>
                     {sortOption === 'alfa-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
                     {sortOption === 'alfa-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                  </div>
+                </th>
+                <th
+                  onClick={() => setSortOption((prev) => (prev === 'numero-asc' ? 'numero-desc' : 'numero-asc'))}
+                  className="px-2 py-2 w-[55px] text-left font-semibold bg-slate-100 whitespace-nowrap cursor-pointer hover:bg-slate-200 transition-colors"
+                  title="Ordenar por N° Afiliado (Asc / Desc)"
+                >
+                  <div className="flex items-center gap-0.5">
+                    <span>N°</span>
+                    {sortOption === 'numero-asc' && <span className="material-symbols-outlined text-[12px] text-primary">arrow_upward</span>}
+                    {sortOption === 'numero-desc' && <span className="material-symbols-outlined text-[12px] text-primary">arrow_downward</span>}
                   </div>
                 </th>
                 <th
@@ -927,14 +927,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                 if (isEditing) {
                   return (
                     <tr key={afiliado.id} className="bg-primary/5 border-l-4 border-l-primary">
-                      {/* Col 1: N° Afiliado */}
-                      <td className="px-2 py-2 align-middle">
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-surface-container text-primary font-code-cadastral text-code-cadastral font-bold border border-outline-variant">
-                          #{afiliado.numero_afiliado}
-                        </span>
-                      </td>
-
-                      {/* Col 2: Info Afiliado Editable */}
+                      {/* Col 1: Info Afiliado Editable */}
                       <td className="px-2.5 py-2 align-middle">
                         <div className="space-y-1 max-w-[280px]">
                           <input
@@ -968,6 +961,13 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                             className="w-full text-[11px] px-1.5 py-0.5 rounded border border-outline-variant bg-surface"
                           />
                         </div>
+                      </td>
+
+                      {/* Col 2: N° Afiliado */}
+                      <td className="px-2 py-2 align-middle">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-surface-container text-primary font-code-cadastral text-code-cadastral font-bold border border-outline-variant">
+                          #{afiliado.numero_afiliado}
+                        </span>
                       </td>
 
                       {/* Col 3: Cuota Mensual Editable */}
@@ -1034,17 +1034,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                       isEven ? 'bg-white hover:bg-blue-50/80' : 'bg-[#eaf0f6] hover:bg-blue-50/80'
                     }`}
                   >
-                    {/* Col 1: N° Afiliado */}
-                    <td className="px-2.5 py-2 align-middle">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-surface-container text-primary font-code-cadastral text-code-cadastral font-bold border border-outline-variant">
-                        #{afiliado.numero_afiliado}
-                      </span>
-                      <span className="block text-[10px] text-on-surface-variant/70 font-code-cadastral mt-0.5">
-                        ALTA: 2018
-                      </span>
-                    </td>
-
-                    {/* Col 2: Info Afiliado */}
+                    {/* Col 1: Info Afiliado */}
                     <td className="px-3 py-2 align-middle">
                       <div className="font-semibold text-primary text-body-md truncate max-w-[250px]">
                         {afiliado.nombre_completo}
@@ -1076,6 +1066,16 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                           Últ. cuota: <strong>{moraInfo.ultimaCuotaPagada}</strong>
                         </div>
                       )}
+                    </td>
+
+                    {/* Col 2: N° Afiliado */}
+                    <td className="px-2.5 py-2 align-middle">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-surface-container text-primary font-code-cadastral text-code-cadastral font-bold border border-outline-variant">
+                        #{afiliado.numero_afiliado}
+                      </span>
+                      <span className="block text-[10px] text-on-surface-variant/70 font-code-cadastral mt-0.5">
+                        ALTA: 2018
+                      </span>
                     </td>
 
                     {/* Col 3: Cuota Mensual */}

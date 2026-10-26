@@ -152,15 +152,15 @@ var
 
 const
   ColNamesParcelas: array[0..7] of string = (
-    'Parcela', 'Sector', 'Fila / Mz', 'Nro Parcela',
-    'Estado Parcela', 'Titular de Concesion', 'Ultimo Pago', 'Saldo'
+    'Titular de Concesion', 'Parcela', 'Sector', 'Fila / Mz', 'Nro Parcela',
+    'Estado Parcela', 'Ultimo Pago', 'Saldo'
   );
   ColNamesInh: array[0..6] of string = (
     'Fecha Inh.', 'Nombre Completo del Difunto', 'DNI', 'Parcela',
     'Nivel', 'Empresa Funebrera', 'Protocolo Sanitario'
   );
   ColNamesAfil: array[0..7] of string = (
-    'Nro Afiliado', 'Nombre Completo del Titular', 'DNI', 'Direccion de Cobro',
+    'Nombre Completo del Titular', 'Nro Afiliado', 'DNI', 'Direccion de Cobro',
     'Cuota', 'Mora', 'Estado Cobertura', 'Meses Pagados 2026'
   );
   ColNamesCaja: array[0..5] of string = (
@@ -599,24 +599,24 @@ var
   diffCurr: Currency;
 begin
   case Col of
-    0: cmp := CompareNaturalNomenclatura(DataParcelas[Idx1].Nomenclatura, DataParcelas[Idx2].Nomenclatura);
-    1: cmp := CompareText(DataParcelas[Idx1].SectorId, DataParcelas[Idx2].SectorId);
-    2:
+    0: cmp := CompareText(DataParcelas[Idx1].TitularNombre, DataParcelas[Idx2].TitularNombre);
+    1: cmp := CompareNaturalNomenclatura(DataParcelas[Idx1].Nomenclatura, DataParcelas[Idx2].Nomenclatura);
+    2: cmp := CompareText(DataParcelas[Idx1].SectorId, DataParcelas[Idx2].SectorId);
+    3:
       begin
         n1 := StrToIntDef(DataParcelas[Idx1].ManzanaFila, 0);
         n2 := StrToIntDef(DataParcelas[Idx2].ManzanaFila, 0);
         if n1 <> n2 then cmp := n1 - n2
         else cmp := CompareText(DataParcelas[Idx1].ManzanaFila, DataParcelas[Idx2].ManzanaFila);
       end;
-    3:
+    4:
       begin
         n1 := StrToIntDef(DataParcelas[Idx1].NumeroParcela, 0);
         n2 := StrToIntDef(DataParcelas[Idx2].NumeroParcela, 0);
         if n1 <> n2 then cmp := n1 - n2
         else cmp := CompareText(DataParcelas[Idx1].NumeroParcela, DataParcelas[Idx2].NumeroParcela);
       end;
-    4: cmp := CompareText(EstadoParcelaToDisplay(DataParcelas[Idx1].Estado), EstadoParcelaToDisplay(DataParcelas[Idx2].Estado));
-    5: cmp := CompareText(DataParcelas[Idx1].TitularNombre, DataParcelas[Idx2].TitularNombre);
+    5: cmp := CompareText(EstadoParcelaToDisplay(DataParcelas[Idx1].Estado), EstadoParcelaToDisplay(DataParcelas[Idx2].Estado));
     6: cmp := CompareText(DataParcelas[Idx1].FechaAdquisicion, DataParcelas[Idx2].FechaAdquisicion);
     7:
       begin
@@ -718,8 +718,8 @@ var
   diffCurr: Currency;
 begin
   case Col of
-    0: cmp := DataAfiliados[Idx1].NumeroAfiliado - DataAfiliados[Idx2].NumeroAfiliado;
-    1: cmp := CompareText(DataAfiliados[Idx1].NombreCompleto, DataAfiliados[Idx2].NombreCompleto);
+    0: cmp := CompareText(DataAfiliados[Idx1].NombreCompleto, DataAfiliados[Idx2].NombreCompleto);
+    1: cmp := DataAfiliados[Idx1].NumeroAfiliado - DataAfiliados[Idx2].NumeroAfiliado;
     2: cmp := CompareText(DataAfiliados[Idx1].Dni, DataAfiliados[Idx2].Dni);
     3: cmp := CompareText(DataAfiliados[Idx1].DireccionCobro, DataAfiliados[Idx2].DireccionCobro);
     4:
@@ -885,12 +885,12 @@ begin
   for i := 0 to count - 1 do
   begin
     AddListViewItemWithParam(hLvParcelas, i, Indices[i], [
+      BoolToTexto(DataParcelas[Indices[i]].TitularNombre <> '', DataParcelas[Indices[i]].TitularNombre, '(Sin Titular Asignado)'),
       DataParcelas[Indices[i]].Nomenclatura,
       BoolToTexto(DataParcelas[Indices[i]].SectorId <> '', DataParcelas[Indices[i]].SectorId, '-'),
       DataParcelas[Indices[i]].ManzanaFila,
       DataParcelas[Indices[i]].NumeroParcela,
       EstadoParcelaToDisplay(DataParcelas[Indices[i]].Estado),
-      BoolToTexto(DataParcelas[Indices[i]].TitularNombre <> '', DataParcelas[Indices[i]].TitularNombre, '(Sin Titular Asignado)'),
       FormatearFecha(DataParcelas[Indices[i]].FechaAdquisicion),
       FormatearMoneda(DataParcelas[Indices[i]].SaldoMantenimiento)
     ]);
@@ -968,8 +968,8 @@ begin
     if PagadosStr = '' then PagadosStr := 'Ninguno';
 
     AddListViewItemWithParam(hLvAfiliados, i, Indices[i], [
-      IntToStr(DataAfiliados[Indices[i]].NumeroAfiliado),
       DataAfiliados[Indices[i]].NombreCompleto,
+      IntToStr(DataAfiliados[Indices[i]].NumeroAfiliado),
       BoolToTexto(DataAfiliados[Indices[i]].Dni <> '', DataAfiliados[Indices[i]].Dni, 'S/D'),
       DataAfiliados[Indices[i]].DireccionCobro,
       FormatearMoneda(DataAfiliados[Indices[i]].MontoCuotaMensual),
@@ -2096,12 +2096,12 @@ begin
   AddControlToModule(1, hBtnSyncParc);
 
   hLvParcelas := CreateListView(hWnd, 15, 175, 990, 435, IDC_LV_PARCELAS);
-  AddListViewColumn(hLvParcelas, 0, 'Parcela', 125);
-  AddListViewColumn(hLvParcelas, 1, 'Sector', 85);
-  AddListViewColumn(hLvParcelas, 2, 'Fila / Mz', 85);
-  AddListViewColumn(hLvParcelas, 3, 'Nro Parcela', 95);
-  AddListViewColumn(hLvParcelas, 4, 'Estado Parcela', 110);
-  AddListViewColumn(hLvParcelas, 5, 'Titular de Concesion', 260);
+  AddListViewColumn(hLvParcelas, 0, 'Titular de Concesion', 260);
+  AddListViewColumn(hLvParcelas, 1, 'Parcela', 115);
+  AddListViewColumn(hLvParcelas, 2, 'Sector', 85);
+  AddListViewColumn(hLvParcelas, 3, 'Fila / Mz', 80);
+  AddListViewColumn(hLvParcelas, 4, 'Nro Parcela', 90);
+  AddListViewColumn(hLvParcelas, 5, 'Estado Parcela', 110);
   AddListViewColumn(hLvParcelas, 6, 'Ultimo Pago', 110);
   AddListViewColumn(hLvParcelas, 7, 'Saldo', 120);
   AddControlToModule(1, hLvParcelas);
@@ -2175,8 +2175,8 @@ begin
   AddControlToModule(3, hBtnSyncAfil);
 
   hLvAfiliados := CreateListView(hWnd, 15, 175, 990, 435, IDC_LV_AFILIADOS);
-  AddListViewColumn(hLvAfiliados, 0, 'Nro Afiliado', 85);
-  AddListViewColumn(hLvAfiliados, 1, 'Nombre Completo del Titular', 200);
+  AddListViewColumn(hLvAfiliados, 0, 'Nombre Completo del Titular', 220);
+  AddListViewColumn(hLvAfiliados, 1, 'Nro Afiliado', 85);
   AddListViewColumn(hLvAfiliados, 2, 'DNI', 95);
   AddListViewColumn(hLvAfiliados, 3, 'Direccion de Cobro', 150);
   AddListViewColumn(hLvAfiliados, 4, 'Cuota', 85);

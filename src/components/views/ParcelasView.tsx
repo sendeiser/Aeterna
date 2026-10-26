@@ -974,17 +974,6 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
                 <tr className="text-label-caps font-label-caps text-slate-700 uppercase bg-slate-100 select-none">
                   <th
-                    onClick={() => setSortOption((prev) => (prev === 'parcela-asc' ? 'parcela-desc' : 'parcela-asc'))}
-                    className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
-                    title="Ordenar por Parcela (A-Z / Z-A)"
-                  >
-                    <div className="flex items-center gap-1">
-                      <span>Parcela</span>
-                      {(sortOption === 'parcela-asc' || sortOption === 'nomenclatura-asc') && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
-                      {(sortOption === 'parcela-desc' || sortOption === 'nomenclatura-desc') && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
-                    </div>
-                  </th>
-                  <th
                     onClick={() => setSortOption((prev) => (prev === 'alfa-asc' ? 'alfa-desc' : 'alfa-asc'))}
                     className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
                     title="Ordenar por Titular Actual (A-Z / Z-A)"
@@ -993,6 +982,17 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                       <span>Titular Actual</span>
                       {sortOption === 'alfa-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
                       {sortOption === 'alfa-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => setSortOption((prev) => (prev === 'parcela-asc' ? 'parcela-desc' : 'parcela-asc'))}
+                    className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
+                    title="Ordenar por Parcela (A-Z / Z-A)"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Parcela</span>
+                      {(sortOption === 'parcela-asc' || sortOption === 'nomenclatura-asc') && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                      {(sortOption === 'parcela-desc' || sortOption === 'nomenclatura-desc') && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
                     </div>
                   </th>
                   <th
@@ -1045,16 +1045,6 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                         key={p.id}
                         className="bg-primary/5 border-l-4 border-l-primary"
                       >
-                        {/* Nomenclatura */}
-                        <td className="py-2.5 px-3">
-                          <span className="font-code-cadastral text-code-cadastral font-bold block text-primary">
-                            {p.nomenclatura}
-                          </span>
-                          <span className="text-[11px] text-outline">
-                            Sec. {p.sector_id === 'SALINAS' ? 'Salinas (Panteón)' : p.sector_id === 'A' ? 'Tradicional' : 'Parque Central'}
-                          </span>
-                        </td>
-
                         {/* Titular Editable */}
                         <td className="py-2 px-3">
                           <div className="space-y-1 max-w-[220px]">
@@ -1083,6 +1073,16 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                               </select>
                             </div>
                           </div>
+                        </td>
+
+                        {/* Nomenclatura */}
+                        <td className="py-2.5 px-3">
+                          <span className="font-code-cadastral text-code-cadastral font-bold block text-primary">
+                            {p.nomenclatura}
+                          </span>
+                          <span className="text-[11px] text-outline">
+                            Sec. {p.sector_id === 'SALINAS' ? 'Salinas (Panteón)' : p.sector_id === 'A' ? 'Tradicional' : 'Parque Central'}
+                          </span>
                         </td>
 
                         {/* Capacidad Editable */}
@@ -1175,20 +1175,6 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                           : 'bg-[#eaf0f6] hover:bg-blue-50/80'
                       }`}
                     >
-                      {/* Nomenclatura */}
-                      <td className="py-2.5 px-3">
-                        <span
-                          className={`font-code-cadastral text-code-cadastral font-bold block ${
-                            isSelected ? 'text-primary' : 'text-on-surface'
-                          }`}
-                        >
-                          {p.nomenclatura}
-                        </span>
-                        <span className="text-[11px] text-outline">
-                          Sec. {p.sector_id === 'SALINAS' ? 'Salinas (Panteón)' : p.sector_id === 'A' ? 'Tradicional' : 'Parque Central'}
-                        </span>
-                      </td>
-
                       {/* Titular */}
                       <td className="py-2.5 px-3">
                         <div className="flex items-center gap-1.5">
@@ -1213,6 +1199,20 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                             Últ. cuota: {p.ultima_cuota_pagada || (p.fecha_ultimo_pago ? p.fecha_ultimo_pago : 'S/D')}
                           </div>
                         )}
+                      </td>
+
+                      {/* Nomenclatura */}
+                      <td className="py-2.5 px-3">
+                        <span
+                          className={`font-code-cadastral text-code-cadastral font-bold block ${
+                            isSelected ? 'text-primary' : 'text-on-surface'
+                          }`}
+                        >
+                          {p.nomenclatura}
+                        </span>
+                        <span className="text-[11px] text-outline">
+                          Sec. {p.sector_id === 'SALINAS' ? 'Salinas (Panteón)' : p.sector_id === 'A' ? 'Tradicional' : 'Parque Central'}
+                        </span>
                       </td>
 
                       {/* Ocupación / Niveles with 3 bars */}
