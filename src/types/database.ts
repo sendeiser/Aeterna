@@ -125,3 +125,21 @@ export interface PagoMantenimiento {
   observaciones?: string | null
   fecha_pago: string
 }
+
+export type TipoMovimientoCaja = 'ingreso' | 'egreso'
+
+export interface MovimientoCaja {
+  id: string
+  tipo: TipoMovimientoCaja
+  concepto: string
+  categoria: string
+  monto: number
+  metodo_pago: MetodoPago | 'efectivo' | 'transferencia' | 'qr'
+  numero_recibo: string
+  parcela_nomenclatura?: string
+  titular_nombre?: string
+  fecha: string
+  operador?: string
+  observaciones?: string
+}
+

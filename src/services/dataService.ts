@@ -20,6 +20,8 @@ export interface PagoRecibo {
   metodo: 'transferencia_qr' | 'efectivo'
   fecha: string
   nroRecibo: string
+  tipo?: 'ingreso' | 'egreso'
+  categoria?: string
 }
 
 // =========================================================================
@@ -936,14 +938,72 @@ export async function registrarPagoSupabase(pago: PagoRecibo): Promise<boolean> 
       numero_recibo: pago.nroRecibo,
       monto: pago.monto,
       metodo_pago: pago.metodo,
-      concepto: pago.concepto,
-      titular_paga: pago.titularNombre,
+      concepto: (pago.tipo === 'egreso' ? '[EGRESO] ' : '') + pago.concepto,
+      titular_paga: pago.titularNombre || 'Tesorería Parroquial / Municipal',
     })
     return true
   } catch (err) {
     return false
   }
 }
+
+export function saveEgresoToStorage(egreso: PagoRecibo) {
+  const mov = { ...egreso, tipo: 'egreso' as const }
+  const existing: PagoRecibo[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.PAGOS) || '[]')
+  existing.unshift(mov)
+  localStorage.setItem(STORAGE_KEYS.PAGOS, JSON.stringify(existing))
+}
+
+export function calcularBalanceCaja(movimientos: PagoRecibo[]) {
+  const totalIngresos = movimientos
+    .filter((m) => m.tipo !== 'egreso')
+    .reduce((sum, m) => sum + (m.monto || 0), 0)
+  const totalEgresos = movimientos
+    .filter((m) => m.tipo === 'egreso')
+    .reduce((sum, m) => sum + (m.monto || 0), 0)
+  return {
+    totalIngresos,
+    totalEgresos,
+    balanceNeto: totalIngresos - totalEgresos,
+  }
+}
+
+export async function actualizarCuotaMasivaSupabase(
+  nuevoMonto: number,
+  soloActivos: boolean = true
+): Promise<{ success: boolean; count: number }> {
+  try {
+    let count = 0
+    // Actualizar en LocalStorage
+    const localAfiliados = JSON.parse(localStorage.getItem(STORAGE_KEYS.AFILIADOS) || '[]')
+    const updatedLocal = localAfiliados.map((a: any) => {
+      if (!soloActivos || a.estado === 'activo') {
+        count++
+        return { ...a, monto_cuota_mensual: nuevoMonto }
+      }
+      return a
+    })
+    localStorage.setItem(STORAGE_KEYS.AFILIADOS, JSON.stringify(updatedLocal))
+
+    if (isSupabaseConfigured) {
+      let query = supabase.from('afiliados_seguro').update({ monto_cuota_mensual: nuevoMonto })
+      if (soloActivos) {
+        query = query.eq('estado', 'activo')
+      }
+      const { data, error } = await query.select()
+      if (error) {
+        console.warn('Advertencia al actualizar cuota masiva en Supabase:', error.message)
+      } else if (data) {
+        count = data.length
+      }
+    }
+    return { success: true, count }
+  } catch (err: any) {
+    console.error('Error en actualizarCuotaMasivaSupabase:', err)
+    return { success: false, count: 0 }
+  }
+}
+
 
 // =========================================================================
 // 4. MIGRACIÓN MASIVA DE TODOS LOS DATOS A SUPABASE
