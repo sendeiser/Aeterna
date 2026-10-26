@@ -152,6 +152,16 @@ begin
   PDFDrawLineTop(Page, 15, 38.5, 195, 38.5, 0.5, COL_SLATE_MED);
 end;
 
+procedure GuardarPDFSeguro(Doc: TPDFDocument; const OutputPath: string);
+var
+  Dir: string;
+begin
+  Dir := ExtractFilePath(OutputPath);
+  if (Dir <> '') and not DirectoryExists(Dir) then
+    ForceDirectories(Dir);
+  Doc.SaveToFile(OutputPath);
+end;
+
 // ----------------------------------------------------------------------------
 // 1. ACTA OFICIAL DE INHUMACION
 // ----------------------------------------------------------------------------
@@ -332,7 +342,7 @@ begin
     PDFWriteTextTop(Page, 15, 284, 'Aeterna Suite XP - Parroquia San Nicolas de Bari - Sistema Registral Certificado');
     PDFWriteTextTop(Page, 160, 284, 'Pagina 1 de 1 - Original');
 
-    Doc.SaveToFile(OutputPath);
+    GuardarPDFSeguro(Doc, OutputPath);
   finally
     Doc.Free;
   end;
@@ -471,7 +481,7 @@ begin
     PDFWriteTextTop(Page, 15, 283, 'Aeterna Suite XP - Libro Parroquial de Inhumaciones');
     PDFWriteTextTop(Page, 170, 283, 'Pagina ' + IntToStr(PaginaActual));
 
-    Doc.SaveToFile(OutputPath);
+    GuardarPDFSeguro(Doc, OutputPath);
   finally
     Doc.Free;
   end;
@@ -597,7 +607,7 @@ begin
     // 2. DUPLICADO (Para Archivo y Caja Parroquial)
     DibujarCuerpoRecibo(Page, FontH, FontN, Pago, 148, 'TALON ARCHIVO PARROQUIAL');
 
-    Doc.SaveToFile(OutputPath);
+    GuardarPDFSeguro(Doc, OutputPath);
   finally
     Doc.Free;
   end;
@@ -735,7 +745,7 @@ begin
     PDFWriteTextTop(Page, 15, 283, 'Aeterna Suite XP - Planilla Oficial de Cobranza');
     PDFWriteTextTop(Page, 170, 283, 'Pagina ' + IntToStr(PaginaActual));
 
-    Doc.SaveToFile(OutputPath);
+    GuardarPDFSeguro(Doc, OutputPath);
   finally
     Doc.Free;
   end;
@@ -895,7 +905,7 @@ begin
     PDFWriteTextTop(Page, 15, 283, 'Aeterna Suite XP - Acta Notarial de Cierre de Caja');
     PDFWriteTextTop(Page, 170, 283, 'Pagina ' + IntToStr(PaginaActual));
 
-    Doc.SaveToFile(OutputPath);
+    GuardarPDFSeguro(Doc, OutputPath);
   finally
     Doc.Free;
   end;
@@ -1070,7 +1080,7 @@ begin
     PDFWriteTextTop(Page, 15, 283, 'Aeterna Suite XP - Padron Oficial de Parcelas');
     PDFWriteTextTop(Page, 170, 283, 'Pagina ' + IntToStr(PaginaActual));
 
-    Doc.SaveToFile(OutputPath);
+    GuardarPDFSeguro(Doc, OutputPath);
   finally
     Doc.Free;
   end;

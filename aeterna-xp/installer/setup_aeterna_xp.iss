@@ -26,6 +26,10 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
+[Dirs]
+; Crear carpeta de reportes con permisos totales para usuarios estandar (evita Error 5 Acceso Denegado al generar PDFs)
+Name: "{app}\reportes"; Permissions: users-full; Flags: uninsneveruninstall
+
 [Files]
 ; Ejecutable principal compilado Win32 nativo
 Source: "..\bin\AeternaXP.exe"; DestDir: "{app}"; Flags: ignoreversion
@@ -37,6 +41,7 @@ Source: "..\bin\ssleay32.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\Aeterna XP"; Filename: "{app}\AeternaXP.exe"
+Name: "{group}\Carpeta de Reportes PDF"; Filename: "{app}\reportes"
 Name: "{group}\Desinstalar Aeterna"; Filename: "{uninstallexe}"
 Name: "{commondesktop}\Aeterna XP"; Filename: "{app}\AeternaXP.exe"; Tasks: desktopicon
 

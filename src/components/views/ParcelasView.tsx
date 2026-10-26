@@ -45,6 +45,14 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   const [pageSize, setPageSize] = useState<'todas' | 50 | 100>('todas')
   const [currentPage, setCurrentPage] = useState(1)
   const [sortOption, setSortOption] = useState<string>('parcela-asc')
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   const [selectedParcelaId, setSelectedParcelaId] = useState<string | null>(
     parcelas.length > 0 ? parcelas[0].id : null
   )
@@ -307,11 +315,12 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
     })
   }, [filteredParcelas, sortOption])
 
-  const totalPages = pageSize === 'todas' ? 1 : Math.ceil(sortedParcelas.length / pageSize)
+  const effectivePageSize = isMobile ? 'todas' : pageSize
+  const totalPages = effectivePageSize === 'todas' ? 1 : Math.ceil(sortedParcelas.length / effectivePageSize)
   const displayedParcelas =
-    pageSize === 'todas'
+    effectivePageSize === 'todas'
       ? sortedParcelas
-      : sortedParcelas.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+      : sortedParcelas.slice((currentPage - 1) * effectivePageSize, currentPage * effectivePageSize)
 
   // Selected Parcela Object
   const selectedParcela = parcelas.find((p) => p.id === selectedParcelaId) || sortedParcelas[0] || parcelas[0]
@@ -1557,16 +1566,17 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
           <div className="shrink-0 p-2 sm:p-2.5 bg-surface-container-low border-t border-outline-variant flex flex-wrap items-center justify-between gap-2 text-body-sm text-on-surface-variant">
             <div className="flex items-center gap-2">
               <span className="font-medium text-on-surface text-xs sm:text-sm">
-                {pageSize === 'todas'
+                {effectivePageSize === 'todas'
                   ? `Mostrando todas las ${filteredParcelas.length} parcelas`
-                  : `Mostrando ${(currentPage - 1) * (pageSize as number) + 1} - ${Math.min(
-                      currentPage * (pageSize as number),
+                  : `Mostrando ${(currentPage - 1) * (effectivePageSize as number) + 1} - ${Math.min(
+                      currentPage * (effectivePageSize as number),
                       filteredParcelas.length
                     )} de ${filteredParcelas.length} parcelas`}
               </span>
             </div>
 
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Selector de paginación: oculto en modo mobile tal como se solicitó para mostrar siempre todos los registros */}
+            <div className="hidden sm:flex items-center gap-1.5 sm:gap-2">
               <span className="text-[11px] text-outline hidden sm:inline">Mostrar:</span>
               <button
                 type="button"

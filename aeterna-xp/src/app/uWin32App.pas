@@ -250,19 +250,132 @@ begin
   if Cond then Result := Si else Result := No;
 end;
 
-function GetReportsDirectory: string;
+function TestDirectoryWritable(const DirPath: string): Boolean;
+var
+  TestFilePath: string;
+  F: TextFile;
 begin
-  Result := ExtractFilePath(ParamStr(0)) + 'reportes';
-  if not DirectoryExists(Result) then
-    ForceDirectories(Result);
+  Result := False;
+  try
+    if not DirectoryExists(DirPath) then
+      if not ForceDirectories(DirPath) then
+        Exit;
+
+    TestFilePath := IncludeTrailingPathDelimiter(DirPath) + 'aeterna_perm_test.tmp';
+    AssignFile(F, TestFilePath);
+    {$I-}
+    Rewrite(F);
+    {$I+}
+    if IOResult = 0 then
+    begin
+      WriteLn(F, 'ok');
+      CloseFile(F);
+      SysUtils.DeleteFile(TestFilePath);
+      Result := True;
+    end;
+  except
+    Result := False;
+  end;
+end;
+
+function GetReportsDirectory: string;
+var
+  Candidate: string;
+  UserProfile: string;
+  AppData: string;
+  TempDir: string;
+begin
+  // 1. Prioridad: carpeta 'reportes' local a la aplicacion (modo portable o desarrollo)
+  Candidate := IncludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0))) + 'reportes';
+  if TestDirectoryWritable(Candidate) then
+  begin
+    Result := Candidate;
+    Exit;
+  end;
+
+  // 2. Si estamos en Program Files o sin permisos de escritura, usar Documentos del Usuario
+  UserProfile := SysUtils.GetEnvironmentVariable('USERPROFILE');
+  if UserProfile <> '' then
+  begin
+    // Probar 'Documents\Aeterna\Reportes' (Windows 7, 8, 10, 11)
+    Candidate := IncludeTrailingPathDelimiter(UserProfile) + 'Documents\Aeterna\Reportes';
+    if TestDirectoryWritable(Candidate) then
+    begin
+      Result := Candidate;
+      Exit;
+    end;
+
+    // Probar 'Mis Documentos\Aeterna\Reportes' (Windows XP en espanol)
+    Candidate := IncludeTrailingPathDelimiter(UserProfile) + 'Mis Documentos\Aeterna\Reportes';
+    if TestDirectoryWritable(Candidate) then
+    begin
+      Result := Candidate;
+      Exit;
+    end;
+  end;
+
+  // 3. Probar en AppData (Roaming)
+  AppData := SysUtils.GetEnvironmentVariable('APPDATA');
+  if AppData <> '' then
+  begin
+    Candidate := IncludeTrailingPathDelimiter(AppData) + 'Aeterna\Reportes';
+    if TestDirectoryWritable(Candidate) then
+    begin
+      Result := Candidate;
+      Exit;
+    end;
+  end;
+
+  // 4. Ultimo recurso garantizado: Carpeta temporal de Windows
+  TempDir := SysUtils.GetEnvironmentVariable('TEMP');
+  if TempDir = '' then
+    TempDir := SysUtils.GetEnvironmentVariable('TMP');
+  if TempDir = '' then
+    TempDir := 'C:\TEMP';
+
+  Candidate := IncludeTrailingPathDelimiter(TempDir) + 'Aeterna\Reportes';
+  if not DirectoryExists(Candidate) then
+    ForceDirectories(Candidate);
+  Result := Candidate;
 end;
 
 procedure OpenFileWithShell(const FilePath: string);
+var
+  Res: PtrInt;
+  Msg: string;
 begin
-  if FileExists(FilePath) then
-    ShellExecute(hMainWnd, 'open', PChar(FilePath), nil, nil, SW_SHOWNORMAL)
-  else
-    MessageBox(hMainWnd, PChar('No se encontro el archivo: ' + FilePath), 'Aviso', MB_ICONWARNING or MB_OK);
+  // Si es una carpeta, abrirla en el Explorador directamente
+  if DirectoryExists(FilePath) then
+  begin
+    ShellExecute(hMainWnd, 'explore', PChar(FilePath), nil, nil, SW_SHOWNORMAL);
+    Exit;
+  end;
+
+  if not FileExists(FilePath) then
+  begin
+    MessageBox(hMainWnd, PChar('No se encontro el archivo de reporte:'#13#10 + FilePath), 'Aviso', MB_ICONWARNING or MB_OK);
+    Exit;
+  end;
+
+  // 1. Intentar abrir con el visor predeterminado asignado en Windows
+  Res := PtrInt(ShellExecute(hMainWnd, 'open', PChar(FilePath), nil, nil, SW_SHOWNORMAL));
+
+  // 2. Si ShellExecute retorna <= 32 (SE_ERR_NOASSOC = 31 u otro error de asociacion de extension)
+  if Res <= 32 then
+  begin
+    // Intento con 'cmd /c start' que consulta asociaciones de registro y navegadores
+    Res := PtrInt(ShellExecute(hMainWnd, 'open', 'cmd.exe', PChar('/c start "" "' + FilePath + '"'), nil, SW_HIDE));
+  end;
+
+  // 3. Si aun no se pudo abrir directamente, abrir el Explorador de Windows con el archivo seleccionado
+  if Res <= 32 then
+  begin
+    ShellExecute(hMainWnd, 'open', 'explorer.exe', PChar('/select,"' + FilePath + '"'), nil, SW_SHOWNORMAL);
+    Msg := 'Reporte PDF generado exitosamente en:'#13#10 + FilePath + #13#10#13#10 +
+           'No se detecto un visor de PDF instalado en esta PC.'#13#10 +
+           'Se abrio la carpeta contenedora en el Explorador para que pueda visualizarlo con su navegador o visor preferido.';
+    MessageBox(hMainWnd, PChar(Msg), 'Reporte Generado', MB_ICONINFORMATION or MB_OK);
+  end;
 end;
 
 procedure SetStatusMessage(const MsgText: string);
@@ -1492,9 +1605,14 @@ begin
         'Parcela: ' + Inh.NomenclaturaParcela), 'Inhumacion Registrada', MB_ICONINFORMATION or MB_OK);
 
       // Emitir Acta Oficial en PDF
-      Ruta := GetReportsDirectory + '\Acta_Inhumacion_' + FormatDateTime('yyyymmdd_hhnnss', Now) + '.pdf';
-      GenerarActaInhumacionPDF(Inh, Ruta);
-      OpenFileWithShell(Ruta);
+      try
+        Ruta := GetReportsDirectory + '\Acta_Inhumacion_' + FormatDateTime('yyyymmdd_hhnnss', Now) + '.pdf';
+        GenerarActaInhumacionPDF(Inh, Ruta);
+        OpenFileWithShell(Ruta);
+      except
+        on E: Exception do
+          MessageBox(hMainWnd, PChar('Inhumacion asentada en la nube, pero no se pudo generar el archivo PDF:'#13#10 + E.Message), 'Aviso de Reporte', MB_ICONWARNING or MB_OK);
+      end;
 
       CargarDatosIniciales;
     end
@@ -1739,12 +1857,17 @@ begin
     Pago.OperadorNombre := 'Admin General';
     Pago.Observaciones := 'Mantenimiento Parcela ' + Nomenclatura;
 
-    Ruta := GetReportsDirectory + '\Recibo_Mantenimiento_' + Pago.NroRecibo + '.pdf';
-    GenerarReciboPagoPDF(Pago, Ruta);
+    try
+      Ruta := GetReportsDirectory + '\Recibo_Mantenimiento_' + Pago.NroRecibo + '.pdf';
+      GenerarReciboPagoPDF(Pago, Ruta);
 
-    MessageBox(hMainWnd, PChar('Cobro de mantenimiento registrado exitosamente.'#13#10 +
-      'Se actualizo el saldo de la parcela y se genero el recibo oficial: ' + Ruta), 'Cobro Registrado', MB_ICONINFORMATION or MB_OK);
-    OpenFileWithShell(Ruta);
+      MessageBox(hMainWnd, PChar('Cobro de mantenimiento registrado exitosamente.'#13#10 +
+        'Se actualizo el saldo de la parcela y se genero el recibo oficial:'#13#10 + Ruta), 'Cobro Registrado', MB_ICONINFORMATION or MB_OK);
+      OpenFileWithShell(Ruta);
+    except
+      on E: Exception do
+        MessageBox(hMainWnd, PChar('Cobro registrado en base de datos, pero hubo un error al crear el archivo PDF:'#13#10 + E.Message), 'Aviso de Reporte', MB_ICONWARNING or MB_OK);
+    end;
 
     CargarDatosIniciales;
   end;
@@ -1910,14 +2033,19 @@ begin
     Pago.OperadorNombre := 'Cobrador General';
     Pago.Observaciones := Concepto;
 
-    Ruta := GetReportsDirectory + '\Recibo_Cuota_' + Pago.NroRecibo + '.pdf';
-    GenerarReciboPagoPDF(Pago, Ruta);
+    try
+      Ruta := GetReportsDirectory + '\Recibo_Cuota_' + Pago.NroRecibo + '.pdf';
+      GenerarReciboPagoPDF(Pago, Ruta);
 
-    MessageBox(hMainWnd, PChar('Cobro de cuota mensual asentado exitosamente.'#13#10 +
-      'Afiliado: ' + Afi.NombreCompleto + ' (#' + IntToStr(Afi.NumeroAfiliado) + ')'#13#10 +
-      'Periodo: ' + MesNombre + ' ' + IntToStr(Anio) + ' - Importe: ' + FormatearMoneda(Monto) + #13#10 +
-      'Se emitio el recibo oficial por duplicado: ' + Ruta), 'Cobro Registrado', MB_ICONINFORMATION or MB_OK);
-    OpenFileWithShell(Ruta);
+      MessageBox(hMainWnd, PChar('Cobro de cuota mensual asentado exitosamente.'#13#10 +
+        'Afiliado: ' + Afi.NombreCompleto + ' (#' + IntToStr(Afi.NumeroAfiliado) + ')'#13#10 +
+        'Periodo: ' + MesNombre + ' ' + IntToStr(Anio) + ' - Importe: ' + FormatearMoneda(Monto) + #13#10 +
+        'Se emitio el recibo oficial por duplicado:'#13#10 + Ruta), 'Cobro Registrado', MB_ICONINFORMATION or MB_OK);
+      OpenFileWithShell(Ruta);
+    except
+      on E: Exception do
+        MessageBox(hMainWnd, PChar('Cuota asentada en la base de datos, pero no se pudo generar el archivo PDF:'#13#10 + E.Message), 'Aviso de Reporte', MB_ICONWARNING or MB_OK);
+    end;
 
     CargarDatosIniciales;
   end;
@@ -1993,12 +2121,17 @@ begin
     Pago.OperadorNombre := 'Caja Central';
     Pago.Observaciones := Concepto;
 
-    Ruta := GetReportsDirectory + '\Recibo_Caja_' + Pago.NroRecibo + '.pdf';
-    GenerarReciboPagoPDF(Pago, Ruta);
+    try
+      Ruta := GetReportsDirectory + '\Recibo_Caja_' + Pago.NroRecibo + '.pdf';
+      GenerarReciboPagoPDF(Pago, Ruta);
 
-    MessageBox(hMainWnd, PChar('Cobro registrado exitosamente en Caja Diaria.'#13#10 +
-      'Se emitio el recibo oficial por duplicado: ' + Ruta), 'Ingreso Registrado', MB_ICONINFORMATION or MB_OK);
-    OpenFileWithShell(Ruta);
+      MessageBox(hMainWnd, PChar('Cobro registrado exitosamente en Caja Diaria.'#13#10 +
+        'Se emitio el recibo oficial por duplicado:'#13#10 + Ruta), 'Ingreso Registrado', MB_ICONINFORMATION or MB_OK);
+      OpenFileWithShell(Ruta);
+    except
+      on E: Exception do
+        MessageBox(hMainWnd, PChar('Ingreso asentado en Caja, pero no se pudo generar el archivo PDF:'#13#10 + E.Message), 'Aviso de Reporte', MB_ICONWARNING or MB_OK);
+    end;
 
     CargarDatosIniciales;
   end;
@@ -2109,20 +2242,30 @@ begin
     Inh.TelefonoResponsable := '336-4419822';
   end;
 
-  Ruta := GetReportsDirectory + '\Acta_Oficial_Inhumacion_' + FormatDateTime('yyyymmdd_hhnnss', Now) + '.pdf';
-  GenerarActaInhumacionPDF(Inh, Ruta);
-  SetStatusMessage('Acta de Inhumacion generada exitosamente: ' + Inh.NombreDifunto);
-  OpenFileWithShell(Ruta);
+  try
+    Ruta := GetReportsDirectory + '\Acta_Oficial_Inhumacion_' + FormatDateTime('yyyymmdd_hhnnss', Now) + '.pdf';
+    GenerarActaInhumacionPDF(Inh, Ruta);
+    SetStatusMessage('Acta de Inhumacion generada exitosamente: ' + Inh.NombreDifunto);
+    OpenFileWithShell(Ruta);
+  except
+    on E: Exception do
+      MessageBox(hMainWnd, PChar('Error al emitir el Acta de Inhumacion en PDF:'#13#10 + E.Message), 'Error de Reporte', MB_ICONERROR or MB_OK);
+  end;
 end;
 
 procedure AccionGenerarFolioPDF;
 var
   Ruta: string;
 begin
-  Ruta := GetReportsDirectory + '\Folio_Libro_Inhumaciones_' + FormatDateTime('yyyymmdd', Now) + '.pdf';
-  GenerarFolioInhumacionesPDF(DataInhumaciones, Ruta);
-  SetStatusMessage('Folio del Libro de Inhumaciones generado.');
-  OpenFileWithShell(Ruta);
+  try
+    Ruta := GetReportsDirectory + '\Folio_Libro_Inhumaciones_' + FormatDateTime('yyyymmdd', Now) + '.pdf';
+    GenerarFolioInhumacionesPDF(DataInhumaciones, Ruta);
+    SetStatusMessage('Folio del Libro de Inhumaciones generado.');
+    OpenFileWithShell(Ruta);
+  except
+    on E: Exception do
+      MessageBox(hMainWnd, PChar('Error al emitir el Folio de Inhumaciones en PDF:'#13#10 + E.Message), 'Error de Reporte', MB_ICONERROR or MB_OK);
+  end;
 end;
 
 procedure AccionGenerarReciboPDF(ExplicitDataIdx: Integer = -1);
@@ -2152,43 +2295,63 @@ begin
     Pago.Observaciones := 'Cobro de Mantenimiento de Parcela';
   end;
 
-  Ruta := GetReportsDirectory + '\Recibo_Oficial_' + Pago.NroRecibo + '.pdf';
-  GenerarReciboPagoPDF(Pago, Ruta);
-  SetStatusMessage('Recibo oficial por duplicado generado: ' + Pago.NroRecibo);
-  OpenFileWithShell(Ruta);
+  try
+    Ruta := GetReportsDirectory + '\Recibo_Oficial_' + Pago.NroRecibo + '.pdf';
+    GenerarReciboPagoPDF(Pago, Ruta);
+    SetStatusMessage('Recibo oficial por duplicado generado: ' + Pago.NroRecibo);
+    OpenFileWithShell(Ruta);
+  except
+    on E: Exception do
+      MessageBox(hMainWnd, PChar('Error al emitir el Recibo Oficial en PDF:'#13#10 + E.Message), 'Error de Reporte', MB_ICONERROR or MB_OK);
+  end;
 end;
 
 procedure AccionGenerarPlanillaRutaPDF;
 var
   Ruta: string;
 begin
-  Ruta := GetReportsDirectory + '\Planilla_Ruta_Cobranza_' + FormatDateTime('yyyymmdd', Now) + '.pdf';
-  GenerarPlanillaRutaPDF(DataAfiliados, Ruta);
-  SetStatusMessage('Planilla de Ruta para cobrador generada.');
-  OpenFileWithShell(Ruta);
+  try
+    Ruta := GetReportsDirectory + '\Planilla_Ruta_Cobranza_' + FormatDateTime('yyyymmdd', Now) + '.pdf';
+    GenerarPlanillaRutaPDF(DataAfiliados, Ruta);
+    SetStatusMessage('Planilla de Ruta para cobrador generada.');
+    OpenFileWithShell(Ruta);
+  except
+    on E: Exception do
+      MessageBox(hMainWnd, PChar('Error al emitir la Planilla de Ruta en PDF:'#13#10 + E.Message), 'Error de Reporte', MB_ICONERROR or MB_OK);
+  end;
 end;
 
 procedure AccionGenerarCierreCajaPDF;
 var
   Ruta: string;
 begin
-  Ruta := GetReportsDirectory + '\Acta_Cierre_Caja_' + FormatDateTime('yyyymmdd', Now) + '.pdf';
-  GenerarCierreCajaPDF(DataPagos, TotalEfHoy, TotalDigHoy, Ruta);
-  SetStatusMessage('Acta de Cierre Diario de Caja generada.');
-  OpenFileWithShell(Ruta);
+  try
+    Ruta := GetReportsDirectory + '\Acta_Cierre_Caja_' + FormatDateTime('yyyymmdd', Now) + '.pdf';
+    GenerarCierreCajaPDF(DataPagos, TotalEfHoy, TotalDigHoy, Ruta);
+    SetStatusMessage('Acta de Cierre Diario de Caja generada.');
+    OpenFileWithShell(Ruta);
+  except
+    on E: Exception do
+      MessageBox(hMainWnd, PChar('Error al emitir el Acta de Cierre de Caja en PDF:'#13#10 + E.Message), 'Error de Reporte', MB_ICONERROR or MB_OK);
+  end;
 end;
 
 procedure AccionGenerarPadronParcelasPDF;
 var
   Ruta: string;
 begin
-  Ruta := GetReportsDirectory + '\Padron_General_Parcelas_' + FormatDateTime('yyyymmdd_hhnnss', Now) + '.pdf';
-  GenerarListadoParcelasPDF(DataParcelas, Ruta);
-  SetStatusMessage('Padron General de Parcelas emitido: ' + Ruta);
-  MessageBox(hMainWnd, PChar('Padron Oficial de Parcelas generado exitosamente.'#13#10 +
-    'Total Parcelas en padron: ' + IntToStr(Length(DataParcelas)) + #13#10 +
-    'Archivo guardado en: ' + Ruta), 'Reporte Generado', MB_ICONINFORMATION or MB_OK);
-  OpenFileWithShell(Ruta);
+  try
+    Ruta := GetReportsDirectory + '\Padron_General_Parcelas_' + FormatDateTime('yyyymmdd_hhnnss', Now) + '.pdf';
+    GenerarListadoParcelasPDF(DataParcelas, Ruta);
+    SetStatusMessage('Padron General de Parcelas emitido: ' + Ruta);
+    MessageBox(hMainWnd, PChar('Padron Oficial de Parcelas generado exitosamente.'#13#10 +
+      'Total Parcelas en padron: ' + IntToStr(Length(DataParcelas)) + #13#10 +
+      'Archivo guardado en: ' + Ruta), 'Reporte Generado', MB_ICONINFORMATION or MB_OK);
+    OpenFileWithShell(Ruta);
+  except
+    on E: Exception do
+      MessageBox(hMainWnd, PChar('Error al emitir el Padron de Parcelas en PDF:'#13#10 + E.Message), 'Error de Reporte', MB_ICONERROR or MB_OK);
+  end;
 end;
 
 // -------------------------------------------------------------
