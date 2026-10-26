@@ -588,6 +588,7 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
           <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <InhumacionForm
               parcelasDisponibles={parcelasDisponibles}
+              inhumaciones={inhumaciones}
               initialData={modalEditInhumacion}
               onSave={(updated) => {
                 onRegistrarInhumacion(updated)

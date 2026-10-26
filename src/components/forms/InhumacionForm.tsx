@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Inhumacion, Parcela } from '../../types/database'
 
 interface InhumacionFormProps {
   parcelasDisponibles: Parcela[]
+  inhumaciones?: Inhumacion[]
   initialData?: Inhumacion | null
   onSave: (inhumacion: Partial<Inhumacion>) => void
   onCancel: () => void
@@ -10,6 +11,7 @@ interface InhumacionFormProps {
 
 export const InhumacionForm: React.FC<InhumacionFormProps> = ({
   parcelasDisponibles,
+  inhumaciones = [],
   initialData,
   onSave,
   onCancel,
@@ -44,7 +46,75 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
   )
   const [observaciones, setObservaciones] = useState(initialData?.observaciones || '')
 
-  const parcelaSeleccionada = parcelasDisponibles.find((p) => p.id === parcelaId)
+  const parcelaSeleccionada = useMemo(() => {
+    return (
+      parcelasDisponibles.find((p) => p.id === parcelaId) ||
+      parcelasDisponibles.find(
+        (p) => (p.nomenclatura || '').toUpperCase() === busquedaParcela.trim().toUpperCase()
+      ) ||
+      parcelasDisponibles.find(
+        (p) =>
+          (p.nomenclatura || '').replace(/[\s-]/g, '').toUpperCase() ===
+          busquedaParcela.replace(/[\s-]/g, '').trim().toUpperCase()
+      )
+    )
+  }, [parcelasDisponibles, parcelaId, busquedaParcela])
+
+  // Difuntos actualmente registrados en la parcela seleccionada
+  const difuntosEnParcela = useMemo(() => {
+    const targetNom = (parcelaSeleccionada?.nomenclatura || busquedaParcela || '').trim().toUpperCase()
+    const targetId = parcelaSeleccionada?.id || parcelaId
+
+    if (!targetNom && !targetId) return []
+
+    return (inhumaciones || []).filter((inh) => {
+      // Ignorar el registro que se está editando para no auto-bloquearse
+      if (initialData?.id && inh.id === initialData.id) return false
+
+      const inhNom = (
+        typeof inh.parcela === 'object'
+          ? inh.parcela?.nomenclatura
+          : (typeof inh.parcela === 'string' ? inh.parcela : (inh as any).parcela_nomenclatura) || ''
+      ).trim().toUpperCase()
+
+      const matchesNom = Boolean(
+        targetNom &&
+          (inhNom === targetNom ||
+            inhNom.replace(/[\s-]/g, '') === targetNom.replace(/[\s-]/g, ''))
+      )
+
+      const matchesId = Boolean(
+        targetId &&
+          (inh.parcela_id === targetId ||
+            (typeof inh.parcela === 'object' && inh.parcela?.id === targetId))
+      )
+
+      return matchesNom || matchesId
+    })
+  }, [inhumaciones, parcelaSeleccionada, busquedaParcela, parcelaId, initialData?.id])
+
+  const capacidadFosa = parcelaSeleccionada?.capacidad_total || 3
+
+  // Mapa de ocupación por nivel: nivel -> Inhumacion
+  const ocupacionPorNivel = useMemo(() => {
+    const map = new Map<number, Inhumacion>()
+    for (const d of difuntosEnParcela) {
+      const lvl = Number(d.nivel_posicion) || 1
+      map.set(lvl, d)
+    }
+    return map
+  }, [difuntosEnParcela])
+
+  // Auto-seleccionar primer nivel disponible cuando cambia la parcela
+  useEffect(() => {
+    if (!initialData) {
+      const nivelesPosibles = Array.from({ length: capacidadFosa }, (_, i) => i + 1)
+      const primerLibre = nivelesPosibles.find((lvl) => !ocupacionPorNivel.has(lvl))
+      if (primerLibre) {
+        setNivelPosicion(primerLibre)
+      }
+    }
+  }, [difuntosEnParcela, capacidadFosa, initialData, ocupacionPorNivel])
 
   // Opciones combinadas para que no se pierda la parcela asignada actualmente
   const parcelasOptions = useMemo(() => {
@@ -211,20 +281,64 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
             </>
           )}
 
-          {/* Tarjeta de Confirmación de Parcela Elegida */}
+          {/* Tarjeta de Confirmación de Parcela Elegida & Difuntos Existentes */}
           {parcelaSeleccionada && (
-            <div className="mt-1.5 p-2 rounded-lg bg-surface-container-low border border-outline-variant/80 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[16px] text-primary">domain</span>
-                <span className="font-mono font-bold text-primary">{parcelaSeleccionada.nomenclatura}</span>
-                <span className="text-outline">·</span>
-                <span className="text-on-surface truncate max-w-[200px]">
-                  {parcelaSeleccionada.titular?.nombre_completo || 'Sin titular'}
-                </span>
+            <div className="mt-2 p-3 rounded-xl bg-surface-container-low border border-outline-variant space-y-2">
+              <div className="flex items-center justify-between text-xs flex-wrap gap-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[18px] text-primary">domain</span>
+                  <span className="font-mono font-bold text-primary text-sm">
+                    {parcelaSeleccionada.nomenclatura}
+                  </span>
+                  <span className="text-outline">·</span>
+                  <span className="font-semibold text-on-surface truncate max-w-[200px]">
+                    {parcelaSeleccionada.titular?.nombre_completo || 'Sin titular asignado'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                  <span className="px-2 py-0.5 bg-white rounded border border-outline-variant font-bold text-slate-700">
+                    Ocupación: {difuntosEnParcela.length}/{capacidadFosa} niveles
+                  </span>
+                  {difuntosEnParcela.length >= capacidadFosa ? (
+                    <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-bold border border-rose-300">
+                      Fosa Llena
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
+                      {capacidadFosa - difuntosEnParcela.length} Libre{capacidadFosa - difuntosEnParcela.length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
               </div>
-              <span className="text-[10px] font-semibold text-outline px-1.5 py-0.5 bg-white rounded border border-outline-variant">
-                Ocupación: {parcelaSeleccionada.espacios_ocupados || 0}/{parcelaSeleccionada.capacidad_total || 3}
-              </span>
+
+              {/* Lista compacta de difuntos que ya descansan en esta fosa */}
+              {difuntosEnParcela.length > 0 && (
+                <div className="pt-2 border-t border-outline-variant/60 text-[11px] text-slate-700 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                    Cuerpos / Difuntos actualmente en esta fosa:
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {difuntosEnParcela.map((d) => (
+                      <div
+                        key={d.id}
+                        className="flex items-center justify-between bg-white px-2 py-1 rounded border border-slate-200 text-[11px]"
+                      >
+                        <div className="flex items-center gap-1.5 truncate">
+                          <span className="font-bold text-rose-700 font-mono text-[10px]">
+                            [Nivel {d.nivel_posicion || 1}]
+                          </span>
+                          <span className="font-medium text-slate-900 truncate">
+                            {d.nombre_difunto}
+                          </span>
+                        </div>
+                        <span className="text-slate-400 font-mono text-[10px] shrink-0 ml-1">
+                          {d.fecha_inhumacion?.slice(0, 10)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -255,7 +369,7 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-semibold text-on-surface block mb-1">Fecha Defunción</label>
             <input
@@ -277,18 +391,142 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
               required
             />
           </div>
-          <div>
-            <label className="text-xs font-semibold text-on-surface block mb-1">Nivel en Fosa</label>
-            <select
-              value={nivelPosicion}
-              onChange={(e) => setNivelPosicion(Number(e.target.value))}
-              className="w-full h-9 px-2 text-xs font-bold bg-white border border-outline-variant rounded-md focus:border-secondary focus:outline-none"
-            >
-              <option value={1}>Nivel 1 (Fondo)</option>
-              <option value={2}>Nivel 2 (Medio)</option>
-              <option value={3}>Nivel 3 (Superior)</option>
-            </select>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* SELECTOR VISUAL DE NIVELES EN FOSA SUBTERRÁNEA                            */}
+        {/* ========================================================================= */}
+        <div className="p-3.5 rounded-xl border border-outline-variant bg-surface-container-low space-y-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[17px] text-primary">layers</span>
+              <span>Disponibilidad de Niveles en Fosa Subterránea (*)</span>
+            </label>
+            <span className="text-[11px] font-mono text-slate-500">
+              Nivel Asignado: <strong className="text-primary font-bold">Nivel {nivelPosicion}</strong>
+            </span>
           </div>
+
+          <p className="text-[11px] text-on-surface-variant">
+            Haga clic en un nivel disponible para ocuparlo. Los niveles ocupados muestran quién descansa allí.
+          </p>
+
+          {/* Tarjetas Interactivas de Niveles (Nivel 3 Superior, Nivel 2 Medio, Nivel 1 Fondo) */}
+          <div className="space-y-1.5">
+            {Array.from({ length: capacidadFosa }, (_, i) => capacidadFosa - i).map((lvl) => {
+              const ocupante = ocupacionPorNivel.get(lvl)
+              const isOccupied = Boolean(ocupante)
+              const isSelected = nivelPosicion === lvl
+              const labelNivel =
+                lvl === 1
+                  ? 'Nivel 1 (Fondo de fosa)'
+                  : lvl === 2
+                  ? 'Nivel 2 (Nivel medio)'
+                  : 'Nivel 3 (Nivel superior / Superficie)'
+
+              return (
+                <div
+                  key={lvl}
+                  onClick={() => setNivelPosicion(lvl)}
+                  className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${
+                    isOccupied
+                      ? isSelected
+                        ? 'bg-rose-50 border-rose-400 ring-2 ring-rose-400'
+                        : 'bg-rose-50/50 border-rose-200 hover:bg-rose-50'
+                      : isSelected
+                      ? 'bg-emerald-50 border-emerald-600 ring-2 ring-emerald-500 shadow-xs'
+                      : 'bg-white border-outline-variant hover:border-emerald-400 hover:bg-emerald-50/30'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div
+                      className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                        isSelected
+                          ? isOccupied
+                            ? 'bg-rose-600 text-white'
+                            : 'bg-emerald-600 text-white'
+                          : 'border border-outline-variant bg-surface'
+                      }`}
+                    >
+                      {isSelected && (
+                        <span className="material-symbols-outlined text-[13px]">check</span>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 space-y-0.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold text-on-surface">
+                          {labelNivel}
+                        </span>
+                        {isOccupied ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.2 rounded-full bg-rose-100 text-rose-800 border border-rose-200">
+                            <span className="material-symbols-outlined text-[11px]">lock</span>
+                            <span>OCUPADO</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.2 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            <span className="material-symbols-outlined text-[11px]">check_circle</span>
+                            <span>DISPONIBLE</span>
+                          </span>
+                        )}
+                        {isSelected && !isOccupied && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-700 text-white">
+                            NIVEL ELEGIDO
+                          </span>
+                        )}
+                        {isSelected && isOccupied && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-700 text-white">
+                            SOBRESCRIBIR / REDUCCIÓN
+                          </span>
+                        )}
+                      </div>
+
+                      {isOccupied && ocupante ? (
+                        <div className="text-[11px] text-slate-700 font-medium truncate">
+                          <span className="font-semibold text-slate-900">
+                            Difunto: {ocupante.nombre_difunto}
+                          </span>
+                          {ocupante.dni_difunto && (
+                            <span className="text-slate-500 font-mono text-[10px] ml-1.5">
+                              (DNI {ocupante.dni_difunto})
+                            </span>
+                          )}
+                          <span className="text-slate-500 text-[10px] ml-1.5">
+                            · Inhumado: {ocupante.fecha_inhumacion?.slice(0, 10)}
+                          </span>
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-emerald-800">
+                          Espacio libre. Clic para asignar féretro en este nivel.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 text-right">
+                    <span className="text-[11px] font-mono font-bold text-slate-500">
+                      Nivel {lvl}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Aviso si todos los niveles están ocupados */}
+          {difuntosEnParcela.length >= capacidadFosa && (
+            <div className="flex items-start gap-2 p-2 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-xs">
+              <span className="material-symbols-outlined text-[16px] text-amber-700 shrink-0 mt-0.5">
+                warning
+              </span>
+              <div>
+                <span className="font-bold block">Fosa con capacidad completa</span>
+                <span>
+                  Todos los niveles tienen difuntos registrados. Solo asigne un nivel ocupado en caso de reducción de restos previa.
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
