@@ -25,3 +25,5 @@ tools/
 # Temporary analysis scripts
 dump_defs.py
 dump_pdf.py
+__pycache__/
+*.pyc

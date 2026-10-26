@@ -1,0 +1,30 @@
+0: {'nombre_difunto': 'acele)', 'fecha_inhumacion': '2021-04-15', 'parcela': 'Sector Salinas', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+1: {'nombre_difunto': 'kfuuenlistee', 'fecha_inhumacion': '2021-04-15', 'parcela': 'Sector Salinas', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+2: {'nombre_difunto': 'TeacaAutonohona', 'fecha_inhumacion': '2021-04-15', 'parcela': 'Sector Salinas', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+3: {'nombre_difunto': '2年Oy cy meleirinlisted', 'fecha_inhumacion': '2021-04-15', 'parcela': 'Sector Salinas', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+4: {'nombre_difunto': 'Aisina Sixto', 'fecha_inhumacion': '2021-04-15', 'parcela': 'Sector Salinas', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+5: {'nombre_difunto': 'Adau Tose Oliva', 'fecha_inhumacion': '2021-04-15', 'parcela': 'i1-45', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+6: {'nombre_difunto': 'LuisAbeiteFune)', 'fecha_inhumacion': '2021-04-15', 'parcela': '11-39', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+7: {'nombre_difunto': 'Jueu N Canera', 'fecha_inhumacion': '2021-04-15', 'parcela': '12-38', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+8: {'nombre_difunto': 'Sector Salinces', 'fecha_inhumacion': '2021-04-15', 'parcela': '12-38', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+9: {'nombre_difunto': 'hauuvare Cscier Dicey', 'fecha_inhumacion': '2021-04-15', 'parcela': '12-43', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+10: {'nombre_difunto': 'Perman Valdea', 'fecha_inhumacion': '2021-04-15', 'parcela': '12-4', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+11: {'nombre_difunto': 'Hrma Elena.', 'fecha_inhumacion': '2021-04-15', 'parcela': '12-56', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+12: {'nombre_difunto': 'MiauceO Aungel', 'fecha_inhumacion': '2021-04-15', 'parcela': '12-52', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+13: {'nombre_difunto': 'Rotrete', 'fecha_inhumacion': '2021-04-15', 'parcela': 'Sector Salinas', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+14: {'nombre_difunto': 'fuillemoFeleucHokd3', 'fecha_inhumacion': '2021-04-15', 'parcela': 'Sector Salinas', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+15: {'nombre_difunto': 'Maniano Orloudo Veqa', 'fecha_inhumacion': '2021-04-15', 'parcela': 'Sector Salinas', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+16: {'nombre_difunto': '020421', 'fecha_inhumacion': '2021-04-15', 'parcela': '14-53', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+17: {'nombre_difunto': 'Noelial R.Looda', 'fecha_inhumacion': '2021-04-15', 'parcela': 'Sector Salinas', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+18: {'nombre_difunto': 'MolnaAngelHensert', 'fecha_inhumacion': '2021-04-15', 'parcela': 'Sector Salinas', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+19: {'nombre_difunto': 'Annoey', 'fecha_inhumacion': '2021-04-15', 'parcela': 'Sector Salinas', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+20: {'nombre_difunto': 'k ez z!', 'fecha_inhumacion': '2021-04-15', 'parcela': 'Sector Salinas', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+21: {'nombre_difunto': 'A1e-43', 'fecha_inhumacion': '2021-04-15', 'parcela': 'A16-4', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+22: {'nombre_difunto': 'Z042.1', 'fecha_inhumacion': '2021-04-15', 'parcela': 'A16-4', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+23: {'nombre_difunto': 'A16-4h', 'fecha_inhumacion': '2021-04-15', 'parcela': 'A6-4', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+24: {'nombre_difunto': 'MkoniCaOvied', 'fecha_inhumacion': '2021-04-15', 'parcela': 'A6-46', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+25: {'nombre_difunto': 'Albed randedinse', 'fecha_inhumacion': '2021-04-15', 'parcela': 'A6-46', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+26: {'nombre_difunto': 'Mouica Rodic', 'fecha_inhumacion': '2021-04-15', 'parcela': 'Sector Salinas', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+27: {'nombre_difunto': '266720', 'fecha_inhumacion': '2021-04-15', 'parcela': 'A6-49', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+28: {'nombre_difunto': 'A6 -49', 'fecha_inhumacion': '2021-04-15', 'parcela': 'A6-49', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
+29: {'nombre_difunto': '241.0421', 'fecha_inhumacion': '2021-04-15', 'parcela': 'A6-49', 'es_covid': True, 'causa_defuncion': 'Protocolo COVID-19 / Sanitario'}
