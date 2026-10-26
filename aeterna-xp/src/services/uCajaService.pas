@@ -13,8 +13,10 @@ type
   public
     class function ObtenerMovimientosHoy: TPagoArray;
     class function RegistrarPago(const ARecibo, AParcelaId, ATitularId, ATitularNombre, AConcepto: string; AMonto: Currency; AMetodo: TMetodoPago; const AOperador, APeriodo: string): Boolean;
+    class function RegistrarEgreso(const AComprobante, AConcepto, ACategoria: string; AMonto: Currency; AMetodo: TMetodoPago; const AOperador: string): Boolean;
     class function EliminarPago(const AId: string): Boolean;
     class function CalcularTotalesHoy(out TotalEfectivo, TotalDigital: Currency): Currency;
+    class procedure CalcularBalanceGeneral(out TotalIngresos, TotalEgresos, BalanceNeto: Currency);
   end;
 
 implementation
@@ -55,6 +57,12 @@ begin
       Result[i].FechaPago := Item.Get('fecha_pago', '');
       Result[i].Observaciones := Result[i].Concepto;
       Result[i].TitularNombre := Item.Get('titular_paga', 'Contribuyente General');
+
+      if (Item.Get('tipo', '') = 'egreso') or (Pos('[EGRESO]', Result[i].Concepto) > 0) then
+        Result[i].TipoMovimiento := tmcEgreso
+      else
+        Result[i].TipoMovimiento := tmcIngreso;
+      Result[i].Categoria := Item.Get('categoria', '');
     end;
   finally
     JsonArr.Free;
@@ -78,6 +86,36 @@ begin
       Data.Add('titular_paga', ATitularNombre)
     else
       Data.Add('titular_paga', 'Contribuyente Parroquia');
+    Data.Add('tipo', 'ingreso');
+    Data.Add('fecha_pago', FechaAhora);
+
+    Resp := Supabase.Insert('pagos_recibos', Data);
+    if Resp <> nil then
+    begin
+      Result := True;
+      Resp.Free;
+    end;
+  finally
+    Data.Free;
+  end;
+end;
+
+class function TCajaService.RegistrarEgreso(const AComprobante, AConcepto, ACategoria: string; AMonto: Currency; AMetodo: TMetodoPago; const AOperador: string): Boolean;
+var
+  Data, Resp: TJSONObject;
+  FechaAhora: string;
+begin
+  Result := False;
+  FechaAhora := FormatDateTime('yyyy-mm-dd"T"hh:nn:ss', Now);
+  Data := TJSONObject.Create;
+  try
+    Data.Add('numero_recibo', AComprobante);
+    Data.Add('monto', Double(AMonto));
+    Data.Add('metodo_pago', MetodoPagoToStr(AMetodo));
+    Data.Add('concepto', '[EGRESO] ' + AConcepto);
+    Data.Add('titular_paga', 'Egreso Operativo');
+    Data.Add('tipo', 'egreso');
+    Data.Add('categoria', ACategoria);
     Data.Add('fecha_pago', FechaAhora);
 
     Resp := Supabase.Insert('pagos_recibos', Data);
@@ -110,13 +148,41 @@ begin
   Movimientos := ObtenerMovimientosHoy;
   for i := Low(Movimientos) to High(Movimientos) do
   begin
-    if Movimientos[i].MetodoPago = mpEfectivo then
-      TotalEfectivo := TotalEfectivo + Movimientos[i].MontoPagado
+    if Movimientos[i].TipoMovimiento = tmcEgreso then
+    begin
+      if Movimientos[i].MetodoPago = mpEfectivo then
+        TotalEfectivo := TotalEfectivo - Movimientos[i].MontoPagado
+      else
+        TotalDigital := TotalDigital - Movimientos[i].MontoPagado;
+    end
     else
-      TotalDigital := TotalDigital + Movimientos[i].MontoPagado;
+    begin
+      if Movimientos[i].MetodoPago = mpEfectivo then
+        TotalEfectivo := TotalEfectivo + Movimientos[i].MontoPagado
+      else
+        TotalDigital := TotalDigital + Movimientos[i].MontoPagado;
+    end;
   end;
 
   Result := TotalEfectivo + TotalDigital;
+end;
+
+class procedure TCajaService.CalcularBalanceGeneral(out TotalIngresos, TotalEgresos, BalanceNeto: Currency);
+var
+  Movimientos: TPagoArray;
+  i: Integer;
+begin
+  TotalIngresos := 0;
+  TotalEgresos := 0;
+  Movimientos := ObtenerMovimientosHoy;
+  for i := Low(Movimientos) to High(Movimientos) do
+  begin
+    if Movimientos[i].TipoMovimiento = tmcEgreso then
+      TotalEgresos := TotalEgresos + Movimientos[i].MontoPagado
+    else
+      TotalIngresos := TotalIngresos + Movimientos[i].MontoPagado;
+  end;
+  BalanceNeto := TotalIngresos - TotalEgresos;
 end;
 
 end.

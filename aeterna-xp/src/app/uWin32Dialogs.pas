@@ -16,6 +16,7 @@ function ShowDlgCobroCaja(ParentWnd: HWND; var Titular, Concepto: string; var Mo
 function ShowDlgCobroMantenimiento(ParentWnd: HWND; const Nomenclatura, TitularDef: string; var Monto: Currency; var Metodo: TMetodoPago; var Periodo, Recibo: string): Boolean;
 function ShowDlgCobroCuotaMes(ParentWnd: HWND; const Afiliado: TAfiliadoSeguro; var MesSeleccionado, AnioSeleccionado: Integer; var Monto: Currency; var Metodo: TMetodoPago; var Recibo: string): Boolean;
 function ShowDlgCuotaMasiva(ParentWnd: HWND; var NuevoMonto: Currency; var SoloActivos: Boolean): Boolean;
+function ShowDlgEgresoCaja(ParentWnd: HWND; var Concepto, Categoria, Comprobante: string; var Monto: Currency; var Metodo: TMetodoPago): Boolean;
 
 implementation
 
@@ -1107,6 +1108,167 @@ begin
 
   SetWindowLongPtr(hDlg, GWLP_USERDATA, LONG_PTR(@DlgData));
   SetFocus(DlgData.EdtMonto);
+
+  RunModalLoop(hDlg, ParentWnd);
+  Result := DlgData.Confirmed;
+end;
+
+type
+  PEgresoDlgData = ^TEgresoDlgData;
+  TEgresoDlgData = record
+    ConceptoPtr, CategoriaPtr, ComprobantePtr: ^string;
+    MontoPtr: ^Currency;
+    MetodoPtr: ^TMetodoPago;
+    EdtConcepto: HWND;
+    CmbCategoria: HWND;
+    EdtComprobante: HWND;
+    EdtMonto: HWND;
+    CmbMetodo: HWND;
+    Confirmed: Boolean;
+  end;
+
+function EgresoDlgProc(hWnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
+var
+  pData: PEgresoDlgData;
+  CurSel: Integer;
+begin
+  pData := PEgresoDlgData(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+  case uMsg of
+    WM_COMMAND:
+      begin
+        case LOWORD(wParam) of
+          1: // Guardar
+            begin
+              if pData <> nil then
+              begin
+                pData^.ConceptoPtr^ := Trim(GetEditText(pData^.EdtConcepto));
+                if pData^.ConceptoPtr^ = '' then
+                begin
+                  MessageBox(hWnd, 'Por favor ingrese el concepto del egreso.', 'Dato Requerido', MB_ICONWARNING or MB_OK);
+                  Exit(0);
+                end;
+
+                pData^.MontoPtr^ := StrToCurrDef(GetEditText(pData^.EdtMonto), 0);
+                if pData^.MontoPtr^ <= 0 then
+                begin
+                  MessageBox(hWnd, 'Por favor ingrese un monto valido mayor a $0.', 'Monto Invalido', MB_ICONWARNING or MB_OK);
+                  Exit(0);
+                end;
+
+                CurSel := SendMessage(pData^.CmbCategoria, CB_GETCURSEL, 0, 0);
+                case CurSel of
+                  0: pData^.CategoriaPtr^ := 'Mantenimiento Parque';
+                  1: pData^.CategoriaPtr^ := 'Combustible / Nafta';
+                  2: pData^.CategoriaPtr^ := 'Servicios de Sepelio';
+                  3: pData^.CategoriaPtr^ := 'Sueldos / Jornales';
+                  4: pData^.CategoriaPtr^ := 'Materiales e Insumos';
+                  5: pData^.CategoriaPtr^ := 'Servicios Publicos';
+                else
+                  pData^.CategoriaPtr^ := 'Otros Gastos Operativos';
+                end;
+
+                pData^.ComprobantePtr^ := Trim(GetEditText(pData^.EdtComprobante));
+                if pData^.ComprobantePtr^ = '' then
+                  pData^.ComprobantePtr^ := 'EGR-' + FormatDateTime('hhnnss', Now);
+
+                if SendMessage(pData^.CmbMetodo, CB_GETCURSEL, 0, 0) = 1 then
+                  pData^.MetodoPtr^ := mpTransferenciaQR
+                else
+                  pData^.MetodoPtr^ := mpEfectivo;
+
+                pData^.Confirmed := True;
+              end;
+              DestroyWindow(hWnd);
+              Exit(0);
+            end;
+          2: // Cancelar
+            begin
+              if pData <> nil then pData^.Confirmed := False;
+              DestroyWindow(hWnd);
+              Exit(0);
+            end;
+        end;
+      end;
+    WM_CLOSE:
+      begin
+        if pData <> nil then pData^.Confirmed := False;
+        DestroyWindow(hWnd);
+        Exit(0);
+      end;
+  end;
+  Result := DefWindowProc(hWnd, uMsg, wParam, lParam);
+end;
+
+function ShowDlgEgresoCaja(ParentWnd: HWND; var Concepto, Categoria, Comprobante: string; var Monto: Currency; var Metodo: TMetodoPago): Boolean;
+var
+  wc: TWndClass;
+  hDlg: HWND;
+  DlgData: TEgresoDlgData;
+begin
+  EnsureDlgFonts;
+  FillChar(wc, SizeOf(wc), 0);
+  wc.style := CS_HREDRAW or CS_VREDRAW;
+  wc.lpfnWndProc := @EgresoDlgProc;
+  wc.hInstance := hInstance;
+  wc.hCursor := LoadCursor(0, IDC_ARROW);
+  wc.hbrBackground := HBRUSH(COLOR_BTNFACE + 1);
+  wc.lpszClassName := 'AeternaEgresoDlgClass';
+  RegisterClass(wc);
+
+  hDlg := CreateWindowEx(WS_EX_DLGMODALFRAME, 'AeternaEgresoDlgClass', 'Registrar Egreso / Gasto de Caja',
+    WS_POPUP or WS_CAPTION or WS_SYSMENU or WS_VISIBLE,
+    0, 0, 480, 360, ParentWnd, 0, hInstance, nil);
+
+  CenterWindow(hDlg, ParentWnd);
+
+  if Concepto = '' then Concepto := '';
+  if Categoria = '' then Categoria := 'Mantenimiento Parque';
+  if Comprobante = '' then Comprobante := 'EGR-' + FormatDateTime('hhnnss', Now);
+  if Monto <= 0 then Monto := 10000;
+
+  DlgData.ConceptoPtr := @Concepto;
+  DlgData.CategoriaPtr := @Categoria;
+  DlgData.ComprobantePtr := @Comprobante;
+  DlgData.MontoPtr := @Monto;
+  DlgData.MetodoPtr := @Metodo;
+  DlgData.Confirmed := False;
+
+  CreateDlgLabel(hDlg, 'Concepto / Motivo del Egreso (*):', 20, 15, 300, 18);
+  DlgData.EdtConcepto := CreateDlgEdit(hDlg, Concepto, 20, 35, 420, 24, 701);
+
+  CreateDlgLabel(hDlg, 'Categoria del Gasto (*):', 20, 70, 200, 18);
+  DlgData.CmbCategoria := CreateDlgCombo(hDlg, 20, 90, 200, 150, 702);
+  SendMessage(DlgData.CmbCategoria, CB_ADDSTRING, 0, LPARAM(PChar('Mantenimiento Parque')));
+  SendMessage(DlgData.CmbCategoria, CB_ADDSTRING, 0, LPARAM(PChar('Combustible / Nafta')));
+  SendMessage(DlgData.CmbCategoria, CB_ADDSTRING, 0, LPARAM(PChar('Servicios de Sepelio')));
+  SendMessage(DlgData.CmbCategoria, CB_ADDSTRING, 0, LPARAM(PChar('Sueldos / Jornales')));
+  SendMessage(DlgData.CmbCategoria, CB_ADDSTRING, 0, LPARAM(PChar('Materiales e Insumos')));
+  SendMessage(DlgData.CmbCategoria, CB_ADDSTRING, 0, LPARAM(PChar('Servicios Publicos')));
+  SendMessage(DlgData.CmbCategoria, CB_ADDSTRING, 0, LPARAM(PChar('Otros Gastos Operativos')));
+  SendMessage(DlgData.CmbCategoria, CB_SETCURSEL, 0, 0);
+
+  CreateDlgLabel(hDlg, 'Via de Egreso (*):', 240, 70, 200, 18);
+  DlgData.CmbMetodo := CreateDlgCombo(hDlg, 240, 90, 200, 100, 703);
+  SendMessage(DlgData.CmbMetodo, CB_ADDSTRING, 0, LPARAM(PChar('Efectivo de Caja')));
+  SendMessage(DlgData.CmbMetodo, CB_ADDSTRING, 0, LPARAM(PChar('Transferencia Bancaria')));
+  if Metodo = mpTransferenciaQR then
+    SendMessage(DlgData.CmbMetodo, CB_SETCURSEL, 1, 0)
+  else
+    SendMessage(DlgData.CmbMetodo, CB_SETCURSEL, 0, 0);
+
+  CreateDlgLabel(hDlg, 'Importe del Egreso ($) (*):', 20, 130, 200, 18);
+  DlgData.EdtMonto := CreateDlgEdit(hDlg, CurrToStr(Monto), 20, 150, 200, 24, 704);
+
+  CreateDlgLabel(hDlg, 'Nro Comprobante / Factura:', 240, 130, 200, 18);
+  DlgData.EdtComprobante := CreateDlgEdit(hDlg, Comprobante, 240, 150, 200, 24, 705);
+
+  CreateDlgLabel(hDlg, 'El egreso se descontara del arqueo de caja y del balance mensual.', 20, 195, 420, 18);
+
+  CreateDlgButton(hDlg, 'Registrar Egreso', 200, 255, 140, 35, 1, True);
+  CreateDlgButton(hDlg, 'Cancelar', 350, 255, 90, 35, 2);
+
+  SetWindowLongPtr(hDlg, GWLP_USERDATA, LONG_PTR(@DlgData));
+  SetFocus(DlgData.EdtConcepto);
 
   RunModalLoop(hDlg, ParentWnd);
   Result := DlgData.Confirmed;

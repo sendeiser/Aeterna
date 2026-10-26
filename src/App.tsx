@@ -23,6 +23,7 @@ import {
   saveInhumacionesToStorage,
   saveAfiliadosToStorage,
   savePagoToStorage,
+  saveEgresoToStorage,
   fetchConfigSupabase,
   saveConfigSupabase,
   fetchParcelasSupabase,
@@ -531,6 +532,31 @@ export default function App() {
     }
   }
 
+  const handleRegistrarEgreso = (datos: {
+    concepto: string
+    categoria: string
+    monto: number
+    comprobante: string
+    metodo: 'efectivo' | 'transferencia'
+  }) => {
+    const nuevoEgreso: PagoRecibo = {
+      id: `egr-${Date.now()}`,
+      nroRecibo: datos.comprobante || `EGR-${Date.now().toString().slice(-6)}`,
+      identificador: 'EGRESO',
+      titularNombre: 'Egreso Operativo',
+      concepto: `[EGRESO] ${datos.concepto}`,
+      monto: Number(datos.monto),
+      metodo: datos.metodo === 'transferencia' ? 'transferencia_qr' : 'efectivo',
+      fecha: new Date().toISOString(),
+      tipo: 'egreso',
+      categoria: datos.categoria,
+      comprobante: datos.comprobante,
+    }
+
+    saveEgresoToStorage(nuevoEgreso)
+    setPagos((prev) => [nuevoEgreso, ...prev])
+  }
+
   // Guardar Parcela (CRUD: Create / Update)
   const handleSaveParcela = async (datos: Partial<Parcela>) => {
     let parcelaTarget: Parcela | null = null
@@ -963,6 +989,7 @@ export default function App() {
         onClose={() => setCierreCajaOpen(false)}
         totalRecaudado={recaudacionHoy}
         pagos={pagos}
+        onRegistrarEgreso={handleRegistrarEgreso}
       />
 
       {/* Modal de Cobro con Código QR (CBU/Alias) */}

@@ -12,6 +12,7 @@ type
   TEstadoAfiliado = (eaActivo, eaEnMora, eaSuspendido, eaBaja);
   TEstadoCuota = (ecPendiente, ecPagada, ecAnulada);
   TMetodoPago = (mpEfectivo, mpTransferenciaQR, mpDebito, mpCredito, mpOtro);
+  TTipoMovimientoCaja = (tmcIngreso, tmcEgreso);
 
   { TTitular }
   TTitular = record
@@ -113,6 +114,8 @@ type
     OperadorNombre: string;
     FechaPago: string;
     Observaciones: string;
+    TipoMovimiento: TTipoMovimientoCaja;
+    Categoria: string;
   end;
   TPagoArray = array of TPagoMantenimiento;
 
@@ -122,6 +125,8 @@ function EstadoAfiliadoToStr(AEstado: TEstadoAfiliado): string;
 function StrToEstadoAfiliado(const AStr: string): TEstadoAfiliado;
 function MetodoPagoToStr(AMetodo: TMetodoPago): string;
 function StrToMetodoPago(const AStr: string): TMetodoPago;
+function TipoMovimientoToStr(ATipo: TTipoMovimientoCaja): string;
+function StrToTipoMovimiento(const AStr: string): TTipoMovimientoCaja;
 
 implementation
 
@@ -198,6 +203,18 @@ begin
   else if S = 'credito' then Result := mpCredito
   else if S = 'efectivo' then Result := mpEfectivo
   else Result := mpOtro;
+end;
+
+function TipoMovimientoToStr(ATipo: TTipoMovimientoCaja): string;
+begin
+  if ATipo = tmcEgreso then Result := 'egreso'
+  else Result := 'ingreso';
+end;
+
+function StrToTipoMovimiento(const AStr: string): TTipoMovimientoCaja;
+begin
+  if LowerCase(Trim(AStr)) = 'egreso' then Result := tmcEgreso
+  else Result := tmcIngreso;
 end;
 
 end.

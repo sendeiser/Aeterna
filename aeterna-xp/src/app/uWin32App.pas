@@ -60,6 +60,7 @@ const
   IDC_BTN_PADRON_PARC_PDF = 2030;
   IDC_BTN_FILTRAR_AFIL    = 2031;
   IDC_BTN_CUOTA_MASIVA    = 2032;
+  IDC_BTN_NUEVO_EGRESO    = 2033;
 
   // Controles de Datos
   IDC_LV_PARCELAS     = 3001;
@@ -132,7 +133,7 @@ var
   hBtnNuevoAfil, hBtnEditAfil, hBtnCobrarAfil, hBtnDelAfil, hBtnPlanillaPdf, hBtnCuotaMasivaAfil, hBtnSyncAfil: HWND;
 
   // Controles Modulo 4 (Caja)
-  hBtnNuevoCobroCaja, hBtnDelCobroCaja, hBtnCierreCaja, hBtnSyncCaja: HWND;
+  hBtnNuevoCobroCaja, hBtnNuevoEgresoCaja, hBtnDelCobroCaja, hBtnCierreCaja, hBtnSyncCaja: HWND;
 
   // Controles Modulo 5 (Reportes)
   hLblRepTitle, hLblRepSub: HWND;
@@ -1082,25 +1083,49 @@ procedure FiltrarYMostrarCaja;
 var
   i, count: Integer;
   Indices: array of Integer;
+  TotalIngresos, TotalEgresos, BalanceNeto: Currency;
+  MontoStr: string;
 begin
   ClearListView(hLvCaja);
   count := Length(DataPagos);
   SetLength(Indices, count);
+  TotalIngresos := 0;
+  TotalEgresos := 0;
+
   for i := 0 to count - 1 do
+  begin
     Indices[i] := i;
+    if DataPagos[i].TipoMovimiento = tmcEgreso then
+      TotalEgresos := TotalEgresos + DataPagos[i].MontoPagado
+    else
+      TotalIngresos := TotalIngresos + DataPagos[i].MontoPagado;
+  end;
+
+  BalanceNeto := TotalIngresos - TotalEgresos;
+  if hLblResumenCaja <> 0 then
+    SetWindowText(hLblResumenCaja, PChar(Format('  INGRESOS: %s  |  EGRESOS: %s  |  BALANCE NETO: %s', [
+      FormatearMoneda(TotalIngresos),
+      FormatearMoneda(TotalEgresos),
+      FormatearMoneda(BalanceNeto)
+    ])));
 
   if count > 1 then
     SortCajaIndices(Indices, 0, count - 1, SortColCaja, SortAscCaja);
 
   for i := 0 to count - 1 do
   begin
+    if DataPagos[Indices[i]].TipoMovimiento = tmcEgreso then
+      MontoStr := '-' + FormatearMoneda(DataPagos[Indices[i]].MontoPagado)
+    else
+      MontoStr := '+' + FormatearMoneda(DataPagos[Indices[i]].MontoPagado);
+
     AddListViewItemWithParam(hLvCaja, i, Indices[i], [
       DataPagos[Indices[i]].NroRecibo,
       FormatearFecha(DataPagos[Indices[i]].FechaPago),
       DataPagos[Indices[i]].TitularNombre,
       DataPagos[Indices[i]].Observaciones,
       MetodoPagoToStr(DataPagos[Indices[i]].MetodoPago),
-      FormatearMoneda(DataPagos[Indices[i]].MontoPagado)
+      MontoStr
     ]);
   end;
 
@@ -1762,6 +1787,37 @@ begin
   end;
 end;
 
+procedure AccionNuevoEgresoCaja;
+var
+  Concepto, Categoria, Comprobante: string;
+  Monto: Currency;
+  Metodo: TMetodoPago;
+begin
+  Concepto := '';
+  Categoria := 'Mantenimiento Parque';
+  Comprobante := 'EGR-' + FormatDateTime('hhnnss', Now);
+  Monto := 10000;
+  Metodo := mpEfectivo;
+
+  if ShowDlgEgresoCaja(hMainWnd, Concepto, Categoria, Comprobante, Monto, Metodo) then
+  begin
+    SetStatusMessage('Registrando egreso operativo en Supabase...');
+    if TCajaService.RegistrarEgreso(Comprobante, Concepto, Categoria, Monto, Metodo, 'Caja Central') then
+    begin
+      MessageBox(hMainWnd,
+        PChar('Egreso operativo registrado exitosamente.'#13#10#13#10 +
+          'Concepto: ' + Concepto + #13#10 +
+          'Categoria: ' + Categoria + #13#10 +
+          'Importe: ' + FormatearMoneda(Monto) + #13#10 +
+          'Comprobante: ' + Comprobante),
+        'Egreso Asentado', MB_ICONINFORMATION or MB_OK);
+      CargarDatosIniciales;
+    end
+    else
+      MessageBox(hMainWnd, 'Error al registrar el egreso en Supabase.', 'Error', MB_ICONERROR or MB_OK);
+  end;
+end;
+
 procedure AccionEliminarCobroCaja;
 var
   Idx: Integer;
@@ -2287,16 +2343,18 @@ begin
   // ===========================================================
   // MODULO 4: CAJA DIARIA Y ARQUEO (CRUD COMPLETO)
   // ===========================================================
-  hLblResumenCaja := CreateLabel(hWnd, '  TOTAL RECAUDADO HOY: $ 0.00   [ Efectivo: $ 0.00 | Digital: $ 0.00 ]', 15, 110, 500, 32, hBoldFont);
+  hLblResumenCaja := CreateLabel(hWnd, '  INGRESOS: $ 0.00  |  EGRESOS: $ 0.00  |  BALANCE NETO: $ 0.00', 15, 110, 480, 32, hBoldFont);
   AddControlToModule(4, hLblResumenCaja);
 
-  hBtnNuevoCobroCaja := CreateButton(hWnd, '+ Cobro en Caja', 525, 110, 130, 32, IDC_BTN_NUEVO_COBRO);
+  hBtnNuevoCobroCaja := CreateButton(hWnd, '+ Cobro en Caja', 505, 110, 115, 32, IDC_BTN_NUEVO_COBRO);
   AddControlToModule(4, hBtnNuevoCobroCaja);
-  hBtnDelCobroCaja   := CreateButton(hWnd, '- Anular Cobro', 660, 110, 120, 32, IDC_BTN_DEL_COBRO);
-  AddControlToModule(4, hBtnDelCobroCaja);
-  hBtnCierreCaja     := CreateButton(hWnd, 'Acta Cierre (PDF)', 785, 110, 135, 32, IDC_BTN_CIERRE_CAJA);
+  hBtnNuevoEgresoCaja := CreateButton(hWnd, '- Registrar Egreso', 625, 110, 125, 32, IDC_BTN_NUEVO_EGRESO);
+  AddControlToModule(4, hBtnNuevoEgresoCaja);
+  hBtnCierreCaja     := CreateButton(hWnd, 'Acta Cierre (PDF)', 755, 110, 125, 32, IDC_BTN_CIERRE_CAJA);
   AddControlToModule(4, hBtnCierreCaja);
-  hBtnSyncCaja       := CreateButton(hWnd, 'Recargar', 925, 110, 70, 32, IDC_BTN_SYNC);
+  hBtnDelCobroCaja   := CreateButton(hWnd, 'Anular', 885, 110, 60, 32, IDC_BTN_DEL_COBRO);
+  AddControlToModule(4, hBtnDelCobroCaja);
+  hBtnSyncCaja       := CreateButton(hWnd, 'Recargar', 950, 110, 55, 32, IDC_BTN_SYNC);
   AddControlToModule(4, hBtnSyncCaja);
 
   hLvCaja := CreateListView(hWnd, 15, 150, 990, 460, IDC_LV_CAJA);
@@ -2690,6 +2748,7 @@ begin
 
           // CRUD Caja
           IDC_BTN_NUEVO_COBRO:  AccionNuevoCobroCaja;
+          IDC_BTN_NUEVO_EGRESO: AccionNuevoEgresoCaja;
           IDC_BTN_DEL_COBRO:    AccionEliminarCobroCaja;
           IDC_BTN_CIERRE_CAJA:  AccionGenerarCierreCajaPDF;
           IDC_BTN_RECIBO_PDF:   AccionGenerarReciboPDF;
