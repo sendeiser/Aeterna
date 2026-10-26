@@ -33,7 +33,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   onNuevaParcela,
   isOnline,
 }) => {
-  const [filterSector, setFilterSector] = useState<'todos' | 'A' | 'E' | 'SALINAS' | 'mora' | 'standby'>('todos')
+  const [filterSector, setFilterSector] = useState<'todos' | 'A' | 'E' | 'SALINAS' | 'mora' | 'standby' | 'baja_libre' | 'baja_inhumados'>('todos')
   const [filterTitularVital, setFilterTitularVital] = useState<'todos' | 'vivo' | 'fallecido'>('todos')
   const [searchTerm, setSearchTerm] = useState('')
   const [pageSize, setPageSize] = useState<'todas' | 50 | 100>('todas')
@@ -162,6 +162,18 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
     }
   }
 
+  // Mapa de conteo de inhumaciones por parcela
+  const inhumadosMap = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const inh of inhumaciones) {
+      const nom = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela
+      if (nom) {
+        map.set(nom, (map.get(nom) || 0) + 1)
+      }
+    }
+    return map
+  }, [inhumaciones])
+
   // Filtrado de parcelas
   const filteredParcelas = parcelas.filter((p) => {
     if (filterSector !== 'todos') {
@@ -169,6 +181,14 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
         if (p.estado !== 'en_mora' && (p.saldo_mantenimiento || 0) <= 0) return false
       } else if (filterSector === 'standby') {
         if (p.estado !== 'standby') return false
+      } else if (filterSector === 'baja_libre') {
+        const esBaja = p.estado === 'baja' || p.estado === 'standby'
+        const hasInh = (inhumadosMap.get(p.nomenclatura) || 0) > 0
+        if (!esBaja || hasInh) return false
+      } else if (filterSector === 'baja_inhumados') {
+        const esBaja = p.estado === 'baja' || p.estado === 'standby'
+        const hasInh = (inhumadosMap.get(p.nomenclatura) || 0) > 0
+        if (!esBaja || !hasInh) return false
       } else {
         if (p.sector_id !== filterSector) return false
       }
@@ -291,6 +311,16 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   const countSalinas = parcelas.filter((p) => p.sector_id === 'SALINAS').length
   const countMora = parcelas.filter((p) => p.estado === 'en_mora' || (p.saldo_mantenimiento || 0) > 0).length
   const countStandby = parcelas.filter((p) => p.estado === 'standby').length
+  const countBajaLibre = parcelas.filter((p) => {
+    const esBaja = p.estado === 'baja' || p.estado === 'standby'
+    const hasInh = (inhumadosMap.get(p.nomenclatura) || 0) > 0
+    return esBaja && !hasInh
+  }).length
+  const countBajaInhumados = parcelas.filter((p) => {
+    const esBaja = p.estado === 'baja' || p.estado === 'standby'
+    const hasInh = (inhumadosMap.get(p.nomenclatura) || 0) > 0
+    return esBaja && hasInh
+  }).length
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden space-y-1.5 sm:space-y-3">
@@ -417,6 +447,30 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               }`}
             >
               Stand-by ({countStandby})
+            </button>
+            <button
+              id="btn-filtro-baja-libre-mobile"
+              type="button"
+              onClick={() => setFilterSector('baja_libre')}
+              className={`px-2 py-0.5 rounded border whitespace-nowrap shrink-0 transition-colors ${
+                filterSector === 'baja_libre'
+                  ? 'border-emerald-600 bg-emerald-600 text-white font-semibold'
+                  : 'border-emerald-300 bg-emerald-50 text-emerald-900'
+              }`}
+            >
+              Baja Libre ({countBajaLibre})
+            </button>
+            <button
+              id="btn-filtro-baja-inhumados-mobile"
+              type="button"
+              onClick={() => setFilterSector('baja_inhumados')}
+              className={`px-2 py-0.5 rounded border whitespace-nowrap shrink-0 transition-colors ${
+                filterSector === 'baja_inhumados'
+                  ? 'border-purple-600 bg-purple-600 text-white font-semibold'
+                  : 'border-purple-300 bg-purple-50 text-purple-900'
+              }`}
+            >
+              Baja c/ Inh ({countBajaInhumados})
             </button>
 
             <span className="h-3 w-px bg-outline-variant shrink-0 mx-0.5" />
@@ -602,6 +656,30 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 }`}
               >
                 ⚠️ Stand-by ({countStandby})
+              </button>
+              <button
+                id="btn-filtro-baja-libre"
+                type="button"
+                onClick={() => setFilterSector('baja_libre')}
+                className={`px-2.5 py-1 rounded text-xs font-medium border whitespace-nowrap transition-colors shrink-0 ${
+                  filterSector === 'baja_libre'
+                    ? 'border-emerald-600 bg-emerald-600 text-white font-semibold'
+                    : 'border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100'
+                }`}
+              >
+                🍃 Baja Libre ({countBajaLibre})
+              </button>
+              <button
+                id="btn-filtro-baja-inhumados"
+                type="button"
+                onClick={() => setFilterSector('baja_inhumados')}
+                className={`px-2.5 py-1 rounded text-xs font-medium border whitespace-nowrap transition-colors shrink-0 ${
+                  filterSector === 'baja_inhumados'
+                    ? 'border-purple-600 bg-purple-600 text-white font-semibold'
+                    : 'border-purple-300 bg-purple-50 text-purple-900 hover:bg-purple-100'
+                }`}
+              >
+                🪦 Baja c/ Inhumados ({countBajaInhumados})
               </button>
 
               <span className="h-4 w-px bg-outline-variant/60 mx-1 shrink-0"></span>
@@ -820,8 +898,10 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                     </div>
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${
-                        p.estado === 'standby'
-                          ? 'bg-rose-100 text-rose-800 border-rose-300'
+                        p.estado === 'standby' || p.estado === 'baja'
+                          ? (inhumadosMap.get(p.nomenclatura) || 0) > 0
+                            ? 'bg-purple-100 text-purple-900 border-purple-300'
+                            : 'bg-emerald-100 text-emerald-900 border-emerald-300'
                           : p.estado === 'ocupada'
                           ? 'bg-blue-50 text-blue-900 border-blue-200'
                           : p.estado === 'en_mora'
@@ -831,8 +911,10 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                           : 'bg-red-50 text-red-900 border-red-200'
                       }`}
                     >
-                      {p.estado === 'standby'
-                        ? '⚠️ Stand-by (+3 años)'
+                      {p.estado === 'standby' || p.estado === 'baja'
+                        ? (inhumadosMap.get(p.nomenclatura) || 0) > 0
+                          ? `Baja (c/ Inhumados)`
+                          : `Baja Libre`
                         : p.estado === 'en_mora'
                         ? 'En Mora'
                         : p.estado.toUpperCase()}
@@ -1239,8 +1321,10 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                       <td className="py-2.5 px-3">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${
-                            p.estado === 'standby'
-                              ? 'bg-rose-100 text-rose-800 border-rose-300'
+                            p.estado === 'standby' || p.estado === 'baja'
+                              ? (inhumadosMap.get(p.nomenclatura) || 0) > 0
+                                ? 'bg-purple-100 text-purple-900 border-purple-300'
+                                : 'bg-emerald-100 text-emerald-900 border-emerald-300'
                               : p.estado === 'ocupada'
                               ? 'bg-blue-50 text-blue-900 border-blue-200'
                               : p.estado === 'en_mora'
@@ -1250,8 +1334,10 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                               : 'bg-red-50 text-red-900 border-red-200'
                           }`}
                         >
-                          {p.estado === 'standby'
-                            ? '⚠️ Stand-by (+3 años)'
+                          {p.estado === 'standby' || p.estado === 'baja'
+                            ? (inhumadosMap.get(p.nomenclatura) || 0) > 0
+                              ? 'Baja (c/ Inhumados)'
+                              : 'Baja Libre'
                             : p.estado === 'en_mora'
                             ? 'En Mora'
                             : p.estado === 'ocupada'

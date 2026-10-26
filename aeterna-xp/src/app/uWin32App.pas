@@ -533,6 +533,43 @@ begin
   end;
 end;
 
+function ParcelaTieneInhumados(const Nom: string): Boolean;
+var
+  k: Integer;
+  NomTrim: string;
+begin
+  Result := False;
+  NomTrim := UpperCase(Trim(Nom));
+  if NomTrim = '' then Exit;
+  for k := 0 to High(DataInhumaciones) do
+  begin
+    if UpperCase(Trim(DataInhumaciones[k].NomenclaturaParcela)) = NomTrim then
+    begin
+      Result := True;
+      Exit;
+    end;
+  end;
+end;
+
+function EstadoParcelaToDisplayEx(AEstado: TEstadoParcela; const Nom: string): string;
+begin
+  if (AEstado = epBaja) or (AEstado = epStandby) then
+  begin
+    if ParcelaTieneInhumados(Nom) then
+    begin
+      if AEstado = epStandby then Result := 'Stand-by (c/ Inh)'
+      else Result := 'Baja (c/ Inh)';
+    end
+    else
+    begin
+      if AEstado = epStandby then Result := 'Stand-by (Libre)'
+      else Result := 'Baja: Libre';
+    end;
+  end
+  else
+    Result := EstadoParcelaToDisplay(AEstado);
+end;
+
 function CompareNaturalNomenclatura(const S1, S2: string): Integer;
 var
   Sec1, Sec2, Fila1, Fila2, Nro1, Nro2: string;
@@ -852,7 +889,11 @@ begin
     else if EstIdx = 2 then PasaEst := (DataParcelas[i].Estado = epOcupada)
     else if EstIdx = 3 then PasaEst := (DataParcelas[i].Estado = epEnMora)
     else if EstIdx = 4 then PasaEst := (DataParcelas[i].Estado = epReservada)
-    else if EstIdx = 5 then PasaEst := (DataParcelas[i].Estado = epBaja);
+    else if EstIdx = 5 then PasaEst := (DataParcelas[i].Estado = epBaja) or (DataParcelas[i].Estado = epStandby)
+    else if EstIdx = 6 then // Baja Libre (sin difuntos)
+      PasaEst := ((DataParcelas[i].Estado = epBaja) or (DataParcelas[i].Estado = epStandby)) and not ParcelaTieneInhumados(DataParcelas[i].Nomenclatura)
+    else if EstIdx = 7 then // Baja con Inhumados
+      PasaEst := ((DataParcelas[i].Estado = epBaja) or (DataParcelas[i].Estado = epStandby)) and ParcelaTieneInhumados(DataParcelas[i].Nomenclatura);
 
     PasaSaldo := True;
     if SaldoIdx = 1 then PasaSaldo := (DataParcelas[i].SaldoMantenimiento > 0)
@@ -890,7 +931,7 @@ begin
       BoolToTexto(DataParcelas[Indices[i]].SectorId <> '', DataParcelas[Indices[i]].SectorId, '-'),
       DataParcelas[Indices[i]].ManzanaFila,
       DataParcelas[Indices[i]].NumeroParcela,
-      EstadoParcelaToDisplay(DataParcelas[Indices[i]].Estado),
+      EstadoParcelaToDisplayEx(DataParcelas[Indices[i]].Estado, DataParcelas[Indices[i]].Nomenclatura),
       FormatearFecha(DataParcelas[Indices[i]].FechaAdquisicion),
       FormatearMoneda(DataParcelas[Indices[i]].SaldoMantenimiento)
     ]);
@@ -2051,21 +2092,23 @@ begin
   SendMessage(hCmbSector, CB_SETCURSEL, 0, 0);
   AddControlToModule(1, hCmbSector);
 
-  hLblEstadoParc := CreateLabel(hWnd, 'Estado:', 180, 110, 50, 22, hBoldFont);
+  hLblEstadoParc := CreateLabel(hWnd, 'Estado:', 178, 110, 48, 22, hBoldFont);
   AddControlToModule(1, hLblEstadoParc);
-  hCmbEstadoParc := CreateComboBox(hWnd, 235, 107, 115, 140, IDC_CMB_ESTADO_PARC);
+  hCmbEstadoParc := CreateComboBox(hWnd, 228, 107, 160, 180, IDC_CMB_ESTADO_PARC);
   SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Todos los Estados')));
   SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Disponible')));
   SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Ocupada')));
   SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('En Mora')));
   SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Reservada')));
-  SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Baja')));
+  SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Baja (General)')));
+  SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Baja: Libre (Sin Inh.)')));
+  SendMessage(hCmbEstadoParc, CB_ADDSTRING, 0, LPARAM(PChar('Baja: Con Inhumados')));
   SendMessage(hCmbEstadoParc, CB_SETCURSEL, 0, 0);
   AddControlToModule(1, hCmbEstadoParc);
 
-  hLblSaldoParc := CreateLabel(hWnd, 'Saldo:', 358, 110, 45, 22, hBoldFont);
+  hLblSaldoParc := CreateLabel(hWnd, 'Saldo:', 394, 110, 42, 22, hBoldFont);
   AddControlToModule(1, hLblSaldoParc);
-  hCmbSaldoParc := CreateComboBox(hWnd, 405, 107, 145, 140, IDC_CMB_SALDO_PARC);
+  hCmbSaldoParc := CreateComboBox(hWnd, 438, 107, 140, 140, IDC_CMB_SALDO_PARC);
   SendMessage(hCmbSaldoParc, CB_ADDSTRING, 0, LPARAM(PChar('Todos los Saldos')));
   SendMessage(hCmbSaldoParc, CB_ADDSTRING, 0, LPARAM(PChar('Solo con Deuda (> $0)')));
   SendMessage(hCmbSaldoParc, CB_ADDSTRING, 0, LPARAM(PChar('Sin Deuda ($0)')));
@@ -2074,11 +2117,11 @@ begin
   SendMessage(hCmbSaldoParc, CB_SETCURSEL, 0, 0);
   AddControlToModule(1, hCmbSaldoParc);
 
-  hLblBuscarParc := CreateLabel(hWnd, 'Buscar Parcela / Titular:', 558, 110, 150, 22, hBoldFont);
+  hLblBuscarParc := CreateLabel(hWnd, 'Buscar Parcela:', 584, 110, 130, 22, hBoldFont);
   AddControlToModule(1, hLblBuscarParc);
-  hEdtBuscarParc := CreateEdit(hWnd, '', 710, 107, 175, 24, IDC_EDT_BUSCAR_PARC);
+  hEdtBuscarParc := CreateEdit(hWnd, '', 718, 107, 170, 24, IDC_EDT_BUSCAR_PARC);
   AddControlToModule(1, hEdtBuscarParc);
-  hBtnBuscarParc := CreateButton(hWnd, 'Filtrar', 890, 106, 75, 26, IDC_BTN_FILTRAR_PARC);
+  hBtnBuscarParc := CreateButton(hWnd, 'Filtrar', 892, 106, 72, 26, IDC_BTN_FILTRAR_PARC);
   AddControlToModule(1, hBtnBuscarParc);
 
   // Fila 2: Botones de Accion
