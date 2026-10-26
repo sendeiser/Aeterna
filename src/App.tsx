@@ -357,7 +357,7 @@ export default function App() {
             estado: 'pagada' as any,
             estado_cuota: 'pagada',
             fecha_pago: new Date().toISOString(),
-            metodo_pago: 'transferencia_qr',
+            metodo_pago: 'transferencia_qr' as const,
             nro_recibo: nroRecibo,
           },
         ]
@@ -438,7 +438,7 @@ export default function App() {
           estado: 'pagada' as any,
           estado_cuota: 'pagada',
           fecha_pago: new Date().toISOString(),
-          metodo_pago: 'transferencia_qr',
+          metodo_pago: 'transferencia_qr' as const,
           nro_recibo: `${nroRecibo}-M${m}`,
         }))
 

@@ -1147,7 +1147,7 @@ export async function registrarPagoSupabase(pago: PagoRecibo): Promise<boolean> 
       : pago.concepto
 
     const metodoNormalizado =
-      pago.metodo === 'transferencia' ? 'transferencia_qr' : pago.metodo || 'transferencia_qr'
+      (pago.metodo as any) === 'transferencia' ? 'transferencia_qr' : pago.metodo || 'transferencia_qr'
 
     const payload: any = {
       numero_recibo: pago.nroRecibo || `REC-${Date.now().toString().slice(-6)}`,
