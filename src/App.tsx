@@ -658,10 +658,11 @@ export default function App() {
   // Guardar Inhumación (CRUD: Create / Update)
   const handleSaveInhumacion = async (datos: Partial<Inhumacion>) => {
     let inhumacionTarget: Inhumacion | null = null
-    const targetId = datos.id || editingInhumacion?.id
+    const targetId = editingInhumacion?.id || datos.id
+    const isExisting = Boolean(targetId && inhumaciones.some((i) => i.id === targetId))
 
-    if (targetId) {
-      const existing = inhumaciones.find((i) => i.id === targetId) || editingInhumacion
+    if (isExisting) {
+      const existing = inhumaciones.find((i) => i.id === targetId)!
       inhumacionTarget = { ...(existing || {}), ...datos } as Inhumacion
       setInhumaciones((prev) => {
         const updated = prev.map((i) => (i.id === targetId ? inhumacionTarget! : i))
@@ -669,15 +670,19 @@ export default function App() {
         return updated
       })
     } else {
+      const newId = datos.id || `inh-${Date.now()}`
       inhumacionTarget = {
-        id: `inh-${Date.now()}`,
-        parcela_id: datos.parcela_id || 'parc-1',
+        id: newId,
+        parcela_id: datos.parcela_id || '',
         nombre_difunto: datos.nombre_difunto || 'Difunto',
-        fecha_inhumacion: datos.fecha_inhumacion || new Date().toISOString(),
-        nivel_posicion: datos.nivel_posicion || 1,
+        dni_difunto: datos.dni_difunto || null,
+        fecha_fallecimiento: datos.fecha_fallecimiento || null,
+        fecha_inhumacion: datos.fecha_inhumacion || new Date().toISOString().split('T')[0],
+        nivel_posicion: Number(datos.nivel_posicion) || 1,
         es_covid: datos.es_covid || false,
         causa_defuncion: datos.causa_defuncion || 'Causa general',
         empresa_funebrera: datos.empresa_funebrera || 'Aeterna Sepelios',
+        observaciones: datos.observaciones || null,
         parcela: datos.parcela as any,
       }
       setInhumaciones((prev) => {
@@ -687,13 +692,26 @@ export default function App() {
       })
 
       // Actualizar ocupación de parcela
-      if (datos.parcela?.nomenclatura) {
+      const targetParcNom =
+        typeof datos.parcela === 'object'
+          ? datos.parcela?.nomenclatura
+          : datos.parcela
+      const targetParcId = datos.parcela_id || (typeof datos.parcela === 'object' ? datos.parcela?.id : null)
+
+      if (targetParcNom || targetParcId) {
         setParcelas((prev) => {
           const updated = prev.map((p) => {
-            if (p.nomenclatura === datos.parcela?.nomenclatura) {
+            const matchesNom = Boolean(
+              targetParcNom && (
+                p.nomenclatura === targetParcNom ||
+                p.nomenclatura.replace(/[\s-]/g, '').toUpperCase() === String(targetParcNom).replace(/[\s-]/g, '').toUpperCase()
+              )
+            )
+            const matchesId = Boolean(targetParcId && p.id === targetParcId)
+            if (matchesNom || matchesId) {
               return {
                 ...p,
-                espacios_ocupados: Math.min(p.capacidad_total, p.espacios_ocupados + 1),
+                espacios_ocupados: Math.min(p.capacidad_total || 3, (p.espacios_ocupados || 0) + 1),
                 estado: 'ocupada' as const,
               }
             }
@@ -710,7 +728,7 @@ export default function App() {
 
     // Supabase Cloud Sync
     if (isSupabaseConfigured && inhumacionTarget) {
-      if (targetId) {
+      if (isExisting) {
         await updateInhumacionSupabase(inhumacionTarget)
       } else {
         await insertInhumacionSupabase(inhumacionTarget)

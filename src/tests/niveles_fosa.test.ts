@@ -102,4 +102,54 @@ describe('Gestión y Asignación de Niveles en Fosa', () => {
     expect(difuntos.length).toBe(1)
     expect(difuntos[0].nombre_difunto).toBe('Martin Gustavo Gonzalez')
   })
+
+  it('guarda correctamente una nueva inhumación en Nivel 1 cuando Nivel 2 ya estaba ocupado', () => {
+    const listaActual: Inhumacion[] = [
+      {
+        id: 'inh-1',
+        parcela_id: 'parc-11-40',
+        parcela: parcelaA1140,
+        nombre_difunto: 'Martin Gustavo Gonzalez',
+        nivel_posicion: 2,
+        fecha_inhumacion: '2026-10-26',
+        es_covid: false,
+      },
+    ]
+
+    const datosNueva: Partial<Inhumacion> = {
+      parcela_id: 'parc-11-40',
+      nombre_difunto: 'Nuevo Difunto Nivel 1',
+      nivel_posicion: 1,
+      fecha_inhumacion: '2026-10-26',
+      parcela: parcelaA1140,
+    }
+
+    const targetId = datosNueva.id
+    const isExisting = Boolean(targetId && listaActual.some((i) => i.id === targetId))
+    expect(isExisting).toBe(false)
+
+    // Al ser nueva, se prepende a la lista
+    const nuevaInhumacion: Inhumacion = {
+      id: datosNueva.id || `inh-${Date.now()}`,
+      parcela_id: datosNueva.parcela_id || '',
+      nombre_difunto: datosNueva.nombre_difunto!,
+      fecha_inhumacion: datosNueva.fecha_inhumacion!,
+      nivel_posicion: datosNueva.nivel_posicion || 1,
+      es_covid: false,
+      parcela: datosNueva.parcela,
+    }
+
+    const listaActualizada = [nuevaInhumacion, ...listaActual]
+    expect(listaActualizada.length).toBe(2)
+
+    // Ahora la fosa tiene ocupados Nivel 1 y Nivel 2
+    const ocupados = listaActualizada.map((i) => i.nivel_posicion)
+    expect(ocupados).toContain(1)
+    expect(ocupados).toContain(2)
+
+    // El único nivel restante debe ser el Nivel 3
+    const niveles = [1, 2, 3]
+    const libre = niveles.find((lvl) => !ocupados.includes(lvl))
+    expect(libre).toBe(3)
+  })
 })

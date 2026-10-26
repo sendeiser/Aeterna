@@ -656,26 +656,43 @@ export async function insertInhumacionSupabase(inhumacion: Inhumacion): Promise<
   if (!isSupabaseConfigured) return false
   try {
     // Buscar parcela id
-    const parcNom =
+    const rawParcNom =
       typeof inhumacion.parcela === 'object'
         ? inhumacion.parcela?.nomenclatura
-        : inhumacion.parcela
+        : (typeof inhumacion.parcela === 'string' ? inhumacion.parcela : (inhumacion as any).parcela_nomenclatura)
 
-    let pId: string | null = null
-    if (parcNom) {
+    let pId: string | null = (inhumacion.parcela_id && isUuid(inhumacion.parcela_id)) ? inhumacion.parcela_id : null
+    let parcNom = (rawParcNom || '').trim()
+
+    // Si no tenemos pId directo pero sí parcNom, buscar en Supabase
+    if (parcNom && !pId) {
+      const cleanNom = parcNom.replace(/\s+/g, '-')
       const { data } = await supabase
         .from('parcelas')
-        .select('id, espacios_ocupados, capacidad_total')
-        .eq('nomenclatura', parcNom)
+        .select('id, nomenclatura, espacios_ocupados, capacidad_total')
+        .or(`nomenclatura.eq.${parcNom},nomenclatura.eq.${cleanNom},nomenclatura.ilike.%${cleanNom}%`)
         .maybeSingle()
 
       if (data) {
         pId = data.id
-        // Incrementar ocupación
+        parcNom = data.nomenclatura
+      }
+    }
+
+    // Actualizar ocupación en la parcela si se identificó
+    if (pId) {
+      const { data: pData } = await supabase
+        .from('parcelas')
+        .select('id, nomenclatura, espacios_ocupados, capacidad_total')
+        .eq('id', pId)
+        .maybeSingle()
+
+      if (pData) {
+        if (!parcNom) parcNom = pData.nomenclatura
         await supabase
           .from('parcelas')
           .update({
-            espacios_ocupados: Math.min(data.capacidad_total || 3, (data.espacios_ocupados || 0) + 1),
+            espacios_ocupados: Math.min(pData.capacidad_total || 3, (pData.espacios_ocupados || 0) + 1),
             estado: 'ocupada',
           })
           .eq('id', pId)
@@ -685,20 +702,25 @@ export async function insertInhumacionSupabase(inhumacion: Inhumacion): Promise<
     const { error } = await supabase.from('inhumaciones').insert({
       parcela_id: pId,
       parcela_nomenclatura: parcNom || null,
-      nombre_difunto: inhumacion.nombre_difunto,
-      dni_difunto: inhumacion.dni_difunto || null,
+      nombre_difunto: (inhumacion.nombre_difunto || '').trim(),
+      dni_difunto: (inhumacion.dni_difunto || '').trim() || null,
       fecha_fallecimiento: inhumacion.fecha_fallecimiento || null,
       fecha_inhumacion: inhumacion.fecha_inhumacion?.slice(0, 10) || new Date().toISOString().slice(0, 10),
-      nivel_posicion: inhumacion.nivel_posicion || 1,
+      nivel_posicion: Number(inhumacion.nivel_posicion) || 1,
       es_covid: Boolean(inhumacion.es_covid),
-      causa_defuncion: inhumacion.causa_defuncion || 'Causa general',
-      empresa_funebrera: inhumacion.empresa_funebrera || 'Aeterna Sepelios',
+      causa_defuncion: (inhumacion.causa_defuncion || '').trim() || 'Causa general',
+      empresa_funebrera: (inhumacion.empresa_funebrera || '').trim() || 'Aeterna Sepelios',
       responsable_contacto: (inhumacion as any).responsable_contacto || (inhumacion as any).nombre_responsable || null,
       telefono_responsable: (inhumacion as any).telefono_responsable || null,
       observaciones: (inhumacion as any).observaciones || (parcNom ? `Parcela asignada: ${parcNom}` : null),
     })
 
-    return !error
+    if (error) {
+      console.error('Error insertando inhumación en Supabase:', error.message, error.details || error)
+      return false
+    }
+
+    return true
   } catch (err) {
     console.error('Error insertando inhumación en Supabase:', err)
     return false

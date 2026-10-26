@@ -51,16 +51,35 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
   const parcelaSeleccionada = useMemo(() => {
     const bTrim = (busquedaParcela || '').trim().toUpperCase()
     const bClean = (busquedaParcela || '').replace(/[\s-]/g, '').trim().toUpperCase()
-    return (
-      parcelasDisponibles.find((p) => p.id === parcelaId) ||
-      (bTrim
-        ? parcelasDisponibles.find((p) => (p.nomenclatura || '').toUpperCase() === bTrim) ||
-          parcelasDisponibles.find(
-            (p) => (p.nomenclatura || '').replace(/[\s-]/g, '').toUpperCase() === bClean
-          )
-        : undefined)
-    )
+
+    // 1. Prioridad: Coincidencia por texto buscado (limpiando espacios y guiones, ej: A 11 40 -> A-11-40)
+    if (bClean) {
+      const matchClean = parcelasDisponibles.find(
+        (p) => (p.nomenclatura || '').replace(/[\s-]/g, '').toUpperCase() === bClean
+      )
+      if (matchClean) return matchClean
+
+      const matchExact = parcelasDisponibles.find(
+        (p) => (p.nomenclatura || '').toUpperCase() === bTrim
+      )
+      if (matchExact) return matchExact
+    }
+
+    // 2. Coincidencia por parcelaId
+    if (parcelaId) {
+      const matchId = parcelasDisponibles.find((p) => p.id === parcelaId)
+      if (matchId) return matchId
+    }
+
+    return parcelasDisponibles[0]
   }, [parcelasDisponibles, parcelaId, busquedaParcela])
+
+  // Sincronizar parcelaId cuando se resuelve la parcela seleccionada
+  useEffect(() => {
+    if (parcelaSeleccionada?.id && parcelaSeleccionada.id !== parcelaId) {
+      setParcelaId(parcelaSeleccionada.id)
+    }
+  }, [parcelaSeleccionada?.id])
 
   // Difuntos actualmente registrados en la parcela seleccionada
   const difuntosEnParcela = useMemo(() => {
@@ -169,20 +188,32 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSave({
-      id: initialData?.id || `inh-${Date.now()}`,
-      parcela_id: parcelaId,
+
+    const chosenParcela =
+      parcelaSeleccionada ||
+      parcelasDisponibles.find((p) => p.id === parcelaId)
+
+    const effectiveParcelaId = chosenParcela?.id || parcelaId
+
+    const dataToSave: Partial<Inhumacion> = {
+      parcela_id: effectiveParcelaId,
       nombre_difunto: (nombreDifunto || '').trim(),
-      dni_difunto: (dniDifunto || '').trim(),
+      dni_difunto: (dniDifunto || '').trim() || null,
       fecha_fallecimiento: fechaFallecimiento || null,
       fecha_inhumacion: fechaInhumacion,
-      nivel_posicion: Number(nivelPosicion),
+      nivel_posicion: Number(nivelPosicion) || 1,
       es_covid: esCovid,
       causa_defuncion: (causaDefuncion || '').trim() || 'Causa Natural',
       empresa_funebrera: (empresaFunebrera || '').trim() || 'Servicios Sociales Chamical',
       observaciones: (observaciones || '').trim() || null,
-      parcela: parcelaSeleccionada || (typeof initialData?.parcela === 'object' ? initialData.parcela : null),
-    })
+      parcela: chosenParcela || (typeof initialData?.parcela === 'object' ? initialData.parcela : null),
+    }
+
+    if (initialData?.id) {
+      dataToSave.id = initialData.id
+    }
+
+    onSave(dataToSave)
   }
 
   return (
