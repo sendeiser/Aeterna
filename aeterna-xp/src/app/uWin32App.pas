@@ -170,6 +170,20 @@ const
     'Concepto Imputado', 'Metodo de Pago', 'Importe'
   );
 
+type
+  PNMITEMACTIVATE_REC = ^TNMITEMACTIVATE_REC;
+  TNMITEMACTIVATE_REC = record
+    hdr: TNMHDR;
+    iItem: Integer;
+    iSubItem: Integer;
+    uNewState: UINT;
+    uOldState: UINT;
+    uChanged: UINT;
+    ptAction: TPoint;
+    lParam: LPARAM;
+    uKeyFlags: UINT;
+  end;
+
 var
   // Datos en Memoria
   DataParcelas: TParcelaArray;
@@ -459,6 +473,14 @@ var
   Item: TLVItem;
 begin
   if (hLv = 0) or (ItemIdx < 0) then Exit;
+  // Deseleccionar todo primero
+  FillChar(Item, SizeOf(Item), 0);
+  Item.mask := LVIF_STATE;
+  Item.state := 0;
+  Item.stateMask := LVIS_SELECTED;
+  SendMessage(hLv, LVM_SETITEMSTATE, -1, LPARAM(@Item));
+
+  // Seleccionar y enfocar el item especificado
   FillChar(Item, SizeOf(Item), 0);
   Item.mask := LVIF_STATE;
   Item.iItem := ItemIdx;
@@ -1288,9 +1310,6 @@ begin
 
   // Poblar ListView Caja
   FiltrarYMostrarCaja;
-
-  SetWindowText(hLblResumenCaja, PChar('TOTAL RECAUDADO HOY: ' + FormatearMoneda(TotalEfHoy + TotalDigHoy) +
-    '   [ Efectivo en Caja: ' + FormatearMoneda(TotalEfHoy) + '  |  Transferencias / QR: ' + FormatearMoneda(TotalDigHoy) + ' ]'));
 
   SetStatusMessage('Aeterna conectado a Supabase Cloud - ' + IntToStr(Length(DataInhumaciones)) + ' actas, ' + IntToStr(Length(DataParcelas)) + ' parcelas, ' + IntToStr(Length(DataAfiliados)) + ' afiliados.');
 end;
@@ -2141,12 +2160,13 @@ begin
   // ===========================================================
   // Modulo 4: Caja Diaria
   // ===========================================================
-  MoveWindow(hLblResumenCaja, 15, 110, cxClient - 520, 32, True);
-  MoveWindow(hBtnNuevoCobroCaja, cxClient - 500, 110, 130, 32, True);
-  MoveWindow(hBtnDelCobroCaja,   cxClient - 365, 110, 130, 32, True);
-  MoveWindow(hBtnCierreCaja,     cxClient - 230, 110, 140, 32, True);
-  MoveWindow(hBtnSyncCaja,       cxClient - 85,  110, 70,  32, True);
-  MoveWindow(hLvCaja, 15, 150, cxClient - 30, cyClient - 180, True);
+  MoveWindow(hLblResumenCaja,     15,             110, cxClient - 605, 32, True);
+  MoveWindow(hBtnNuevoCobroCaja,  cxClient - 582, 110, 120,            32, True);
+  MoveWindow(hBtnNuevoEgresoCaja, cxClient - 454, 110, 125,            32, True);
+  MoveWindow(hBtnDelCobroCaja,    cxClient - 321, 110, 85,             32, True);
+  MoveWindow(hBtnCierreCaja,      cxClient - 228, 110, 130,            32, True);
+  MoveWindow(hBtnSyncCaja,        cxClient - 90,  110, 75,             32, True);
+  MoveWindow(hLvCaja,             15,             150, cxClient - 30,  cyClient - 180, True);
 
   // ===========================================================
   // Modulo 5: Reportes PDF
@@ -2402,18 +2422,18 @@ begin
   // ===========================================================
   // MODULO 4: CAJA DIARIA Y ARQUEO (CRUD COMPLETO)
   // ===========================================================
-  hLblResumenCaja := CreateLabel(hWnd, '  INGRESOS: $ 0.00  |  EGRESOS: $ 0.00  |  BALANCE NETO: $ 0.00', 15, 110, 480, 32, hBoldFont);
+  hLblResumenCaja := CreateLabel(hWnd, '  INGRESOS: $ 0.00  |  EGRESOS: $ 0.00  |  BALANCE NETO: $ 0.00', 15, 110, 420, 32, hBoldFont);
   AddControlToModule(4, hLblResumenCaja);
 
-  hBtnNuevoCobroCaja := CreateButton(hWnd, '+ Cobro en Caja', 505, 110, 115, 32, IDC_BTN_NUEVO_COBRO);
+  hBtnNuevoCobroCaja := CreateButton(hWnd, '+ Cobro en Caja', 442, 110, 120, 32, IDC_BTN_NUEVO_COBRO);
   AddControlToModule(4, hBtnNuevoCobroCaja);
-  hBtnNuevoEgresoCaja := CreateButton(hWnd, '- Registrar Egreso', 625, 110, 125, 32, IDC_BTN_NUEVO_EGRESO);
+  hBtnNuevoEgresoCaja := CreateButton(hWnd, '- Registrar Egreso', 570, 110, 125, 32, IDC_BTN_NUEVO_EGRESO);
   AddControlToModule(4, hBtnNuevoEgresoCaja);
-  hBtnCierreCaja     := CreateButton(hWnd, 'Acta Cierre (PDF)', 755, 110, 125, 32, IDC_BTN_CIERRE_CAJA);
-  AddControlToModule(4, hBtnCierreCaja);
-  hBtnDelCobroCaja   := CreateButton(hWnd, 'Anular', 885, 110, 60, 32, IDC_BTN_DEL_COBRO);
+  hBtnDelCobroCaja   := CreateButton(hWnd, 'Anular', 703, 110, 85, 32, IDC_BTN_DEL_COBRO);
   AddControlToModule(4, hBtnDelCobroCaja);
-  hBtnSyncCaja       := CreateButton(hWnd, 'Recargar', 950, 110, 55, 32, IDC_BTN_SYNC);
+  hBtnCierreCaja     := CreateButton(hWnd, 'Acta Cierre (PDF)', 796, 110, 130, 32, IDC_BTN_CIERRE_CAJA);
+  AddControlToModule(4, hBtnCierreCaja);
+  hBtnSyncCaja       := CreateButton(hWnd, 'Recargar', 934, 110, 75, 32, IDC_BTN_SYNC);
   AddControlToModule(4, hBtnSyncCaja);
 
   hLvCaja := CreateListView(hWnd, 15, 150, 990, 460, IDC_LV_CAJA);
@@ -2568,6 +2588,7 @@ var
   Len: Integer;
   pnm: PNMHDR;
   pnmv: PNMListView;
+  pnmia: PNMITEMACTIVATE_REC;
 begin
   case uMsg of
     WM_NOTIFY:
@@ -2582,13 +2603,26 @@ begin
             Result := 0;
             Exit;
           end
+          else if Integer(pnm^.code) = NM_CLICK then
+          begin
+            pnmia := PNMITEMACTIVATE_REC(lParam);
+            if (pnmia <> nil) and (pnmia^.iItem >= 0) then
+              SetListViewSelectedIndex(pnm^.hwndFrom, pnmia^.iItem);
+            Result := 0;
+            Exit;
+          end
           else if (Integer(pnm^.code) = NM_DBLCLK) or (Integer(pnm^.code) = NM_RETURN) then
           begin
+            pnmia := PNMITEMACTIVATE_REC(lParam);
+            if (pnmia <> nil) and (pnmia^.iItem >= 0) then
+              SetListViewSelectedIndex(pnm^.hwndFrom, pnmia^.iItem);
             HandleListViewDoubleClick(pnm^.hwndFrom);
             Result := 0;
             Exit;
           end;
         end;
+        Result := 0;
+        Exit;
       end;
 
     WM_CTLCOLORSTATIC:
