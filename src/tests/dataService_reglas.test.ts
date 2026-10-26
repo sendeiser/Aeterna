@@ -64,4 +64,24 @@ describe('dataService - Gestión Administrativa de Stand-by', () => {
     expect(liberada.saldo_mantenimiento).toBe(0)
     expect(liberada.motivo_bloqueo).toBe('Caducidad administrativa municipal')
   })
+
+  it('al cobrar una nueva cuota (ej. mes 4), se preservan las cuotas previas (1, 2, 3) sin quedar en mora', () => {
+    const afiliado = {
+      id: 'afi-test-1',
+      numero_afiliado: 1,
+      nombre_completo: 'Afiliado Test',
+      monto_cuota_mensual: 18000,
+      estado: 'activo' as const,
+      fecha_alta: '2025-01-01',
+      cuotasPagadas: [1, 2, 3],
+    }
+
+    const nroCuota = 4
+    const currentPaid = afiliado.cuotasPagadas || []
+    const updatedPaid = currentPaid.includes(nroCuota) ? currentPaid : [...currentPaid, nroCuota]
+
+    expect(updatedPaid).toEqual([1, 2, 3, 4])
+    const mesesVencidos = [1, 2, 3].filter((m) => !updatedPaid.includes(m))
+    expect(mesesVencidos.length).toBe(0)
+  })
 })

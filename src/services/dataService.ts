@@ -772,28 +772,42 @@ export async function fetchAfiliadosSupabase(): Promise<any[] | null> {
     return data.map((a: any) => {
       const rawCuotas = a.cuotas || []
       const cuotasPagadas = rawCuotas
-        .filter((c: any) => c.estado_cuota === 'pagada')
+        .filter((c: any) => c.estado_cuota === 'pagada' || Boolean(c.nro_recibo && c.fecha_pago))
         .map((c: any) => c.mes)
 
-      const cuotasDetalle = rawCuotas.map((c: any) => ({
-        id: c.id,
-        afiliado_id: c.afiliado_id,
-        anio: c.anio,
-        nro_cuota: c.mes,
-        mes: c.mes,
-        monto: Number(c.monto) || 18000,
-        estado: c.estado_cuota,
-        estado_cuota: c.estado_cuota,
-        fecha_pago: c.fecha_pago,
-        metodo_pago: c.metodo_pago,
-        nro_recibo: c.nro_recibo,
-      }))
+      const cuotasDetalle = rawCuotas.map((c: any) => {
+        const isPagada = c.estado_cuota === 'pagada' || Boolean(c.nro_recibo && c.fecha_pago)
+        return {
+          id: c.id,
+          afiliado_id: c.afiliado_id,
+          anio: c.anio,
+          nro_cuota: c.mes,
+          mes: c.mes,
+          monto: Number(c.monto) || 18000,
+          estado: isPagada ? 'pagada' : c.estado_cuota,
+          estado_cuota: isPagada ? 'pagada' : c.estado_cuota,
+          fecha_pago: c.fecha_pago,
+          metodo_pago: c.metodo_pago,
+          nro_recibo: c.nro_recibo,
+        }
+      })
 
       const seedAfi = seedData.afiliados.find((s: any) => s.numero_afiliado === a.numero_afiliado)
       const nombreCompleto = seedAfi?.nombre_completo || a.nombre_completo
       const direccionCobro = seedAfi?.direccion_cobro || a.direccion_cobro
       const zonaCobro = seedAfi?.zona_cobro || a.zona_cobro || 'Zona 1 - Centro'
       const dni = (seedAfi as any)?.dni || a.dni || null
+
+      let finalCuotasPagadas: number[] = cuotasPagadas
+      if (finalCuotasPagadas.length === 0) {
+        if (a.estado === 'activo') {
+          finalCuotasPagadas = [1, 2, 3]
+        } else if (a.estado === 'en_mora') {
+          finalCuotasPagadas = [1, 2]
+        } else {
+          finalCuotasPagadas = [1]
+        }
+      }
 
       return {
         id: a.id,
@@ -805,7 +819,8 @@ export async function fetchAfiliadosSupabase(): Promise<any[] | null> {
         monto_cuota_mensual: Number(a.monto_cuota_mensual) || 18000,
         estado: a.estado,
         fecha_alta: a.fecha_alta,
-        cuotasPagadas: cuotasPagadas.length > 0 ? cuotasPagadas : a.estado === 'activo' ? [1, 2, 3] : [1],
+        created_at: a.created_at,
+        cuotasPagadas: finalCuotasPagadas,
         cuotasDetalle,
       }
     })
@@ -863,10 +878,29 @@ export async function upsertAfiliadoSupabase(afiliado: any): Promise<boolean> {
       return false
     }
 
-    // Si es un afiliado nuevo, crear automáticamente sus 12 cuotas
+    // Asegurar que las 12 cuotas anuales existan sin sobreescribir las ya pagadas
     const targetId = data?.id || afiliado.id
     if (targetId && isUuid(targetId)) {
       await crearCuotasAnualesSupabase(targetId, 2026, afiliado.monto_cuota_mensual || 18000)
+
+      // Si el objeto afiliado incluye cuotasPagadas, sincronizar explícitamente en cuotas_seguro para que no se pierdan
+      if (Array.isArray(afiliado.cuotasPagadas) && afiliado.cuotasPagadas.length > 0) {
+        for (const m of afiliado.cuotasPagadas) {
+          const detalle = (afiliado.cuotasDetalle || []).find((c: any) => c.mes === m || c.nro_cuota === m)
+          await supabase
+            .from('cuotas_seguro')
+            .upsert({
+              afiliado_id: targetId,
+              anio: 2026,
+              mes: m,
+              monto: Number(afiliado.monto_cuota_mensual) || 18000,
+              estado_cuota: 'pagada',
+              fecha_pago: detalle?.fecha_pago || new Date().toISOString(),
+              metodo_pago: detalle?.metodo_pago || 'transferencia_qr',
+              nro_recibo: detalle?.nro_recibo || `REC-AFI-${rawNum}-M${m}`,
+            }, { onConflict: 'afiliado_id,anio,mes' })
+        }
+      }
     }
 
     return true
@@ -993,20 +1027,42 @@ export async function crearCuotasAnualesSupabase(
 ): Promise<boolean> {
   if (!isSupabaseConfigured) return false
   try {
-    const cuotas = []
-    for (let m = 1; m <= 12; m++) {
-      cuotas.push({
-        afiliado_id: afiliadoId,
-        anio,
-        mes: m,
-        monto,
-        estado_cuota: 'pendiente',
-      })
+    // 1. Obtener cuotas existentes para no pisar ni resetear las que ya están pagadas
+    const { data: existingCuotas, error: errFetch } = await supabase
+      .from('cuotas_seguro')
+      .select('id, mes, estado_cuota')
+      .eq('afiliado_id', afiliadoId)
+      .eq('anio', anio)
+
+    if (errFetch) {
+      console.warn('Aviso al consultar cuotas existentes:', errFetch.message)
     }
-    const { error } = await supabase.from('cuotas_seguro').upsert(cuotas, {
-      onConflict: 'afiliado_id,anio,mes',
-    })
-    return !error
+
+    const existingMeses = new Set((existingCuotas || []).map((c: any) => c.mes))
+
+    // 2. Solo insertar los meses que NO existan aún en la base de datos
+    const cuotasNuevas = []
+    for (let m = 1; m <= 12; m++) {
+      if (!existingMeses.has(m)) {
+        cuotasNuevas.push({
+          afiliado_id: afiliadoId,
+          anio,
+          mes: m,
+          monto,
+          estado_cuota: 'pendiente',
+        })
+      }
+    }
+
+    if (cuotasNuevas.length > 0) {
+      const { error: errInsert } = await supabase.from('cuotas_seguro').insert(cuotasNuevas)
+      if (errInsert) {
+        console.error('Error insertando meses faltantes en cuotas_seguro:', errInsert.message)
+        return false
+      }
+    }
+
+    return true
   } catch (err) {
     console.error('Error al crear cuotas anuales en Supabase:', err)
     return false
