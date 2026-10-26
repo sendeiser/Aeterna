@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Inhumacion, Parcela } from '../../types/database'
 
 interface InhumacionFormProps {
@@ -26,6 +26,10 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
   const [parcelaId, setParcelaId] = useState(
     initialMatchedParcela?.id || initialData?.parcela_id || parcelasDisponibles[0]?.id || ''
   )
+  const [busquedaParcela, setBusquedaParcela] = useState(
+    initialMatchedParcela?.nomenclatura || existingParcNom || ''
+  )
+  const [dropdownOpen, setDropdownOpen] = useState(false)
   const [nombreDifunto, setNombreDifunto] = useState(initialData?.nombre_difunto || '')
   const [dniDifunto, setDniDifunto] = useState(initialData?.dni_difunto || '')
   const [fechaFallecimiento, setFechaFallecimiento] = useState(initialData?.fecha_fallecimiento || '')
@@ -43,20 +47,45 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
   const parcelaSeleccionada = parcelasDisponibles.find((p) => p.id === parcelaId)
 
   // Opciones combinadas para que no se pierda la parcela asignada actualmente
-  const parcelasOptions = [...parcelasDisponibles]
-  if (
-    existingParcNom &&
-    !parcelasOptions.some((p) => p.nomenclatura === existingParcNom || p.id === parcelaId)
-  ) {
-    parcelasOptions.unshift({
-      id: parcelaId || `parc-custom-${Date.now()}`,
-      nomenclatura: existingParcNom,
-      capacidad_total: 3,
-      espacios_ocupados: nivelPosicion,
-      estado: 'ocupada',
-      saldo_mantenimiento: 0,
-    } as Parcela)
-  }
+  const parcelasOptions = useMemo(() => {
+    const opts = [...parcelasDisponibles]
+    if (
+      existingParcNom &&
+      !opts.some((p) => p.nomenclatura === existingParcNom || p.id === parcelaId)
+    ) {
+      opts.unshift({
+        id: parcelaId || `parc-custom-${Date.now()}`,
+        nomenclatura: existingParcNom,
+        capacidad_total: 3,
+        espacios_ocupados: nivelPosicion,
+        estado: 'ocupada',
+        saldo_mantenimiento: 0,
+      } as Parcela)
+    }
+    return opts
+  }, [parcelasDisponibles, existingParcNom, parcelaId, nivelPosicion])
+
+  // Parcelas filtradas interactivamente para el buscador de parcela
+  const parcelasFiltradas = useMemo(() => {
+    const q = busquedaParcela.trim().toLowerCase()
+    if (!q) return parcelasOptions.slice(0, 60)
+    return parcelasOptions
+      .filter((p) => {
+        const nom = (p.nomenclatura || '').toLowerCase()
+        const nro = String(p.numero_parcela || '').toLowerCase()
+        const sec = (p.sector_id || '').toLowerCase()
+        const tit = (p.titular?.nombre_completo || '').toLowerCase()
+        const dni = (p.titular?.dni || '').toLowerCase()
+        return (
+          nom.includes(q) ||
+          nro.includes(q) ||
+          sec.includes(q) ||
+          tit.includes(q) ||
+          dni.includes(q)
+        )
+      })
+      .slice(0, 60)
+  }, [parcelasOptions, busquedaParcela])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -102,22 +131,102 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
       </div>
 
       <div className="space-y-3.5">
-        <div>
+        {/* Buscador Interactivo de Parcela Destino */}
+        <div className="relative">
           <label className="text-xs font-semibold text-on-surface block mb-1">
-            Parcela Destino <span className="text-error">*</span>
+            Parcela Destino (Buscar por Nomenclatura, N° Parcela o Titular) <span className="text-error">*</span>
           </label>
-          <select
-            value={parcelaId}
-            onChange={(e) => setParcelaId(e.target.value)}
-            className="w-full h-9 px-2 text-xs font-mono font-bold text-primary bg-white border border-outline-variant rounded-md focus:border-secondary focus:outline-none"
-            required
-          >
-            {parcelasOptions.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nomenclatura} - {p.titular?.nombre_completo || 'Sin titular'} ({p.espacios_ocupados}/{p.capacidad_total} niveles)
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">
+              search
+            </span>
+            <input
+              id="input-buscar-parcela-inhumacion"
+              type="text"
+              value={busquedaParcela}
+              onChange={(e) => {
+                setBusquedaParcela(e.target.value)
+                setDropdownOpen(true)
+              }}
+              onFocus={() => setDropdownOpen(true)}
+              placeholder="Escriba para buscar parcela (ej. A-01-05, Salinas, Gómez)..."
+              className="w-full h-9 pl-8 pr-24 text-xs font-medium bg-white border border-outline-variant rounded-md focus:border-secondary focus:outline-none"
+              autoComplete="off"
+            />
+            {parcelaSeleccionada && (
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                {parcelaSeleccionada.nomenclatura}
+              </span>
+            )}
+          </div>
+
+          {/* Menú desplegable flotante de parcelas encontradas */}
+          {dropdownOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setDropdownOpen(false)}
+              />
+              <div className="absolute left-0 right-0 top-full mt-1 z-20 max-h-56 overflow-y-auto bg-surface-container-lowest border border-outline-variant rounded-lg shadow-xl divide-y divide-outline-variant/40 custom-scroll">
+                {parcelasFiltradas.length > 0 ? (
+                  parcelasFiltradas.map((p) => {
+                    const isSelected = p.id === parcelaId
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          setParcelaId(p.id)
+                          setBusquedaParcela(p.nomenclatura)
+                          setDropdownOpen(false)
+                        }}
+                        className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-primary/10 font-semibold text-primary'
+                            : 'hover:bg-surface-container-low text-on-surface'
+                        }`}
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-code-cadastral font-bold text-xs text-primary">
+                            {p.nomenclatura}
+                          </span>
+                          <span className="text-[11px] text-outline">
+                            Titular: {p.titular?.nombre_completo || 'Sin titular'} {p.titular?.dni ? `(DNI: ${p.titular.dni})` : ''}
+                          </span>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface border border-outline-variant text-on-surface-variant font-mono">
+                            {p.espacios_ocupados || 0}/{p.capacidad_total || 3} niveles
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })
+                ) : (
+                  <div className="p-3 text-center text-xs text-outline">
+                    No se encontraron parcelas que coincidan con "{busquedaParcela}".
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Tarjeta de Confirmación de Parcela Elegida */}
+          {parcelaSeleccionada && (
+            <div className="mt-1.5 p-2 rounded-lg bg-surface-container-low border border-outline-variant/80 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[16px] text-primary">domain</span>
+                <span className="font-mono font-bold text-primary">{parcelaSeleccionada.nomenclatura}</span>
+                <span className="text-outline">·</span>
+                <span className="text-on-surface truncate max-w-[200px]">
+                  {parcelaSeleccionada.titular?.nombre_completo || 'Sin titular'}
+                </span>
+              </div>
+              <span className="text-[10px] font-semibold text-outline px-1.5 py-0.5 bg-white rounded border border-outline-variant">
+                Ocupación: {parcelaSeleccionada.espacios_ocupados || 0}/{parcelaSeleccionada.capacidad_total || 3}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

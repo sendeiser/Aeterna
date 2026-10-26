@@ -8,7 +8,8 @@ uses
   Classes, SysUtils, CommCtrl, Windows, Messages,
   uDataModels, uBusinessRules;
 
-function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion): Boolean;
+function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion): Boolean; overload;
+function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion; const ParcelasRef: TParcelaArray): Boolean; overload;
 function ShowDlgParcela(ParentWnd: HWND; IsEdit: Boolean; var Parc: TParcela): Boolean;
 function ShowDlgAfiliado(ParentWnd: HWND; IsEdit: Boolean; var Afil: TAfiliadoSeguro): Boolean;
 function ShowDlgCobroCaja(ParentWnd: HWND; var Titular, Concepto: string; var Monto: Currency; var Metodo: TMetodoPago; var Recibo: string): Boolean;
@@ -65,6 +66,15 @@ begin
   EnsureDlgFonts;
   Result := CreateWindow('COMBOBOX', '',
     WS_CHILD or WS_VISIBLE or CBS_DROPDOWNLIST or WS_VSCROLL,
+    X, Y, W, H, hParent, HMENU(Id), hInstance, nil);
+  SendMessage(Result, WM_SETFONT, WPARAM(hDlgFont), 1);
+end;
+
+function CreateDlgEditableCombo(hParent: HWND; X, Y, W, H, Id: Integer): HWND;
+begin
+  EnsureDlgFonts;
+  Result := CreateWindow('COMBOBOX', '',
+    WS_CHILD or WS_VISIBLE or CBS_DROPDOWN or WS_VSCROLL or CBS_AUTOHSCROLL,
     X, Y, W, H, hParent, HMENU(Id), hInstance, nil);
   SendMessage(Result, WM_SETFONT, WPARAM(hDlgFont), 1);
 end;
@@ -153,6 +163,8 @@ type
 function InhDlgProc(hWnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
 var
   pData: PInhDlgData;
+  rawNom: string;
+  pDash: Integer;
 begin
   pData := PInhDlgData(GetWindowLongPtr(hWnd, GWLP_USERDATA));
   case uMsg of
@@ -168,7 +180,14 @@ begin
               begin
                 pData^.InhPtr^.NombreDifunto := GetEditText(pData^.EdtNombre);
                 pData^.InhPtr^.DniDifunto := GetEditText(pData^.EdtDni);
-                pData^.InhPtr^.NomenclaturaParcela := GetEditText(pData^.EdtParcela);
+
+                rawNom := GetEditText(pData^.EdtParcela);
+                pDash := Pos(' - ', rawNom);
+                if pDash > 0 then
+                  pData^.InhPtr^.NomenclaturaParcela := Trim(Copy(rawNom, 1, pDash - 1))
+                else
+                  pData^.InhPtr^.NomenclaturaParcela := Trim(rawNom);
+
                 pData^.InhPtr^.NivelPosicion := SendMessage(pData^.CmbNivel, CB_GETCURSEL, 0, 0) + 1;
                 pData^.InhPtr^.FechaInhumacion := GetEditText(pData^.EdtFecha);
                 pData^.InhPtr^.EmpresaFunebrera := GetEditText(pData^.EdtEmpresa);
@@ -209,12 +228,13 @@ begin
   Result := DefWindowProc(hWnd, uMsg, wParam, lParam);
 end;
 
-function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion): Boolean;
+function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion; const ParcelasRef: TParcelaArray): Boolean;
 var
   wc: TWndClass;
   hDlg: HWND;
   DlgData: TInhDlgData;
   Title: string;
+  i: Integer;
 begin
   EnsureDlgFonts;
   FillChar(wc, SizeOf(wc), 0);
@@ -247,8 +267,14 @@ begin
   CreateDlgLabel(hDlg, 'DNI Difunto:', 20, 70, 140, 18);
   DlgData.EdtDni := CreateDlgEdit(hDlg, Inh.DniDifunto, 20, 90, 140, 24, 102);
 
-  CreateDlgLabel(hDlg, 'Parcela (ej. A-25-96):', 180, 70, 160, 18);
-  DlgData.EdtParcela := CreateDlgEdit(hDlg, Inh.NomenclaturaParcela, 180, 90, 160, 24, 103);
+  CreateDlgLabel(hDlg, 'Buscar / Elegir Parcela (*):', 180, 70, 160, 18);
+  DlgData.EdtParcela := CreateDlgEditableCombo(hDlg, 180, 90, 160, 200, 103);
+  for i := 0 to High(ParcelasRef) do
+  begin
+    SendMessage(DlgData.EdtParcela, CB_ADDSTRING, 0, LPARAM(PChar(ParcelasRef[i].Nomenclatura + ' - ' + ParcelasRef[i].TitularNombre)));
+  end;
+  if Inh.NomenclaturaParcela <> '' then
+    SetWindowText(DlgData.EdtParcela, PChar(Inh.NomenclaturaParcela));
 
   CreateDlgLabel(hDlg, 'Nivel / Posicion:', 360, 70, 120, 18);
   DlgData.CmbNivel := CreateDlgCombo(hDlg, 360, 90, 120, 100, 104);
@@ -297,6 +323,14 @@ begin
 
   RunModalLoop(hDlg, ParentWnd);
   Result := DlgData.Confirmed;
+end;
+
+function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion): Boolean;
+var
+  Dummy: TParcelaArray;
+begin
+  SetLength(Dummy, 0);
+  Result := ShowDlgInhumacion(ParentWnd, IsEdit, Inh, Dummy);
 end;
 
 // ============================================================================

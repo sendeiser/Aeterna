@@ -1283,7 +1283,7 @@ begin
   Inh.NivelPosicion := 1;
   Inh.EmpresaFunebrera := 'Servicios Sociales Chamical - Mat. Fun. 104';
 
-  if ShowDlgInhumacion(hMainWnd, False, Inh) then
+  if ShowDlgInhumacion(hMainWnd, False, Inh, DataParcelas) then
   begin
     SetStatusMessage('Guardando nueva inhumacion en Supabase Cloud...');
     if TInhumacionesService.CrearInhumacion(Inh) then
@@ -1321,7 +1321,7 @@ begin
   end;
 
   Inh := DataInhumaciones[Idx];
-  if ShowDlgInhumacion(hMainWnd, True, Inh) then
+  if ShowDlgInhumacion(hMainWnd, True, Inh, DataParcelas) then
   begin
     SetStatusMessage('Actualizando acta de inhumacion en Supabase...');
     if TInhumacionesService.ActualizarInhumacion(Inh.Id, Inh) then
