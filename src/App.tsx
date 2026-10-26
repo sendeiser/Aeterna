@@ -39,6 +39,7 @@ import {
   registrarPagoCuotaSupabase,
   revertirPagoCuotaSupabase,
   registrarPagoSupabase,
+  fetchPagosSupabase,
   PagoRecibo,
 } from './services/dataService'
 
@@ -137,11 +138,12 @@ export default function App() {
     if (!isSupabaseConfigured) return
 
     async function fetchCloudData() {
-      const [cloudConfig, cloudParcelas, cloudInhumaciones, cloudAfiliados] = await Promise.all([
+      const [cloudConfig, cloudParcelas, cloudInhumaciones, cloudAfiliados, cloudPagos] = await Promise.all([
         fetchConfigSupabase(),
         fetchParcelasSupabase(),
         fetchInhumacionesSupabase(),
         fetchAfiliadosSupabase(),
+        fetchPagosSupabase(),
       ])
 
       if (cloudConfig) {
@@ -155,6 +157,13 @@ export default function App() {
       }
       if (cloudAfiliados && cloudAfiliados.length > 0) {
         setAfiliados(cloudAfiliados)
+      }
+      if (cloudPagos && cloudPagos.length > 0) {
+        setPagos(cloudPagos)
+        const sumPagos = cloudPagos
+          .filter((p) => p.tipo !== 'egreso')
+          .reduce((acc, p) => acc + (p.monto || 0), 0)
+        setRecaudacionHoy(sumPagos)
       }
     }
 
@@ -278,9 +287,11 @@ export default function App() {
           estado: nuevoEstado,
         }
 
-        setParcelas((prev) =>
-          prev.map((p) => (p.id === parcela.id ? updatedParcela : p))
-        )
+        setParcelas((prev) => {
+          const updated = prev.map((p) => (p.id === parcela.id ? updatedParcela : p))
+          saveParcelasToStorage(updated)
+          return updated
+        })
 
         const nroRecibo = datos?.nroRecibo || `REC-${parcela.nomenclatura}-${Date.now().toString().slice(-6)}`
 
@@ -327,46 +338,39 @@ export default function App() {
       identificador: `AFI-${afiliado.numero_afiliado}-${mesNombre}`,
       titularNombre: afiliado.nombre_completo,
       onConfirm: async () => {
-        let updatedAfiliadosList: AfiliadoSeguro[] = []
-        let updatedAfiliado: any = null
+        const currentPaid = afiliado.cuotasPagadas || []
+        const updatedPaid = currentPaid.includes(nroCuota)
+          ? currentPaid
+          : [...currentPaid, nroCuota]
+        const alDia = [1, 2, 3].every((m) => updatedPaid.includes(m))
+
+        const currentDetalles = afiliado.cuotasDetalle || []
+        const updatedDetalles = [
+          ...currentDetalles.filter((c) => c.mes !== nroCuota && (c as any).nro_cuota !== nroCuota),
+          {
+            id: `cuota-${afiliado.id}-${nroCuota}`,
+            afiliado_id: afiliado.id,
+            anio: 2026,
+            nro_cuota: nroCuota,
+            mes: nroCuota,
+            monto,
+            estado: 'pagada' as any,
+            estado_cuota: 'pagada',
+            fecha_pago: new Date().toISOString(),
+            metodo_pago: 'transferencia_qr',
+            nro_recibo: nroRecibo,
+          },
+        ]
+
+        const updatedAfiliado: AfiliadoSeguro = {
+          ...afiliado,
+          cuotasPagadas: updatedPaid,
+          cuotasDetalle: updatedDetalles,
+          estado: alDia ? 'activo' : afiliado.estado,
+        }
 
         setAfiliados((prev) => {
-          updatedAfiliadosList = prev.map((a) => {
-            if (a.id === afiliado.id) {
-              const currentPaid = a.cuotasPagadas || []
-              const updatedPaid = currentPaid.includes(nroCuota)
-                ? currentPaid
-                : [...currentPaid, nroCuota]
-              const alDia = [1, 2, 3].every((m) => updatedPaid.includes(m))
-
-              const currentDetalles = a.cuotasDetalle || []
-              const updatedDetalles = [
-                ...currentDetalles.filter((c) => c.mes !== nroCuota && (c as any).nro_cuota !== nroCuota),
-                {
-                  id: `cuota-${afiliado.id}-${nroCuota}`,
-                  afiliado_id: afiliado.id,
-                  anio: 2026,
-                  nro_cuota: nroCuota,
-                  mes: nroCuota,
-                  monto,
-                  estado: 'pagada' as any,
-                  estado_cuota: 'pagada',
-                  fecha_pago: new Date().toISOString(),
-                  metodo_pago: 'transferencia_qr',
-                  nro_recibo: nroRecibo,
-                },
-              ]
-
-              updatedAfiliado = {
-                ...a,
-                cuotasPagadas: updatedPaid,
-                cuotasDetalle: updatedDetalles,
-                estado: alDia ? 'activo' : a.estado,
-              }
-              return updatedAfiliado
-            }
-            return a
-          })
+          const updatedAfiliadosList = prev.map((a) => (a.id === afiliado.id ? updatedAfiliado : a))
           saveAfiliadosToStorage(updatedAfiliadosList)
           return updatedAfiliadosList
         })
@@ -387,7 +391,7 @@ export default function App() {
         setRecaudacionHoy((prev) => prev + monto)
 
         // Supabase Cloud Sync
-        if (isSupabaseConfigured && updatedAfiliado) {
+        if (isSupabaseConfigured) {
           await Promise.all([
             upsertAfiliadoSupabase(updatedAfiliado),
             registrarPagoCuotaSupabase(afiliado.id, 2026, nroCuota, {
@@ -419,44 +423,37 @@ export default function App() {
       identificador: `AFI-${afiliado.numero_afiliado}-MORA`,
       titularNombre: afiliado.nombre_completo,
       onConfirm: async () => {
-        let updatedAfiliadosList: AfiliadoSeguro[] = []
-        let updatedAfiliado: any = null
+        const currentPaid = afiliado.cuotasPagadas || []
+        const updatedPaid = Array.from(new Set([...currentPaid, ...nrosCuotas]))
+        const alDia = [1, 2, 3].every((m) => updatedPaid.includes(m))
+
+        const currentDetalles = afiliado.cuotasDetalle || []
+        const newDetalles = nrosCuotas.map((m) => ({
+          id: `cuota-${afiliado.id}-${m}`,
+          afiliado_id: afiliado.id,
+          anio: 2026,
+          nro_cuota: m,
+          mes: m,
+          monto: valorUnitario,
+          estado: 'pagada' as any,
+          estado_cuota: 'pagada',
+          fecha_pago: new Date().toISOString(),
+          metodo_pago: 'transferencia_qr',
+          nro_recibo: `${nroRecibo}-M${m}`,
+        }))
+
+        const updatedAfiliado: AfiliadoSeguro = {
+          ...afiliado,
+          cuotasPagadas: updatedPaid,
+          cuotasDetalle: [
+            ...currentDetalles.filter((c) => !nrosCuotas.includes(c.mes || (c as any).nro_cuota)),
+            ...newDetalles,
+          ],
+          estado: alDia ? 'activo' : afiliado.estado,
+        }
 
         setAfiliados((prev) => {
-          updatedAfiliadosList = prev.map((a) => {
-            if (a.id === afiliado.id) {
-              const currentPaid = a.cuotasPagadas || []
-              const updatedPaid = Array.from(new Set([...currentPaid, ...nrosCuotas]))
-              const alDia = [1, 2, 3].every((m) => updatedPaid.includes(m))
-
-              const currentDetalles = a.cuotasDetalle || []
-              const newDetalles = nrosCuotas.map((m) => ({
-                id: `cuota-${afiliado.id}-${m}`,
-                afiliado_id: afiliado.id,
-                anio: 2026,
-                nro_cuota: m,
-                mes: m,
-                monto: valorUnitario,
-                estado: 'pagada' as any,
-                estado_cuota: 'pagada',
-                fecha_pago: new Date().toISOString(),
-                metodo_pago: 'transferencia_qr',
-                nro_recibo: `${nroRecibo}-M${m}`,
-              }))
-
-              updatedAfiliado = {
-                ...a,
-                cuotasPagadas: updatedPaid,
-                cuotasDetalle: [
-                  ...currentDetalles.filter((c) => !nrosCuotas.includes(c.mes || (c as any).nro_cuota)),
-                  ...newDetalles,
-                ],
-                estado: alDia ? 'activo' : a.estado,
-              }
-              return updatedAfiliado
-            }
-            return a
-          })
+          const updatedAfiliadosList = prev.map((a) => (a.id === afiliado.id ? updatedAfiliado : a))
           saveAfiliadosToStorage(updatedAfiliadosList)
           return updatedAfiliadosList
         })
@@ -477,7 +474,7 @@ export default function App() {
         setRecaudacionHoy((prev) => prev + montoTotal)
 
         // Supabase Cloud Sync
-        if (isSupabaseConfigured && updatedAfiliado) {
+        if (isSupabaseConfigured) {
           const promises: Promise<any>[] = [
             upsertAfiliadoSupabase(updatedAfiliado),
             registrarPagoSupabase(nuevoPago),
@@ -498,29 +495,25 @@ export default function App() {
   }
 
   const handleRevertirCuotaAfiliado = async (afiliadoId: string, nroCuota: number) => {
-    let updatedAfiliadosList: AfiliadoSeguro[] = []
-    let updatedAfiliado: any = null
+    const targetAfiliado = afiliados.find((a) => a.id === afiliadoId)
+    if (!targetAfiliado) return
+
+    const currentPaid = targetAfiliado.cuotasPagadas || []
+    const updatedPaid = currentPaid.filter((m) => m !== nroCuota)
+    const alDia = [1, 2, 3].every((m) => updatedPaid.includes(m))
+    const currentDetalles = targetAfiliado.cuotasDetalle || []
+
+    const updatedAfiliado: AfiliadoSeguro = {
+      ...targetAfiliado,
+      cuotasPagadas: updatedPaid,
+      cuotasDetalle: currentDetalles.filter(
+        (c) => c.mes !== nroCuota && (c as any).nro_cuota !== nroCuota
+      ),
+      estado: alDia ? 'activo' : 'en_mora',
+    }
 
     setAfiliados((prev) => {
-      updatedAfiliadosList = prev.map((a) => {
-        if (a.id === afiliadoId) {
-          const currentPaid = a.cuotasPagadas || []
-          const updatedPaid = currentPaid.filter((m) => m !== nroCuota)
-          const alDia = [1, 2, 3].every((m) => updatedPaid.includes(m))
-          const currentDetalles = a.cuotasDetalle || []
-
-          updatedAfiliado = {
-            ...a,
-            cuotasPagadas: updatedPaid,
-            cuotasDetalle: currentDetalles.filter(
-              (c) => c.mes !== nroCuota && (c as any).nro_cuota !== nroCuota
-            ),
-            estado: alDia ? 'activo' : 'en_mora',
-          }
-          return updatedAfiliado
-        }
-        return a
-      })
+      const updatedAfiliadosList = prev.map((a) => (a.id === afiliadoId ? updatedAfiliado : a))
       saveAfiliadosToStorage(updatedAfiliadosList)
       return updatedAfiliadosList
     })
@@ -528,12 +521,12 @@ export default function App() {
     if (isSupabaseConfigured) {
       await Promise.all([
         revertirPagoCuotaSupabase(afiliadoId, 2026, nroCuota),
-        updatedAfiliado ? upsertAfiliadoSupabase(updatedAfiliado) : Promise.resolve(true),
+        upsertAfiliadoSupabase(updatedAfiliado),
       ])
     }
   }
 
-  const handleRegistrarEgreso = (datos: {
+  const handleRegistrarEgreso = async (datos: {
     concepto: string
     categoria: string
     monto: number
@@ -545,7 +538,7 @@ export default function App() {
       nroRecibo: datos.comprobante || `EGR-${Date.now().toString().slice(-6)}`,
       identificador: 'EGRESO',
       titularNombre: 'Egreso Operativo',
-      concepto: `[EGRESO] ${datos.concepto}`,
+      concepto: `[EGRESO] (${datos.categoria}) ${datos.concepto}`,
       monto: Number(datos.monto),
       metodo: datos.metodo === 'transferencia' ? 'transferencia_qr' : 'efectivo',
       fecha: new Date().toISOString(),
@@ -556,6 +549,10 @@ export default function App() {
 
     saveEgresoToStorage(nuevoEgreso)
     setPagos((prev) => [nuevoEgreso, ...prev])
+
+    if (isSupabaseConfigured) {
+      await registrarPagoSupabase(nuevoEgreso)
+    }
   }
 
   // Guardar Parcela (CRUD: Create / Update)
@@ -563,15 +560,13 @@ export default function App() {
     let parcelaTarget: Parcela | null = null
 
     if (datos.id) {
-      setParcelas((prev) =>
-        prev.map((p) => {
-          if (p.id === datos.id) {
-            parcelaTarget = { ...p, ...(editingParcela || {}), ...datos } as Parcela
-            return parcelaTarget
-          }
-          return p
-        })
-      )
+      const existing = parcelas.find((p) => p.id === datos.id) || editingParcela
+      parcelaTarget = { ...(existing || {}), ...datos } as Parcela
+      setParcelas((prev) => {
+        const updated = prev.map((p) => (p.id === datos.id ? parcelaTarget! : p))
+        saveParcelasToStorage(updated)
+        return updated
+      })
     } else {
       parcelaTarget = {
         id: `parc-${Date.now()}`,
@@ -586,7 +581,11 @@ export default function App() {
         notas: datos.notas || '',
         titular: datos.titular || null,
       }
-      setParcelas((prev) => [parcelaTarget!, ...prev])
+      setParcelas((prev) => {
+        const updated = [parcelaTarget!, ...prev]
+        saveParcelasToStorage(updated)
+        return updated
+      })
     }
 
     setFormParcelaOpen(false)
@@ -601,18 +600,16 @@ export default function App() {
   // Guardar Inhumación (CRUD: Create / Update)
   const handleSaveInhumacion = async (datos: Partial<Inhumacion>) => {
     let inhumacionTarget: Inhumacion | null = null
+    const targetId = datos.id || editingInhumacion?.id
 
-    if (datos.id || editingInhumacion) {
-      const targetId = datos.id || editingInhumacion?.id
-      setInhumaciones((prev) =>
-        prev.map((i) => {
-          if (i.id === targetId) {
-            inhumacionTarget = { ...i, ...(editingInhumacion || {}), ...datos } as Inhumacion
-            return inhumacionTarget
-          }
-          return i
-        })
-      )
+    if (targetId) {
+      const existing = inhumaciones.find((i) => i.id === targetId) || editingInhumacion
+      inhumacionTarget = { ...(existing || {}), ...datos } as Inhumacion
+      setInhumaciones((prev) => {
+        const updated = prev.map((i) => (i.id === targetId ? inhumacionTarget! : i))
+        saveInhumacionesToStorage(updated)
+        return updated
+      })
     } else {
       inhumacionTarget = {
         id: `inh-${Date.now()}`,
@@ -625,22 +622,28 @@ export default function App() {
         empresa_funebrera: datos.empresa_funebrera || 'Aeterna Sepelios',
         parcela: datos.parcela as any,
       }
-      setInhumaciones((prev) => [inhumacionTarget!, ...prev])
+      setInhumaciones((prev) => {
+        const updated = [inhumacionTarget!, ...prev]
+        saveInhumacionesToStorage(updated)
+        return updated
+      })
 
       // Actualizar ocupación de parcela
       if (datos.parcela?.nomenclatura) {
-        setParcelas((prev) =>
-          prev.map((p) => {
+        setParcelas((prev) => {
+          const updated = prev.map((p) => {
             if (p.nomenclatura === datos.parcela?.nomenclatura) {
               return {
                 ...p,
                 espacios_ocupados: Math.min(p.capacidad_total, p.espacios_ocupados + 1),
-                estado: 'ocupada',
+                estado: 'ocupada' as const,
               }
             }
             return p
           })
-        )
+          saveParcelasToStorage(updated)
+          return updated
+        })
       }
     }
 
@@ -649,7 +652,7 @@ export default function App() {
 
     // Supabase Cloud Sync
     if (isSupabaseConfigured && inhumacionTarget) {
-      if (datos.id || editingInhumacion) {
+      if (targetId) {
         await updateInhumacionSupabase(inhumacionTarget)
       } else {
         await insertInhumacionSupabase(inhumacionTarget)

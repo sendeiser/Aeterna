@@ -1572,8 +1572,7 @@ begin
         DataParcelas[Idx].SaldoMantenimiento := 0;
       if (DataParcelas[Idx].SaldoMantenimiento <= 0) and ((DataParcelas[Idx].Estado = epEnMora) or (DataParcelas[Idx].Estado = epStandby)) then
         DataParcelas[Idx].Estado := epOcupada;
-      if ParcId <> '' then
-        TParcelasService.ActualizarParcela(ParcId, DataParcelas[Idx]);
+      TParcelasService.ActualizarParcela(ParcId, DataParcelas[Idx]);
     end;
 
     // Emitir Recibo Oficial en PDF

@@ -26,8 +26,24 @@ type
   end;
 
 function Supabase: TSupabaseClient;
+function IsValidUuid(const S: string): Boolean;
 
 implementation
+
+function IsValidUuid(const S: string): Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  if Length(S) <> 36 then Exit;
+  if (S[9] <> '-') or (S[14] <> '-') or (S[19] <> '-') or (S[24] <> '-') then Exit;
+  for i := 1 to 36 do
+  begin
+    if (i = 9) or (i = 14) or (i = 19) or (i = 24) then Continue;
+    if not (S[i] in ['0'..'9', 'a'..'f', 'A'..'F']) then Exit;
+  end;
+  Result := True;
+end;
 
 var
   GSupabaseClient: TSupabaseClient = nil;

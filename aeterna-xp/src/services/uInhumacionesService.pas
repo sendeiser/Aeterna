@@ -106,7 +106,7 @@ begin
       end;
       if ParcArr <> nil then ParcArr.Free;
     end
-    else if AInhumacion.ParcelaId <> '' then
+    else if (AInhumacion.ParcelaId <> '') and IsValidUuid(AInhumacion.ParcelaId) then
       Data.Add('parcela_id', AInhumacion.ParcelaId);
 
     if AInhumacion.NomenclaturaParcela <> '' then
@@ -145,7 +145,7 @@ var
   Filter: string;
 begin
   Result := False;
-  if (AId <> '') and (Pos('-', AId) > 0) then
+  if IsValidUuid(AId) then
     Filter := 'id=eq.' + AId
   else if AInhumacion.DniDifunto <> '' then
     Filter := 'dni_difunto=eq.' + AInhumacion.DniDifunto
@@ -156,7 +156,7 @@ begin
 
   Data := TJSONObject.Create;
   try
-    if AInhumacion.ParcelaId <> '' then
+    if (AInhumacion.ParcelaId <> '') and IsValidUuid(AInhumacion.ParcelaId) then
       Data.Add('parcela_id', AInhumacion.ParcelaId);
     if AInhumacion.NomenclaturaParcela <> '' then
       Data.Add('parcela_nomenclatura', AInhumacion.NomenclaturaParcela);
@@ -185,7 +185,7 @@ var
 begin
   Result := False;
   if AId = '' then Exit;
-  if Pos('-', AId) > 0 then
+  if IsValidUuid(AId) then
     Filter := 'id=eq.' + AId
   else
     Filter := 'nombre_difunto=eq.' + AId;

@@ -86,7 +86,6 @@ begin
       Data.Add('titular_paga', ATitularNombre)
     else
       Data.Add('titular_paga', 'Contribuyente Parroquia');
-    Data.Add('tipo', 'ingreso');
     Data.Add('fecha_pago', FechaAhora);
 
     Resp := Supabase.Insert('pagos_recibos', Data);
@@ -103,19 +102,22 @@ end;
 class function TCajaService.RegistrarEgreso(const AComprobante, AConcepto, ACategoria: string; AMonto: Currency; AMetodo: TMetodoPago; const AOperador: string): Boolean;
 var
   Data, Resp: TJSONObject;
-  FechaAhora: string;
+  FechaAhora, ConceptoFinal: string;
 begin
   Result := False;
   FechaAhora := FormatDateTime('yyyy-mm-dd"T"hh:nn:ss', Now);
+  if ACategoria <> '' then
+    ConceptoFinal := '[EGRESO] (' + ACategoria + ') ' + AConcepto
+  else
+    ConceptoFinal := '[EGRESO] ' + AConcepto;
+
   Data := TJSONObject.Create;
   try
     Data.Add('numero_recibo', AComprobante);
     Data.Add('monto', Double(AMonto));
     Data.Add('metodo_pago', MetodoPagoToStr(AMetodo));
-    Data.Add('concepto', '[EGRESO] ' + AConcepto);
+    Data.Add('concepto', ConceptoFinal);
     Data.Add('titular_paga', 'Egreso Operativo');
-    Data.Add('tipo', 'egreso');
-    Data.Add('categoria', ACategoria);
     Data.Add('fecha_pago', FechaAhora);
 
     Resp := Supabase.Insert('pagos_recibos', Data);
@@ -135,7 +137,7 @@ var
 begin
   Result := False;
   if AId = '' then Exit;
-  if (Length(AId) = 36) and (AId[9] = '-') then
+  if IsValidUuid(AId) then
     Filter := 'id=eq.' + AId
   else
     Filter := 'numero_recibo=eq.' + AId;

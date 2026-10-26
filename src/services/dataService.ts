@@ -898,6 +898,11 @@ export async function registrarPagoCuotaSupabase(
       }
     }
 
+    if (!isUuid(realAfiliadoId)) {
+      console.warn('registrarPagoCuotaSupabase: No se puede registrar cuota porque no hay un UUID válido para el afiliado:', afiliadoId)
+      return false
+    }
+
     const { data: existing } = await supabase
       .from('cuotas_seguro')
       .select('id')
@@ -955,6 +960,11 @@ export async function revertirPagoCuotaSupabase(
           .maybeSingle()
         if (afiRow?.id) realAfiliadoId = afiRow.id
       }
+    }
+
+    if (!isUuid(realAfiliadoId)) {
+      console.warn('revertirPagoCuotaSupabase: No se puede revertir cuota porque no hay un UUID válido para el afiliado:', afiliadoId)
+      return false
     }
 
     const { error } = await supabase
@@ -1094,18 +1104,68 @@ export async function deleteAfiliadoSupabase(idOrNumero: string | number): Promi
 }
 
 // PAGOS Y RECIBOS CRUD
+export async function fetchPagosSupabase(): Promise<PagoRecibo[] | null> {
+  if (!isSupabaseConfigured) return null
+  try {
+    const { data, error } = await supabase
+      .from('pagos_recibos')
+      .select('*')
+      .order('fecha_pago', { ascending: false })
+      .limit(300)
+
+    if (error || !data) {
+      if (error) console.error('Error al obtener pagos de Supabase:', error.message)
+      return null
+    }
+
+    return data.map((p: any) => {
+      const isEgreso = (p.concepto && p.concepto.includes('[EGRESO]')) || p.tipo === 'egreso'
+      return {
+        id: p.id,
+        nroRecibo: p.numero_recibo || '',
+        concepto: p.concepto || '',
+        monto: Number(p.monto) || 0,
+        metodo: p.metodo_pago || 'transferencia_qr',
+        identificador: isEgreso ? 'EGRESO' : 'COBRO',
+        titularNombre: p.titular_paga || 'Contribuyente General',
+        fecha: p.fecha_pago || p.created_at || new Date().toISOString(),
+        tipo: isEgreso ? ('egreso' as const) : undefined,
+      }
+    })
+  } catch (err) {
+    console.error('Excepción al obtener pagos de Supabase:', err)
+    return null
+  }
+}
+
 export async function registrarPagoSupabase(pago: PagoRecibo): Promise<boolean> {
   if (!isSupabaseConfigured) return false
   try {
-    await supabase.from('pagos_recibos').insert({
-      numero_recibo: pago.nroRecibo,
-      monto: pago.monto,
-      metodo_pago: pago.metodo,
-      concepto: (pago.tipo === 'egreso' ? '[EGRESO] ' : '') + pago.concepto,
-      titular_paga: pago.titularNombre || 'Tesorería Parroquial / Municipal',
-    })
+    const isEgreso = pago.tipo === 'egreso' || (pago.concepto && pago.concepto.includes('[EGRESO]'))
+    const cleanConcepto = isEgreso
+      ? (pago.concepto.startsWith('[EGRESO]') ? pago.concepto : `[EGRESO] ${pago.concepto}`)
+      : pago.concepto
+
+    const metodoNormalizado =
+      pago.metodo === 'transferencia' ? 'transferencia_qr' : pago.metodo || 'transferencia_qr'
+
+    const payload: any = {
+      numero_recibo: pago.nroRecibo || `REC-${Date.now().toString().slice(-6)}`,
+      monto: Number(pago.monto) || 0,
+      metodo_pago: metodoNormalizado,
+      concepto: cleanConcepto,
+      titular_paga: pago.titularNombre || (isEgreso ? 'Egreso Operativo' : 'Contribuyente General'),
+      fecha_pago: pago.fecha || new Date().toISOString(),
+    }
+
+    const { error } = await supabase.from('pagos_recibos').insert(payload)
+    if (error) {
+      console.error('Error insertando pago/egreso en Supabase:', error.message, error.details || error)
+      return false
+    }
     return true
   } catch (err) {
+    console.error('Excepción registrando pago en Supabase:', err)
     return false
   }
 }

@@ -82,12 +82,25 @@ end;
 
 class function TAfiliadosService.ObtenerCuotas(const AAfiliadoId: string; Anio: Integer): TCuotaSeguroArray;
 var
-  JsonArr: TJSONArray;
+  JsonArr, AfiArr: TJSONArray;
   Item: TJSONObject;
   i, Total: Integer;
+  RealAfiliadoId, CleanNum: string;
 begin
   SetLength(Result, 0);
-  JsonArr := Supabase.Select('cuotas_seguro', Format('afiliado_id=eq.%s&anio=eq.%d&order=mes.asc', [AAfiliadoId, Anio]));
+  RealAfiliadoId := AAfiliadoId;
+  if not IsValidUuid(RealAfiliadoId) then
+  begin
+    CleanNum := StringReplace(RealAfiliadoId, 'afi-', '', [rfIgnoreCase]);
+    AfiArr := Supabase.Select('afiliados_seguro', 'numero_afiliado=eq.' + CleanNum + '&select=id');
+    if (AfiArr <> nil) and (AfiArr.Count > 0) then
+      RealAfiliadoId := TJSONObject(AfiArr.Items[0]).Get('id', RealAfiliadoId);
+    if AfiArr <> nil then AfiArr.Free;
+  end;
+
+  if not IsValidUuid(RealAfiliadoId) then Exit;
+
+  JsonArr := Supabase.Select('cuotas_seguro', Format('afiliado_id=eq.%s&anio=eq.%d&order=mes.asc', [RealAfiliadoId, Anio]));
   if JsonArr = nil then Exit;
 
   try
@@ -117,13 +130,25 @@ end;
 class function TAfiliadosService.RegistrarPagoCuota(const AAfiliadoId: string; Anio, NroCuota: Integer; AMonto: Currency; AMetodo: TMetodoPago; const ARecibo: string): Boolean;
 var
   Data, Resp: TJSONObject;
-  ExistingArr: TJSONArray;
-  FechaHoy: string;
+  ExistingArr, AfiArr: TJSONArray;
+  FechaHoy, RealAfiliadoId, CleanNum: string;
 begin
   Result := False;
   FechaHoy := FormatDateTime('yyyy-mm-dd"T"hh:nn:ss"+00:00"', Now);
 
-  ExistingArr := Supabase.Select('cuotas_seguro', Format('afiliado_id=eq.%s&anio=eq.%d&mes=eq.%d&select=id', [AAfiliadoId, Anio, NroCuota]));
+  RealAfiliadoId := AAfiliadoId;
+  if not IsValidUuid(RealAfiliadoId) then
+  begin
+    CleanNum := StringReplace(RealAfiliadoId, 'afi-', '', [rfIgnoreCase]);
+    AfiArr := Supabase.Select('afiliados_seguro', 'numero_afiliado=eq.' + CleanNum + '&select=id');
+    if (AfiArr <> nil) and (AfiArr.Count > 0) then
+      RealAfiliadoId := TJSONObject(AfiArr.Items[0]).Get('id', RealAfiliadoId);
+    if AfiArr <> nil then AfiArr.Free;
+  end;
+
+  if not IsValidUuid(RealAfiliadoId) then Exit;
+
+  ExistingArr := Supabase.Select('cuotas_seguro', Format('afiliado_id=eq.%s&anio=eq.%d&mes=eq.%d&select=id', [RealAfiliadoId, Anio, NroCuota]));
   Data := TJSONObject.Create;
   try
     Data.Add('monto', Double(AMonto));
@@ -138,7 +163,7 @@ begin
     end
     else
     begin
-      Data.Add('afiliado_id', AAfiliadoId);
+      Data.Add('afiliado_id', RealAfiliadoId);
       Data.Add('anio', Anio);
       Data.Add('mes', NroCuota);
       Resp := Supabase.Insert('cuotas_seguro', Data);
@@ -192,10 +217,12 @@ var
   Filter: string;
 begin
   Result := False;
-  if (AId <> '') and (Pos('-', AId) > 0) then
+  if IsValidUuid(AId) then
     Filter := 'id=eq.' + AId
   else if AAfiliado.NumeroAfiliado > 0 then
     Filter := 'numero_afiliado=eq.' + IntToStr(AAfiliado.NumeroAfiliado)
+  else if AId <> '' then
+    Filter := 'numero_afiliado=eq.' + StringReplace(AId, 'afi-', '', [rfIgnoreCase])
   else
     Exit;
 
@@ -239,17 +266,26 @@ end;
 
 class function TAfiliadosService.EliminarAfiliado(const AId: string): Boolean;
 var
-  Filter: string;
+  Filter, RealId, CleanNum: string;
+  AfiArr: TJSONArray;
 begin
   Result := False;
   if AId = '' then Exit;
-  if Pos('-', AId) > 0 then
+  RealId := AId;
+  if IsValidUuid(AId) then
     Filter := 'id=eq.' + AId
   else
-    Filter := 'numero_afiliado=eq.' + AId;
+  begin
+    CleanNum := StringReplace(AId, 'afi-', '', [rfIgnoreCase]);
+    Filter := 'numero_afiliado=eq.' + CleanNum;
+    AfiArr := Supabase.Select('afiliados_seguro', Filter + '&select=id');
+    if (AfiArr <> nil) and (AfiArr.Count > 0) then
+      RealId := TJSONObject(AfiArr.Items[0]).Get('id', '');
+    if AfiArr <> nil then AfiArr.Free;
+  end;
 
-  // Eliminar cuotas hijas asociadas para evitar restriccion FK
-  Supabase.Delete('cuotas_seguro', 'afiliado_id=eq.' + AId);
+  if IsValidUuid(RealId) then
+    Supabase.Delete('cuotas_seguro', 'afiliado_id=eq.' + RealId);
 
   Result := Supabase.Delete('afiliados_seguro', Filter);
 end;

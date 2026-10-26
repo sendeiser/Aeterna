@@ -129,12 +129,18 @@ end;
 class function TParcelasService.ActualizarEstado(const AId: string; AEstado: TEstadoParcela; ASaldo: Currency): Boolean;
 var
   Data: TJSONObject;
+  Filter: string;
 begin
+  if IsValidUuid(AId) then
+    Filter := 'id=eq.' + AId
+  else
+    Filter := 'nomenclatura=eq.' + AId;
+
   Data := TJSONObject.Create;
   try
     Data.Add('estado', EstadoParcelaToStr(AEstado));
     Data.Add('saldo_mantenimiento', Double(ASaldo));
-    Result := Supabase.Update('parcelas', 'id=eq.' + AId, Data);
+    Result := Supabase.Update('parcelas', Filter, Data);
   finally
     Data.Free;
   end;
@@ -174,10 +180,12 @@ var
   Filter, NotasFinales: string;
 begin
   Result := False;
-  if (AId <> '') and (Pos('-', AId) > 0) then
+  if IsValidUuid(AId) then
     Filter := 'id=eq.' + AId
   else if AParcela.Nomenclatura <> '' then
     Filter := 'nomenclatura=eq.' + AParcela.Nomenclatura
+  else if AId <> '' then
+    Filter := 'nomenclatura=eq.' + AId
   else
     Exit;
 
@@ -214,7 +222,7 @@ var
 begin
   Result := False;
   if AId = '' then Exit;
-  if Pos('-', AId) > 0 then
+  if IsValidUuid(AId) then
     Filter := 'id=eq.' + AId
   else
     Filter := 'nomenclatura=eq.' + AId;
