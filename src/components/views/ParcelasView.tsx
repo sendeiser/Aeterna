@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Parcela, Inhumacion, EstadoTitular } from '../../types/database'
-import { formatCurrency } from '../../lib/formatters'
+import { formatCurrency, formatDateHour } from '../../lib/formatters'
 import { reactivarParcelaStandby, liberarParcelaStandby } from '../../services/dataService'
 import { ParcelaForm } from '../forms/ParcelaForm'
 
@@ -15,6 +15,8 @@ interface ParcelasViewProps {
   onLiberarParcela?: (parcela: Parcela) => void
   onNuevaParcela?: () => void
   isOnline: boolean
+  onRefresh?: () => void
+  isRefreshing?: boolean
 }
 
 function compareNaturalParcela(a: string, b: string): number {
@@ -32,9 +34,13 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   onLiberarParcela,
   onNuevaParcela,
   isOnline,
+  onRefresh,
+  isRefreshing = false,
 }) => {
   const [filterSector, setFilterSector] = useState<'todos' | 'A' | 'E' | 'SALINAS' | 'mora' | 'standby' | 'baja_libre' | 'baja_inhumados'>('todos')
   const [filterTitularVital, setFilterTitularVital] = useState<'todos' | 'vivo' | 'fallecido'>('todos')
+  const [filterFechaDesde, setFilterFechaDesde] = useState('')
+  const [filterFechaHasta, setFilterFechaHasta] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [pageSize, setPageSize] = useState<'todas' | 50 | 100>('todas')
   const [currentPage, setCurrentPage] = useState(1)
@@ -207,7 +213,19 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
       const titular = (p.titular?.nombre_completo || '').toLowerCase()
       const dni = (p.titular?.dni || '').toLowerCase()
       const dir = (p.titular?.direccion || '').toLowerCase()
-      return nom.includes(q) || titular.includes(q) || dni.includes(q) || dir.includes(q)
+      if (!nom.includes(q) && !titular.includes(q) && !dni.includes(q) && !dir.includes(q)) {
+        return false
+      }
+    }
+
+    if (filterFechaDesde) {
+      const pDate = p.created_at || p.fecha_adquisicion
+      if (!pDate || pDate.slice(0, 10) < filterFechaDesde) return false
+    }
+
+    if (filterFechaHasta) {
+      const pDate = p.created_at || p.fecha_adquisicion
+      if (!pDate || pDate.slice(0, 10) > filterFechaHasta) return false
     }
 
     return true
@@ -216,7 +234,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   // Reset de página al cambiar filtros
   useEffect(() => {
     setCurrentPage(1)
-  }, [filterSector, filterTitularVital, searchTerm, pageSize, sortOption])
+  }, [filterSector, filterTitularVital, searchTerm, pageSize, sortOption, filterFechaDesde, filterFechaHasta])
 
   // Ordenamiento dinámico de parcelas por columnas
   const sortedParcelas: Parcela[] = useMemo(() => {
@@ -276,13 +294,13 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
         return (a.saldo_mantenimiento || 0) - (b.saldo_mantenimiento || 0)
       }
       if (sortOption === 'fecha-desc') {
-        const dateA = a.fecha_adquisicion ? new Date(a.fecha_adquisicion).getTime() : 0
-        const dateB = b.fecha_adquisicion ? new Date(b.fecha_adquisicion).getTime() : 0
+        const dateA = (a.created_at || a.fecha_adquisicion) ? new Date(a.created_at || a.fecha_adquisicion!).getTime() : 0
+        const dateB = (b.created_at || b.fecha_adquisicion) ? new Date(b.created_at || b.fecha_adquisicion!).getTime() : 0
         return dateB - dateA
       }
       if (sortOption === 'fecha-asc') {
-        const dateA = a.fecha_adquisicion ? new Date(a.fecha_adquisicion).getTime() : 0
-        const dateB = b.fecha_adquisicion ? new Date(b.fecha_adquisicion).getTime() : 0
+        const dateA = (a.created_at || a.fecha_adquisicion) ? new Date(a.created_at || a.fecha_adquisicion!).getTime() : 0
+        const dateB = (b.created_at || b.fecha_adquisicion) ? new Date(b.created_at || b.fecha_adquisicion!).getTime() : 0
         return dateA - dateB
       }
       return compareNaturalParcela(a.nomenclatura, b.nomenclatura)
@@ -364,6 +382,20 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 </button>
               )}
             </div>
+
+            {/* Botoncito Actualizar Mobile */}
+            {onRefresh && (
+              <button
+                id="btn-refresh-parcelas-mobile"
+                type="button"
+                onClick={onRefresh}
+                disabled={isRefreshing}
+                className="h-7 w-7 rounded border border-outline-variant bg-surface-container-low hover:bg-surface-container text-primary flex items-center justify-center shrink-0 disabled:opacity-50 cursor-pointer"
+                title="Actualizar datos con la base de datos"
+              >
+                <span className={`material-symbols-outlined text-[15px] ${isRefreshing ? 'animate-spin' : ''}`}>sync</span>
+              </button>
+            )}
 
             {/* Nueva Parcela Button */}
             {onNuevaParcela && (
@@ -516,7 +548,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
         {/* DESKTOP VIEW (>= sm): Consolidated 2-Row Toolbar */}
         <div className="hidden sm:flex flex-col gap-2">
           {/* Row 1: Título + Búsqueda Rápida + Botón Nueva Parcela */}
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2 shrink-0">
               <span className="material-symbols-outlined text-primary text-[22px]">domain</span>
               <div className="flex items-baseline gap-2">
@@ -528,7 +560,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
             </div>
 
             {/* Quick Search Cadastral Input */}
-            <div className="relative flex-1 max-w-md">
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
               <span
                 className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[18px]"
                 data-icon="search"
@@ -553,8 +585,44 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               )}
             </div>
 
+            {/* Filtro por Rango de Fechas (Desde - Hasta) */}
+            <div className="flex items-center gap-1.5 bg-surface-container-low px-2.5 py-1 rounded-lg border border-outline-variant text-xs shrink-0">
+              <span className="material-symbols-outlined text-[16px] text-outline">calendar_today</span>
+              <span className="text-[11px] text-on-surface-variant font-medium">Desde:</span>
+              <input
+                id="filter-fecha-desde-parcelas"
+                type="date"
+                value={filterFechaDesde}
+                onChange={(e) => setFilterFechaDesde(e.target.value)}
+                className="h-6 text-[11px] bg-white border border-outline-variant rounded px-1.5 focus:border-secondary focus:outline-none"
+                title="Filtrar parcelas desde fecha de registro"
+              />
+              <span className="text-[11px] text-on-surface-variant font-medium">Hasta:</span>
+              <input
+                id="filter-fecha-hasta-parcelas"
+                type="date"
+                value={filterFechaHasta}
+                onChange={(e) => setFilterFechaHasta(e.target.value)}
+                className="h-6 text-[11px] bg-white border border-outline-variant rounded px-1.5 focus:border-secondary focus:outline-none"
+                title="Filtrar parcelas hasta fecha de registro"
+              />
+              {(filterFechaDesde || filterFechaHasta) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterFechaDesde('')
+                    setFilterFechaHasta('')
+                  }}
+                  className="p-0.5 text-outline hover:text-error rounded cursor-pointer"
+                  title="Limpiar filtro de fecha"
+                >
+                  <span className="material-symbols-outlined text-[14px]">close</span>
+                </button>
+              )}
+            </div>
+
             {/* Ordenar por Alfabeto o Fecha */}
-            <div className="flex items-center gap-1 text-xs">
+            <div className="flex items-center gap-1 text-xs shrink-0">
               <select
                 value={sortOption}
                 onChange={(e) => setSortOption(e.target.value)}
@@ -573,6 +641,25 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 <option value="fecha-asc">📅 Fecha: Más antiguo</option>
               </select>
             </div>
+
+            {/* Botón pequeño para refrescar / sincronizar con Supabase Cloud */}
+            {onRefresh && (
+              <button
+                id="btn-refresh-parcelas"
+                type="button"
+                onClick={onRefresh}
+                disabled={isRefreshing}
+                className="h-8 px-2.5 rounded-lg border border-outline-variant bg-surface-container-low hover:bg-surface-container hover:border-primary/50 text-on-surface-variant hover:text-primary transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer shadow-2xs disabled:opacity-50 shrink-0"
+                title="Actualizar y sincronizar parcelas con la base de datos"
+              >
+                <span
+                  className={`material-symbols-outlined text-[16px] text-primary ${isRefreshing ? 'animate-spin' : ''}`}
+                >
+                  sync
+                </span>
+                <span className="hidden xl:inline">{isRefreshing ? 'Actualizando...' : 'Actualizar'}</span>
+              </button>
+            )}
 
             {onNuevaParcela && (
               <button
@@ -940,6 +1027,10 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                     <div className="text-[11px] font-code-cadastral text-outline">
                       {p.titular?.dni ? `DNI: ${p.titular.dni}` : 'Parcela Municipal / Sin DNI'}
                     </div>
+                    <div className="text-[10px] font-code-cadastral text-on-surface-variant flex items-center gap-1 mt-0.5">
+                      <span className="material-symbols-outlined text-[13px] text-outline">schedule</span>
+                      <span>Alta: {formatDateHour(p.created_at || p.fecha_adquisicion)}</span>
+                    </div>
                     {p.estado === 'standby' && (
                       <div className="text-[11px] text-rose-700 font-medium bg-rose-50 p-1.5 rounded border border-rose-200 mt-1">
                         <span className="font-bold">⚠️ Pérdida de titularidad:</span> +3 años sin pago.<br />
@@ -1100,6 +1191,17 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                     </div>
                   </th>
                   <th
+                    onClick={() => setSortOption((prev) => (prev === 'fecha-desc' ? 'fecha-asc' : 'fecha-desc'))}
+                    className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
+                    title="Ordenar por Fecha y Hora de Registro"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Fecha / Registro</span>
+                      {sortOption === 'fecha-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                      {sortOption === 'fecha-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                    </div>
+                  </th>
+                  <th
                     onClick={() => setSortOption((prev) => (prev === 'deuda-desc' ? 'saldo-asc' : 'deuda-desc'))}
                     className="py-2.5 px-3 bg-slate-100 text-right cursor-pointer hover:bg-slate-200 transition-colors"
                     title="Ordenar por Saldo (Mayor / Menor Deuda)"
@@ -1197,6 +1299,11 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                             <option value="standby">Stand-by</option>
                             <option value="baja">Baja</option>
                           </select>
+                        </td>
+
+                        {/* Fecha Registro */}
+                        <td className="py-2 px-3 text-xs text-outline font-code-cadastral whitespace-nowrap">
+                          {formatDateHour(p.created_at || p.fecha_adquisicion)}
                         </td>
 
                         {/* Saldo Editable */}
@@ -1346,6 +1453,11 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                             ? 'Disponible'
                             : 'Baja'}
                         </span>
+                      </td>
+
+                      {/* Fecha / Registro */}
+                      <td className="py-2.5 px-3 whitespace-nowrap text-xs text-on-surface-variant font-code-cadastral">
+                        {formatDateHour(p.created_at || p.fecha_adquisicion)}
                       </td>
 
                       {/* Saldo */}

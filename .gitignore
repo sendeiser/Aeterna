@@ -17,6 +17,7 @@ dist
 *.ppu
 *.compiled
 *.bak
+aeterna-xp/lib/
 reportes/
 
 # Portable compilers & tools

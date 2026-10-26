@@ -19,6 +19,8 @@ interface NavbarProps {
   onLogout?: () => void
   afiliados?: (AfiliadoSeguro & { cuotasPagadas?: number[] })[]
   parcelas?: Parcela[]
+  onRefresh?: () => void
+  isRefreshing?: boolean
 }
 
 interface NotificationItem {
@@ -80,6 +82,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   afiliados = [],
   parcelas = [],
+  onRefresh,
+  isRefreshing = false,
 }) => {
   const [auditoriaOpen, setAuditoriaOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
@@ -453,6 +457,25 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="w-full h-8 pl-8 pr-3 text-body-sm bg-surface rounded border border-outline-variant cursor-pointer hover:border-secondary focus:outline-none"
             />
           </div>
+
+          {/* Botoncito para actualizar datos en tiempo real con Supabase */}
+          {onRefresh && (
+            <button
+              id="btn-navbar-refresh"
+              type="button"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className="h-8 px-2 sm:px-2.5 rounded-lg border border-outline-variant bg-surface-container-low hover:bg-surface-container hover:border-primary/50 text-on-surface-variant hover:text-primary transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer shadow-2xs disabled:opacity-50"
+              title="Actualizar y sincronizar datos con Supabase Cloud"
+            >
+              <span
+                className={`material-symbols-outlined text-[16px] text-primary ${isRefreshing ? 'animate-spin' : ''}`}
+              >
+                sync
+              </span>
+              <span className="hidden sm:inline">{isRefreshing ? 'Actualizando...' : 'Actualizar'}</span>
+            </button>
+          )}
 
 
 

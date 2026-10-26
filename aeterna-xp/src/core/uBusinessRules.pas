@@ -20,6 +20,7 @@ function EvaluarMoraParcela(const AParcela: TParcela; AnioRef: Integer = 2026): 
 function EvaluarMoraAfiliado(const AAfiliado: TAfiliadoSeguro; MesActual: Integer = 10): Integer;
 function FormatearMoneda(AMonto: Currency): string;
 function FormatearFecha(const AFechaISO: string): string;
+function FormatearFechaHora(const AFechaISO: string): string;
 
 implementation
 
@@ -117,8 +118,6 @@ begin
 end;
 
 function FormatearFecha(const AFechaISO: string): string;
-var
-  Partes: TStringList;
 begin
   if Trim(AFechaISO) = '' then
   begin
@@ -128,6 +127,27 @@ begin
 
   // AFechaISO en formato YYYY-MM-DD
   if Length(AFechaISO) >= 10 then
+  begin
+    Result := Copy(AFechaISO, 9, 2) + '/' + Copy(AFechaISO, 6, 2) + '/' + Copy(AFechaISO, 1, 4);
+  end
+  else
+    Result := AFechaISO;
+end;
+
+function FormatearFechaHora(const AFechaISO: string): string;
+begin
+  if Trim(AFechaISO) = '' then
+  begin
+    Result := '-';
+    Exit;
+  end;
+
+  if Length(AFechaISO) >= 16 then
+  begin
+    // YYYY-MM-DDTHH:MM o YYYY-MM-DD HH:MM
+    Result := Copy(AFechaISO, 9, 2) + '/' + Copy(AFechaISO, 6, 2) + '/' + Copy(AFechaISO, 1, 4) + ' ' + Copy(AFechaISO, 12, 5) + ' hs';
+  end
+  else if Length(AFechaISO) >= 10 then
   begin
     Result := Copy(AFechaISO, 9, 2) + '/' + Copy(AFechaISO, 6, 2) + '/' + Copy(AFechaISO, 1, 4);
   end

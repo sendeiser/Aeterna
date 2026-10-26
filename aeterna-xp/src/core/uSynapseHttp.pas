@@ -155,7 +155,7 @@ begin
       case AMethod of
         hmGET:
         begin
-          Client.Get(FullUrl, ResponseBodyStream);
+          Client.HTTPMethod('GET', FullUrl, ResponseBodyStream, [200, 201, 204, 206, 400, 401, 403, 404, 409, 422, 500]);
         end;
 
         hmPOST:
@@ -163,7 +163,7 @@ begin
           Payload := EnsureUtf8(ABody);
           RequestBodyStream := TStringStream.Create(Payload);
           Client.RequestBody := RequestBodyStream;
-          Client.Post(FullUrl, ResponseBodyStream);
+          Client.HTTPMethod('POST', FullUrl, ResponseBodyStream, [200, 201, 204, 400, 401, 403, 404, 409, 422, 500]);
         end;
 
         hmPATCH:

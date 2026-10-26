@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { Navbar, TabType } from './components/layout/Navbar'
 import { OmniboxSearch, SearchResultItem } from './components/search/OmniboxSearch'
 import { QRPaymentModal } from './components/payment/QRPaymentModal'
@@ -133,11 +133,15 @@ export default function App() {
     return sumPagos > 0 ? sumPagos : 18000 * 3
   })
 
-  // Sincronización en vivo desde Supabase si está configurado
-  useEffect(() => {
-    if (!isSupabaseConfigured) return
+  // Estado de sincronización en tiempo real con Supabase
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-    async function fetchCloudData() {
+  // Sincronización en vivo desde Supabase si está configurado
+  const fetchCloudData = useCallback(async (showLoading = false) => {
+    if (!isSupabaseConfigured) return
+    if (showLoading) setIsRefreshing(true)
+
+    try {
       const [cloudConfig, cloudParcelas, cloudInhumaciones, cloudAfiliados, cloudPagos] = await Promise.all([
         fetchConfigSupabase(),
         fetchParcelasSupabase(),
@@ -148,15 +152,19 @@ export default function App() {
 
       if (cloudConfig) {
         setConfig(cloudConfig)
+        saveConfigToStorage(cloudConfig)
       }
       if (cloudParcelas && cloudParcelas.length > 0) {
         setParcelas(cloudParcelas)
+        saveParcelasToStorage(cloudParcelas)
       }
       if (cloudInhumaciones && cloudInhumaciones.length > 0) {
         setInhumaciones(cloudInhumaciones)
+        saveInhumacionesToStorage(cloudInhumaciones)
       }
       if (cloudAfiliados && cloudAfiliados.length > 0) {
         setAfiliados(cloudAfiliados)
+        saveAfiliadosToStorage(cloudAfiliados)
       }
       if (cloudPagos && cloudPagos.length > 0) {
         setPagos(cloudPagos)
@@ -165,10 +173,16 @@ export default function App() {
           .reduce((acc, p) => acc + (p.monto || 0), 0)
         setRecaudacionHoy(sumPagos)
       }
+    } catch (err) {
+      console.error('Error al sincronizar datos desde Supabase:', err)
+    } finally {
+      if (showLoading) setIsRefreshing(false)
     }
-
-    fetchCloudData()
   }, [])
+
+  useEffect(() => {
+    fetchCloudData(false)
+  }, [fetchCloudData])
 
   // Guardar en Storage al cambiar
   useEffect(() => {
@@ -317,6 +331,7 @@ export default function App() {
             upsertParcelaSupabase(updatedParcela),
             registrarPagoSupabase(nuevoPago),
           ])
+          await fetchCloudData()
         }
       },
     })
@@ -401,6 +416,7 @@ export default function App() {
             }),
             registrarPagoSupabase(nuevoPago),
           ])
+          await fetchCloudData()
         }
       },
     })
@@ -489,6 +505,7 @@ export default function App() {
             )
           }
           await Promise.all(promises)
+          await fetchCloudData()
         }
       },
     })
@@ -523,6 +540,7 @@ export default function App() {
         revertirPagoCuotaSupabase(afiliadoId, 2026, nroCuota),
         upsertAfiliadoSupabase(updatedAfiliado),
       ])
+      await fetchCloudData()
     }
   }
 
@@ -552,6 +570,7 @@ export default function App() {
 
     if (isSupabaseConfigured) {
       await registrarPagoSupabase(nuevoEgreso)
+      await fetchCloudData()
     }
   }
 
@@ -594,6 +613,7 @@ export default function App() {
     // Supabase Cloud Sync
     if (isSupabaseConfigured && parcelaTarget) {
       await upsertParcelaSupabase(parcelaTarget)
+      await fetchCloudData()
     }
   }
 
@@ -657,6 +677,7 @@ export default function App() {
       } else {
         await insertInhumacionSupabase(inhumacionTarget)
       }
+      await fetchCloudData()
     }
   }
 
@@ -706,6 +727,7 @@ export default function App() {
     // Supabase Cloud Sync
     if (isSupabaseConfigured && afiliadoTarget) {
       await upsertAfiliadoSupabase(afiliadoTarget)
+      await fetchCloudData()
     }
   }
 
@@ -715,6 +737,7 @@ export default function App() {
     setParcelas((prev) => prev.filter((p) => p.id !== parcelaId))
     if (isSupabaseConfigured && target) {
       await deleteParcelaSupabase(target.nomenclatura || target.id)
+      await fetchCloudData()
     }
   }
 
@@ -723,6 +746,7 @@ export default function App() {
     setInhumaciones((prev) => prev.filter((i) => i.id !== inhId))
     if (isSupabaseConfigured) {
       await deleteInhumacionSupabase(inhId, target)
+      await fetchCloudData()
     }
   }
 
@@ -735,6 +759,7 @@ export default function App() {
     })
     if (isSupabaseConfigured && target) {
       await deleteAfiliadoSupabase(target.numero_afiliado || target.id)
+      await fetchCloudData()
     }
   }
 
@@ -742,6 +767,7 @@ export default function App() {
     setConfig(nuevaConfig)
     if (isSupabaseConfigured) {
       await saveConfigSupabase(nuevaConfig)
+      await fetchCloudData()
     }
   }
 
@@ -820,6 +846,8 @@ export default function App() {
         onLogout={handleLogout}
         afiliados={afiliados}
         parcelas={parcelas}
+        onRefresh={() => fetchCloudData(true)}
+        isRefreshing={isRefreshing}
       />
 
       {/* Canvas Principal */}
@@ -912,6 +940,8 @@ export default function App() {
                 setFormInhumacionOpen(true)
               }}
               isOnline={isSupabaseConfigured}
+              onRefresh={() => fetchCloudData(true)}
+              isRefreshing={isRefreshing}
             />
           )}
 
@@ -928,6 +958,8 @@ export default function App() {
               onVerParcela={(nom) => {
                 setCurrentTab('parcelas')
               }}
+              onRefresh={() => fetchCloudData(true)}
+              isRefreshing={isRefreshing}
             />
           )}
 
@@ -947,6 +979,8 @@ export default function App() {
               }}
               onSaveAfiliado={handleSaveAfiliado}
               onEliminarAfiliado={handleDeleteAfiliado}
+              onRefresh={() => fetchCloudData(true)}
+              isRefreshing={isRefreshing}
             />
           )}
 

@@ -42,6 +42,7 @@ type
     TelefonoResponsable: string;
     Observaciones: string;
     NomenclaturaParcela: string;
+    CreatedAt: string;
   end;
   TInhumacionArray = array of TInhumacion;
 
@@ -64,6 +65,7 @@ type
     UltimaCuotaPagada: string;
     MotivoBloqueo: string;
     Notas: string;
+    CreatedAt: string;
   end;
   TParcelaArray = array of TParcela;
 
@@ -97,6 +99,7 @@ type
     MesesMora: Integer;
     UltimaCuotaPagada: string;
     CuotasPagadas: array of Integer;
+    CreatedAt: string;
   end;
   TAfiliadoArray = array of TAfiliadoSeguro;
 

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { Inhumacion, Parcela } from '../../types/database'
+import { formatDateHour } from '../../lib/formatters'
 import { ActaInhumacionModal } from '../modals/ActaInhumacionModal'
 import { FolioInhumacionesModal } from '../modals/FolioInhumacionesModal'
 import { InhumacionForm } from '../forms/InhumacionForm'
@@ -11,6 +12,8 @@ interface InhumacionesViewProps {
   onEliminarInhumacion?: (id: string) => void
   onVerParcela?: (nomenclatura: string) => void
   onNuevaInhumacion?: () => void
+  onRefresh?: () => void
+  isRefreshing?: boolean
 }
 
 function compareNaturalInhumacion(a: string | undefined, b: string | undefined): number {
@@ -24,9 +27,13 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
   onEliminarInhumacion,
   onVerParcela,
   onNuevaInhumacion,
+  onRefresh,
+  isRefreshing = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterProtocol, setFilterProtocol] = useState<'all' | 'covid' | 'standard' | 'judicial'>('all')
+  const [filterFechaDesde, setFilterFechaDesde] = useState('')
+  const [filterFechaHasta, setFilterFechaHasta] = useState('')
   const [sortOption, setSortOption] = useState<string>('fecha-desc')
   const [isFolioModalOpen, setIsFolioModalOpen] = useState(false)
   const [actaModal, setActaModal] = useState<{
@@ -46,6 +53,16 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
   const filtered = inhumaciones.filter((i) => {
     if (filterProtocol === 'covid' && !i.es_covid) return false
     if (filterProtocol === 'standard' && i.es_covid) return false
+
+    if (filterFechaDesde) {
+      const iDate = i.fecha_inhumacion || i.created_at
+      if (!iDate || iDate.slice(0, 10) < filterFechaDesde) return false
+    }
+
+    if (filterFechaHasta) {
+      const iDate = i.fecha_inhumacion || i.created_at
+      if (!iDate || iDate.slice(0, 10) > filterFechaHasta) return false
+    }
 
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase()
@@ -71,13 +88,13 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
         return (b.nombre_difunto || '').localeCompare(a.nombre_difunto || '')
       }
       if (sortOption === 'fecha-desc') {
-        const dateA = a.fecha_inhumacion ? new Date(a.fecha_inhumacion).getTime() : 0
-        const dateB = b.fecha_inhumacion ? new Date(b.fecha_inhumacion).getTime() : 0
+        const dateA = (a.fecha_inhumacion || a.created_at) ? new Date(a.fecha_inhumacion || a.created_at!).getTime() : 0
+        const dateB = (b.fecha_inhumacion || b.created_at) ? new Date(b.fecha_inhumacion || b.created_at!).getTime() : 0
         return dateB - dateA
       }
       if (sortOption === 'fecha-asc') {
-        const dateA = a.fecha_inhumacion ? new Date(a.fecha_inhumacion).getTime() : 0
-        const dateB = b.fecha_inhumacion ? new Date(b.fecha_inhumacion).getTime() : 0
+        const dateA = (a.fecha_inhumacion || a.created_at) ? new Date(a.fecha_inhumacion || a.created_at!).getTime() : 0
+        const dateB = (b.fecha_inhumacion || b.created_at) ? new Date(b.fecha_inhumacion || b.created_at!).getTime() : 0
         return dateA - dateB
       }
       if (sortOption === 'parcela-asc') {
@@ -138,6 +155,23 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
             </span>
           </div>
 
+          {/* Botoncito Actualizar / Sincronizar Supabase */}
+          {onRefresh && (
+            <button
+              id="btn-refresh-inhumaciones"
+              type="button"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className="h-7 sm:h-[38px] px-2.5 rounded-lg border border-outline-variant bg-surface-container-low hover:bg-surface-container hover:border-primary/50 text-on-surface-variant hover:text-primary transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer shadow-2xs disabled:opacity-50 shrink-0"
+              title="Actualizar y sincronizar con la base de datos"
+            >
+              <span className={`material-symbols-outlined text-[16px] text-primary ${isRefreshing ? 'animate-spin' : ''}`}>
+                sync
+              </span>
+              <span className="hidden sm:inline">{isRefreshing ? 'Actualizando...' : 'Actualizar'}</span>
+            </button>
+          )}
+
           {onNuevaInhumacion && (
             <button
               type="button"
@@ -159,9 +193,9 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
       <section className="bg-surface-container-lowest border border-outline-variant rounded-lg shadow-[0_1px_2px_0_rgba(15,23,42,0.04)] flex-1 min-h-0 flex flex-col overflow-hidden">
         {/* Filter Toolbar (Buscador por nombre, protocolos, orden y exportar folio) */}
         <div className="p-2 sm:p-3 bg-surface-container-lowest border-b border-outline-variant flex flex-wrap items-center justify-between gap-2 sm:gap-3 shrink-0">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1 max-w-2xl w-full">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1 max-w-4xl w-full flex-wrap">
             {/* Search bar */}
-            <div className="relative flex-1 min-w-0">
+            <div className="relative flex-1 min-w-[180px]">
               <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">
                 search
               </span>
@@ -173,6 +207,43 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                 className="w-full h-[34px] pl-8 pr-3 text-body-sm font-body-sm bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary/30 outline-none"
               />
             </div>
+
+            {/* Filtro por Rango de Fechas (Desde - Hasta) */}
+            <div className="flex items-center gap-1.5 bg-surface-container-low px-2 py-1 rounded-lg border border-outline-variant text-xs shrink-0">
+              <span className="material-symbols-outlined text-[15px] text-outline">calendar_today</span>
+              <span className="text-[11px] text-on-surface-variant font-medium">Desde:</span>
+              <input
+                id="filter-fecha-desde-inhumaciones"
+                type="date"
+                value={filterFechaDesde}
+                onChange={(e) => setFilterFechaDesde(e.target.value)}
+                className="h-6 text-[11px] bg-white border border-outline-variant rounded px-1.5 focus:border-secondary focus:outline-none"
+                title="Filtrar inhumaciones desde fecha"
+              />
+              <span className="text-[11px] text-on-surface-variant font-medium">Hasta:</span>
+              <input
+                id="filter-fecha-hasta-inhumaciones"
+                type="date"
+                value={filterFechaHasta}
+                onChange={(e) => setFilterFechaHasta(e.target.value)}
+                className="h-6 text-[11px] bg-white border border-outline-variant rounded px-1.5 focus:border-secondary focus:outline-none"
+                title="Filtrar inhumaciones hasta fecha"
+              />
+              {(filterFechaDesde || filterFechaHasta) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterFechaDesde('')
+                    setFilterFechaHasta('')
+                  }}
+                  className="p-0.5 text-outline hover:text-error rounded cursor-pointer"
+                  title="Limpiar filtro de fecha"
+                >
+                  <span className="material-symbols-outlined text-[14px]">close</span>
+                </button>
+              )}
+            </div>
+
             {/* Sanity Filter Quick Select */}
             <select
               value={filterProtocol}
@@ -246,9 +317,8 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <span className="font-code-cadastral font-bold text-on-surface text-sm">
-                        {fechaInh}
+                        {formatDateHour(inh.fecha_inhumacion || inh.created_at)}
                       </span>
-                      <span className="text-[11px] text-outline ml-1.5">{hora}</span>
                       <div className="text-[11px] font-code-cadastral text-outline">Acta #84{90 + index}-B</div>
                     </div>
                     {inh.es_covid ? (
@@ -407,8 +477,7 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                   >
                     {/* Fecha */}
                     <td className="py-1 px-3 font-code-cadastral text-code-cadastral whitespace-nowrap text-on-surface">
-                      <div className="font-semibold">{fechaInh}</div>
-                      <div className="text-[10px] text-outline">{hora}</div>
+                      <div className="font-semibold">{formatDateHour(inh.fecha_inhumacion || inh.created_at)}</div>
                     </td>
 
                     {/* Difunto / DNI */}

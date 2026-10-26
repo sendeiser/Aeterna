@@ -58,6 +58,7 @@ export interface Parcela {
   titular?: Titular | null
   sector?: Sector | null
   inhumaciones?: Inhumacion[]
+  created_at?: string | null
 }
 
 export interface Inhumacion {
@@ -75,6 +76,7 @@ export interface Inhumacion {
   telefono_responsable?: string | null
   observaciones?: string | null
   parcela?: Parcela | null
+  created_at?: string | null
 }
 
 export interface AfiliadoSeguro {
@@ -96,6 +98,7 @@ export interface AfiliadoSeguro {
   meses_mora?: number
   fecha_ultimo_pago?: string | null
   ultima_cuota_pagada?: string | null
+  created_at?: string | null
 }
 
 export interface CuotaSeguro {

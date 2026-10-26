@@ -15,7 +15,7 @@ type
     class function ObtenerPorId(const AId: string; out AParcela: TParcela): Boolean;
     class function ActualizarEstado(const AId: string; AEstado: TEstadoParcela; ASaldo: Currency): Boolean;
     class function CrearParcela(const AParcela: TParcela): Boolean;
-    class function ActualizarParcela(const AId: string; const AParcela: TParcela): Boolean;
+    class function ActualizarParcela(const AId: string; const AParcela: TParcela; const AOriginalNomenclatura: string = ''): Boolean;
     class function EliminarParcela(const AId: string): Boolean;
   end;
 
@@ -32,7 +32,7 @@ var
   Query: string;
 begin
   SetLength(Result, 0);
-  Query := 'select=id,nomenclatura,sector_id,manzana_fila,numero_parcela,capacidad_total,espacios_ocupados,estado,saldo_mantenimiento,fecha_adquisicion,notas,titular:titulares(id,nombre_completo,dni)&order=nomenclatura.asc';
+  Query := 'select=id,nomenclatura,sector_id,manzana_fila,numero_parcela,capacidad_total,espacios_ocupados,estado,saldo_mantenimiento,fecha_adquisicion,created_at,notas,titular:titulares(id,nombre_completo,dni)&order=nomenclatura.asc';
 
   if ASector <> '' then
     Query := Query + '&sector_id=eq.' + ASector;
@@ -61,6 +61,7 @@ begin
       Result[i].FechaUltimoPago := Item.Get('fecha_ultimo_pago', '');
       Result[i].UltimaCuotaPagada := Item.Get('ultima_cuota_pagada', '');
       Result[i].MotivoBloqueo := Item.Get('motivo_bloqueo', '');
+      Result[i].CreatedAt := Item.Get('created_at', '');
       Result[i].Notas := Item.Get('notas', '');
 
       // Parse titular
@@ -148,9 +149,42 @@ end;
 
 class function TParcelasService.CrearParcela(const AParcela: TParcela): Boolean;
 var
-  Data, Resp: TJSONObject;
+  Data, Resp, TitData, TitResp: TJSONObject;
+  NotasFinales, NewTitId: string;
 begin
   Result := False;
+  NewTitId := '';
+  NotasFinales := AParcela.Notas;
+
+  if Trim(AParcela.TitularNombre) <> '' then
+  begin
+    if Pos(AParcela.TitularNombre, NotasFinales) = 0 then
+    begin
+      if NotasFinales <> '' then
+        NotasFinales := 'Titular: ' + AParcela.TitularNombre + '. ' + NotasFinales
+      else
+        NotasFinales := 'Titular: ' + AParcela.TitularNombre;
+    end;
+
+    // Crear registro en tabla titulares de Supabase
+    TitData := TJSONObject.Create;
+    try
+      TitData.Add('nombre_completo', AParcela.TitularNombre);
+      if AParcela.TitularDni <> '' then
+        TitData.Add('dni', AParcela.TitularDni);
+      TitData.Add('ciudad', 'Chamical');
+      TitData.Add('estado_titular', 'activo');
+      TitResp := Supabase.Insert('titulares', TitData);
+      if TitResp <> nil then
+      begin
+        NewTitId := TitResp.Get('id', '');
+        TitResp.Free;
+      end;
+    finally
+      TitData.Free;
+    end;
+  end;
+
   Data := TJSONObject.Create;
   try
     Data.Add('nomenclatura', AParcela.Nomenclatura);
@@ -161,8 +195,14 @@ begin
     Data.Add('espacios_ocupados', AParcela.EspaciosOcupados);
     Data.Add('estado', EstadoParcelaToStr(AParcela.Estado));
     Data.Add('saldo_mantenimiento', Double(AParcela.SaldoMantenimiento));
-    if AParcela.Notas <> '' then
-      Data.Add('notas', AParcela.Notas);
+    if NewTitId <> '' then
+      Data.Add('titular_id', NewTitId);
+    if AParcela.FechaAdquisicion <> '' then
+      Data.Add('fecha_adquisicion', AParcela.FechaAdquisicion)
+    else
+      Data.Add('fecha_adquisicion', FormatDateTime('yyyy-mm-dd', Now));
+    if NotasFinales <> '' then
+      Data.Add('notas', NotasFinales);
     Resp := Supabase.Insert('parcelas', Data);
     if Resp <> nil then
     begin
@@ -174,14 +214,16 @@ begin
   end;
 end;
 
-class function TParcelasService.ActualizarParcela(const AId: string; const AParcela: TParcela): Boolean;
+class function TParcelasService.ActualizarParcela(const AId: string; const AParcela: TParcela; const AOriginalNomenclatura: string = ''): Boolean;
 var
-  Data: TJSONObject;
-  Filter, NotasFinales: string;
+  Data, TitData, TitResp: TJSONObject;
+  Filter, NotasFinales, NewTitId: string;
 begin
   Result := False;
   if IsValidUuid(AId) then
     Filter := 'id=eq.' + AId
+  else if AOriginalNomenclatura <> '' then
+    Filter := 'nomenclatura=eq.' + AOriginalNomenclatura
   else if AParcela.Nomenclatura <> '' then
     Filter := 'nomenclatura=eq.' + AParcela.Nomenclatura
   else if AId <> '' then
@@ -198,6 +240,43 @@ begin
       NotasFinales := 'Titular: ' + AParcela.TitularNombre;
   end;
 
+  NewTitId := AParcela.TitularId;
+  // Actualizar titular en tabla titulares o crear nuevo
+  if IsValidUuid(AParcela.TitularId) then
+  begin
+    if AParcela.TitularNombre <> '' then
+    begin
+      TitData := TJSONObject.Create;
+      try
+        TitData.Add('nombre_completo', AParcela.TitularNombre);
+        if AParcela.TitularDni <> '' then
+          TitData.Add('dni', AParcela.TitularDni);
+        Supabase.Update('titulares', 'id=eq.' + AParcela.TitularId, TitData);
+      finally
+        TitData.Free;
+      end;
+    end;
+  end
+  else if Trim(AParcela.TitularNombre) <> '' then
+  begin
+    TitData := TJSONObject.Create;
+    try
+      TitData.Add('nombre_completo', AParcela.TitularNombre);
+      if AParcela.TitularDni <> '' then
+        TitData.Add('dni', AParcela.TitularDni);
+      TitData.Add('ciudad', 'Chamical');
+      TitData.Add('estado_titular', 'activo');
+      TitResp := Supabase.Insert('titulares', TitData);
+      if TitResp <> nil then
+      begin
+        NewTitId := TitResp.Get('id', '');
+        TitResp.Free;
+      end;
+    finally
+      TitData.Free;
+    end;
+  end;
+
   Data := TJSONObject.Create;
   try
     Data.Add('nomenclatura', AParcela.Nomenclatura);
@@ -209,6 +288,12 @@ begin
       Data.Add('numero_parcela', AParcela.NumeroParcela);
     Data.Add('estado', EstadoParcelaToStr(AParcela.Estado));
     Data.Add('saldo_mantenimiento', Double(AParcela.SaldoMantenimiento));
+    if NewTitId <> '' then
+      Data.Add('titular_id', NewTitId)
+    else if (AParcela.TitularNombre = '') and (AParcela.TitularId = '') then
+      Data.Add('titular_id', TJSONNull.Create);
+    if AParcela.FechaAdquisicion <> '' then
+      Data.Add('fecha_adquisicion', AParcela.FechaAdquisicion);
     Data.Add('notas', NotasFinales);
     Result := Supabase.Update('parcelas', Filter, Data);
   finally

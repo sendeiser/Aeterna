@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { AfiliadoSeguro } from '../../types/database'
-import { formatCurrency } from '../../lib/formatters'
+import { formatCurrency, formatDateHour } from '../../lib/formatters'
 import { DetalleCuotaModal } from '../modals/DetalleCuotaModal'
 import { TalonarioRecibosModal } from '../modals/TalonarioRecibosModal'
 import { PlanillaRutaModal } from '../modals/PlanillaRutaModal'
@@ -16,6 +16,8 @@ interface AfiliadosSeguroViewProps {
   onEditarAfiliado: (afiliado: AfiliadoSeguro) => void
   onSaveAfiliado?: (afiliado: Partial<AfiliadoSeguro>) => void
   onEliminarAfiliado?: (id: string) => void
+  onRefresh?: () => void
+  isRefreshing?: boolean
 }
 
 export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
@@ -27,10 +29,14 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
   onEditarAfiliado,
   onSaveAfiliado,
   onEliminarAfiliado,
+  onRefresh,
+  isRefreshing = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [zoneFilter, setZoneFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'deuda' | 'aldia' | 'standby'>('all')
+  const [filterFechaDesde, setFilterFechaDesde] = useState('')
+  const [filterFechaHasta, setFilterFechaHasta] = useState('')
   const [sortOption, setSortOption] = useState<string>('numero-asc')
   const [isTalonarioModalOpen, setIsTalonarioModalOpen] = useState(false)
   const [isPlanillaModalOpen, setIsPlanillaModalOpen] = useState(false)
@@ -195,8 +201,21 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
         const nom = a.nombre_completo.toLowerCase()
         const dir = (a.direccion_cobro || '').toLowerCase()
         const dni = (a.dni || '').toLowerCase()
-        return nro.includes(q) || nom.includes(q) || dir.includes(q) || dni.includes(q)
+        if (!nro.includes(q) && !nom.includes(q) && !dir.includes(q) && !dni.includes(q)) {
+          return false
+        }
       }
+
+      if (filterFechaDesde) {
+        const aDate = a.created_at || a.fecha_alta
+        if (!aDate || aDate.slice(0, 10) < filterFechaDesde) return false
+      }
+
+      if (filterFechaHasta) {
+        const aDate = a.created_at || a.fecha_alta
+        if (!aDate || aDate.slice(0, 10) > filterFechaHasta) return false
+      }
+
       return true
     })
 
@@ -236,18 +255,18 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
         return moraA - moraB
       }
       if (sortOption === 'fecha-desc') {
-        const timeA = a.fecha_alta ? new Date(a.fecha_alta).getTime() : (Number(a.numero_afiliado) || 0)
-        const timeB = b.fecha_alta ? new Date(b.fecha_alta).getTime() : (Number(b.numero_afiliado) || 0)
+        const timeA = (a.created_at || a.fecha_alta) ? new Date(a.created_at || a.fecha_alta!).getTime() : (Number(a.numero_afiliado) || 0)
+        const timeB = (b.created_at || b.fecha_alta) ? new Date(b.created_at || b.fecha_alta!).getTime() : (Number(b.numero_afiliado) || 0)
         return timeB - timeA
       }
       if (sortOption === 'fecha-asc') {
-        const timeA = a.fecha_alta ? new Date(a.fecha_alta).getTime() : (Number(a.numero_afiliado) || 0)
-        const timeB = b.fecha_alta ? new Date(b.fecha_alta).getTime() : (Number(b.numero_afiliado) || 0)
+        const timeA = (a.created_at || a.fecha_alta) ? new Date(a.created_at || a.fecha_alta!).getTime() : (Number(a.numero_afiliado) || 0)
+        const timeB = (b.created_at || b.fecha_alta) ? new Date(b.created_at || b.fecha_alta!).getTime() : (Number(b.numero_afiliado) || 0)
         return timeA - timeB
       }
       return (Number(a.numero_afiliado) || 0) - (Number(b.numero_afiliado) || 0)
     })
-  }, [afiliados, zoneFilter, statusFilter, searchTerm, sortOption])
+  }, [afiliados, zoneFilter, statusFilter, searchTerm, sortOption, filterFechaDesde, filterFechaHasta])
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden space-y-1 sm:space-y-2">
@@ -287,6 +306,19 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
               </button>
             )}
           </div>
+
+          {onRefresh && (
+            <button
+              id="btn-refresh-afiliados-mobile"
+              type="button"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className="h-7 w-7 rounded border border-outline-variant bg-surface-container-low hover:bg-surface-container text-primary flex items-center justify-center shrink-0 disabled:opacity-50 cursor-pointer"
+              title="Actualizar datos con la base de datos"
+            >
+              <span className={`material-symbols-outlined text-[14px] ${isRefreshing ? 'animate-spin' : ''}`}>sync</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -484,6 +516,42 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             </select>
           </div>
 
+          {/* Filtro por Rango de Fechas (Desde - Hasta) */}
+          <div className="flex items-center gap-1.5 bg-surface-container-low px-2 py-1 rounded-lg border border-outline-variant text-xs shrink-0">
+            <span className="material-symbols-outlined text-[15px] text-outline">calendar_today</span>
+            <span className="text-[11px] text-on-surface-variant font-medium">Desde:</span>
+            <input
+              id="filter-fecha-desde-afiliados"
+              type="date"
+              value={filterFechaDesde}
+              onChange={(e) => setFilterFechaDesde(e.target.value)}
+              className="h-6 text-[11px] bg-white border border-outline-variant rounded px-1.5 focus:border-secondary focus:outline-none"
+              title="Filtrar afiliados desde fecha de alta"
+            />
+            <span className="text-[11px] text-on-surface-variant font-medium">Hasta:</span>
+            <input
+              id="filter-fecha-hasta-afiliados"
+              type="date"
+              value={filterFechaHasta}
+              onChange={(e) => setFilterFechaHasta(e.target.value)}
+              className="h-6 text-[11px] bg-white border border-outline-variant rounded px-1.5 focus:border-secondary focus:outline-none"
+              title="Filtrar afiliados hasta fecha de alta"
+            />
+            {(filterFechaDesde || filterFechaHasta) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setFilterFechaDesde('')
+                  setFilterFechaHasta('')
+                }}
+                className="p-0.5 text-outline hover:text-error rounded cursor-pointer"
+                title="Limpiar filtro de fecha"
+              >
+                <span className="material-symbols-outlined text-[14px]">close</span>
+              </button>
+            )}
+          </div>
+
           {/* Status Filter Pills */}
           <div className="flex items-center gap-0.5 border border-outline-variant rounded-lg p-0.5 bg-surface-container-low text-xs shrink-0">
             <button
@@ -535,6 +603,21 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
 
         {/* Export & New Record Actions */}
         <div className="flex items-center gap-1.5 shrink-0">
+          {onRefresh && (
+            <button
+              id="btn-refresh-afiliados"
+              type="button"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className="h-8 px-2.5 rounded-lg border border-outline-variant bg-surface-container-low hover:bg-surface-container hover:border-primary/50 text-on-surface-variant hover:text-primary transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer shadow-2xs disabled:opacity-50 shrink-0"
+              title="Actualizar y sincronizar con la base de datos"
+            >
+              <span className={`material-symbols-outlined text-[16px] text-primary ${isRefreshing ? 'animate-spin' : ''}`}>
+                sync
+              </span>
+              <span className="hidden xl:inline">{isRefreshing ? 'Actualizando...' : 'Actualizar'}</span>
+            </button>
+          )}
           <button
             id="btn-imprimir-talonario"
             type="button"
@@ -775,6 +858,10 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                       <span>•</span>
                       <span className="truncate">{afiliado.direccion_cobro || 'Chamical, La Rioja'}</span>
                     </div>
+                    <div className="text-[10px] font-code-cadastral text-on-surface-variant flex items-center gap-1 mt-0.5">
+                      <span className="material-symbols-outlined text-[13px] text-outline">schedule</span>
+                      <span>Alta: {formatDateHour(afiliado.created_at || afiliado.fecha_alta)}</span>
+                    </div>
                     {moraInfo.enStandby && (
                       <div className="text-[11px] text-rose-900 font-semibold bg-rose-50 px-2.5 py-1 rounded border border-rose-200 mt-1">
                         ⚠️ Plan suspendido (+3 meses de mora) · <strong>Última cuota pagada:</strong> {moraInfo.ultimaCuotaPagada}
@@ -912,7 +999,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
 
         {/* DESKTOP VIEW (>= md): Ledger Table with 12-Month Matrix */}
         <div className="hidden md:block overflow-x-auto flex-1 min-h-0 custom-scroll">
-          <table className="w-full min-w-[990px] text-left border-collapse table-fixed">
+          <table className="w-full min-w-[1050px] text-left border-collapse table-fixed">
             <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
               <tr className="bg-slate-100 text-[11px] font-label-caps text-slate-700 uppercase tracking-wider h-8 select-none whitespace-nowrap">
                 <th
@@ -935,6 +1022,17 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                     <span>N°</span>
                     {sortOption === 'numero-asc' && <span className="material-symbols-outlined text-[12px] text-primary">arrow_upward</span>}
                     {sortOption === 'numero-desc' && <span className="material-symbols-outlined text-[12px] text-primary">arrow_downward</span>}
+                  </div>
+                </th>
+                <th
+                  onClick={() => setSortOption((prev) => (prev === 'fecha-desc' ? 'fecha-asc' : 'fecha-desc'))}
+                  className="px-2 py-2 w-[120px] font-semibold bg-slate-100 whitespace-nowrap cursor-pointer hover:bg-slate-200 transition-colors"
+                  title="Ordenar por Fecha y Hora de Alta"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Fecha Alta</span>
+                    {sortOption === 'fecha-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                    {sortOption === 'fecha-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
                   </div>
                 </th>
                 <th
@@ -1025,7 +1123,12 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                         </span>
                       </td>
 
-                      {/* Col 3: Cuota Mensual Editable */}
+                      {/* Col 3: Fecha Alta */}
+                      <td className="px-2 py-2 align-middle text-[11px] text-outline font-code-cadastral whitespace-nowrap">
+                        {formatDateHour(afiliado.created_at || afiliado.fecha_alta)}
+                      </td>
+
+                      {/* Col 4: Cuota Mensual Editable */}
                       <td className="px-2 py-2 align-middle whitespace-nowrap">
                         <div className="flex items-center gap-1 whitespace-nowrap">
                           <span className="text-xs text-outline">$</span>
@@ -1128,12 +1231,14 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-surface-container text-primary font-code-cadastral text-code-cadastral font-bold border border-outline-variant">
                         #{afiliado.numero_afiliado}
                       </span>
-                      <span className="block text-[10px] text-on-surface-variant/70 font-code-cadastral mt-0.5">
-                        ALTA: 2018
-                      </span>
                     </td>
 
-                    {/* Col 3: Cuota Mensual */}
+                    {/* Col 3: Fecha Alta */}
+                    <td className="px-2 py-2 align-middle text-[11px] text-on-surface-variant font-code-cadastral whitespace-nowrap">
+                      {formatDateHour(afiliado.created_at || afiliado.fecha_alta)}
+                    </td>
+
+                    {/* Col 4: Cuota Mensual */}
                     <td className="px-2 py-2 align-middle whitespace-nowrap">
                       <div className="font-code-cadastral font-bold text-on-surface text-[13.5px] whitespace-nowrap">
                         {formatCurrency(afiliado.monto_cuota_mensual)}

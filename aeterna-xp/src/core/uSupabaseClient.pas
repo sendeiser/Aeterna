@@ -141,14 +141,35 @@ end;
 function TSupabaseClient.Update(const ATable: string; const AFilter: string; AData: TJSONObject): Boolean;
 var
   Resp: THttpResponse;
+  Parser: TJSONParser;
+  Data: TJSONData;
 begin
   Result := False;
   FLastErrorMessage := '';
   if AData = nil then Exit;
 
   Resp := FHttpClient.Patch(ATable, AFilter, AData.AsJSON);
-  Result := Resp.Success;
-  if not Result then
+  if Resp.Success then
+  begin
+    if Resp.Body <> '' then
+    begin
+      Parser := TJSONParser.Create(Resp.Body);
+      try
+        Data := Parser.Parse;
+        if (Data is TJSONArray) and (TJSONArray(Data).Count = 0) then
+        begin
+          FLastErrorMessage := 'No se encontro el registro para actualizar en Supabase (' + AFilter + ')';
+          Data.Free;
+          Exit(False);
+        end;
+        Data.Free;
+      finally
+        Parser.Free;
+      end;
+    end;
+    Result := True;
+  end
+  else
     FLastErrorMessage := Resp.ErrorMessage;
 end;
 

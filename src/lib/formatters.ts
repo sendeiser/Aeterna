@@ -131,3 +131,24 @@ export function montoEnLetras(monto: number | null | undefined): string {
   }
   return base
 }
+
+/**
+ * Formatea una fecha ISO a formato argentino legible con fecha y hora:
+ * Ejemplo: "2026-10-24T18:30:00Z" -> "24/10/2026 18:30 hs"
+ */
+export function formatDateHour(isoString?: string | null): string {
+  if (!isoString) return '-'
+  try {
+    const d = new Date(isoString)
+    if (isNaN(d.getTime())) return isoString.slice(0, 10)
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const year = d.getFullYear()
+    const hours = String(d.getHours()).padStart(2, '0')
+    const mins = String(d.getMinutes()).padStart(2, '0')
+    return `${day}/${month}/${year} ${hours}:${mins} hs`
+  } catch {
+    return String(isoString)
+  }
+}
+
