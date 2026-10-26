@@ -17,9 +17,11 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
   onCancel,
 }) => {
   // Resolver parcela inicial o existente
-  const existingParcNom = typeof initialData?.parcela === 'object'
-    ? initialData?.parcela?.nomenclatura
-    : (typeof initialData?.parcela === 'string' ? initialData.parcela : '')
+  const existingParcNom = (
+    initialData?.parcela && typeof initialData.parcela === 'object'
+      ? initialData.parcela.nomenclatura
+      : (typeof initialData?.parcela === 'string' ? initialData.parcela : '')
+  ) || ''
 
   const initialMatchedParcela = parcelasDisponibles.find(
     (p) => p.id === initialData?.parcela_id || (existingParcNom && p.nomenclatura === existingParcNom)
@@ -47,46 +49,54 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
   const [observaciones, setObservaciones] = useState(initialData?.observaciones || '')
 
   const parcelaSeleccionada = useMemo(() => {
+    const bTrim = (busquedaParcela || '').trim().toUpperCase()
+    const bClean = (busquedaParcela || '').replace(/[\s-]/g, '').trim().toUpperCase()
     return (
       parcelasDisponibles.find((p) => p.id === parcelaId) ||
-      parcelasDisponibles.find(
-        (p) => (p.nomenclatura || '').toUpperCase() === busquedaParcela.trim().toUpperCase()
-      ) ||
-      parcelasDisponibles.find(
-        (p) =>
-          (p.nomenclatura || '').replace(/[\s-]/g, '').toUpperCase() ===
-          busquedaParcela.replace(/[\s-]/g, '').trim().toUpperCase()
-      )
+      (bTrim
+        ? parcelasDisponibles.find((p) => (p.nomenclatura || '').toUpperCase() === bTrim) ||
+          parcelasDisponibles.find(
+            (p) => (p.nomenclatura || '').replace(/[\s-]/g, '').toUpperCase() === bClean
+          )
+        : undefined)
     )
   }, [parcelasDisponibles, parcelaId, busquedaParcela])
 
   // Difuntos actualmente registrados en la parcela seleccionada
   const difuntosEnParcela = useMemo(() => {
-    const targetNom = (parcelaSeleccionada?.nomenclatura || busquedaParcela || '').trim().toUpperCase()
+    const rawTargetNom = (parcelaSeleccionada?.nomenclatura || busquedaParcela || '').trim().toUpperCase()
+    const targetNomClean = rawTargetNom.replace(/[\s-]/g, '')
     const targetId = parcelaSeleccionada?.id || parcelaId
 
-    if (!targetNom && !targetId) return []
+    if (!rawTargetNom && !targetId) return []
 
     return (inhumaciones || []).filter((inh) => {
+      if (!inh) return false
       // Ignorar el registro que se está editando para no auto-bloquearse
       if (initialData?.id && inh.id === initialData.id) return false
 
-      const inhNom = (
-        typeof inh.parcela === 'object'
-          ? inh.parcela?.nomenclatura
-          : (typeof inh.parcela === 'string' ? inh.parcela : (inh as any).parcela_nomenclatura) || ''
-      ).trim().toUpperCase()
+      let rawInhNom = ''
+      if (inh.parcela && typeof inh.parcela === 'object' && inh.parcela.nomenclatura) {
+        rawInhNom = String(inh.parcela.nomenclatura)
+      } else if (typeof inh.parcela === 'string') {
+        rawInhNom = inh.parcela
+      } else if ((inh as any)?.parcela_nomenclatura) {
+        rawInhNom = String((inh as any).parcela_nomenclatura)
+      }
+
+      const inhNom = (rawInhNom || '').trim().toUpperCase()
+      const inhNomClean = inhNom.replace(/[\s-]/g, '')
 
       const matchesNom = Boolean(
-        targetNom &&
-          (inhNom === targetNom ||
-            inhNom.replace(/[\s-]/g, '') === targetNom.replace(/[\s-]/g, ''))
+        rawTargetNom &&
+          (inhNom === rawTargetNom ||
+            (inhNomClean && targetNomClean && inhNomClean === targetNomClean))
       )
 
       const matchesId = Boolean(
         targetId &&
           (inh.parcela_id === targetId ||
-            (typeof inh.parcela === 'object' && inh.parcela?.id === targetId))
+            (inh.parcela && typeof inh.parcela === 'object' && inh.parcela.id === targetId))
       )
 
       return matchesNom || matchesId
@@ -137,7 +147,7 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
 
   // Parcelas filtradas interactivamente para el buscador de parcela
   const parcelasFiltradas = useMemo(() => {
-    const q = busquedaParcela.trim().toLowerCase()
+    const q = (busquedaParcela || '').trim().toLowerCase()
     if (!q) return parcelasOptions.slice(0, 60)
     return parcelasOptions
       .filter((p) => {
@@ -162,15 +172,15 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
     onSave({
       id: initialData?.id || `inh-${Date.now()}`,
       parcela_id: parcelaId,
-      nombre_difunto: nombreDifunto.trim(),
-      dni_difunto: dniDifunto.trim(),
+      nombre_difunto: (nombreDifunto || '').trim(),
+      dni_difunto: (dniDifunto || '').trim(),
       fecha_fallecimiento: fechaFallecimiento || null,
       fecha_inhumacion: fechaInhumacion,
       nivel_posicion: Number(nivelPosicion),
       es_covid: esCovid,
-      causa_defuncion: causaDefuncion.trim() || 'Causa Natural',
-      empresa_funebrera: empresaFunebrera.trim() || 'Servicios Sociales Chamical',
-      observaciones: observaciones.trim() || null,
+      causa_defuncion: (causaDefuncion || '').trim() || 'Causa Natural',
+      empresa_funebrera: (empresaFunebrera || '').trim() || 'Servicios Sociales Chamical',
+      observaciones: (observaciones || '').trim() || null,
       parcela: parcelaSeleccionada || (typeof initialData?.parcela === 'object' ? initialData.parcela : null),
     })
   }

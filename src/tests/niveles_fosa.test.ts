@@ -71,4 +71,35 @@ describe('Gestión y Asignación de Niveles en Fosa', () => {
     const hayLibre = niveles.some((lvl) => !ocupados.has(lvl))
     expect(hayLibre).toBe(false)
   })
+
+  it('maneja con total resiliencia inhumaciones con parcela null, undefined o sin nomenclatura', () => {
+    const inhumacionesConNulos: Inhumacion[] = [
+      { id: '1', parcela_id: '', parcela: null as any, nombre_difunto: 'Difunto Sin Parcela', nivel_posicion: 1, fecha_inhumacion: '2020-01-01', es_covid: false },
+      { id: '2', parcela_id: '', parcela: { id: 'x' } as any, nombre_difunto: 'Difunto Parcela Incompleta', nivel_posicion: 2, fecha_inhumacion: '2022-01-01', es_covid: false },
+      { id: '3', parcela_id: 'parc-11-40', parcela: parcelaA1140, nombre_difunto: 'Martin Gustavo Gonzalez', nivel_posicion: 2, fecha_inhumacion: '2026-10-26', es_covid: false },
+    ]
+
+    const targetNom = 'A-11-40'
+    const targetId = 'parc-11-40'
+
+    const difuntos = inhumacionesConNulos.filter((inh) => {
+      if (!inh) return false
+      let rawInhNom = ''
+      if (inh.parcela && typeof inh.parcela === 'object' && inh.parcela.nomenclatura) {
+        rawInhNom = String(inh.parcela.nomenclatura)
+      } else if (typeof inh.parcela === 'string') {
+        rawInhNom = inh.parcela
+      } else if ((inh as any)?.parcela_nomenclatura) {
+        rawInhNom = String((inh as any).parcela_nomenclatura)
+      }
+      const inhNom = (rawInhNom || '').trim().toUpperCase()
+
+      const matchesNom = Boolean(targetNom && inhNom === targetNom)
+      const matchesId = Boolean(targetId && inh.parcela_id === targetId)
+      return matchesNom || matchesId
+    })
+
+    expect(difuntos.length).toBe(1)
+    expect(difuntos[0].nombre_difunto).toBe('Martin Gustavo Gonzalez')
+  })
 })
