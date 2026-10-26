@@ -498,47 +498,71 @@ export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
   }
 }
 
+function isUuid(id?: string | null): boolean {
+  return typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+}
+
+export function sanitizeEstadoParcelaDb(estado?: string | null): 'disponible' | 'ocupada' | 'en_mora' | 'reservada' | 'baja' {
+  if (!estado) return 'disponible'
+  const est = estado.toLowerCase().trim()
+  if (est === 'standby' || est === 'morosa') return 'en_mora'
+  if (est === 'al_dia' || est === 'ocupado') return 'ocupada'
+  if (est === 'libre') return 'disponible'
+  if (est.startsWith('baja')) return 'baja'
+  if (['disponible', 'ocupada', 'en_mora', 'reservada', 'baja'].includes(est)) {
+    return est as any
+  }
+  return 'disponible'
+}
+
 export async function upsertParcelaSupabase(parcela: Parcela): Promise<boolean> {
   if (!isSupabaseConfigured) return false
   try {
     let titularId: string | null = (parcela as any).titular_id || null
+    if (titularId && !isUuid(titularId)) {
+      titularId = null
+    }
 
     // 1. Vincular titular si existe
     if (parcela.titular?.nombre_completo) {
       const titNombre = parcela.titular.nombre_completo.trim()
-      const { data: existingTit } = await supabase
-        .from('titulares')
-        .select('id')
-        .eq('nombre_completo', titNombre)
-        .maybeSingle()
+      if (titNombre) {
+        const { data: existingTit } = await supabase
+          .from('titulares')
+          .select('id')
+          .eq('nombre_completo', titNombre)
+          .maybeSingle()
 
-      if (existingTit?.id) {
-        titularId = existingTit.id
-        // Actualizar datos de contacto si cambiaron
-        if (parcela.titular.dni || parcela.titular.telefono || parcela.titular.direccion) {
-          await supabase
+        if (existingTit?.id && isUuid(existingTit.id)) {
+          titularId = existingTit.id
+          // Actualizar datos de contacto si cambiaron
+          if (parcela.titular.dni || parcela.titular.telefono || parcela.titular.direccion) {
+            await supabase
+              .from('titulares')
+              .update({
+                dni: parcela.titular.dni || null,
+                telefono: parcela.titular.telefono || null,
+                direccion: parcela.titular.direccion || 'Chamical',
+              })
+              .eq('id', titularId)
+          }
+        } else {
+          const { data: newTit } = await supabase
             .from('titulares')
-            .update({
+            .insert({
+              nombre_completo: titNombre,
               dni: parcela.titular.dni || null,
               telefono: parcela.titular.telefono || null,
               direccion: parcela.titular.direccion || 'Chamical',
+              estado_titular: 'activo',
             })
-            .eq('id', titularId)
-        }
-      } else {
-        const { data: newTit } = await supabase
-          .from('titulares')
-          .insert({
-            nombre_completo: titNombre,
-            dni: parcela.titular.dni || null,
-            telefono: parcela.titular.telefono || null,
-            direccion: parcela.titular.direccion || 'Chamical',
-            estado_titular: 'activo',
-          })
-          .select('id')
-          .single()
+            .select('id')
+            .maybeSingle()
 
-        if (newTit?.id) titularId = newTit.id
+          if (newTit?.id && isUuid(newTit.id)) {
+            titularId = newTit.id
+          }
+        }
       }
     }
 
@@ -547,30 +571,40 @@ export async function upsertParcelaSupabase(parcela: Parcela): Promise<boolean> 
     if (titularNombreTexto && !notasTexto.includes(titularNombreTexto)) {
       notasTexto = `Titular: ${titularNombreTexto}. ${notasTexto}`.trim()
     }
+    if (parcela.estado === 'standby' && !notasTexto.includes('Stand-by')) {
+      notasTexto = `[Stand-by: Mora prolongada] ${notasTexto}`.trim()
+    }
 
-    const sectorId = parcela.sector_id || (parcela.nomenclatura ? parcela.nomenclatura.split('-')[0] : 'A')
+    const rawSector = parcela.sector_id || (parcela.nomenclatura ? parcela.nomenclatura.split('-')[0] : 'A')
+    const sectorId = ['A', 'B', 'E', 'SALINAS'].includes(rawSector?.toUpperCase()) ? rawSector.toUpperCase() : 'A'
     const fila = parcela.manzana_fila || (parcela.nomenclatura ? parcela.nomenclatura.split('-')[1] || '01' : '01')
     const num = parcela.numero_parcela ? String(parcela.numero_parcela) : (parcela.nomenclatura ? parcela.nomenclatura.split('-')[2] || '1' : '1')
 
-    // 2. Upsert parcela
+    // 2. Upsert parcela con estado sanitizado compatible con CHECK constraint PostgreSQL
     const payload: any = {
       nomenclatura: parcela.nomenclatura,
       sector_id: sectorId,
-      manzana_fila: fila,
-      numero_parcela: num,
-      capacidad_total: parcela.capacidad_total || 3,
-      espacios_ocupados: parcela.espacios_ocupados || 0,
-      estado: parcela.estado,
-      saldo_mantenimiento: parcela.saldo_mantenimiento || 0,
+      manzana_fila: String(fila),
+      numero_parcela: String(num),
+      capacidad_total: Number(parcela.capacidad_total) || 3,
+      espacios_ocupados: Number(parcela.espacios_ocupados) || 0,
+      estado: sanitizeEstadoParcelaDb(parcela.estado),
+      saldo_mantenimiento: Number(parcela.saldo_mantenimiento) || 0,
       notas: notasTexto,
     }
-    if (titularId) payload.titular_id = titularId
+    if (titularId && isUuid(titularId)) {
+      payload.titular_id = titularId
+    }
 
     const { error } = await supabase.from('parcelas').upsert(payload, { onConflict: 'nomenclatura' })
+    if (error) {
+      console.error('Error al guardar parcela en Supabase:', error.message, error.details || error)
+      return false
+    }
 
-    return !error
+    return true
   } catch (err) {
-    console.error('Error al guardar parcela en Supabase:', err)
+    console.error('Excepción al guardar parcela en Supabase:', err)
     return false
   }
 }
@@ -840,10 +874,6 @@ export async function upsertAfiliadoSupabase(afiliado: any): Promise<boolean> {
     console.error('Excepción en upsertAfiliadoSupabase:', err)
     return false
   }
-}
-
-function isUuid(id: string): boolean {
-  return typeof id === 'string' && id.length === 36 && id.includes('-')
 }
 
 export async function registrarPagoCuotaSupabase(
@@ -1162,16 +1192,17 @@ export async function syncDataToSupabase(onProgress?: (msg: string) => void) {
   onProgress?.(`Migrando ${parcelas.length} parcelas extraídas de documentos...`)
   for (let i = 0; i < parcelas.length; i += 50) {
     const chunk = parcelas.slice(i, i + 50).map((p) => {
-      const sectorCode = p.sector_id || (p.nomenclatura.startsWith('E') ? 'E' : p.nomenclatura.startsWith('SAL') ? 'SALINAS' : 'A')
+      const rawSector = p.sector_id || (p.nomenclatura.startsWith('E') ? 'E' : p.nomenclatura.startsWith('SAL') ? 'SALINAS' : 'A')
+      const sectorCode = ['A', 'B', 'E', 'SALINAS'].includes(rawSector?.toUpperCase()) ? rawSector.toUpperCase() : 'A'
       return {
         nomenclatura: p.nomenclatura,
         sector_id: sectorCode,
         manzana_fila: p.manzana_fila,
         numero_parcela: p.numero_parcela ? String(p.numero_parcela) : null,
-        capacidad_total: p.capacidad_total || 3,
-        espacios_ocupados: p.espacios_ocupados || 0,
-        estado: p.estado,
-        saldo_mantenimiento: p.saldo_mantenimiento || 0,
+        capacidad_total: Number(p.capacidad_total) || 3,
+        espacios_ocupados: Number(p.espacios_ocupados) || 0,
+        estado: sanitizeEstadoParcelaDb(p.estado),
+        saldo_mantenimiento: Number(p.saldo_mantenimiento) || 0,
         notas: p.titular ? `Titular: ${p.titular.nombre_completo}. Domicilio: ${p.titular.direccion || 'Chamical'}` : '',
       }
     })

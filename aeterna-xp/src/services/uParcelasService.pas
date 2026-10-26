@@ -55,6 +55,8 @@ begin
       Result[i].EspaciosOcupados := Item.Get('espacios_ocupados', 0);
       Result[i].Estado := StrToEstadoParcela(Item.Get('estado', 'disponible'));
       Result[i].SaldoMantenimiento := Item.Get('saldo_mantenimiento', 0.0);
+      if (Result[i].Estado = epEnMora) and (Result[i].SaldoMantenimiento >= 100000) then
+        Result[i].Estado := epStandby;
       Result[i].FechaAdquisicion := Item.Get('fecha_adquisicion', '');
       Result[i].FechaUltimoPago := Item.Get('fecha_ultimo_pago', '');
       Result[i].UltimaCuotaPagada := Item.Get('ultima_cuota_pagada', '');
@@ -110,6 +112,8 @@ begin
       AParcela.EspaciosOcupados := Item.Get('espacios_ocupados', 0);
       AParcela.Estado := StrToEstadoParcela(Item.Get('estado', 'disponible'));
       AParcela.SaldoMantenimiento := Item.Get('saldo_mantenimiento', 0.0);
+      if (AParcela.Estado = epEnMora) and (AParcela.SaldoMantenimiento >= 100000) then
+        AParcela.Estado := epStandby;
       AParcela.FechaAdquisicion := Item.Get('fecha_adquisicion', '');
       AParcela.FechaUltimoPago := Item.Get('fecha_ultimo_pago', '');
       AParcela.UltimaCuotaPagada := Item.Get('ultima_cuota_pagada', '');

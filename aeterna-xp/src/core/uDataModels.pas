@@ -138,7 +138,7 @@ begin
     epReservada:  Result := 'reservada';
     epEnMora:     Result := 'en_mora';
     epBaja:       Result := 'baja';
-    epStandby:    Result := 'standby';
+    epStandby:    Result := 'en_mora';
   else
     Result := 'disponible';
   end;
