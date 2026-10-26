@@ -3,7 +3,7 @@ import { AuditoriaModal } from '../modals/AuditoriaModal'
 import { Parcela, AfiliadoSeguro } from '../../types/database'
 import { evaluarMoraAfiliado, evaluarMoraParcela } from '../../lib/reglasNegocio'
 
-export type TabType = 'dashboard' | 'parcelas' | 'inhumaciones' | 'seguro' | 'configuracion'
+export type TabType = 'dashboard' | 'parcelas' | 'inhumaciones' | 'seguro' | 'caja' | 'configuracion'
 
 interface NavbarProps {
   currentTab: TabType
@@ -217,6 +217,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'parcelas' as TabType, label: 'Parcelas', icon: 'domain' },
     { id: 'inhumaciones' as TabType, label: 'Inhumaciones', icon: 'calendar_month' },
     { id: 'seguro' as TabType, label: 'Plan Seguro Integral', icon: 'security' },
+    { id: 'caja' as TabType, label: 'Caja Diaria', icon: 'payments' },
     { id: 'configuracion' as TabType, label: 'Configuración', icon: 'settings' },
   ]
 
@@ -225,6 +226,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     parcelas: 'Módulo de Gestión de Parcelas',
     inhumaciones: 'Libro Digital de Inhumaciones',
     seguro: 'Padrón de Plan Seguro Integral',
+    caja: 'Caja Diaria, Arqueo & Movimientos de Tesorería',
     configuracion: 'Configuración CBU / Alias de Tesorería',
   }
 
@@ -662,7 +664,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-14 bg-surface-container-lowest border-t border-outline-variant z-40 flex items-center justify-around px-1">
         {navItems.map((item) => {
           const active = currentTab === item.id
-          const shortLabel = item.id === 'configuracion' ? 'Config' : item.label.split(' ')[0]
+          const shortLabel = item.id === 'configuracion' ? 'Config' : item.id === 'caja' ? 'Caja' : item.label.split(' ')[0]
           return (
             <button
               key={item.id}

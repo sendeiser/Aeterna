@@ -1160,6 +1160,12 @@ export async function deleteAfiliadoSupabase(idOrNumero: string | number): Promi
 }
 
 // PAGOS Y RECIBOS CRUD
+function extractCategoriaFromConcepto(concepto?: string): string | undefined {
+  if (!concepto) return undefined
+  const match = concepto.match(/\[EGRESO\]\s*\(([^)]+)\)/i)
+  return match ? match[1] : undefined
+}
+
 export async function fetchPagosSupabase(): Promise<PagoRecibo[] | null> {
   if (!isSupabaseConfigured) return null
   try {
@@ -1186,6 +1192,8 @@ export async function fetchPagosSupabase(): Promise<PagoRecibo[] | null> {
         titularNombre: p.titular_paga || 'Contribuyente General',
         fecha: p.fecha_pago || p.created_at || new Date().toISOString(),
         tipo: isEgreso ? ('egreso' as const) : undefined,
+        categoria: p.categoria || (isEgreso ? extractCategoriaFromConcepto(p.concepto) : undefined),
+        comprobante: p.comprobante || p.numero_recibo,
       }
     })
   } catch (err) {
@@ -1226,6 +1234,38 @@ export async function registrarPagoSupabase(pago: PagoRecibo): Promise<boolean> 
   }
 }
 
+export async function anularPagoSupabase(idOrRecibo: string): Promise<boolean> {
+  if (!isSupabaseConfigured) return false
+  try {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrRecibo)
+    let query = supabase.from('pagos_recibos').delete()
+    if (isUuid) {
+      query = query.eq('id', idOrRecibo)
+    } else {
+      query = query.eq('numero_recibo', idOrRecibo)
+    }
+    const { error } = await query
+    if (error) {
+      console.error('Error al anular pago en Supabase:', error.message)
+      return false
+    }
+    return true
+  } catch (err) {
+    console.error('Excepción al anular pago en Supabase:', err)
+    return false
+  }
+}
+
+export function deletePagoFromStorage(idOrRecibo: string) {
+  const existing: PagoRecibo[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.PAGOS) || '[]')
+  const filtered = existing.filter((p) => p.id !== idOrRecibo && p.nroRecibo !== idOrRecibo)
+  localStorage.setItem(STORAGE_KEYS.PAGOS, JSON.stringify(filtered))
+}
+
+export async function registrarCobroCajaSupabase(pago: PagoRecibo): Promise<boolean> {
+  return registrarPagoSupabase(pago)
+}
+
 export function saveEgresoToStorage(egreso: PagoRecibo) {
   const mov = { ...egreso, tipo: 'egreso' as const }
   const existing: PagoRecibo[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.PAGOS) || '[]')
@@ -1240,10 +1280,28 @@ export function calcularBalanceCaja(movimientos: PagoRecibo[]) {
   const totalEgresos = movimientos
     .filter((m) => m.tipo === 'egreso')
     .reduce((sum, m) => sum + (m.monto || 0), 0)
+  const totalEfectivo = movimientos.reduce((acc, m) => {
+    const isEgr = m.tipo === 'egreso'
+    if (m.metodo === 'efectivo') {
+      return acc + (isEgr ? -m.monto : m.monto)
+    }
+    return acc
+  }, 0)
+  const totalDigital = movimientos.reduce((acc, m) => {
+    const isEgr = m.tipo === 'egreso'
+    if (m.metodo !== 'efectivo') {
+      return acc + (isEgr ? -m.monto : m.monto)
+    }
+    return acc
+  }, 0)
+
   return {
     totalIngresos,
     totalEgresos,
     balanceNeto: totalIngresos - totalEgresos,
+    totalEfectivo,
+    totalDigital,
+    totalMovimientos: movimientos.length,
   }
 }
 

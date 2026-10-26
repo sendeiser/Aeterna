@@ -9,7 +9,9 @@ import { DashboardView } from './components/views/DashboardView'
 import { ParcelasView } from './components/views/ParcelasView'
 import { InhumacionesView } from './components/views/InhumacionesView'
 import { AfiliadosSeguroView } from './components/views/AfiliadosSeguroView'
+import { CajaView } from './components/views/CajaView'
 import { ConfiguracionView } from './components/views/ConfiguracionView'
+import { CobroCajaData } from './components/modals/CobroCajaModal'
 import { CierreCajaModal } from './components/modals/CierreCajaModal'
 import { PortalPagoPublico } from './components/payment/PortalPagoPublico'
 import { LoginView } from './components/auth/LoginView'
@@ -24,6 +26,9 @@ import {
   saveAfiliadosToStorage,
   savePagoToStorage,
   saveEgresoToStorage,
+  deletePagoFromStorage,
+  anularPagoSupabase,
+  registrarCobroCajaSupabase,
   fetchConfigSupabase,
   saveConfigSupabase,
   fetchParcelasSupabase,
@@ -574,6 +579,39 @@ export default function App() {
     }
   }
 
+  const handleNuevoCobroCaja = async (datos: CobroCajaData) => {
+    const nuevoPago: PagoRecibo = {
+      id: `pago-${Date.now()}`,
+      nroRecibo: datos.nroRecibo || `REC-${Date.now().toString().slice(-6)}`,
+      identificador: datos.identificador || 'Caja Central',
+      titularNombre: datos.titularNombre || 'Contribuyente General',
+      concepto: datos.concepto || 'Cobro General de Servicios',
+      monto: Number(datos.monto),
+      metodo: datos.metodo === 'transferencia_qr' ? 'transferencia_qr' : 'efectivo',
+      fecha: new Date().toISOString(),
+      tipo: 'ingreso',
+    }
+
+    savePagoToStorage(nuevoPago)
+    setPagos((prev) => [nuevoPago, ...prev])
+
+    if (isSupabaseConfigured) {
+      await registrarCobroCajaSupabase(nuevoPago)
+      await fetchCloudData()
+    }
+  }
+
+  const handleAnularPago = async (pago: PagoRecibo) => {
+    const idToDelete = pago.id || pago.nroRecibo
+    deletePagoFromStorage(idToDelete)
+    setPagos((prev) => prev.filter((p) => p.id !== pago.id && p.nroRecibo !== pago.nroRecibo))
+
+    if (isSupabaseConfigured) {
+      await anularPagoSupabase(idToDelete)
+      await fetchCloudData()
+    }
+  }
+
   // Guardar Parcela (CRUD: Create / Update)
   const handleSaveParcela = async (datos: Partial<Parcela>) => {
     let parcelaTarget: Parcela | null = null
@@ -868,6 +906,7 @@ export default function App() {
                 {currentTab === 'parcelas' && 'PADRÓN GENERAL Y REGISTRO DE PARCELAS'}
                 {currentTab === 'inhumaciones' && 'LIBRO OFICIAL DE INHUMACIONES Y REGISTRO DE DIFUNTOS'}
                 {currentTab === 'seguro' && 'PADRÓN DE AFILIADOS Y ESTADO DE COBRANZA PLAN SEGURO INTEGRAL'}
+                {currentTab === 'caja' && 'LIBRO DIARIO DE CAJA Y ARQUEO DE TESORERÍA'}
                 {currentTab === 'configuracion' && 'CONSTANCIA DE PARÁMETROS Y ARANCELES MUNICIPALES'}
               </h1>
               <p className="text-xs text-slate-600 font-medium">
@@ -982,6 +1021,21 @@ export default function App() {
               onRefresh={() => fetchCloudData(true)}
               isRefreshing={isRefreshing}
             />
+          )}
+
+          {currentTab === 'caja' && (
+            <div className="flex-1 min-h-0 flex flex-col overflow-y-auto custom-scroll pb-4">
+              <CajaView
+                pagos={pagos}
+                onNuevoCobro={handleNuevoCobroCaja}
+                onNuevoEgreso={handleRegistrarEgreso}
+                onAnularPago={handleAnularPago}
+                onCierreCaja={() => setCierreCajaOpen(true)}
+                onRefresh={() => fetchCloudData(true)}
+                isRefreshing={isRefreshing}
+                isOnline={isSupabaseConfigured}
+              />
+            </div>
           )}
 
           {currentTab === 'configuracion' && (
