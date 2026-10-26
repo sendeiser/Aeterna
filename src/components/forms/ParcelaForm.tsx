@@ -242,10 +242,10 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({ initialData, onSave, o
               />
             </div>
 
-            {/* Vista Previa Nomenclatura */}
+            {/* Vista Previa Parcela */}
             <div className="sm:col-span-12 bg-primary/5 border border-primary/20 rounded-lg p-2.5 flex items-center justify-between">
               <span className="text-xs font-semibold text-primary uppercase">
-                Nomenclatura Resultante:
+                Parcela Resultante:
               </span>
               <span className="font-code-cadastral text-base font-bold text-primary">
                 {previewNomenclatura}

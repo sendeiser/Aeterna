@@ -13,6 +13,10 @@ interface InhumacionesViewProps {
   onNuevaInhumacion?: () => void
 }
 
+function compareNaturalInhumacion(a: string | undefined, b: string | undefined): number {
+  return (a || '').localeCompare(b || '', undefined, { numeric: true, sensitivity: 'base' })
+}
+
 export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
   inhumaciones,
   parcelasDisponibles,
@@ -23,9 +27,7 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterProtocol, setFilterProtocol] = useState<'all' | 'covid' | 'standard' | 'judicial'>('all')
-  const [sortOption, setSortOption] = useState<
-    'fecha-desc' | 'fecha-asc' | 'alfa-asc' | 'alfa-desc' | 'parcela-asc'
-  >('fecha-desc')
+  const [sortOption, setSortOption] = useState<string>('fecha-desc')
   const [isFolioModalOpen, setIsFolioModalOpen] = useState(false)
   const [actaModal, setActaModal] = useState<{
     isOpen: boolean
@@ -59,10 +61,13 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
   // Ordenamiento dinámico de actas de inhumación
   const sortedInhumaciones = useMemo(() => {
     return [...filtered].sort((a, b) => {
-      if (sortOption === 'alfa-asc') {
+      const parcA = typeof a.parcela === 'object' ? a.parcela?.nomenclatura : a.parcela || ''
+      const parcB = typeof b.parcela === 'object' ? b.parcela?.nomenclatura : b.parcela || ''
+
+      if (sortOption === 'alfa-asc' || sortOption === 'difunto-asc') {
         return (a.nombre_difunto || '').localeCompare(b.nombre_difunto || '')
       }
-      if (sortOption === 'alfa-desc') {
+      if (sortOption === 'alfa-desc' || sortOption === 'difunto-desc') {
         return (b.nombre_difunto || '').localeCompare(a.nombre_difunto || '')
       }
       if (sortOption === 'fecha-desc') {
@@ -75,9 +80,31 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
         const dateB = b.fecha_inhumacion ? new Date(b.fecha_inhumacion).getTime() : 0
         return dateA - dateB
       }
-      const parcA = typeof a.parcela === 'object' ? a.parcela?.nomenclatura : a.parcela
-      const parcB = typeof b.parcela === 'object' ? b.parcela?.nomenclatura : b.parcela
-      return (parcA || '').localeCompare(parcB || '')
+      if (sortOption === 'parcela-asc') {
+        return compareNaturalInhumacion(parcA, parcB)
+      }
+      if (sortOption === 'parcela-desc') {
+        return compareNaturalInhumacion(parcB, parcA)
+      }
+      if (sortOption === 'dni-asc') {
+        return (a.dni_difunto || '').localeCompare(b.dni_difunto || '')
+      }
+      if (sortOption === 'dni-desc') {
+        return (b.dni_difunto || '').localeCompare(a.dni_difunto || '')
+      }
+      if (sortOption === 'nivel-asc') {
+        return (a.nivel_posicion || 1) - (b.nivel_posicion || 1)
+      }
+      if (sortOption === 'nivel-desc') {
+        return (b.nivel_posicion || 1) - (a.nivel_posicion || 1)
+      }
+      if (sortOption === 'empresa-asc') {
+        return (a.empresa_funebrera || '').localeCompare(b.empresa_funebrera || '')
+      }
+      if (sortOption === 'empresa-desc') {
+        return (b.empresa_funebrera || '').localeCompare(a.empresa_funebrera || '')
+      }
+      return compareNaturalInhumacion(parcA, parcB)
     })
   }, [filtered, sortOption])
 
@@ -205,7 +232,9 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
               return (
                 <div
                   key={inh.id}
-                  className={`p-3 rounded-lg border flex flex-col gap-2.5 shadow-xs ${
+                  onDoubleClick={() => setModalEditInhumacion(inh)}
+                  title="Doble clic para modificar acta de inhumación"
+                  className={`p-3 rounded-lg border flex flex-col gap-2.5 shadow-xs cursor-pointer transition-colors ${
                     inh.es_covid
                       ? 'bg-[#F5F3FF] border-[#DDD6FE]'
                       : isEven
@@ -345,13 +374,14 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                   </div>
                 </th>
                 <th
-                  onClick={() => setSortOption((prev) => (prev === 'parcela-asc' ? 'fecha-desc' : 'parcela-asc'))}
+                  onClick={() => setSortOption((prev) => (prev === 'parcela-asc' ? 'parcela-desc' : 'parcela-asc'))}
                   className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
-                  title="Ordenar por Parcela"
+                  title="Ordenar por Parcela (A-Z / Z-A)"
                 >
                   <div className="flex items-center gap-1">
                     <span>Parcela y Nivel</span>
                     {sortOption === 'parcela-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                    {sortOption === 'parcela-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
                   </div>
                 </th>
                 <th className="py-2.5 px-3 bg-slate-100 text-right">Acciones Registrales</th>
@@ -369,7 +399,9 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                 return (
                   <tr
                     key={inh.id}
-                    className={`transition-colors h-[42px] border-b border-slate-200/80 ${
+                    onDoubleClick={() => setModalEditInhumacion(inh)}
+                    title="Doble clic para modificar acta de inhumación"
+                    className={`transition-colors h-[42px] border-b border-slate-200/80 cursor-pointer ${
                       isEven ? 'bg-white hover:bg-blue-50/80' : 'bg-[#eaf0f6] hover:bg-blue-50/80'
                     }`}
                   >

@@ -674,7 +674,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
                 <tr className="bg-slate-100 text-[11px] font-label-caps text-slate-700 uppercase tracking-wider h-8 select-none">
-                  <th className="px-4 py-2 w-28 text-left font-semibold bg-slate-100">Nomenclatura</th>
+                  <th className="px-4 py-2 w-28 text-left font-semibold bg-slate-100">Parcela</th>
                   <th className="px-4 py-2 min-w-[240px] font-semibold bg-slate-100">Titular / DNI</th>
                   <th className="px-4 py-2 w-32 font-semibold bg-slate-100">Ubicación</th>
                   <th className="px-4 py-2 w-32 font-semibold bg-slate-100">Estado</th>
@@ -686,7 +686,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 {(tableTab === 'parcelas' ? displayedParcelas : displayedMora).slice(0, limitCount).map((p, index) => (
                   <tr
                     key={p.id}
-                    className={`transition-colors h-[42px] border-b border-slate-200/80 ${
+                    onDoubleClick={() => onSelectTab && onSelectTab('parcelas')}
+                    title="Doble clic para ir a Parcela y modificar"
+                    className={`transition-colors h-[42px] border-b border-slate-200/80 cursor-pointer ${
                       index % 2 === 0 ? 'bg-white hover:bg-blue-50/80' : 'bg-[#eaf0f6] hover:bg-blue-50/80'
                     }`}
                   >

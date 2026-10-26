@@ -30,9 +30,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('')
   const [zoneFilter, setZoneFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'deuda' | 'aldia' | 'standby'>('all')
-  const [sortOption, setSortOption] = useState<
-    'numero-asc' | 'alfa-asc' | 'alfa-desc' | 'fecha-desc' | 'fecha-asc' | 'deuda-desc'
-  >('numero-asc')
+  const [sortOption, setSortOption] = useState<string>('numero-asc')
   const [isTalonarioModalOpen, setIsTalonarioModalOpen] = useState(false)
   const [isPlanillaModalOpen, setIsPlanillaModalOpen] = useState(false)
 
@@ -168,11 +166,39 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
     })
 
     return list.sort((a, b) => {
-      if (sortOption === 'alfa-asc') {
+      if (sortOption === 'numero-asc') {
+        return (Number(a.numero_afiliado) || 0) - (Number(b.numero_afiliado) || 0)
+      }
+      if (sortOption === 'numero-desc') {
+        return (Number(b.numero_afiliado) || 0) - (Number(a.numero_afiliado) || 0)
+      }
+      if (sortOption === 'alfa-asc' || sortOption === 'titular-asc') {
         return a.nombre_completo.localeCompare(b.nombre_completo)
       }
-      if (sortOption === 'alfa-desc') {
+      if (sortOption === 'alfa-desc' || sortOption === 'titular-desc') {
         return b.nombre_completo.localeCompare(a.nombre_completo)
+      }
+      if (sortOption === 'dni-asc') {
+        return (a.dni || '').localeCompare(b.dni || '')
+      }
+      if (sortOption === 'dni-desc') {
+        return (b.dni || '').localeCompare(a.dni || '')
+      }
+      if (sortOption === 'cuota-desc') {
+        return (b.monto_cuota_mensual || 0) - (a.monto_cuota_mensual || 0)
+      }
+      if (sortOption === 'cuota-asc') {
+        return (a.monto_cuota_mensual || 0) - (b.monto_cuota_mensual || 0)
+      }
+      if (sortOption === 'deuda-desc' || sortOption === 'saldo-desc') {
+        const moraA = [1, 2, 3].filter((m) => !(a.cuotasPagadas || []).includes(m)).length * a.monto_cuota_mensual
+        const moraB = [1, 2, 3].filter((m) => !(b.cuotasPagadas || []).includes(m)).length * b.monto_cuota_mensual
+        return moraB - moraA
+      }
+      if (sortOption === 'deuda-asc' || sortOption === 'saldo-asc') {
+        const moraA = [1, 2, 3].filter((m) => !(a.cuotasPagadas || []).includes(m)).length * a.monto_cuota_mensual
+        const moraB = [1, 2, 3].filter((m) => !(b.cuotasPagadas || []).includes(m)).length * b.monto_cuota_mensual
+        return moraA - moraB
       }
       if (sortOption === 'fecha-desc') {
         const timeA = a.fecha_alta ? new Date(a.fecha_alta).getTime() : (Number(a.numero_afiliado) || 0)
@@ -183,11 +209,6 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
         const timeA = a.fecha_alta ? new Date(a.fecha_alta).getTime() : (Number(a.numero_afiliado) || 0)
         const timeB = b.fecha_alta ? new Date(b.fecha_alta).getTime() : (Number(b.numero_afiliado) || 0)
         return timeA - timeB
-      }
-      if (sortOption === 'deuda-desc') {
-        const moraA = [1, 2, 3].filter((m) => !(a.cuotasPagadas || []).includes(m)).length * a.monto_cuota_mensual
-        const moraB = [1, 2, 3].filter((m) => !(b.cuotasPagadas || []).includes(m)).length * b.monto_cuota_mensual
-        return moraB - moraA
       }
       return (Number(a.numero_afiliado) || 0) - (Number(b.numero_afiliado) || 0)
     })
@@ -654,7 +675,9 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
               return (
                 <div
                   key={afiliado.id}
-                  className={`p-3.5 rounded-lg border flex flex-col gap-3 shadow-xs ${
+                  onDoubleClick={() => onEditarAfiliado(afiliado)}
+                  title="Doble clic para modificar afiliado"
+                  className={`p-3.5 rounded-lg border flex flex-col gap-3 shadow-xs cursor-pointer transition-colors ${
                     isEven
                       ? 'bg-white border-slate-200/90'
                       : 'bg-[#eaf0f6] border-slate-200/90'
@@ -838,20 +861,20 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
               <tr className="bg-slate-100 text-[11px] font-label-caps text-slate-700 uppercase tracking-wider h-8 select-none whitespace-nowrap">
                 <th
-                  onClick={() => setSortOption((prev) => (prev === 'numero-asc' ? 'fecha-desc' : 'numero-asc'))}
-                  className="px-2 py-2 w-[46px] text-left font-semibold bg-slate-100 whitespace-nowrap cursor-pointer hover:bg-slate-200 transition-colors"
-                  title="Ordenar por N° / Fecha"
+                  onClick={() => setSortOption((prev) => (prev === 'numero-asc' ? 'numero-desc' : 'numero-asc'))}
+                  className="px-2 py-2 w-[52px] text-left font-semibold bg-slate-100 whitespace-nowrap cursor-pointer hover:bg-slate-200 transition-colors"
+                  title="Ordenar por N° Afiliado (Asc / Desc)"
                 >
                   <div className="flex items-center gap-0.5">
                     <span>N°</span>
                     {sortOption === 'numero-asc' && <span className="material-symbols-outlined text-[12px] text-primary">arrow_upward</span>}
-                    {sortOption === 'fecha-desc' && <span className="material-symbols-outlined text-[12px] text-primary">arrow_downward</span>}
+                    {sortOption === 'numero-desc' && <span className="material-symbols-outlined text-[12px] text-primary">arrow_downward</span>}
                   </div>
                 </th>
                 <th
                   onClick={() => setSortOption((prev) => (prev === 'alfa-asc' ? 'alfa-desc' : 'alfa-asc'))}
                   className="px-2.5 py-2 w-[225px] font-semibold bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
-                  title="Ordenar por Alfabeto A-Z / Z-A"
+                  title="Ordenar por Nombre A-Z / Z-A"
                 >
                   <div className="flex items-center gap-1">
                     <span>Afiliado / Titular & Domicilio</span>
@@ -859,18 +882,29 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                     {sortOption === 'alfa-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
                   </div>
                 </th>
-                <th className="px-2 py-2 w-[110px] font-semibold bg-slate-100 whitespace-nowrap">Cuota Base</th>
+                <th
+                  onClick={() => setSortOption((prev) => (prev === 'cuota-desc' ? 'cuota-asc' : 'cuota-desc'))}
+                  className="px-2 py-2 w-[110px] font-semibold bg-slate-100 whitespace-nowrap cursor-pointer hover:bg-slate-200 transition-colors"
+                  title="Ordenar por Monto de Cuota Base"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Cuota Base</span>
+                    {sortOption === 'cuota-desc' && <span className="material-symbols-outlined text-[12px] text-primary">arrow_downward</span>}
+                    {sortOption === 'cuota-asc' && <span className="material-symbols-outlined text-[12px] text-primary">arrow_upward</span>}
+                  </div>
+                </th>
                 <th className="px-1 py-2 w-[265px] text-center font-semibold bg-slate-100 whitespace-nowrap">
                   <span>Cuotas Ejercicio 2026 (Ene - Dic)</span>
                 </th>
                 <th
-                  onClick={() => setSortOption((prev) => (prev === 'deuda-desc' ? 'numero-asc' : 'deuda-desc'))}
+                  onClick={() => setSortOption((prev) => (prev === 'deuda-desc' ? 'deuda-asc' : 'deuda-desc'))}
                   className="px-2 py-2 w-[120px] text-right font-semibold bg-slate-100 whitespace-nowrap cursor-pointer hover:bg-slate-200 transition-colors"
-                  title="Ordenar por Mayor Deuda"
+                  title="Ordenar por Saldo Deuda (Mayor / Menor)"
                 >
                   <div className="flex items-center justify-end gap-1">
                     <span>Saldo Deuda</span>
-                    {sortOption === 'deuda-desc' && <span className="material-symbols-outlined text-[13px] text-red-600">arrow_downward</span>}
+                    {(sortOption === 'deuda-desc' || sortOption === 'saldo-desc') && <span className="material-symbols-outlined text-[13px] text-red-600">arrow_downward</span>}
+                    {(sortOption === 'deuda-asc' || sortOption === 'saldo-asc') && <span className="material-symbols-outlined text-[13px] text-emerald-600">arrow_upward</span>}
                   </div>
                 </th>
                 <th className="px-2 py-2 w-[224px] text-right font-semibold bg-slate-100 whitespace-nowrap">Acciones Rápidas</th>
@@ -994,7 +1028,9 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                 return (
                   <tr
                     key={afiliado.id}
-                    className={`transition-colors border-b border-slate-200/80 ${
+                    onDoubleClick={() => onEditarAfiliado(afiliado)}
+                    title="Doble clic para modificar afiliado"
+                    className={`transition-colors border-b border-slate-200/80 cursor-pointer ${
                       isEven ? 'bg-white hover:bg-blue-50/80' : 'bg-[#eaf0f6] hover:bg-blue-50/80'
                     }`}
                   >

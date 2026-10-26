@@ -113,7 +113,7 @@ var
 
   // ListViews
   hLvParcelas, hLvInh, hLvAfiliados, hLvCaja, hLvRecentInh: HWND;
-  hCmbSector, hCmbEstadoParc, hCmbMora, hEdtBuscarInh: HWND;
+  hCmbSector, hCmbEstadoParc: HWND;
   hLblResumenCaja: HWND;
 
   // Controles Modulo 1 (Parcelas)
@@ -707,7 +707,7 @@ begin
         else cmp := 0;
       end;
     5: cmp := DataAfiliados[Idx1].MesesMora - DataAfiliados[Idx2].MesesMora;
-    6: cmp := CompareText(DataAfiliados[Idx1].Estado, DataAfiliados[Idx2].Estado);
+    6: cmp := Ord(DataAfiliados[Idx1].Estado) - Ord(DataAfiliados[Idx2].Estado);
     7: cmp := Length(DataAfiliados[Idx1].CuotasPagadas) - Length(DataAfiliados[Idx2].CuotasPagadas);
   else
     cmp := 0;
@@ -2321,14 +2321,14 @@ begin
         pnm := PNMHDR(lParam);
         if pnm <> nil then
         begin
-          if pnm^.code = LVN_COLUMNCLICK then
+          if Integer(pnm^.code) = LVN_COLUMNCLICK then
           begin
             pnmv := PNMListView(lParam);
             HandleColumnClick(pnm^.hwndFrom, pnmv^.iSubItem);
             Result := 0;
             Exit;
           end
-          else if pnm^.code = NM_DBLCLK then
+          else if (Integer(pnm^.code) = NM_DBLCLK) or (Integer(pnm^.code) = NM_RETURN) then
           begin
             HandleListViewDoubleClick(pnm^.hwndFrom);
             Result := 0;

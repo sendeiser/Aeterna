@@ -17,6 +17,10 @@ interface ParcelasViewProps {
   isOnline: boolean
 }
 
+function compareNaturalParcela(a: string, b: string): number {
+  return (a || '').localeCompare(b || '', undefined, { numeric: true, sensitivity: 'base' })
+}
+
 export const ParcelasView: React.FC<ParcelasViewProps> = ({
   parcelas,
   inhumaciones = [],
@@ -34,9 +38,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('')
   const [pageSize, setPageSize] = useState<'todas' | 50 | 100>('todas')
   const [currentPage, setCurrentPage] = useState(1)
-  const [sortOption, setSortOption] = useState<
-    'nomenclatura-asc' | 'alfa-asc' | 'alfa-desc' | 'fecha-desc' | 'fecha-asc' | 'deuda-desc'
-  >('nomenclatura-asc')
+  const [sortOption, setSortOption] = useState<string>('parcela-asc')
   const [selectedParcelaId, setSelectedParcelaId] = useState<string | null>(
     parcelas.length > 0 ? parcelas[0].id : null
   )
@@ -196,18 +198,62 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
     setCurrentPage(1)
   }, [filterSector, filterTitularVital, searchTerm, pageSize, sortOption])
 
-  // Ordenamiento dinámico de parcelas por alfabeto o fecha
+  // Ordenamiento dinámico de parcelas por columnas
   const sortedParcelas: Parcela[] = useMemo(() => {
     return [...filteredParcelas].sort((a, b) => {
-      if (sortOption === 'alfa-asc') {
+      if (sortOption === 'parcela-asc' || sortOption === 'nomenclatura-asc') {
+        return compareNaturalParcela(a.nomenclatura, b.nomenclatura)
+      }
+      if (sortOption === 'parcela-desc' || sortOption === 'nomenclatura-desc') {
+        return compareNaturalParcela(b.nomenclatura, a.nomenclatura)
+      }
+      if (sortOption === 'alfa-asc' || sortOption === 'titular-asc') {
         const nomA = a.titular?.nombre_completo || 'ZZZ'
         const nomB = b.titular?.nombre_completo || 'ZZZ'
         return nomA.localeCompare(nomB)
       }
-      if (sortOption === 'alfa-desc') {
+      if (sortOption === 'alfa-desc' || sortOption === 'titular-desc') {
         const nomA = a.titular?.nombre_completo || ''
         const nomB = b.titular?.nombre_completo || ''
         return nomB.localeCompare(nomA)
+      }
+      if (sortOption === 'sector-asc') {
+        return (a.sector_id || '').localeCompare(b.sector_id || '')
+      }
+      if (sortOption === 'sector-desc') {
+        return (b.sector_id || '').localeCompare(a.sector_id || '')
+      }
+      if (sortOption === 'fila-asc') {
+        const fA = parseInt(a.manzana_fila || '0', 10) || 0
+        const fB = parseInt(b.manzana_fila || '0', 10) || 0
+        return fA !== fB ? fA - fB : (a.manzana_fila || '').localeCompare(b.manzana_fila || '')
+      }
+      if (sortOption === 'fila-desc') {
+        const fA = parseInt(a.manzana_fila || '0', 10) || 0
+        const fB = parseInt(b.manzana_fila || '0', 10) || 0
+        return fA !== fB ? fB - fA : (b.manzana_fila || '').localeCompare(a.manzana_fila || '')
+      }
+      if (sortOption === 'ocupacion-asc') {
+        const oA = a.espacios_ocupados || (a.estado === 'ocupada' ? 1 : 0)
+        const oB = b.espacios_ocupados || (b.estado === 'ocupada' ? 1 : 0)
+        return oA - oB
+      }
+      if (sortOption === 'ocupacion-desc') {
+        const oA = a.espacios_ocupados || (a.estado === 'ocupada' ? 1 : 0)
+        const oB = b.espacios_ocupados || (b.estado === 'ocupada' ? 1 : 0)
+        return oB - oA
+      }
+      if (sortOption === 'estado-asc') {
+        return (a.estado || '').localeCompare(b.estado || '')
+      }
+      if (sortOption === 'estado-desc') {
+        return (b.estado || '').localeCompare(a.estado || '')
+      }
+      if (sortOption === 'deuda-desc' || sortOption === 'saldo-desc') {
+        return (b.saldo_mantenimiento || 0) - (a.saldo_mantenimiento || 0)
+      }
+      if (sortOption === 'deuda-asc' || sortOption === 'saldo-asc') {
+        return (a.saldo_mantenimiento || 0) - (b.saldo_mantenimiento || 0)
       }
       if (sortOption === 'fecha-desc') {
         const dateA = a.fecha_adquisicion ? new Date(a.fecha_adquisicion).getTime() : 0
@@ -219,10 +265,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
         const dateB = b.fecha_adquisicion ? new Date(b.fecha_adquisicion).getTime() : 0
         return dateA - dateB
       }
-      if (sortOption === 'deuda-desc') {
-        return (b.saldo_mantenimiento || 0) - (a.saldo_mantenimiento || 0)
-      }
-      return a.nomenclatura.localeCompare(b.nomenclatura)
+      return compareNaturalParcela(a.nomenclatura, b.nomenclatura)
     })
   }, [filteredParcelas, sortOption])
 
@@ -460,16 +503,20 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
             <div className="flex items-center gap-1 text-xs">
               <select
                 value={sortOption}
-                onChange={(e) => setSortOption(e.target.value as any)}
+                onChange={(e) => setSortOption(e.target.value)}
                 className="h-8 text-xs bg-white border border-outline-variant rounded px-2 py-1 focus:border-secondary font-medium text-slate-800 cursor-pointer"
-                title="Ordenar parcelas por alfabeto o fecha"
+                title="Ordenar parcelas"
               >
-                <option value="nomenclatura-asc">📍 Nomenclatura (A → Z)</option>
+                <option value="parcela-asc">📍 Parcela (A → Z)</option>
+                <option value="parcela-desc">📍 Parcela (Z → A)</option>
                 <option value="alfa-asc">🔤 Titular: A → Z</option>
                 <option value="alfa-desc">🔤 Titular: Z → A</option>
-                <option value="fecha-desc">📅 Fecha Adquisición: Más reciente</option>
-                <option value="fecha-asc">📅 Fecha Adquisición: Más antiguo</option>
+                <option value="sector-asc">🏛️ Sector</option>
+                <option value="fila-asc">🔢 Fila / Nro</option>
                 <option value="deuda-desc">💰 Mayor deuda</option>
+                <option value="saldo-asc">💰 Menor deuda (Al día)</option>
+                <option value="fecha-desc">📅 Fecha: Más reciente</option>
+                <option value="fecha-asc">📅 Fecha: Más antiguo</option>
               </select>
             </div>
 
@@ -746,6 +793,8 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 <div
                   key={p.id}
                   onClick={() => handleSelectParcela(p)}
+                  onDoubleClick={() => setModalEditParcela(p)}
+                  title="Doble clic para modificar parcela"
                   className={`p-3 rounded-lg border transition-all cursor-pointer flex flex-col gap-2.5 ${
                     isSelected
                       ? 'bg-primary/10 border-primary shadow-xs ring-1 ring-primary/40'
@@ -925,20 +974,20 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
                 <tr className="text-label-caps font-label-caps text-slate-700 uppercase bg-slate-100 select-none">
                   <th
-                    onClick={() => setSortOption((prev) => (prev === 'nomenclatura-asc' ? 'fecha-desc' : 'nomenclatura-asc'))}
+                    onClick={() => setSortOption((prev) => (prev === 'parcela-asc' ? 'parcela-desc' : 'parcela-asc'))}
                     className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
-                    title="Ordenar por Nomenclatura / Fecha"
+                    title="Ordenar por Parcela (A-Z / Z-A)"
                   >
                     <div className="flex items-center gap-1">
                       <span>Parcela</span>
-                      {sortOption === 'nomenclatura-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
-                      {sortOption === 'fecha-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                      {(sortOption === 'parcela-asc' || sortOption === 'nomenclatura-asc') && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                      {(sortOption === 'parcela-desc' || sortOption === 'nomenclatura-desc') && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
                     </div>
                   </th>
                   <th
                     onClick={() => setSortOption((prev) => (prev === 'alfa-asc' ? 'alfa-desc' : 'alfa-asc'))}
                     className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
-                    title="Ordenar por Alfabeto A-Z / Z-A"
+                    title="Ordenar por Titular Actual (A-Z / Z-A)"
                   >
                     <div className="flex items-center gap-1">
                       <span>Titular Actual</span>
@@ -946,16 +995,37 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                       {sortOption === 'alfa-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
                     </div>
                   </th>
-                  <th className="py-2.5 px-3 bg-slate-100 text-center">Ocupación / Niveles</th>
-                  <th className="py-2.5 px-3 bg-slate-100">Estado</th>
                   <th
-                    onClick={() => setSortOption((prev) => (prev === 'deuda-desc' ? 'nomenclatura-asc' : 'deuda-desc'))}
+                    onClick={() => setSortOption((prev) => (prev === 'ocupacion-desc' ? 'ocupacion-asc' : 'ocupacion-desc'))}
+                    className="py-2.5 px-3 bg-slate-100 text-center cursor-pointer hover:bg-slate-200 transition-colors"
+                    title="Ordenar por Ocupación / Niveles"
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span>Ocupación / Niveles</span>
+                      {sortOption === 'ocupacion-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                      {sortOption === 'ocupacion-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => setSortOption((prev) => (prev === 'estado-asc' ? 'estado-desc' : 'estado-asc'))}
+                    className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
+                    title="Ordenar por Estado"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Estado</span>
+                      {sortOption === 'estado-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                      {sortOption === 'estado-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => setSortOption((prev) => (prev === 'deuda-desc' ? 'saldo-asc' : 'deuda-desc'))}
                     className="py-2.5 px-3 bg-slate-100 text-right cursor-pointer hover:bg-slate-200 transition-colors"
-                    title="Ordenar por Mayor Deuda"
+                    title="Ordenar por Saldo (Mayor / Menor Deuda)"
                   >
                     <div className="flex items-center justify-end gap-1">
                       <span>Saldo</span>
-                      {sortOption === 'deuda-desc' && <span className="material-symbols-outlined text-[13px] text-red-600">arrow_downward</span>}
+                      {(sortOption === 'deuda-desc' || sortOption === 'saldo-desc') && <span className="material-symbols-outlined text-[13px] text-red-600">arrow_downward</span>}
+                      {(sortOption === 'deuda-asc' || sortOption === 'saldo-asc') && <span className="material-symbols-outlined text-[13px] text-emerald-600">arrow_upward</span>}
                     </div>
                   </th>
                   <th className="py-2.5 px-2 bg-slate-100 text-center">Acción</th>
@@ -1095,6 +1165,8 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                     <tr
                       key={p.id}
                       onClick={() => handleSelectParcela(p)}
+                      onDoubleClick={() => setModalEditParcela(p)}
+                      title="Doble clic para modificar los datos de la parcela"
                       className={`transition-colors cursor-pointer border-b border-slate-200/80 ${
                         isSelected
                           ? 'bg-primary/10 hover:bg-primary/15 border-l-4 border-l-primary font-medium'
