@@ -20,6 +20,7 @@ interface QRPaymentModalProps {
     metodo: 'efectivo' | 'transferencia_qr'
     comprobante: string
     nroRecibo: string
+    monto: number
   }) => void
 }
 
@@ -39,17 +40,38 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
   const [copiedField, setCopiedField] = useState<'alias' | 'cbu' | 'link' | null>(null)
   const [pagoConfirmado, setPagoConfirmado] = useState(false)
   const [printFormat, setPrintFormat] = useState<'thermal' | 'a4'>('a4')
-  const [reciboNro, setReciboNro] = useState(`REC-2026-${Math.floor(1000 + Math.random() * 9000)}`)
+
+  const cleanId = useMemo(() => {
+    return (identificador || '').replace(/^Parcela\s+/i, '').trim().replace(/\s+/g, '-')
+  }, [identificador])
+
+  const defaultRecibo = useMemo(() => {
+    return cleanId
+      ? `REC-${cleanId}-${Date.now().toString().slice(-6)}`
+      : `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`
+  }, [cleanId])
+
+  const [reciboNro, setReciboNro] = useState(defaultRecibo)
+  const [montoCobrar, setMontoCobrar] = useState<number>(monto)
+
+  React.useEffect(() => {
+    setMontoCobrar(monto)
+    setReciboNro(
+      cleanId
+        ? `REC-${cleanId}-${Date.now().toString().slice(-6)}`
+        : `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`
+    )
+  }, [monto, cleanId])
 
   // Enlace oficial de pago web (abre portal con datos bancarios y botones para copiar Alias/CBU)
   const webPaymentUrl = useMemo(() => {
     return generateWebPaymentUrl({
-      monto,
+      monto: montoCobrar,
       concepto,
       identificador,
       titularNombre,
     })
-  }, [monto, concepto, identificador, titularNombre])
+  }, [montoCobrar, concepto, identificador, titularNombre])
 
   // Generación de payload EMVCo interoperable oficial (BCRA Transferencias 3.0 con CRC-16)
   const bcraPayload = useMemo(() => {
@@ -57,11 +79,11 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
       cbu: config.cbu,
       alias: config.alias_cbu,
       titular: config.titular_cuenta,
-      monto,
+      monto: montoCobrar,
       referencia: identificador,
       concepto,
     })
-  }, [config, monto, identificador, concepto])
+  }, [config, montoCobrar, identificador, concepto])
 
   // Payload universal legible por cámaras estándar de celulares
   const universalPayload = useMemo(() => {
@@ -69,11 +91,11 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
       cbu: config.cbu,
       alias: config.alias_cbu,
       titular: config.titular_cuenta,
-      monto,
+      monto: montoCobrar,
       referencia: identificador,
       concepto,
     })
-  }, [config, monto, identificador, concepto])
+  }, [config, montoCobrar, identificador, concepto])
 
   if (!isOpen) return null
 
@@ -93,18 +115,17 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
   }
 
   const handleConfirmar = () => {
-    const nro = `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`
-    setReciboNro(nro)
     setPagoConfirmado(true)
     onConfirmarPago({
       metodo,
       comprobante,
-      nroRecibo: nro,
+      nroRecibo: reciboNro,
+      monto: montoCobrar,
     })
   }
 
   const handleWhatsApp = () => {
-    const msg = `*COMPROBANTE OFICIAL - AETERNA PARQUE*\nRecibo: ${reciboNro}\nTitular: ${titularNombre}\nIdentificador: ${identificador}\nConcepto: ${concepto}\nMonto: ${formatCurrency(monto)}\nMétodo: ${metodo === 'transferencia_qr' ? 'Transferencia QR Interoperable' : 'Efectivo en Caja'}\nOficina Central de Gestión & Sepelios · Chamical, La Rioja`
+    const msg = `*COMPROBANTE OFICIAL - AETERNA PARQUE*\nRecibo: ${reciboNro}\nTitular: ${titularNombre}\nIdentificador: ${identificador}\nConcepto: ${concepto}\nMonto: ${formatCurrency(montoCobrar)}\nMétodo: ${metodo === 'transferencia_qr' ? 'Transferencia QR Interoperable' : 'Efectivo en Caja'}\nOficina Central de Gestión & Sepelios · Chamical, La Rioja`
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
@@ -157,23 +178,40 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
             </div>
           </div>
 
-          {/* Monto Destacado */}
-          <div className="px-5 py-4 bg-surface-container-low border-b border-outline-variant flex items-center justify-between">
-            <div>
-              <span className="text-label-caps font-label-caps uppercase text-outline tracking-wider font-semibold">
-                Monto Total a Regularizar
+          {/* Monto Destacado y editable para Cancelación de Deuda */}
+          <div className="px-5 py-3.5 bg-surface-container-low border-b border-outline-variant flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <span className="text-[11px] font-label-caps uppercase text-outline tracking-wider font-semibold block">
+                Monto a Cancelar / Cobrar ($ ARS)
               </span>
-              <div className="text-display font-display text-primary tracking-tight font-bold flex items-baseline gap-1 mt-0.5">
-                <span>{formatCurrency(monto)}</span>
-                <span className="text-title-md font-title-md font-medium text-outline">ARS</span>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-xl font-bold text-primary font-code-cadastral">$</span>
+                <input
+                  id="input-monto-cobrar-qr"
+                  type="number"
+                  value={montoCobrar}
+                  onChange={(e) => setMontoCobrar(Math.max(0, Number(e.target.value) || 0))}
+                  className="w-36 text-lg font-bold font-code-cadastral text-primary bg-white border border-outline-variant rounded px-2 py-0.5 focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary"
+                  title="Ingrese el importe exacto para cancelar deuda o registrar pago parcial"
+                />
+                {monto !== montoCobrar && (
+                  <button
+                    type="button"
+                    onClick={() => setMontoCobrar(monto)}
+                    className="text-[11px] text-outline underline hover:text-primary whitespace-nowrap cursor-pointer"
+                    title="Restablecer monto original"
+                  >
+                    Restablecer ({formatCurrency(monto)})
+                  </button>
+                )}
               </div>
             </div>
-            <div className="text-right">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-label-caps font-label-caps bg-emerald-50 text-emerald-800 border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
-                <span>Al Día / Sin Mora</span>
+            <div className="text-right shrink-0">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-code-cadastral font-bold bg-primary/10 text-primary border border-primary/20">
+                <span className="material-symbols-outlined text-[13px]">receipt_long</span>
+                <span>{reciboNro}</span>
               </span>
-              <div className="text-body-sm font-code-cadastral text-outline mt-1">Terminal Oficial Chamical</div>
+              <div className="text-[10px] font-code-cadastral text-outline mt-1">Terminal Chamical</div>
             </div>
           </div>
 
@@ -507,7 +545,7 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
                 <div className="border-t border-outline-variant pt-2 flex justify-between items-baseline font-bold print:border-slate-800">
                   <span className="text-primary text-body-md">Total Cancelado:</span>
                   <span className="text-headline-sm font-code-cadastral text-emerald-800 print:text-slate-950">
-                    {formatCurrency(monto)} ARS
+                    {formatCurrency(montoCobrar)} ARS
                   </span>
                 </div>
               </div>
@@ -585,7 +623,7 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
                     </div>
                     <div>
                       <span className="text-slate-500 block text-[10px]">Total Cancelado:</span>
-                      <span className="font-bold font-mono text-emerald-800">{formatCurrency(monto)} ARS</span>
+                      <span className="font-bold font-mono text-emerald-800">{formatCurrency(montoCobrar)} ARS</span>
                     </div>
                     <div>
                       <span className="text-slate-500 block text-[10px]">Fecha y Hora:</span>

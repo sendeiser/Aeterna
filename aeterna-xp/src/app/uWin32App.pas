@@ -1467,23 +1467,39 @@ begin
     Nomenclatura := DataParcelas[Idx].Nomenclatura;
     Titular := DataParcelas[Idx].TitularNombre;
     ParcId := DataParcelas[Idx].Id;
+    if DataParcelas[Idx].SaldoMantenimiento > 0 then
+      Monto := DataParcelas[Idx].SaldoMantenimiento
+    else
+      Monto := 49000;
   end
   else
   begin
     Nomenclatura := 'A-01-01';
     Titular := 'Titular Concesion';
     ParcId := '';
+    Monto := 49000;
   end;
 
-  Monto := 49000;
   Metodo := mpEfectivo;
   Periodo := 'Anual 2026/2027';
-  Recibo := 'MANT-' + FormatDateTime('hhnnss', Now);
+  Recibo := 'REC-' + Nomenclatura + '-' + FormatDateTime('hhnnss', Now);
 
   if ShowDlgCobroMantenimiento(hMainWnd, Nomenclatura, Titular, Monto, Metodo, Periodo, Recibo) then
   begin
     SetStatusMessage('Registrando cobro de mantenimiento en Supabase...');
     TCajaService.RegistrarPago(Recibo, ParcId, '', Titular, 'Mantenimiento Parcela ' + Nomenclatura, Monto, Metodo, 'Admin Catastro', Periodo);
+
+    // Descontar saldo y si queda en 0 y estaba en mora pasar a ocupada
+    if (Idx >= 0) and (Idx <= High(DataParcelas)) then
+    begin
+      DataParcelas[Idx].SaldoMantenimiento := DataParcelas[Idx].SaldoMantenimiento - Monto;
+      if DataParcelas[Idx].SaldoMantenimiento < 0 then
+        DataParcelas[Idx].SaldoMantenimiento := 0;
+      if (DataParcelas[Idx].SaldoMantenimiento <= 0) and ((DataParcelas[Idx].Estado = epEnMora) or (DataParcelas[Idx].Estado = epStandby)) then
+        DataParcelas[Idx].Estado := epOcupada;
+      if ParcId <> '' then
+        TParcelasService.ActualizarParcela(ParcId, DataParcelas[Idx]);
+    end;
 
     // Emitir Recibo Oficial en PDF
     FillChar(Pago, SizeOf(Pago), 0);
@@ -1499,7 +1515,7 @@ begin
     GenerarReciboPagoPDF(Pago, Ruta);
 
     MessageBox(hMainWnd, PChar('Cobro de mantenimiento registrado exitosamente.'#13#10 +
-      'Se genero el recibo oficial por duplicado: ' + Ruta), 'Cobro Registrado', MB_ICONINFORMATION or MB_OK);
+      'Se actualizo el saldo de la parcela y se genero el recibo oficial: ' + Ruta), 'Cobro Registrado', MB_ICONINFORMATION or MB_OK);
     OpenFileWithShell(Ruta);
 
     CargarDatosIniciales;

@@ -22,6 +22,7 @@ export interface PagoRecibo {
   nroRecibo: string
   tipo?: 'ingreso' | 'egreso'
   categoria?: string
+  comprobante?: string
 }
 
 // =========================================================================

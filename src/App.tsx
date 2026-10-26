@@ -183,7 +183,12 @@ export default function App() {
     monto: number
     identificador: string
     titularNombre: string
-    onConfirm: () => void
+    onConfirm: (datos?: {
+      metodo: 'efectivo' | 'transferencia_qr'
+      comprobante: string
+      nroRecibo: string
+      monto: number
+    }) => void | Promise<void>
   }>({
     isOpen: false,
     concepto: '',
@@ -260,31 +265,38 @@ export default function App() {
       monto,
       identificador: parcela.nomenclatura,
       titularNombre,
-      onConfirm: async () => {
+      onConfirm: async (datos) => {
+        const montoCobrado = datos?.monto ?? monto
+        const nuevoSaldo = Math.max(0, (parcela.saldo_mantenimiento || 0) - montoCobrado)
+        const nuevoEstado = nuevoSaldo <= 0 && (parcela.estado === 'en_mora' || parcela.estado === 'standby') ? 'ocupada' : parcela.estado
+
         const updatedParcela: Parcela = {
           ...parcela,
-          saldo_mantenimiento: 0,
-          estado: parcela.estado === 'en_mora' ? 'ocupada' : parcela.estado,
+          saldo_mantenimiento: nuevoSaldo,
+          estado: nuevoEstado,
         }
 
         setParcelas((prev) =>
           prev.map((p) => (p.id === parcela.id ? updatedParcela : p))
         )
 
+        const nroRecibo = datos?.nroRecibo || `REC-${parcela.nomenclatura}-${Date.now().toString().slice(-6)}`
+
         const nuevoPago: PagoRecibo = {
           id: `pago-${Date.now()}`,
           concepto,
-          monto,
+          monto: montoCobrado,
           identificador: parcela.nomenclatura,
           titularNombre,
-          metodo: 'transferencia_qr',
+          metodo: (datos?.metodo as any) || 'transferencia_qr',
           fecha: new Date().toISOString(),
-          nroRecibo: `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+          nroRecibo,
+          comprobante: datos?.comprobante || '7849',
         }
 
         savePagoToStorage(nuevoPago)
         setPagos((prev) => [nuevoPago, ...prev])
-        setRecaudacionHoy((prev) => prev + monto)
+        setRecaudacionHoy((prev) => prev + montoCobrado)
 
         // Supabase Cloud Sync
         if (isSupabaseConfigured) {
@@ -962,8 +974,8 @@ export default function App() {
         identificador={qrModal.identificador}
         titularNombre={qrModal.titularNombre}
         config={config}
-        onConfirmarPago={() => {
-          qrModal.onConfirm()
+        onConfirmarPago={(datos) => {
+          qrModal.onConfirm(datos)
         }}
       />
 
