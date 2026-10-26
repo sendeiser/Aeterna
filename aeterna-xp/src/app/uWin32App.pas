@@ -154,7 +154,7 @@ var
   hBtnRepActa, hBtnRepFolio, hBtnRepRecibo, hBtnRepPlanilla, hBtnRepCierre, hBtnRepCarpeta, hBtnRepPadronParcMod5: HWND;
 
   // Estado de Ordenamiento de Columnas
-  SortColParcelas: Integer = 0;   // 0: Titular, 1: Difuntos, 2: Parcela, 3: Sector, 4: Fila, 5: Nro, 6: Estado, 7: Fecha/Reg, 8: Ultimo Pago, 9: Saldo
+  SortColParcelas: Integer = 0;   // 0: Titular, 1: Difuntos, 2: Parcela, 3: Estado, 4: Fecha/Reg, 5: Ultimo Pago, 6: Saldo
   SortAscParcelas: Boolean = True;
 
   SortColInh: Integer = 0;        // 0: Fecha/Hora Inh, 1: Difunto, 2: DNI, 3: Parcela, 4: Nivel, 5: Empresa, 6: Protocolo
@@ -167,8 +167,8 @@ var
   SortAscCaja: Boolean = False;
 
 const
-  ColNamesParcelas: array[0..9] of string = (
-    'Titular (Condicion)', 'Difuntos en Fosa (Fallecidos)', 'Parcela', 'Sector', 'Fila / Mz', 'Nro Parcela',
+  ColNamesParcelas: array[0..6] of string = (
+    'Titular (Condicion)', 'Difuntos en Fosa (Fallecidos)', 'Parcela',
     'Estado Parcela', 'Fecha / Registro', 'Ultimo Pago', 'Saldo'
   );
   ColNamesInh: array[0..6] of string = (
@@ -709,7 +709,7 @@ end;
 
 function CompareParcelasByCol(Idx1, Idx2: Integer; Col: Integer; Asc: Boolean): Integer;
 var
-  cmp, n1, n2: Integer;
+  cmp: Integer;
   diffCurr: Currency;
   s1, s2: string;
 begin
@@ -722,29 +722,14 @@ begin
         cmp := CompareText(s1, s2);
       end;
     2: cmp := CompareNaturalNomenclatura(DataParcelas[Idx1].Nomenclatura, DataParcelas[Idx2].Nomenclatura);
-    3: cmp := CompareText(DataParcelas[Idx1].SectorId, DataParcelas[Idx2].SectorId);
+    3: cmp := CompareText(EstadoParcelaToDisplay(DataParcelas[Idx1].Estado), EstadoParcelaToDisplay(DataParcelas[Idx2].Estado));
     4:
-      begin
-        n1 := StrToIntDef(DataParcelas[Idx1].ManzanaFila, 0);
-        n2 := StrToIntDef(DataParcelas[Idx2].ManzanaFila, 0);
-        if n1 <> n2 then cmp := n1 - n2
-        else cmp := CompareText(DataParcelas[Idx1].ManzanaFila, DataParcelas[Idx2].ManzanaFila);
-      end;
-    5:
-      begin
-        n1 := StrToIntDef(DataParcelas[Idx1].NumeroParcela, 0);
-        n2 := StrToIntDef(DataParcelas[Idx2].NumeroParcela, 0);
-        if n1 <> n2 then cmp := n1 - n2
-        else cmp := CompareText(DataParcelas[Idx1].NumeroParcela, DataParcelas[Idx2].NumeroParcela);
-      end;
-    6: cmp := CompareText(EstadoParcelaToDisplay(DataParcelas[Idx1].Estado), EstadoParcelaToDisplay(DataParcelas[Idx2].Estado));
-    7:
       begin
         cmp := CompareText(DataParcelas[Idx1].CreatedAt, DataParcelas[Idx2].CreatedAt);
         if cmp = 0 then cmp := CompareText(DataParcelas[Idx1].FechaAdquisicion, DataParcelas[Idx2].FechaAdquisicion);
       end;
-    8: cmp := CompareText(DataParcelas[Idx1].FechaUltimoPago, DataParcelas[Idx2].FechaUltimoPago);
-    9:
+    5: cmp := CompareText(DataParcelas[Idx1].FechaUltimoPago, DataParcelas[Idx2].FechaUltimoPago);
+    6:
       begin
         diffCurr := DataParcelas[Idx1].SaldoMantenimiento - DataParcelas[Idx2].SaldoMantenimiento;
         if diffCurr > 0 then cmp := 1
@@ -1063,9 +1048,6 @@ begin
       TitularStr,
       DifuntosStr,
       DataParcelas[Indices[i]].Nomenclatura,
-      BoolToTexto(DataParcelas[Indices[i]].SectorId <> '', DataParcelas[Indices[i]].SectorId, '-'),
-      DataParcelas[Indices[i]].ManzanaFila,
-      DataParcelas[Indices[i]].NumeroParcela,
       EstadoParcelaToDisplayEx(DataParcelas[Indices[i]].Estado, DataParcelas[Indices[i]].Nomenclatura),
       FechaRegStr,
       FormatearFecha(DataParcelas[Indices[i]].FechaUltimoPago),
@@ -1335,7 +1317,7 @@ begin
     else
     begin
       SortColParcelas := ColIndex;
-      if ColIndex = 9 then SortAscParcelas := False
+      if ColIndex = 6 then SortAscParcelas := False
       else SortAscParcelas := True;
     end;
     FiltrarYMostrarParcelas;
@@ -2510,16 +2492,13 @@ begin
   AddControlToModule(1, hBtnFiltrarFechaParc);
 
   hLvParcelas := CreateListView(hWnd, 15, 175, 990, 435, IDC_LV_PARCELAS);
-  AddListViewColumn(hLvParcelas, 0, 'Titular (Condicion)', 190);
-  AddListViewColumn(hLvParcelas, 1, 'Difuntos en Fosa (Fallecidos)', 240);
-  AddListViewColumn(hLvParcelas, 2, 'Parcela', 95);
-  AddListViewColumn(hLvParcelas, 3, 'Sector', 60);
-  AddListViewColumn(hLvParcelas, 4, 'Fila / Mz', 65);
-  AddListViewColumn(hLvParcelas, 5, 'Nro Parcela', 75);
-  AddListViewColumn(hLvParcelas, 6, 'Estado Parcela', 100);
-  AddListViewColumn(hLvParcelas, 7, 'Fecha / Registro', 110);
-  AddListViewColumn(hLvParcelas, 8, 'Ultimo Pago', 95);
-  AddListViewColumn(hLvParcelas, 9, 'Saldo', 100);
+  AddListViewColumn(hLvParcelas, 0, 'Titular (Condicion)', 210);
+  AddListViewColumn(hLvParcelas, 1, 'Difuntos en Fosa (Fallecidos)', 260);
+  AddListViewColumn(hLvParcelas, 2, 'Parcela', 110);
+  AddListViewColumn(hLvParcelas, 3, 'Estado Parcela', 110);
+  AddListViewColumn(hLvParcelas, 4, 'Fecha / Registro', 120);
+  AddListViewColumn(hLvParcelas, 5, 'Ultimo Pago', 100);
+  AddListViewColumn(hLvParcelas, 6, 'Saldo', 110);
   AddControlToModule(1, hLvParcelas);
 
   // ===========================================================
