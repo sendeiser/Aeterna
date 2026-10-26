@@ -168,33 +168,17 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
     }
   }
 
-  // Mapa de difuntos (inhumaciones) por nomenclatura de parcela
-  const difuntosPorParcela = useMemo(() => {
-    const map = new Map<string, Inhumacion[]>()
-    for (const inh of inhumaciones) {
-      const nom = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela
-      if (nom) {
-        const norm = nom.trim().toUpperCase()
-        if (!map.has(norm)) {
-          map.set(norm, [])
-        }
-        map.get(norm)!.push(inh)
-      }
-    }
-    for (const list of map.values()) {
-      list.sort((a, b) => (a.nivel_posicion || 1) - (b.nivel_posicion || 1))
-    }
-    return map
-  }, [inhumaciones])
-
   // Mapa de conteo de inhumaciones por parcela
   const inhumadosMap = useMemo(() => {
     const map = new Map<string, number>()
-    for (const [nom, list] of difuntosPorParcela.entries()) {
-      map.set(nom, list.length)
+    for (const inh of inhumaciones) {
+      const nom = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela
+      if (nom) {
+        map.set(nom, (map.get(nom) || 0) + 1)
+      }
     }
     return map
-  }, [difuntosPorParcela])
+  }, [inhumaciones])
 
   // Filtrado de parcelas
   const filteredParcelas = parcelas.filter((p) => {
@@ -205,11 +189,11 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
         if (p.estado !== 'standby') return false
       } else if (filterSector === 'baja_libre') {
         const esBaja = p.estado === 'baja' || p.estado === 'standby'
-        const hasInh = (inhumadosMap.get(p.nomenclatura.trim().toUpperCase()) || 0) > 0
+        const hasInh = (inhumadosMap.get(p.nomenclatura) || 0) > 0
         if (!esBaja || hasInh) return false
       } else if (filterSector === 'baja_inhumados') {
         const esBaja = p.estado === 'baja' || p.estado === 'standby'
-        const hasInh = (inhumadosMap.get(p.nomenclatura.trim().toUpperCase()) || 0) > 0
+        const hasInh = (inhumadosMap.get(p.nomenclatura) || 0) > 0
         if (!esBaja || !hasInh) return false
       } else {
         if (p.sector_id !== filterSector) return false
@@ -229,13 +213,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
       const titular = (p.titular?.nombre_completo || '').toLowerCase()
       const dni = (p.titular?.dni || '').toLowerCase()
       const dir = (p.titular?.direccion || '').toLowerCase()
-      const difuntos = difuntosPorParcela.get(p.nomenclatura.trim().toUpperCase()) || []
-      const difuntoMatch = difuntos.some(
-        (d) =>
-          d.nombre_difunto?.toLowerCase().includes(q) ||
-          d.dni_difunto?.toLowerCase().includes(q)
-      )
-      if (!nom.includes(q) && !titular.includes(q) && !dni.includes(q) && !dir.includes(q) && !difuntoMatch) {
+      if (!nom.includes(q) && !titular.includes(q) && !dni.includes(q) && !dir.includes(q)) {
         return false
       }
     }
@@ -1079,38 +1057,6 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Difuntos en Fosa (Fallecidos) */}
-                  {(() => {
-                    const difList = difuntosPorParcela.get(p.nomenclatura.trim().toUpperCase()) || []
-                    if (difList.length > 0) {
-                      return (
-                        <div className="bg-slate-50/90 border border-slate-200/90 rounded p-2 text-xs">
-                          <div className="text-[10px] font-bold text-slate-600 uppercase flex items-center gap-1 mb-1">
-                            <span className="material-symbols-outlined text-[13px] text-slate-500">person_off</span>
-                            <span>Difuntos en Fosa ({difList.length}):</span>
-                          </div>
-                          <div className="space-y-1">
-                            {difList.map((d, dIdx) => (
-                              <div key={dIdx} className="flex items-center justify-between text-[11px] text-slate-800">
-                                <span className="truncate max-w-[210px]">
-                                  <span className="font-bold text-primary font-code-cadastral">[N{d.nivel_posicion || 1}]</span> {d.nombre_difunto}
-                                </span>
-                                <span className="text-[10px] text-slate-500 font-code-cadastral">
-                                  {d.fecha_inhumacion ? d.fecha_inhumacion.slice(0, 10) : ''}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )
-                    }
-                    return (
-                      <div className="text-[11px] text-emerald-700 bg-emerald-50/60 border border-emerald-200/60 rounded px-2 py-1 flex items-center gap-1">
-                        <span>🍃 Fosa libre (Sin difuntos inhumados)</span>
-                      </div>
-                    )
-                  })()}
-
                   {/* Footer: Saldo + Actions */}
                   <div
                     className="flex flex-wrap items-center justify-between pt-2 border-t border-outline-variant/40 mt-0.5 gap-2"
@@ -1224,11 +1170,11 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                   </th>
                   <th
                     onClick={() => setSortOption((prev) => (prev === 'ocupacion-desc' ? 'ocupacion-asc' : 'ocupacion-desc'))}
-                    className="py-2.5 px-3 bg-slate-100 text-left cursor-pointer hover:bg-slate-200 transition-colors"
-                    title="Ordenar por Ocupación / Difuntos"
+                    className="py-2.5 px-3 bg-slate-100 text-center cursor-pointer hover:bg-slate-200 transition-colors"
+                    title="Ordenar por Ocupación / Niveles"
                   >
-                    <div className="flex items-center gap-1">
-                      <span>Difuntos en Fosa (Fallecidos) / Ocupación</span>
+                    <div className="flex items-center justify-center gap-1">
+                      <span>Ocupación / Niveles</span>
                       {sortOption === 'ocupacion-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
                       {sortOption === 'ocupacion-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
                     </div>
@@ -1458,48 +1404,24 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                         </span>
                       </td>
 
-                      {/* Difuntos en Fosa (Fallecidos) / Ocupación */}
-                      <td className="py-2.5 px-3">
-                        {(() => {
-                          const difList = difuntosPorParcela.get(p.nomenclatura.trim().toUpperCase()) || []
-                          if (difList.length > 0) {
-                            return (
-                              <div className="space-y-1 min-w-[200px]">
-                                {difList.map((d, dIdx) => (
-                                  <div key={dIdx} className="flex items-center gap-1 text-[11px] text-slate-800 leading-tight">
-                                    <span className="font-bold text-primary font-code-cadastral shrink-0">
-                                      [N{d.nivel_posicion || 1}]
-                                    </span>
-                                    <span className="truncate max-w-[190px] font-medium" title={`${d.nombre_difunto} (${d.dni_difunto ? `DNI: ${d.dni_difunto}` : 'Sin DNI'})`}>
-                                      {d.nombre_difunto}
-                                    </span>
-                                  </div>
-                                ))}
-                                <div className="flex items-center gap-1.5 mt-1 pt-1 border-t border-slate-200/60 text-[10px] text-slate-500">
-                                  <span>{difList.length}/{totalNiveles} niveles</span>
-                                  <div className="flex gap-0.5">
-                                    {Array.from({ length: totalNiveles }).map((_, idx) => (
-                                      <div
-                                        key={idx}
-                                        className={`w-2.5 h-1 rounded-xs ${
-                                          idx < ocupados ? 'bg-primary' : 'bg-outline-variant/60'
-                                        }`}
-                                      />
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            )
-                          }
-                          return (
-                            <div className="inline-flex flex-col items-start">
-                              <span className="text-[11px] text-emerald-700 font-medium flex items-center gap-1">
-                                <span>🍃 Fosa libre</span>
-                              </span>
-                              <span className="text-[10px] text-slate-400">0 de {totalNiveles} ocupados</span>
-                            </div>
-                          )
-                        })()}
+                      {/* Ocupación / Niveles with 3 bars */}
+                      <td className="py-2.5 px-3 text-center">
+                        <div className="inline-flex flex-col items-center">
+                          <span className="font-medium text-on-surface text-[12px]">
+                            {ocupados} de {totalNiveles} ocupados
+                          </span>
+                          <div className="flex gap-1 mt-1">
+                            {Array.from({ length: totalNiveles }).map((_, idx) => (
+                              <div
+                                key={idx}
+                                className={`w-4 h-1.5 rounded-sm ${
+                                  idx < ocupados ? 'bg-primary' : 'bg-outline-variant/60'
+                                }`}
+                                title={`Nivel ${idx + 1} ${idx < ocupados ? 'Ocupado' : 'Disponible'}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
                       </td>
 
                       {/* Estado */}
@@ -1713,13 +1635,11 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
       {modalEditParcela && (
         <ParcelaForm
           initialData={modalEditParcela}
-          inhumaciones={inhumaciones}
           onSave={(updated) => {
             onSaveParcela(updated)
             setModalEditParcela(null)
           }}
           onCancel={() => setModalEditParcela(null)}
-          onNuevaInhumacionParaParcela={onNuevaInhumacionParaParcela}
         />
       )}
     </div>
