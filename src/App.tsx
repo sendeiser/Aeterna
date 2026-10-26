@@ -1123,18 +1123,28 @@ export default function App() {
 
       {/* Modal Formulario Parcela (si se abre flotante) */}
       {formParcelaOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <ParcelaForm
-              initialData={editingParcela}
-              onSave={handleSaveParcela}
-              onCancel={() => {
-                setFormParcelaOpen(false)
-                setEditingParcela(null)
-              }}
-            />
-          </div>
-        </div>
+        <ParcelaForm
+          initialData={editingParcela}
+          inhumaciones={inhumaciones}
+          onSave={handleSaveParcela}
+          onCancel={() => {
+            setFormParcelaOpen(false)
+            setEditingParcela(null)
+          }}
+          onNuevaInhumacionParaParcela={(nom) => {
+            setFormParcelaOpen(false)
+            setEditingParcela(null)
+            setEditingInhumacion({
+              id: '',
+              nombre_difunto: '',
+              parcela: nom,
+              fecha_inhumacion: new Date().toISOString(),
+              nivel_posicion: 2,
+              es_covid: false,
+            } as any)
+            setFormInhumacionOpen(true)
+          }}
+        />
       )}
 
       {/* Modal Formulario Inhumación */}

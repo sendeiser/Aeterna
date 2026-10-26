@@ -1,15 +1,23 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { Parcela, EstadoParcela, EstadoTitular } from '../../types/database'
+import { Parcela, Inhumacion, EstadoParcela, EstadoTitular } from '../../types/database'
 import { formatNomenclatura } from '../../lib/formatters'
 
 interface ParcelaFormProps {
   initialData?: Parcela | null
+  inhumaciones?: Inhumacion[]
   onSave: (parcela: Partial<Parcela>) => void
   onCancel: () => void
+  onNuevaInhumacionParaParcela?: (nomenclatura: string) => void
 }
 
-export const ParcelaForm: React.FC<ParcelaFormProps> = ({ initialData, onSave, onCancel }) => {
+export const ParcelaForm: React.FC<ParcelaFormProps> = ({
+  initialData,
+  inhumaciones = [],
+  onSave,
+  onCancel,
+  onNuevaInhumacionParaParcela,
+}) => {
   const [sector, setSector] = useState(initialData?.sector_id || 'A')
   const [manzana, setManzana] = useState(initialData?.manzana_fila || '25')
   const [numero, setNumero] = useState(initialData?.numero_parcela?.toString() || '96')
@@ -27,6 +35,20 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({ initialData, onSave, o
   const [notas, setNotas] = useState(initialData?.notas || '')
 
   const previewNomenclatura = formatNomenclatura(sector, manzana || '00', numero || '00')
+  const nomActual = initialData?.nomenclatura || previewNomenclatura
+
+  const difuntosEnParcela = useMemo(() => {
+    if (!inhumaciones || !nomActual) return []
+    const normTarget = nomActual.toUpperCase().replace(/[\s-]/g, '')
+    return inhumaciones
+      .filter((inh) => {
+        const inhParc = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela
+        if (!inhParc) return false
+        const normInh = inhParc.toUpperCase().replace(/[\s-]/g, '')
+        return normInh === normTarget
+      })
+      .sort((a, b) => (a.nivel_posicion || 1) - (b.nivel_posicion || 1))
+  }, [inhumaciones, nomActual])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -274,6 +296,112 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({ initialData, onSave, o
                 ))}
               </div>
             </div>
+          </div>
+        </fieldset>
+
+        {/* Sección: Ocupación de Niveles de la Fosa (Difuntos Inhumados) */}
+        <fieldset className="border border-outline-variant/70 rounded-xl p-4 bg-surface/50 space-y-3">
+          <legend className="text-label-caps font-label-caps text-primary uppercase px-2 font-bold flex items-center gap-1.5 bg-surface-container-low rounded py-0.5">
+            <span className="material-symbols-outlined text-[15px]">layers</span>
+            <span>Ocupación de Niveles de la Fosa (Difuntos Inhumados)</span>
+          </legend>
+
+          <div className="flex items-center justify-between text-xs text-on-surface-variant pb-2 border-b border-outline-variant/50">
+            <div className="flex items-center gap-1.5">
+              <span className="font-medium">Parcela:</span>
+              <span className="font-bold text-primary font-code-cadastral">{nomActual}</span>
+              <span className="text-slate-400">·</span>
+              <span>Capacidad: {capacidad} niveles</span>
+            </div>
+            <div className="flex items-center gap-1.5 font-semibold">
+              <span className={difuntosEnParcela.length > 0 ? 'text-primary' : 'text-emerald-700'}>
+                {difuntosEnParcela.length} de {capacidad} niveles ocupados
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {Array.from({ length: Math.max(Number(capacidad) || 1, difuntosEnParcela.length) }, (_, i) => i + 1).map((lvl) => {
+              const difunto = difuntosEnParcela.find((d) => (d.nivel_posicion || 1) === lvl)
+              const isOccupied = !!difunto
+
+              return (
+                <div
+                  key={lvl}
+                  className={`p-3 rounded-lg border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+                    isOccupied ? 'bg-white border-slate-300 shadow-2xs' : 'bg-emerald-50/50 border-emerald-200/80'
+                  }`}
+                >
+                  <div className="flex items-start sm:items-center gap-3">
+                    <div
+                      className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                        isOccupied ? 'bg-primary text-white shadow-xs' : 'bg-emerald-600 text-white shadow-xs'
+                      }`}
+                    >
+                      N{lvl}
+                    </div>
+
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className={`text-[11px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                            isOccupied
+                              ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                              : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          }`}
+                        >
+                          {isOccupied ? 'Ocupado' : 'Disponible / Libre'}
+                        </span>
+
+                        {isOccupied && (
+                          <span className="font-semibold text-sm text-slate-900">
+                            {difunto.nombre_difunto}
+                          </span>
+                        )}
+                      </div>
+
+                      {isOccupied ? (
+                        <div className="text-[11px] text-slate-600 flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 font-code-cadastral">
+                          {difunto.dni_difunto && (
+                            <span className="font-medium text-slate-700">DNI: {difunto.dni_difunto}</span>
+                          )}
+                          {difunto.fecha_inhumacion && (
+                            <span>Fecha Inhumación: {difunto.fecha_inhumacion.slice(0, 10)}</span>
+                          )}
+                          {difunto.empresa_funebrera && (
+                            <span className="font-sans text-slate-500">Empresa: {difunto.empresa_funebrera}</span>
+                          )}
+                          {difunto.es_covid && (
+                            <span className="font-sans px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 font-bold text-[10px]">
+                              Protocolo Sanitario COVID
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-emerald-800 mt-0.5">
+                          Espacio libre en la fosa disponible para futura inhumación.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {!isOccupied && onNuevaInhumacionParaParcela && initialData && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onCancel()
+                        onNuevaInhumacionParaParcela(nomActual)
+                      }}
+                      className="px-2.5 py-1 text-xs font-semibold bg-emerald-700 hover:bg-emerald-800 text-white rounded-md flex items-center gap-1 shrink-0 shadow-xs cursor-pointer self-start sm:self-auto"
+                      title="Asentar nueva inhumación en este nivel"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">add</span>
+                      <span>Asentar Inhumación</span>
+                    </button>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </fieldset>
 
