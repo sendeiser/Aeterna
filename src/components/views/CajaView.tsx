@@ -45,6 +45,7 @@ export const CajaView: React.FC<CajaViewProps> = ({
   const [fechaHasta, setFechaHasta] = useState('')
   const [sortField, setSortField] = useState<SortField>('fecha')
   const [sortAsc, setSortAsc] = useState<boolean>(false)
+  const [showMobileFilters, setShowMobileFilters] = useState(false)
 
   // Estados de modales
   const [cobroModalOpen, setCobroModalOpen] = useState(false)
@@ -203,11 +204,209 @@ export const CajaView: React.FC<CajaViewProps> = ({
   }
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 space-y-4">
+    <div className="w-full h-full flex flex-col overflow-hidden space-y-1.5 sm:space-y-3">
       {/* ========================================================================= */}
-      {/* 1. HEADER INSTITUCIONAL & BOTONES DE ACCIÓN RÁPIDA                        */}
+      {/* MOBILE COMPACT TOOLBAR (< sm): Diseño denso para visualización inmediata  */}
       {/* ========================================================================= */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-outline-variant shadow-xs">
+      <div className="sm:hidden bg-surface-container-lowest p-2 rounded-xl border border-outline-variant shadow-xs flex flex-col gap-2 shrink-0">
+        {/* Fila 1: Título + Balance Neto + Botones de Acción */}
+        <div className="flex items-center justify-between gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="material-symbols-outlined text-primary text-[20px] shrink-0">
+              point_of_sale
+            </span>
+            <div className="flex flex-col min-w-0">
+              <span className="font-bold text-xs text-primary leading-tight">Caja</span>
+              <span className="font-mono font-bold text-[11px] text-emerald-800 leading-tight truncate">
+                {formatCurrency(balanceGlobal.balanceNeto)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            {onRefresh && (
+              <button
+                type="button"
+                onClick={onRefresh}
+                disabled={isRefreshing}
+                className="w-7 h-7 flex items-center justify-center rounded-lg border border-outline-variant text-slate-600 hover:bg-surface-container"
+                title="Sincronizar"
+              >
+                <span className={`material-symbols-outlined text-[15px] ${isRefreshing ? 'animate-spin text-primary' : ''}`}>
+                  refresh
+                </span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={onCierreCaja}
+              className="h-7 px-2 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 text-[11px] font-bold flex items-center gap-1"
+              title="Arqueo / Cierre"
+            >
+              <span className="material-symbols-outlined text-[14px]">receipt_long</span>
+              <span>Arqueo</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setEgresoModalOpen(true)}
+              className="h-7 px-2 rounded-lg bg-rose-700 text-white text-[11px] font-bold flex items-center gap-0.5 shadow-xs"
+              title="Registrar Egreso"
+            >
+              <span className="material-symbols-outlined text-[13px]">remove</span>
+              <span>Egreso</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setCobroModalOpen(true)}
+              className="h-7 px-2 rounded-lg bg-emerald-700 text-white text-[11px] font-bold flex items-center gap-0.5 shadow-xs"
+              title="Nuevo Cobro"
+            >
+              <span className="material-symbols-outlined text-[13px]">add</span>
+              <span>Cobro</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Fila 2: Búsqueda rápida + Pestañas Tipo + Toggle Filtros Avanzados */}
+        <div className="flex items-center gap-1.5">
+          <div className="relative flex-1">
+            <span className="material-symbols-outlined absolute left-2 top-2 text-[15px] text-slate-400">
+              search
+            </span>
+            <input
+              type="text"
+              placeholder="Buscar recibo, titular..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-7 pr-6 py-1 text-xs rounded-lg border border-outline-variant focus:outline-none focus:border-primary bg-surface text-on-surface"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-1.5 top-1.5 text-slate-400 hover:text-slate-700"
+              >
+                <span className="material-symbols-outlined text-[14px]">cancel</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center bg-surface-container rounded-lg p-0.5 text-[11px] font-semibold shrink-0">
+            <button
+              type="button"
+              onClick={() => setTipoFilter('todos')}
+              className={`px-2 py-1 rounded transition-colors ${
+                tipoFilter === 'todos' ? 'bg-white text-primary shadow-xs font-bold' : 'text-slate-600'
+              }`}
+            >
+              Todos ({pagos.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setTipoFilter('ingreso')}
+              className={`px-2 py-1 rounded transition-colors ${
+                tipoFilter === 'ingreso' ? 'bg-emerald-600 text-white shadow-xs font-bold' : 'text-slate-600'
+              }`}
+            >
+              Ingresos
+            </button>
+            <button
+              type="button"
+              onClick={() => setTipoFilter('egreso')}
+              className={`px-2 py-1 rounded transition-colors ${
+                tipoFilter === 'egreso' ? 'bg-rose-700 text-white shadow-xs font-bold' : 'text-slate-600'
+              }`}
+            >
+              Egresos
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+            className={`w-7 h-7 flex items-center justify-center rounded-lg border text-xs shrink-0 ${
+              showMobileFilters || fechaDesde || fechaHasta || metodoFilter !== 'todos'
+                ? 'bg-primary text-white border-primary'
+                : 'border-outline-variant text-slate-600 bg-surface'
+            }`}
+            title="Filtros avanzados de fecha y método"
+          >
+            <span className="material-symbols-outlined text-[15px]">filter_list</span>
+          </button>
+        </div>
+
+        {/* Fila 3: Resumen rápido de totales en móvil */}
+        <div className="flex items-center justify-between text-[11px] font-mono px-1 pt-1 border-t border-outline-variant/50">
+          <span className="text-emerald-700 font-bold">+{formatCurrency(balanceGlobal.totalIngresos)}</span>
+          <span className="text-rose-700 font-bold">-{formatCurrency(balanceGlobal.totalEgresos)}</span>
+          <span className="text-amber-800 font-medium">Ef: {formatCurrency(balanceGlobal.totalEfectivo)}</span>
+          <span className="text-sky-800 font-medium">QR: {formatCurrency(balanceGlobal.totalDigital)}</span>
+        </div>
+
+        {/* Filtros avanzados desplegables para móvil (si el usuario los abre) */}
+        {showMobileFilters && (
+          <div className="pt-2 border-t border-outline-variant/60 flex flex-col gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-slate-500 uppercase">Método:</span>
+              <div className="flex items-center gap-1">
+                {(['todos', 'efectivo', 'digital'] as MetodoFiltro[]).map((met) => (
+                  <button
+                    key={met}
+                    type="button"
+                    onClick={() => setMetodoFilter(met)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-medium ${
+                      metodoFilter === met ? 'bg-primary text-white font-bold' : 'bg-surface-container text-slate-700'
+                    }`}
+                  >
+                    {met === 'todos' ? 'Todos' : met === 'efectivo' ? 'Efectivo' : 'Digital QR'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] font-bold text-slate-500 uppercase">Fecha:</span>
+              <input
+                type="date"
+                value={fechaDesde}
+                onChange={(e) => setFechaDesde(e.target.value)}
+                className="px-1.5 py-0.5 text-[11px] border border-outline-variant rounded bg-white"
+              />
+              <span className="text-slate-400">a</span>
+              <input
+                type="date"
+                value={fechaHasta}
+                onChange={(e) => setFechaHasta(e.target.value)}
+                className="px-1.5 py-0.5 text-[11px] border border-outline-variant rounded bg-white"
+              />
+              <button
+                type="button"
+                onClick={handleFiltroHoy}
+                className="px-1.5 py-0.5 rounded bg-surface-container text-[11px]"
+              >
+                Hoy
+              </button>
+              {(fechaDesde || fechaHasta || metodoFilter !== 'todos') && (
+                <button
+                  type="button"
+                  onClick={handleLimpiarFiltros}
+                  className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 text-[11px] font-bold"
+                >
+                  Limpiar
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 1. HEADER INSTITUCIONAL & BOTONES DE ACCIÓN RÁPIDA (Desktop/Tablet)        */}
+      {/* ========================================================================= */}
+      <div className="hidden sm:flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-outline-variant shadow-xs shrink-0">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary/20">
@@ -281,9 +480,9 @@ export const CajaView: React.FC<CajaViewProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. TARJETAS DE BALANCE & MÉTRICAS KPI                                      */}
+      {/* 2. TARJETAS DE BALANCE & MÉTRICAS KPI (Desktop / Tablet)                   */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
+      <div className="hidden sm:grid sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3 shrink-0">
         {/* Total Ingresos */}
         <div className="bg-surface-container-lowest p-3.5 rounded-xl border border-emerald-200/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-emerald-800">
@@ -388,9 +587,9 @@ export const CajaView: React.FC<CajaViewProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. BARRA DE HERRAMIENTAS: BÚSQUEDA & FILTROS MULTI-CRITERIO               */}
+      {/* 3. BARRA DE HERRAMIENTAS: BÚSQUEDA & FILTROS MULTI-CRITERIO (Desktop)     */}
       {/* ========================================================================= */}
-      <div className="bg-surface-container-lowest p-3 sm:p-4 rounded-2xl border border-outline-variant shadow-xs space-y-3">
+      <div className="hidden sm:block bg-surface-container-lowest p-3 sm:p-4 rounded-2xl border border-outline-variant shadow-xs space-y-3 shrink-0">
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
           {/* Input de Búsqueda */}
           <div className="relative flex-1">
@@ -542,9 +741,9 @@ export const CajaView: React.FC<CajaViewProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* 4. TABLA DE MOVIMIENTOS DE CAJA (DESKTOP) & LISTADO RESPONSIVO           */}
+      {/* 4. TABLA DE MOVIMIENTOS DE CAJA (DESKTOP) & LISTADO RESPONSIVO (MOBILE)   */}
       {/* ========================================================================= */}
-      <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-xs flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="bg-surface-container-lowest rounded-xl sm:rounded-2xl border border-outline-variant shadow-xs flex-1 min-h-0 flex flex-col overflow-hidden">
         {movimientosOrdenados.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
             <div className="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
@@ -574,9 +773,93 @@ export const CajaView: React.FC<CajaViewProps> = ({
             </div>
           </div>
         ) : (
-          <div className="overflow-y-auto custom-scroll flex-1">
-            {/* Tabla para pantallas medianas/grandes */}
-            <table className="w-full text-left text-xs border-collapse hidden md:table">
+          <>
+            {/* MOBILE VIEW (< md): Responsive Interactive Cards */}
+            <div className="md:hidden divide-y divide-outline-variant/60 p-2 space-y-2 flex-1 min-h-0 overflow-y-auto custom-scroll">
+              {movimientosOrdenados.map((mov) => {
+                const isEgreso = mov.tipo === 'egreso' || (mov.concepto && mov.concepto.includes('[EGRESO]'))
+                const isEfectivo = mov.metodo === 'efectivo'
+
+                return (
+                  <div key={mov.id || mov.nroRecibo} className="p-3 bg-white rounded-xl border border-outline-variant/80 shadow-2xs space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              isEgreso ? 'bg-rose-500' : 'bg-emerald-500'
+                            }`}
+                          />
+                          <span className="font-mono font-bold text-xs text-slate-900">
+                            {mov.nroRecibo || 'REC-S/N'}
+                          </span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded font-bold uppercase ${
+                              isEgreso ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            }`}
+                          >
+                            {isEgreso ? 'Egreso' : 'Ingreso'}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-slate-500 font-mono block mt-0.5">
+                          {formatDateHour(mov.fecha)}
+                        </span>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span
+                          className={`font-mono font-bold text-sm block ${
+                            isEgreso ? 'text-rose-700' : 'text-emerald-700'
+                          }`}
+                        >
+                          {isEgreso ? '-' : '+'}
+                          {formatCurrency(mov.monto)}
+                        </span>
+                        <span className="text-[10px] text-slate-500">
+                          {isEfectivo ? 'Efectivo en Caja' : 'Digital QR'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-xs">
+                      <div className="font-semibold text-slate-900">
+                        {mov.titularNombre || (isEgreso ? 'Egreso Operativo' : 'Contribuyente General')}
+                      </div>
+                      <div className="text-slate-600 text-[11px] mt-0.5 flex items-center gap-1 flex-wrap">
+                        {mov.categoria && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-slate-100 text-slate-700 border border-slate-200">
+                            {mov.categoria}
+                          </span>
+                        )}
+                        <span>{mov.concepto}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-1.5 border-t border-dashed border-outline-variant">
+                      <button
+                        type="button"
+                        onClick={() => setReciboDetallePago(mov)}
+                        className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-1 cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">receipt_long</span>
+                        <span>Ver Recibo</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPagoParaAnular(mov)}
+                        className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs flex items-center gap-1 cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">delete</span>
+                        <span>Anular</span>
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* DESKTOP VIEW (>= md): Full Data Table */}
+            <div className="hidden md:block flex-1 min-h-0 overflow-auto custom-scroll">
+              <table className="w-full text-left text-xs border-collapse">
               <thead className="sticky top-0 z-10 bg-surface-container border-b border-outline-variant text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                 <tr>
                   <th
@@ -732,95 +1015,13 @@ export const CajaView: React.FC<CajaViewProps> = ({
                 })}
               </tbody>
             </table>
-
-            {/* Listado de tarjetas para Móvil */}
-            <div className="divide-y divide-outline-variant md:hidden">
-              {movimientosOrdenados.map((mov) => {
-                const isEgreso = mov.tipo === 'egreso' || (mov.concepto && mov.concepto.includes('[EGRESO]'))
-                const isEfectivo = mov.metodo === 'efectivo'
-
-                return (
-                  <div key={mov.id || mov.nroRecibo} className="p-3 space-y-2 hover:bg-surface-container-low">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className={`w-2 h-2 rounded-full ${
-                              isEgreso ? 'bg-rose-500' : 'bg-emerald-500'
-                            }`}
-                          />
-                          <span className="font-mono font-bold text-xs text-slate-900">
-                            {mov.nroRecibo || 'REC-S/N'}
-                          </span>
-                          <span
-                            className={`text-[10px] px-1.5 py-0.2 rounded font-bold uppercase ${
-                              isEgreso ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'
-                            }`}
-                          >
-                            {isEgreso ? 'Egreso' : 'Ingreso'}
-                          </span>
-                        </div>
-                        <span className="text-[11px] text-slate-500 font-mono block mt-0.5">
-                          {formatDateHour(mov.fecha)}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <span
-                          className={`font-mono font-bold text-sm block ${
-                            isEgreso ? 'text-rose-700' : 'text-emerald-700'
-                          }`}
-                        >
-                          {isEgreso ? '-' : '+'}
-                          {formatCurrency(mov.monto)}
-                        </span>
-                        <span className="text-[10px] text-slate-500">
-                          {isEfectivo ? 'Efectivo en Caja' : 'Digital QR'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="text-xs">
-                      <div className="font-semibold text-slate-900">
-                        {mov.titularNombre || (isEgreso ? 'Egreso Operativo' : 'Contribuyente General')}
-                      </div>
-                      <div className="text-slate-600 text-[11px] mt-0.5 flex items-center gap-1 flex-wrap">
-                        {mov.categoria && (
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-slate-100 text-slate-700 border border-slate-200">
-                            {mov.categoria}
-                          </span>
-                        )}
-                        <span>{mov.concepto}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-end gap-2 pt-1 border-t border-dashed border-outline-variant">
-                      <button
-                        type="button"
-                        onClick={() => setReciboDetallePago(mov)}
-                        className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-1"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">receipt_long</span>
-                        <span>Ver Recibo</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPagoParaAnular(mov)}
-                        className="px-2.5 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs flex items-center gap-1"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">delete</span>
-                        <span>Anular</span>
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
           </div>
-        )}
+        </>
+      )}
 
         {/* Resumen al pie del listado */}
         {movimientosOrdenados.length > 0 && (
-          <div className="p-3 bg-surface-container border-t border-outline-variant flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-600 gap-2">
+          <div className="p-2.5 sm:p-3 bg-surface-container border-t border-outline-variant flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-600 gap-1.5 sm:gap-2 shrink-0">
             <div>
               Mostrando <strong>{movimientosOrdenados.length}</strong> movimientos en el periodo
               seleccionado.

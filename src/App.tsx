@@ -1042,18 +1042,16 @@ export default function App() {
           )}
 
           {currentTab === 'caja' && (
-            <div className="flex-1 min-h-0 flex flex-col overflow-y-auto custom-scroll pb-4">
-              <CajaView
-                pagos={pagos}
-                onNuevoCobro={handleNuevoCobroCaja}
-                onNuevoEgreso={handleRegistrarEgreso}
-                onAnularPago={handleAnularPago}
-                onCierreCaja={() => setCierreCajaOpen(true)}
-                onRefresh={() => fetchCloudData(true)}
-                isRefreshing={isRefreshing}
-                isOnline={isSupabaseConfigured}
-              />
-            </div>
+            <CajaView
+              pagos={pagos}
+              onNuevoCobro={handleNuevoCobroCaja}
+              onNuevoEgreso={handleRegistrarEgreso}
+              onAnularPago={handleAnularPago}
+              onCierreCaja={() => setCierreCajaOpen(true)}
+              onRefresh={() => fetchCloudData(true)}
+              isRefreshing={isRefreshing}
+              isOnline={isSupabaseConfigured}
+            />
           )}
 
           {currentTab === 'configuracion' && (
