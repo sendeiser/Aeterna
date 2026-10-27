@@ -2,6 +2,8 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { Navbar, TabType } from './components/layout/Navbar'
 import { OmniboxSearch, SearchResultItem } from './components/search/OmniboxSearch'
 import { QRPaymentModal } from './components/payment/QRPaymentModal'
+import { EnviarCobroModal } from './components/payment/EnviarCobroModal'
+import { aplicarCobroParcela, aplicarCobroCuotas } from './services/cobroService'
 import { ParcelaForm } from './components/forms/ParcelaForm'
 import { InhumacionForm } from './components/forms/InhumacionForm'
 import { AfiliadoForm } from './components/forms/AfiliadoForm'
@@ -241,6 +243,17 @@ export default function App() {
   const [formAfiliadoOpen, setFormAfiliadoOpen] = useState(false)
   const [editingAfiliado, setEditingAfiliado] = useState<AfiliadoSeguro | null>(null)
 
+  // Estado para el modal de Enviar Cobro a Distancia
+  const [enviarCobroModal, setEnviarCobroModal] = useState<{
+    isOpen: boolean
+    tipo: 'parcela' | 'seguro'
+    item: Parcela | AfiliadoSeguro | null
+  }>({
+    isOpen: false,
+    tipo: 'parcela',
+    item: null,
+  })
+
   // Omnibox Search Items
   const searchItems = useMemo<SearchResultItem[]>(() => {
     const list: SearchResultItem[] = []
@@ -290,7 +303,7 @@ export default function App() {
   // Handlers para cobro con QR
   const handleCobrarParcela = (parcela: Parcela) => {
     const monto = parcela.saldo_mantenimiento > 0 ? parcela.saldo_mantenimiento : 36000
-    const concepto = `Mantenimiento Cuatrimestral - Parcela ${parcela.nomenclatura}`
+    const concepto = `Mantenimiento Anual - Parcela ${parcela.nomenclatura}`
     const titularNombre = parcela.titular?.nombre_completo || 'Titular Parcela'
 
     setQrModal({
@@ -305,34 +318,20 @@ export default function App() {
       instagram: parcela.titular?.instagram,
       onConfirm: async (datos) => {
         const montoCobrado = datos?.monto ?? monto
-        const nuevoSaldo = Math.max(0, (parcela.saldo_mantenimiento || 0) - montoCobrado)
-        const nuevoEstado = nuevoSaldo <= 0 && (parcela.estado === 'en_mora' || parcela.estado === 'standby') ? 'ocupada' : parcela.estado
-
-        const updatedParcela: Parcela = {
-          ...parcela,
-          saldo_mantenimiento: nuevoSaldo,
-          estado: nuevoEstado,
-        }
+        const { updatedParcela, nuevoPago } = aplicarCobroParcela({
+          parcela,
+          montoCobrado,
+          nroRecibo: datos?.nroRecibo,
+          comprobante: datos?.comprobante || '7849',
+          metodo: (datos?.metodo as any) || 'transferencia_qr',
+          concepto,
+        })
 
         setParcelas((prev) => {
           const updated = prev.map((p) => (p.id === parcela.id ? updatedParcela : p))
           saveParcelasToStorage(updated)
           return updated
         })
-
-        const nroRecibo = datos?.nroRecibo || `REC-${parcela.nomenclatura}-${Date.now().toString().slice(-6)}`
-
-        const nuevoPago: PagoRecibo = {
-          id: `pago-${Date.now()}`,
-          concepto,
-          monto: montoCobrado,
-          identificador: parcela.nomenclatura,
-          titularNombre,
-          metodo: (datos?.metodo as any) || 'transferencia_qr',
-          fecha: new Date().toISOString(),
-          nroRecibo,
-          comprobante: datos?.comprobante || '7849',
-        }
 
         savePagoToStorage(nuevoPago)
         setPagos((prev) => [nuevoPago, ...prev])
@@ -369,37 +368,21 @@ export default function App() {
       email: afiliado.email,
       facebook: afiliado.facebook,
       instagram: afiliado.instagram,
-      onConfirm: async () => {
-        const currentPaid = afiliado.cuotasPagadas || []
-        const updatedPaid = currentPaid.includes(nroCuota)
-          ? currentPaid
-          : [...currentPaid, nroCuota]
-        const alDia = [1, 2, 3].every((m) => updatedPaid.includes(m))
+      onConfirm: async (datos) => {
+        const montoCobrado = datos?.monto ?? monto
+        const nroReciboFinal = datos?.nroRecibo || nroRecibo
+        const comprobanteFinal = datos?.comprobante || '7849'
+        const metodoFinal = (datos?.metodo as any) || 'transferencia_qr'
 
-        const currentDetalles = afiliado.cuotasDetalle || []
-        const updatedDetalles = [
-          ...currentDetalles.filter((c) => c.mes !== nroCuota && (c as any).nro_cuota !== nroCuota),
-          {
-            id: `cuota-${afiliado.id}-${nroCuota}`,
-            afiliado_id: afiliado.id,
-            anio: 2026,
-            nro_cuota: nroCuota,
-            mes: nroCuota,
-            monto,
-            estado: 'pagada' as any,
-            estado_cuota: 'pagada',
-            fecha_pago: new Date().toISOString(),
-            metodo_pago: 'transferencia_qr' as const,
-            nro_recibo: nroRecibo,
-          },
-        ]
-
-        const updatedAfiliado: AfiliadoSeguro = {
-          ...afiliado,
-          cuotasPagadas: updatedPaid,
-          cuotasDetalle: updatedDetalles,
-          estado: alDia ? 'activo' : afiliado.estado,
-        }
+        const { updatedAfiliado, nuevoPago } = aplicarCobroCuotas({
+          afiliado,
+          nrosCuotas: [nroCuota],
+          valorUnitario: montoCobrado,
+          nroRecibo: nroReciboFinal,
+          comprobante: comprobanteFinal,
+          metodo: metodoFinal,
+          concepto,
+        })
 
         setAfiliados((prev) => {
           const updatedAfiliadosList = prev.map((a) => (a.id === afiliado.id ? updatedAfiliado : a))
@@ -407,29 +390,18 @@ export default function App() {
           return updatedAfiliadosList
         })
 
-        const nuevoPago: PagoRecibo = {
-          id: `pago-${Date.now()}`,
-          concepto,
-          monto,
-          identificador: `AFI-${afiliado.numero_afiliado}-${mesNombre}`,
-          titularNombre: afiliado.nombre_completo,
-          metodo: 'transferencia_qr',
-          fecha: new Date().toISOString(),
-          nroRecibo,
-        }
-
         savePagoToStorage(nuevoPago)
         setPagos((prev) => [nuevoPago, ...prev])
-        setRecaudacionHoy((prev) => prev + monto)
+        setRecaudacionHoy((prev) => prev + montoCobrado)
 
         // Supabase Cloud Sync
         if (isSupabaseConfigured) {
           await Promise.all([
             upsertAfiliadoSupabase(updatedAfiliado),
             registrarPagoCuotaSupabase(afiliado.id, 2026, nroCuota, {
-              nroRecibo,
-              metodoPago: 'transferencia_qr',
-              monto,
+              nroRecibo: nroReciboFinal,
+              metodoPago: metodoFinal,
+              monto: montoCobrado,
             }),
             registrarPagoSupabase(nuevoPago),
           ])
@@ -455,35 +427,25 @@ export default function App() {
       monto: montoTotal,
       identificador: `AFI-${afiliado.numero_afiliado}-MORA`,
       titularNombre: afiliado.nombre_completo,
-      onConfirm: async () => {
-        const currentPaid = afiliado.cuotasPagadas || []
-        const updatedPaid = Array.from(new Set([...currentPaid, ...nrosCuotas]))
-        const alDia = [1, 2, 3].every((m) => updatedPaid.includes(m))
+      telefono: afiliado.telefono,
+      email: afiliado.email,
+      facebook: afiliado.facebook,
+      instagram: afiliado.instagram,
+      onConfirm: async (datos) => {
+        const montoCobrado = datos?.monto ?? montoTotal
+        const nroReciboFinal = datos?.nroRecibo || nroRecibo
+        const comprobanteFinal = datos?.comprobante || '7849'
+        const metodoFinal = (datos?.metodo as any) || 'transferencia_qr'
 
-        const currentDetalles = afiliado.cuotasDetalle || []
-        const newDetalles = nrosCuotas.map((m) => ({
-          id: `cuota-${afiliado.id}-${m}`,
-          afiliado_id: afiliado.id,
-          anio: 2026,
-          nro_cuota: m,
-          mes: m,
-          monto: valorUnitario,
-          estado: 'pagada' as any,
-          estado_cuota: 'pagada',
-          fecha_pago: new Date().toISOString(),
-          metodo_pago: 'transferencia_qr' as const,
-          nro_recibo: `${nroRecibo}-M${m}`,
-        }))
-
-        const updatedAfiliado: AfiliadoSeguro = {
-          ...afiliado,
-          cuotasPagadas: updatedPaid,
-          cuotasDetalle: [
-            ...currentDetalles.filter((c) => !nrosCuotas.includes(c.mes || (c as any).nro_cuota)),
-            ...newDetalles,
-          ],
-          estado: alDia ? 'activo' : afiliado.estado,
-        }
+        const { updatedAfiliado, nuevoPago, cuotasDetalleNuevas } = aplicarCobroCuotas({
+          afiliado,
+          nrosCuotas,
+          valorUnitario: montoCobrado / nrosCuotas.length,
+          nroRecibo: nroReciboFinal,
+          comprobante: comprobanteFinal,
+          metodo: metodoFinal,
+          concepto,
+        })
 
         setAfiliados((prev) => {
           const updatedAfiliadosList = prev.map((a) => (a.id === afiliado.id ? updatedAfiliado : a))
@@ -491,20 +453,9 @@ export default function App() {
           return updatedAfiliadosList
         })
 
-        const nuevoPago: PagoRecibo = {
-          id: `pago-${Date.now()}`,
-          concepto,
-          monto: montoTotal,
-          identificador: `AFI-${afiliado.numero_afiliado}-MORA`,
-          titularNombre: afiliado.nombre_completo,
-          metodo: 'transferencia_qr',
-          fecha: new Date().toISOString(),
-          nroRecibo,
-        }
-
         savePagoToStorage(nuevoPago)
         setPagos((prev) => [nuevoPago, ...prev])
-        setRecaudacionHoy((prev) => prev + montoTotal)
+        setRecaudacionHoy((prev) => prev + montoCobrado)
 
         // Supabase Cloud Sync
         if (isSupabaseConfigured) {
@@ -512,12 +463,12 @@ export default function App() {
             upsertAfiliadoSupabase(updatedAfiliado),
             registrarPagoSupabase(nuevoPago),
           ]
-          for (const m of nrosCuotas) {
+          for (const c of cuotasDetalleNuevas) {
             promises.push(
-              registrarPagoCuotaSupabase(afiliado.id, 2026, m, {
-                nroRecibo: `${nroRecibo}-M${m}`,
-                metodoPago: 'transferencia_qr',
-                monto: valorUnitario,
+              registrarPagoCuotaSupabase(afiliado.id, c.anio, c.nro_cuota, {
+                nroRecibo: c.nro_recibo || nroReciboFinal,
+                metodoPago: metodoFinal,
+                monto: c.monto,
               })
             )
           }
@@ -526,6 +477,102 @@ export default function App() {
         }
       },
     })
+  }
+
+  // Handlers para Enviar Cobro a Distancia (WhatsApp, redes y comprobante)
+  const handleOpenEnviarCobroParcela = (parcela: Parcela) => {
+    setEnviarCobroModal({
+      isOpen: true,
+      tipo: 'parcela',
+      item: parcela,
+    })
+  }
+
+  const handleOpenEnviarCobroAfiliado = (afiliado: AfiliadoSeguro) => {
+    setEnviarCobroModal({
+      isOpen: true,
+      tipo: 'seguro',
+      item: afiliado,
+    })
+  }
+
+  const handleConfirmarEnviarCobro = async (datos: {
+    monto: number
+    nroRecibo: string
+    comprobante: string
+    nrosCuotas?: number[]
+    metodo: 'transferencia_qr' | 'efectivo'
+    concepto: string
+  }) => {
+    if (enviarCobroModal.tipo === 'parcela' && enviarCobroModal.item) {
+      const parcela = enviarCobroModal.item as Parcela
+      const { updatedParcela, nuevoPago } = aplicarCobroParcela({
+        parcela,
+        montoCobrado: datos.monto,
+        nroRecibo: datos.nroRecibo,
+        comprobante: datos.comprobante,
+        metodo: datos.metodo,
+        concepto: datos.concepto,
+      })
+
+      setParcelas((prev) => {
+        const updated = prev.map((p) => (p.id === parcela.id ? updatedParcela : p))
+        saveParcelasToStorage(updated)
+        return updated
+      })
+
+      savePagoToStorage(nuevoPago)
+      setPagos((prev) => [nuevoPago, ...prev])
+      setRecaudacionHoy((prev) => prev + datos.monto)
+
+      if (isSupabaseConfigured) {
+        await Promise.all([
+          upsertParcelaSupabase(updatedParcela),
+          registrarPagoSupabase(nuevoPago),
+        ])
+        await fetchCloudData()
+      }
+    } else if (enviarCobroModal.tipo === 'seguro' && enviarCobroModal.item) {
+      const afiliado = enviarCobroModal.item as AfiliadoSeguro
+      const nrosCuotas = datos.nrosCuotas && datos.nrosCuotas.length > 0 ? datos.nrosCuotas : [1]
+      const { updatedAfiliado, nuevoPago, cuotasDetalleNuevas } = aplicarCobroCuotas({
+        afiliado,
+        nrosCuotas,
+        valorUnitario: datos.monto / nrosCuotas.length,
+        nroRecibo: datos.nroRecibo,
+        comprobante: datos.comprobante,
+        metodo: datos.metodo,
+        concepto: datos.concepto,
+      })
+
+      setAfiliados((prev) => {
+        const updated = prev.map((a) => (a.id === afiliado.id ? (updatedAfiliado as any) : a))
+        saveAfiliadosToStorage(updated)
+        return updated
+      })
+
+      savePagoToStorage(nuevoPago)
+      setPagos((prev) => [nuevoPago, ...prev])
+      setRecaudacionHoy((prev) => prev + datos.monto)
+
+      if (isSupabaseConfigured) {
+        const promises: Promise<any>[] = [
+          upsertAfiliadoSupabase(updatedAfiliado),
+          registrarPagoSupabase(nuevoPago),
+        ]
+        for (const c of cuotasDetalleNuevas) {
+          promises.push(
+            registrarPagoCuotaSupabase(afiliado.id, c.anio, c.nro_cuota, {
+              nroRecibo: c.nro_recibo || datos.nroRecibo,
+              metodoPago: datos.metodo,
+              monto: c.monto,
+            })
+          )
+        }
+        await Promise.all(promises)
+        await fetchCloudData()
+      }
+    }
   }
 
   const handleRevertirCuotaAfiliado = async (afiliadoId: string, nroCuota: number) => {
@@ -991,6 +1038,7 @@ export default function App() {
               parcelas={parcelas}
               inhumaciones={inhumaciones}
               onCobrarQR={handleCobrarParcela}
+              onEnviarCobro={handleOpenEnviarCobroParcela}
               onSaveParcela={handleSaveParcela}
               onDeleteParcela={handleDeleteParcela}
               onNuevaParcela={() => {
@@ -1037,6 +1085,7 @@ export default function App() {
               afiliados={afiliados}
               onCobrarCuota={handleCobrarAfiliado}
               onCobrarMultiplesCuotas={handleCobrarMultiplesCuotas}
+              onEnviarCobro={handleOpenEnviarCobroAfiliado}
               onRevertirCuota={handleRevertirCuotaAfiliado}
               onNuevoAfiliado={() => {
                 setEditingAfiliado(null)
@@ -1133,6 +1182,23 @@ export default function App() {
         onConfirmarPago={(datos) => {
           qrModal.onConfirm(datos)
         }}
+      />
+
+      {/* Modal de Enviar Cobro a Distancia (WhatsApp, Redes y Recibo Oficial) */}
+      <EnviarCobroModal
+        isOpen={enviarCobroModal.isOpen}
+        onClose={() => setEnviarCobroModal((prev) => ({ ...prev, isOpen: false }))}
+        tipo={enviarCobroModal.tipo}
+        item={enviarCobroModal.item}
+        config={config}
+        ultimoPago={
+          enviarCobroModal.tipo === 'parcela' && enviarCobroModal.item
+            ? pagos.find(
+                (p) => p.identificador === (enviarCobroModal.item as Parcela).nomenclatura
+              )
+            : null
+        }
+        onConfirmarCobro={handleConfirmarEnviarCobro}
       />
 
       {/* Modal Formulario Parcela (si se abre flotante) */}
