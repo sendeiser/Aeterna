@@ -501,115 +501,138 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Menu Popover Notificaciones */}
             {notifOpen && (
-              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl z-50 p-3 space-y-3 animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="flex items-center justify-between border-b border-outline-variant pb-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-primary text-[18px]">
-                      notifications_active
-                    </span>
-                    <span className="text-body-md font-bold text-on-surface">
-                      Notificaciones
-                    </span>
-                    {unreadCount > 0 && (
-                      <span className="bg-primary/10 text-primary text-[11px] font-semibold px-2 py-0.5 rounded-full">
-                        {unreadCount} nuevas
+              <>
+                {/* Backdrop oscuro en mobile para cerrar tocando afuera */}
+                <div
+                  className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 sm:hidden animate-fade-in"
+                  onClick={() => setNotifOpen(false)}
+                />
+
+                <div
+                  className="fixed sm:absolute inset-x-3 sm:inset-x-auto top-16 sm:top-full sm:right-0 sm:mt-2 max-w-sm sm:max-w-none w-auto sm:w-96 mx-auto sm:mx-0 bg-surface-container-lowest border border-outline-variant rounded-2xl sm:rounded-xl shadow-2xl z-50 p-3 sm:p-3.5 space-y-2.5 sm:space-y-3 animate-in fade-in slide-in-from-top-2 duration-150"
+                >
+                  <div className="flex items-center justify-between border-b border-outline-variant pb-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-primary text-[18px]">
+                        notifications_active
                       </span>
+                      <span className="text-xs sm:text-sm font-bold text-on-surface">
+                        Notificaciones
+                      </span>
+                      {unreadCount > 0 && (
+                        <span className="bg-primary/10 text-primary text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full">
+                          {unreadCount} nuevas
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {unreadCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleMarkAllAsRead}
+                          className="text-[11px] text-primary hover:underline font-semibold cursor-pointer"
+                        >
+                          Leídas todas
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setNotifOpen(false)}
+                        className="sm:hidden text-slate-400 hover:text-slate-700 p-1 rounded-md cursor-pointer"
+                        title="Cerrar notificaciones"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">close</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="max-h-[50vh] sm:max-h-72 overflow-y-auto space-y-2 pr-1 custom-scroll">
+                    {notifications.length === 0 ? (
+                      <div className="py-6 text-center text-outline text-xs">
+                        No hay notificaciones pendientes.
+                      </div>
+                    ) : (
+                      notifications.map((item) => (
+                        <div
+                          key={item.id}
+                          onClick={() => {
+                            if (item.actionTab) {
+                              onSelectTab(item.actionTab)
+                              setNotifOpen(false)
+                              setReadNotifIds((prev) => new Set([...prev, item.id]))
+                            }
+                          }}
+                          className={`p-2.5 sm:p-3 rounded-xl border text-left transition-all ${
+                            item.actionTab ? 'cursor-pointer hover:border-primary/50 hover:shadow-xs' : ''
+                          } ${
+                            item.read
+                              ? 'bg-surface border-outline-variant/50 opacity-75'
+                              : 'bg-primary/5 border-primary/20 shadow-xs'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-1.5 font-bold text-xs text-on-surface">
+                              <span
+                                className={`w-2 h-2 rounded-full shrink-0 ${
+                                  item.type === 'success'
+                                    ? 'bg-emerald-500'
+                                    : item.type === 'warning'
+                                    ? 'bg-amber-500'
+                                    : item.type === 'error'
+                                    ? 'bg-rose-500'
+                                    : 'bg-primary'
+                                }`}
+                              ></span>
+                              <span className="truncate">{item.title}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDismissNotif(item.id)
+                              }}
+                              className="text-outline hover:text-on-surface text-[14px] leading-none shrink-0 p-0.5 rounded hover:bg-slate-200 cursor-pointer"
+                              title="Descartar"
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <p className="text-[11px] sm:text-xs text-on-surface-variant mt-1 leading-snug line-clamp-3 sm:line-clamp-none">
+                            {item.message}
+                          </p>
+                          <div className="flex items-center justify-between mt-2 pt-1 border-t border-outline-variant/30 text-[10px] text-outline">
+                            <span>{item.time}</span>
+                            {!item.read && (
+                              <span className="text-primary font-bold">Pendiente</span>
+                            )}
+                          </div>
+                        </div>
+                      ))
                     )}
                   </div>
-                  {unreadCount > 0 && (
+
+                  <div className="flex items-center justify-between pt-2 border-t border-outline-variant text-[11px]">
                     <button
                       type="button"
-                      onClick={handleMarkAllAsRead}
-                      className="text-[11px] text-primary hover:underline font-medium"
+                      onClick={() => {
+                        setNotifOpen(false)
+                        setAuditoriaOpen(true)
+                      }}
+                      className="text-primary font-semibold hover:underline flex items-center gap-1 cursor-pointer"
                     >
-                      Leídas todas
+                      <span className="material-symbols-outlined text-[14px]">shield</span>
+                      <span>Auditoría completa</span>
                     </button>
-                  )}
+                    <button
+                      type="button"
+                      onClick={() => setNotifOpen(false)}
+                      className="text-slate-500 hover:text-slate-800 font-medium px-2 py-0.5 rounded hover:bg-slate-100 transition-colors cursor-pointer"
+                    >
+                      Cerrar
+                    </button>
+                  </div>
                 </div>
-
-                <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
-                  {notifications.length === 0 ? (
-                    <div className="py-6 text-center text-outline text-body-sm">
-                      No hay notificaciones pendientes.
-                    </div>
-                  ) : (
-                    notifications.map((item) => (
-                      <div
-                        key={item.id}
-                        onClick={() => {
-                          if (item.actionTab) {
-                            onSelectTab(item.actionTab)
-                            setNotifOpen(false)
-                            setReadNotifIds((prev) => new Set([...prev, item.id]))
-                          }
-                        }}
-                        className={`p-2.5 rounded-lg border text-left transition-all ${
-                          item.actionTab ? 'cursor-pointer hover:border-primary/50 hover:shadow-xs' : ''
-                        } ${
-                          item.read
-                            ? 'bg-surface border-outline-variant/50 opacity-75'
-                            : 'bg-primary/5 border-primary/20 shadow-xs'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-1.5 font-semibold text-body-sm text-on-surface">
-                            <span
-                              className={`w-2 h-2 rounded-full ${
-                                item.type === 'success'
-                                  ? 'bg-emerald-500'
-                                  : item.type === 'warning'
-                                  ? 'bg-amber-500'
-                                  : item.type === 'error'
-                                  ? 'bg-rose-500'
-                                  : 'bg-primary'
-                              }`}
-                            ></span>
-                            <span>{item.title}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleDismissNotif(item.id)}
-                            className="text-outline hover:text-on-surface text-[14px] leading-none"
-                            title="Descartar"
-                          >
-                            ×
-                          </button>
-                        </div>
-                        <p className="text-body-xs text-on-surface-variant mt-1 leading-snug">
-                          {item.message}
-                        </p>
-                        <div className="flex items-center justify-between mt-2 pt-1 border-t border-outline-variant/30 text-[10px] text-outline">
-                          <span>{item.time}</span>
-                          {!item.read && (
-                            <span className="text-primary font-medium">Pendiente</span>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-outline-variant text-[11px]">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNotifOpen(false)
-                      setAuditoriaOpen(true)
-                    }}
-                    className="text-primary font-medium hover:underline flex items-center gap-1"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">shield</span>
-                    <span>Auditoría completa</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNotifOpen(false)}
-                    className="text-outline hover:text-on-surface"
-                  >
-                    Cerrar
-                  </button>
-                </div>
-              </div>
+              </>
             )}
           </div>
 
