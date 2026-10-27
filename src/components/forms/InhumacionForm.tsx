@@ -46,6 +46,15 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
   const [empresaFunebrera, setEmpresaFunebrera] = useState(
     initialData?.empresa_funebrera || 'Aeterna Sepelios'
   )
+  const [nombreResponsable, setNombreResponsable] = useState(
+    initialData?.nombre_responsable || (initialData as any)?.responsable_contacto || ''
+  )
+  const [telefonoResponsable, setTelefonoResponsable] = useState(
+    (initialData?.telefono_responsable || '').replace('+54 9 ', '')
+  )
+  const [emailResponsable, setEmailResponsable] = useState(initialData?.email_responsable || '')
+  const [facebookResponsable, setFacebookResponsable] = useState(initialData?.facebook_responsable || '')
+  const [instagramResponsable, setInstagramResponsable] = useState(initialData?.instagram_responsable || '')
   const [observaciones, setObservaciones] = useState(initialData?.observaciones || '')
 
   const parcelaSeleccionada = useMemo(() => {
@@ -205,6 +214,11 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
       es_covid: esCovid,
       causa_defuncion: (causaDefuncion || '').trim() || 'Causa Natural',
       empresa_funebrera: (empresaFunebrera || '').trim() || 'Servicios Sociales Chamical',
+      nombre_responsable: (nombreResponsable || '').trim() || null,
+      telefono_responsable: telefonoResponsable.trim() ? `+54 9 ${telefonoResponsable.trim()}` : null,
+      email_responsable: (emailResponsable || '').trim() || null,
+      facebook_responsable: (facebookResponsable || '').trim() || null,
+      instagram_responsable: (instagramResponsable || '').trim() || null,
       observaciones: (observaciones || '').trim() || null,
       parcela: chosenParcela || (typeof initialData?.parcela === 'object' ? initialData.parcela : null),
     }
@@ -592,6 +606,91 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
             />
           </div>
         </div>
+
+        {/* Sección: Responsable de Contacto Familiar & Cobranza */}
+        <fieldset className="border border-outline-variant/70 rounded-xl p-3.5 bg-surface/50 space-y-3">
+          <legend className="text-label-caps font-label-caps text-primary uppercase px-2 font-bold flex items-center gap-1.5 bg-surface-container-low rounded py-0.5 text-[11px]">
+            <span className="material-symbols-outlined text-[15px]">contact_phone</span>
+            <span>Responsable Familiar de Contacto & Cobro</span>
+          </legend>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label className="text-[11px] font-semibold text-on-surface-variant block mb-1">
+                Familiar / Responsable de Contacto
+              </label>
+              <input
+                type="text"
+                value={nombreResponsable}
+                onChange={(e) => setNombreResponsable(e.target.value)}
+                placeholder="Ej. Gómez, María del Carmen"
+                className="w-full h-8 px-2.5 text-xs bg-white border border-outline-variant rounded-md focus:border-secondary focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold text-on-surface-variant mb-1 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[13px] text-emerald-700">chat</span>
+                <span>Teléfono / WhatsApp</span>
+              </label>
+              <div className="flex">
+                <span className="inline-flex items-center px-2 h-8 rounded-l-md border border-r-0 border-outline-variant bg-surface-container-low text-[11px] font-mono text-outline select-none">
+                  +54 9
+                </span>
+                <input
+                  type="tel"
+                  value={telefonoResponsable}
+                  onChange={(e) => setTelefonoResponsable(e.target.value)}
+                  placeholder="3826 44-8921"
+                  className="w-full h-8 px-2.5 text-xs bg-white border border-outline-variant rounded-r-md focus:border-secondary focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 border-t border-outline-variant/40">
+            <div>
+              <label className="text-[11px] font-semibold text-on-surface-variant mb-1 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[13px] text-red-600">mail</span>
+                <span>Gmail / Correo</span>
+              </label>
+              <input
+                type="email"
+                value={emailResponsable}
+                onChange={(e) => setEmailResponsable(e.target.value)}
+                placeholder="responsable@gmail.com"
+                className="w-full h-8 px-2.5 text-xs bg-white border border-outline-variant rounded-md focus:border-secondary focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-semibold text-on-surface-variant mb-1 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[13px] text-blue-600">chat</span>
+                <span>Facebook</span>
+              </label>
+              <input
+                type="text"
+                value={facebookResponsable}
+                onChange={(e) => setFacebookResponsable(e.target.value)}
+                placeholder="usuario ó perfil"
+                className="w-full h-8 px-2.5 text-xs bg-white border border-outline-variant rounded-md focus:border-secondary focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-semibold text-on-surface-variant mb-1 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[13px] text-pink-600">photo_camera</span>
+                <span>Instagram</span>
+              </label>
+              <input
+                type="text"
+                value={instagramResponsable}
+                onChange={(e) => setInstagramResponsable(e.target.value)}
+                placeholder="@usuario"
+                className="w-full h-8 px-2.5 text-xs bg-white border border-outline-variant rounded-md focus:border-secondary focus:outline-none"
+              />
+            </div>
+          </div>
+        </fieldset>
 
         <div>
           <label className="text-xs font-semibold text-on-surface block mb-1">Observaciones / Notas Sanitarias</label>

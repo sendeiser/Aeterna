@@ -10,6 +10,10 @@ interface AfiliadoFormProps {
 export const AfiliadoForm: React.FC<AfiliadoFormProps> = ({ initialData, onSave, onCancel }) => {
   const [numeroAfiliado, setNumeroAfiliado] = useState(initialData?.numero_afiliado || '')
   const [nombreCompleto, setNombreCompleto] = useState(initialData?.nombre_completo || '')
+  const [telefono, setTelefono] = useState((initialData?.telefono || '').replace('+54 9 ', ''))
+  const [email, setEmail] = useState(initialData?.email || '')
+  const [facebook, setFacebook] = useState(initialData?.facebook || '')
+  const [instagram, setInstagram] = useState(initialData?.instagram || '')
   const [direccion, setDireccion] = useState(initialData?.direccion_cobro || '')
   const [montoCuota, setMontoCuota] = useState(initialData?.monto_cuota_mensual || 18000)
   const [zonaCobro, setZonaCobro] = useState(initialData?.zona_cobro || 'Zona 1 - Centro')
@@ -21,6 +25,10 @@ export const AfiliadoForm: React.FC<AfiliadoFormProps> = ({ initialData, onSave,
       id: initialData?.id || `afi-${Date.now()}`,
       numero_afiliado: Number(numeroAfiliado),
       nombre_completo: nombreCompleto,
+      telefono: telefono.trim() ? `+54 9 ${telefono.trim()}` : null,
+      email: email.trim() || null,
+      facebook: facebook.trim() || null,
+      instagram: instagram.trim() || null,
       direccion_cobro: direccion,
       monto_cuota_mensual: Number(montoCuota),
       zona_cobro: zonaCobro,
@@ -107,6 +115,79 @@ export const AfiliadoForm: React.FC<AfiliadoFormProps> = ({ initialData, onSave,
             <option value="Zona 2 - B° Loma Blanca">Zona 2 - B° Loma Blanca</option>
             <option value="Zona 3 - Centro Chamical">Zona 3 - Centro Chamical</option>
           </select>
+        </div>
+      </div>
+
+      {/* Canales de Contacto Directo & Cobranza */}
+      <div className="p-3 bg-surface-container-low rounded-lg border border-outline-variant/60 space-y-2.5">
+        <span className="text-[11px] font-bold text-primary uppercase tracking-wide flex items-center gap-1.5">
+          <span className="material-symbols-outlined text-[15px]">contact_phone</span>
+          <span>Canales de Contacto Directo & Envío de Cobro</span>
+        </span>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div>
+            <label className="text-[11px] font-semibold text-on-surface-variant mb-1 flex items-center gap-1">
+              <span className="material-symbols-outlined text-[13px] text-emerald-700">chat</span>
+              <span>Teléfono / WhatsApp</span>
+            </label>
+            <div className="flex">
+              <span className="inline-flex items-center px-2 h-8 rounded-l-md border border-r-0 border-outline-variant bg-white text-[11px] font-mono text-outline select-none">
+                +54 9
+              </span>
+              <input
+                type="tel"
+                value={telefono}
+                onChange={(e) => setTelefono(e.target.value)}
+                placeholder="3826 44-8921"
+                className="w-full h-8 px-2.5 text-xs bg-white border border-outline-variant rounded-r-md focus:border-secondary focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[11px] font-semibold text-on-surface-variant mb-1 flex items-center gap-1">
+              <span className="material-symbols-outlined text-[13px] text-red-600">mail</span>
+              <span>Gmail / Correo</span>
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="afiliado@gmail.com"
+              className="w-full h-8 px-2.5 text-xs bg-white border border-outline-variant rounded-md focus:border-secondary focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div>
+            <label className="text-[11px] font-semibold text-on-surface-variant mb-1 flex items-center gap-1">
+              <span className="material-symbols-outlined text-[13px] text-blue-600">chat</span>
+              <span>Facebook</span>
+            </label>
+            <input
+              type="text"
+              value={facebook}
+              onChange={(e) => setFacebook(e.target.value)}
+              placeholder="usuario ó perfil"
+              className="w-full h-8 px-2.5 text-xs bg-white border border-outline-variant rounded-md focus:border-secondary focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-[11px] font-semibold text-on-surface-variant mb-1 flex items-center gap-1">
+              <span className="material-symbols-outlined text-[13px] text-pink-600">photo_camera</span>
+              <span>Instagram</span>
+            </label>
+            <input
+              type="text"
+              value={instagram}
+              onChange={(e) => setInstagram(e.target.value)}
+              placeholder="@usuario"
+              className="w-full h-8 px-2.5 text-xs bg-white border border-outline-variant rounded-md focus:border-secondary focus:outline-none"
+            />
+          </div>
         </div>
       </div>
 

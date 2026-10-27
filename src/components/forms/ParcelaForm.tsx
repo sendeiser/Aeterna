@@ -24,6 +24,9 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({
   const [titularNombre, setTitularNombre] = useState(initialData?.titular?.nombre_completo || '')
   const [titularDni, setTitularDni] = useState(initialData?.titular?.dni || '')
   const [titularTel, setTitularTel] = useState((initialData?.titular?.telefono || '').replace('+54 9 ', ''))
+  const [titularEmail, setTitularEmail] = useState(initialData?.titular?.email || '')
+  const [titularFacebook, setTitularFacebook] = useState(initialData?.titular?.facebook || '')
+  const [titularInstagram, setTitularInstagram] = useState(initialData?.titular?.instagram || '')
   const [direccion, setDireccion] = useState(initialData?.titular?.direccion || '')
   const [titularEstadoVital, setTitularEstadoVital] = useState<'vivo' | 'fallecido'>(
     initialData?.titular?.estado_vital ||
@@ -69,6 +72,9 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({
             nombre_completo: titularNombre.trim(),
             dni: titularDni.trim() || null,
             telefono: titularTel.trim() ? `+54 9 ${titularTel.trim()}` : null,
+            email: titularEmail.trim() || null,
+            facebook: titularFacebook.trim() || null,
+            instagram: titularInstagram.trim() || null,
             direccion: direccion.trim() || null,
             estado_titular: (titularEstadoVital === 'fallecido' ? 'fallecido' : 'activo') as EstadoTitular,
             estado_vital: titularEstadoVital,
@@ -176,6 +182,51 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({
                 placeholder="Av. San Martín 452, Chamical"
                 className="w-full h-9 px-3 text-body-md bg-white border border-outline-variant rounded-lg focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none"
               />
+            </div>
+
+            {/* Canales Digitales de Contacto */}
+            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+              <div>
+                <label className="block text-[11px] font-semibold text-on-surface-variant mb-1 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px] text-red-600">mail</span>
+                  <span>Gmail / Correo</span>
+                </label>
+                <input
+                  type="email"
+                  value={titularEmail}
+                  onChange={(e) => setTitularEmail(e.target.value)}
+                  placeholder="ejemplo@gmail.com"
+                  className="w-full h-8 px-2.5 text-xs bg-white border border-outline-variant rounded-md focus:border-secondary focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-on-surface-variant mb-1 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px] text-blue-600">chat</span>
+                  <span>Facebook</span>
+                </label>
+                <input
+                  type="text"
+                  value={titularFacebook}
+                  onChange={(e) => setTitularFacebook(e.target.value)}
+                  placeholder="usuario ó perfil"
+                  className="w-full h-8 px-2.5 text-xs bg-white border border-outline-variant rounded-md focus:border-secondary focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-on-surface-variant mb-1 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px] text-pink-600">photo_camera</span>
+                  <span>Instagram</span>
+                </label>
+                <input
+                  type="text"
+                  value={titularInstagram}
+                  onChange={(e) => setTitularInstagram(e.target.value)}
+                  placeholder="@usuario"
+                  className="w-full h-8 px-2.5 text-xs bg-white border border-outline-variant rounded-md focus:border-secondary focus:outline-none"
+                />
+              </div>
             </div>
 
             {/* Selector Condición Vital del Titular (Vivo / Fallecido) */}
