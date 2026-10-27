@@ -11,6 +11,7 @@ interface AfiliadosSeguroViewProps {
   afiliados: (AfiliadoSeguro & { cuotasPagadas?: number[] })[]
   onCobrarCuota: (afiliado: AfiliadoSeguro, nroCuota: number) => void
   onCobrarMultiplesCuotas?: (afiliado: AfiliadoSeguro, nrosCuotas: number[]) => void
+  onEnviarCobro?: (afiliado: AfiliadoSeguro) => void
   onRevertirCuota?: (afiliadoId: string, nroCuota: number) => void
   onNuevoAfiliado: () => void
   onEditarAfiliado: (afiliado: AfiliadoSeguro) => void
@@ -24,6 +25,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
   afiliados,
   onCobrarCuota,
   onCobrarMultiplesCuotas,
+  onEnviarCobro,
   onRevertirCuota,
   onNuevoAfiliado,
   onEditarAfiliado,
@@ -1087,6 +1089,18 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                       </button>
                     )}
 
+                    {onEnviarCobro && (
+                      <button
+                        type="button"
+                        onClick={() => onEnviarCobro(afiliado)}
+                        className="h-8 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 active:scale-[0.98] justify-center"
+                        title="Enviar cobro por WhatsApp o Redes"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">send_to_mobile</span>
+                        <span>Enviar cobro</span>
+                      </button>
+                    )}
+
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
@@ -1518,6 +1532,17 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                               qr_code_2
                             </span>
                             <span className="whitespace-nowrap">Cobrar</span>
+                          </button>
+                        )}
+                        {onEnviarCobro && (
+                          <button
+                            type="button"
+                            onClick={() => onEnviarCobro(afiliado)}
+                            className="h-7 px-2 rounded bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shadow-xs inline-flex items-center gap-1 active:scale-[0.98] shrink-0 whitespace-nowrap cursor-pointer transition-colors"
+                            title="Enviar cobro a distancia por WhatsApp o Redes"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">send_to_mobile</span>
+                            <span>Enviar cobro</span>
                           </button>
                         )}
                         <button

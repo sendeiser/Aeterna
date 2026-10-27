@@ -8,6 +8,7 @@ interface ParcelasViewProps {
   parcelas: Parcela[]
   inhumaciones?: Inhumacion[]
   onCobrarQR: (parcela: Parcela) => void
+  onEnviarCobro?: (parcela: Parcela) => void
   onSaveParcela: (parcela: Partial<Parcela>) => void
   onDeleteParcela?: (id: string) => void
   onNuevaInhumacionParaParcela?: (nomenclatura: string) => void
@@ -27,6 +28,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   parcelas,
   inhumaciones = [],
   onCobrarQR,
+  onEnviarCobro,
   onSaveParcela,
   onDeleteParcela,
   onNuevaInhumacionParaParcela,
@@ -1244,6 +1246,17 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                             <span className="material-symbols-outlined text-[15px]">qr_code_2</span>
                             <span>Cobrar</span>
                           </button>
+                          {onEnviarCobro && (
+                            <button
+                              type="button"
+                              onClick={() => onEnviarCobro(p)}
+                              className="h-8 px-2.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold inline-flex items-center gap-1 shadow-xs cursor-pointer"
+                              title="Enviar cobro a distancia (QR, Alias y Recibo)"
+                            >
+                              <span className="material-symbols-outlined text-[15px]">send_to_mobile</span>
+                              <span>Enviar cobro</span>
+                            </button>
+                          )}
                         </>
                       )}
 
@@ -1684,6 +1697,18 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                                   qr_code_2
                                 </span>
                               </button>
+                              {onEnviarCobro && (
+                                <button
+                                  type="button"
+                                  onClick={() => onEnviarCobro(p)}
+                                  title="Enviar cobro a distancia (QR, Alias y Recibo)"
+                                  className="w-7 h-7 inline-flex items-center justify-center rounded hover:bg-emerald-50 text-emerald-600 cursor-pointer"
+                                >
+                                  <span className="material-symbols-outlined text-[18px]" data-icon="send_to_mobile">
+                                    send_to_mobile
+                                  </span>
+                                </button>
+                              )}
                             </>
                           )}
                           <button
