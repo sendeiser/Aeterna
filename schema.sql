@@ -209,3 +209,21 @@ CREATE POLICY "Acceso total personal y anon" ON public.pagos_recibos FOR ALL TO 
 
 DROP POLICY IF EXISTS "Acceso total personal y anon" ON public.pagos_mantenimiento;
 CREATE POLICY "Acceso total personal y anon" ON public.pagos_mantenimiento FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
+-- ==============================================================
+-- 13. MIGRACIÓN AUTOMÁTICA DE COLUMNAS (Idempotente)
+-- Agrega columnas omnicanal a tablas preexistentes sin pérdida de datos
+-- ==============================================================
+ALTER TABLE public.titulares ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE public.titulares ADD COLUMN IF NOT EXISTS facebook TEXT;
+ALTER TABLE public.titulares ADD COLUMN IF NOT EXISTS instagram TEXT;
+ALTER TABLE public.titulares ADD COLUMN IF NOT EXISTS telefono_secundario TEXT;
+
+ALTER TABLE public.inhumaciones ADD COLUMN IF NOT EXISTS email_responsable TEXT;
+ALTER TABLE public.inhumaciones ADD COLUMN IF NOT EXISTS facebook_responsable TEXT;
+ALTER TABLE public.inhumaciones ADD COLUMN IF NOT EXISTS instagram_responsable TEXT;
+
+ALTER TABLE public.afiliados_seguro ADD COLUMN IF NOT EXISTS telefono TEXT;
+ALTER TABLE public.afiliados_seguro ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE public.afiliados_seguro ADD COLUMN IF NOT EXISTS facebook TEXT;
+ALTER TABLE public.afiliados_seguro ADD COLUMN IF NOT EXISTS instagram TEXT;

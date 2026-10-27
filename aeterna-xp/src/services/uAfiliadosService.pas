@@ -216,6 +216,14 @@ begin
       Data.Add('fecha_alta', FormatDateTime('yyyy-mm-dd', Now));
 
     Resp := Supabase.Insert('afiliados_seguro', Data);
+    if (Resp = nil) and ((AAfiliado.Telefono <> '') or (AAfiliado.Email <> '') or (AAfiliado.Facebook <> '') or (AAfiliado.Instagram <> '')) then
+    begin
+      if Data.Find('telefono') <> nil then Data.Delete('telefono');
+      if Data.Find('email') <> nil then Data.Delete('email');
+      if Data.Find('facebook') <> nil then Data.Delete('facebook');
+      if Data.Find('instagram') <> nil then Data.Delete('instagram');
+      Resp := Supabase.Insert('afiliados_seguro', Data);
+    end;
     if Resp <> nil then
     begin
       Result := True;
@@ -265,6 +273,14 @@ begin
     Data.Add('estado', EstadoAfiliadoToStr(AAfiliado.Estado));
 
     Result := Supabase.Update('afiliados_seguro', Filter, Data);
+    if (not Result) and ((AAfiliado.Telefono <> '') or (AAfiliado.Email <> '') or (AAfiliado.Facebook <> '') or (AAfiliado.Instagram <> '')) then
+    begin
+      if Data.Find('telefono') <> nil then Data.Delete('telefono');
+      if Data.Find('email') <> nil then Data.Delete('email');
+      if Data.Find('facebook') <> nil then Data.Delete('facebook');
+      if Data.Find('instagram') <> nil then Data.Delete('instagram');
+      Result := Supabase.Update('afiliados_seguro', Filter, Data);
+    end;
   finally
     Data.Free;
   end;

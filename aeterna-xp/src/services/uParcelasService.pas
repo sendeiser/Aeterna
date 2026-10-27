@@ -32,7 +32,7 @@ var
   Query: string;
 begin
   SetLength(Result, 0);
-  Query := 'select=id,nomenclatura,sector_id,manzana_fila,numero_parcela,capacidad_total,espacios_ocupados,estado,saldo_mantenimiento,fecha_adquisicion,created_at,notas,titular:titulares(id,nombre_completo,dni,telefono,email,facebook,instagram)&order=nomenclatura.asc';
+  Query := 'select=id,nomenclatura,sector_id,manzana_fila,numero_parcela,capacidad_total,espacios_ocupados,estado,saldo_mantenimiento,fecha_adquisicion,created_at,notas,titular:titulares(*)&order=nomenclatura.asc';
 
   if ASector <> '' then
     Query := Query + '&sector_id=eq.' + ASector;
@@ -194,6 +194,13 @@ begin
       TitData.Add('ciudad', 'Chamical');
       TitData.Add('estado_titular', 'activo');
       TitResp := Supabase.Insert('titulares', TitData);
+      if (TitResp = nil) and ((AParcela.TitularEmail <> '') or (AParcela.TitularFacebook <> '') or (AParcela.TitularInstagram <> '')) then
+      begin
+        if TitData.Find('email') <> nil then TitData.Delete('email');
+        if TitData.Find('facebook') <> nil then TitData.Delete('facebook');
+        if TitData.Find('instagram') <> nil then TitData.Delete('instagram');
+        TitResp := Supabase.Insert('titulares', TitData);
+      end;
       if TitResp <> nil then
       begin
         NewTitId := TitResp.Get('id', '');
@@ -278,7 +285,13 @@ begin
           TitData.Add('facebook', AParcela.TitularFacebook);
         if AParcela.TitularInstagram <> '' then
           TitData.Add('instagram', AParcela.TitularInstagram);
-        Supabase.Update('titulares', 'id=eq.' + AParcela.TitularId, TitData);
+        if not Supabase.Update('titulares', 'id=eq.' + AParcela.TitularId, TitData) then
+        begin
+          if TitData.Find('email') <> nil then TitData.Delete('email');
+          if TitData.Find('facebook') <> nil then TitData.Delete('facebook');
+          if TitData.Find('instagram') <> nil then TitData.Delete('instagram');
+          Supabase.Update('titulares', 'id=eq.' + AParcela.TitularId, TitData);
+        end;
       finally
         TitData.Free;
       end;
@@ -302,6 +315,13 @@ begin
       TitData.Add('ciudad', 'Chamical');
       TitData.Add('estado_titular', 'activo');
       TitResp := Supabase.Insert('titulares', TitData);
+      if (TitResp = nil) and ((AParcela.TitularEmail <> '') or (AParcela.TitularFacebook <> '') or (AParcela.TitularInstagram <> '')) then
+      begin
+        if TitData.Find('email') <> nil then TitData.Delete('email');
+        if TitData.Find('facebook') <> nil then TitData.Delete('facebook');
+        if TitData.Find('instagram') <> nil then TitData.Delete('instagram');
+        TitResp := Supabase.Insert('titulares', TitData);
+      end;
       if TitResp <> nil then
       begin
         NewTitId := TitResp.Get('id', '');

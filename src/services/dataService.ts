@@ -396,18 +396,7 @@ export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
         estado,
         saldo_mantenimiento,
         notas,
-        titular:titulares (
-          id,
-          nombre_completo,
-          dni,
-          telefono,
-          telefono_secundario,
-          email,
-          facebook,
-          instagram,
-          direccion,
-          estado_titular
-        )
+        titular:titulares (*)
       `)
       .order('nomenclatura', { ascending: true })
 
@@ -560,33 +549,63 @@ export async function upsertParcelaSupabase(parcela: Parcela): Promise<boolean> 
             parcela.titular.instagram ||
             parcela.titular.direccion
           ) {
-            await supabase
-              .from('titulares')
-              .update({
-                dni: parcela.titular.dni || null,
-                telefono: parcela.titular.telefono || null,
-                email: parcela.titular.email || null,
-                facebook: parcela.titular.facebook || null,
-                instagram: parcela.titular.instagram || null,
-                direccion: parcela.titular.direccion || 'Chamical',
-              })
-              .eq('id', titularId)
-          }
-        } else {
-          const { data: newTit } = await supabase
-            .from('titulares')
-            .insert({
-              nombre_completo: titNombre,
+            const titPayload: any = {
               dni: parcela.titular.dni || null,
               telefono: parcela.titular.telefono || null,
-              email: parcela.titular.email || null,
-              facebook: parcela.titular.facebook || null,
-              instagram: parcela.titular.instagram || null,
               direccion: parcela.titular.direccion || 'Chamical',
-              estado_titular: 'activo',
-            })
+            }
+            if (parcela.titular.email) titPayload.email = parcela.titular.email
+            if (parcela.titular.facebook) titPayload.facebook = parcela.titular.facebook
+            if (parcela.titular.instagram) titPayload.instagram = parcela.titular.instagram
+
+            const { error: updErr } = await supabase
+              .from('titulares')
+              .update(titPayload)
+              .eq('id', titularId)
+
+            if (updErr) {
+              await supabase
+                .from('titulares')
+                .update({
+                  dni: parcela.titular.dni || null,
+                  telefono: parcela.titular.telefono || null,
+                  direccion: parcela.titular.direccion || 'Chamical',
+                })
+                .eq('id', titularId)
+            }
+          }
+        } else {
+          const newTitPayload: any = {
+            nombre_completo: titNombre,
+            dni: parcela.titular.dni || null,
+            telefono: parcela.titular.telefono || null,
+            direccion: parcela.titular.direccion || 'Chamical',
+            estado_titular: 'activo',
+          }
+          if (parcela.titular.email) newTitPayload.email = parcela.titular.email
+          if (parcela.titular.facebook) newTitPayload.facebook = parcela.titular.facebook
+          if (parcela.titular.instagram) newTitPayload.instagram = parcela.titular.instagram
+
+          let { data: newTit, error: insErr } = await supabase
+            .from('titulares')
+            .insert(newTitPayload)
             .select('id')
             .maybeSingle()
+
+          if (insErr) {
+            const fallbackRes = await supabase
+              .from('titulares')
+              .insert({
+                nombre_completo: titNombre,
+                dni: parcela.titular.dni || null,
+                telefono: parcela.titular.telefono || null,
+                direccion: parcela.titular.direccion || 'Chamical',
+                estado_titular: 'activo',
+              })
+              .select('id')
+              .maybeSingle()
+            newTit = fallbackRes.data
+          }
 
           if (newTit?.id && isUuid(newTit.id)) {
             titularId = newTit.id
@@ -645,21 +664,7 @@ export async function fetchInhumacionesSupabase(): Promise<Inhumacion[] | null> 
     const { data, error } = await supabase
       .from('inhumaciones')
       .select(`
-        id,
-        nombre_difunto,
-        dni_difunto,
-        fecha_fallecimiento,
-        fecha_inhumacion,
-        nivel_posicion,
-        es_covid,
-        causa_defuncion,
-        empresa_funebrera,
-        responsable_contacto,
-        telefono_responsable,
-        email_responsable,
-        facebook_responsable,
-        instagram_responsable,
-        observaciones,
+        *,
         parcela:parcelas (
           id,
           nomenclatura
@@ -740,7 +745,7 @@ export async function insertInhumacionSupabase(inhumacion: Inhumacion): Promise<
       }
     }
 
-    const { error } = await supabase.from('inhumaciones').insert({
+    const payload: any = {
       parcela_id: pId,
       parcela_nomenclatura: parcNom || null,
       nombre_difunto: (inhumacion.nombre_difunto || '').trim(),
@@ -757,7 +762,17 @@ export async function insertInhumacionSupabase(inhumacion: Inhumacion): Promise<
       facebook_responsable: (inhumacion as any).facebook_responsable || null,
       instagram_responsable: (inhumacion as any).instagram_responsable || null,
       observaciones: (inhumacion as any).observaciones || (parcNom ? `Parcela asignada: ${parcNom}` : null),
-    })
+    }
+
+    let { error } = await supabase.from('inhumaciones').insert(payload)
+
+    if (error) {
+      delete payload.email_responsable
+      delete payload.facebook_responsable
+      delete payload.instagram_responsable
+      const res = await supabase.from('inhumaciones').insert(payload)
+      error = res.error
+    }
 
     if (error) {
       console.error('Error insertando inhumación en Supabase:', error.message, error.details || error)
@@ -819,7 +834,22 @@ export async function updateInhumacionSupabase(inhumacion: Inhumacion): Promise<
       query = query.eq('nombre_difunto', inhumacion.nombre_difunto)
     }
 
-    const { error } = await query
+    let { error } = await query
+    if (error) {
+      delete payload.email_responsable
+      delete payload.facebook_responsable
+      delete payload.instagram_responsable
+      let retryQuery = supabase.from('inhumaciones').update(payload)
+      if (inhumacion.id && isUuid(inhumacion.id)) {
+        retryQuery = retryQuery.eq('id', inhumacion.id)
+      } else if (inhumacion.dni_difunto) {
+        retryQuery = retryQuery.eq('dni_difunto', inhumacion.dni_difunto)
+      } else {
+        retryQuery = retryQuery.eq('nombre_difunto', inhumacion.nombre_difunto)
+      }
+      const retryRes = await retryQuery
+      error = retryRes.error
+    }
     return !error
   } catch (err) {
     console.error('Error actualizando inhumación en Supabase:', err)
@@ -944,11 +974,25 @@ export async function upsertAfiliadoSupabase(afiliado: any): Promise<boolean> {
       estado: estadoNormalizado,
     }
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('afiliados_seguro')
       .upsert(payload, { onConflict: 'numero_afiliado' })
       .select('id')
       .maybeSingle()
+
+    if (error) {
+      delete (payload as any).telefono
+      delete (payload as any).email
+      delete (payload as any).facebook
+      delete (payload as any).instagram
+      const retryRes = await supabase
+        .from('afiliados_seguro')
+        .upsert(payload, { onConflict: 'numero_afiliado' })
+        .select('id')
+        .maybeSingle()
+      data = retryRes.data
+      error = retryRes.error
+    }
 
     if (error) {
       console.error('Error en upsertAfiliadoSupabase:', error.message, error.details)

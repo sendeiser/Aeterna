@@ -125,7 +125,6 @@ begin
     Data.Add('causa_defuncion', AInhumacion.CausaDefuncion);
     Data.Add('empresa_funebrera', AInhumacion.EmpresaFunebrera);
     Data.Add('responsable_contacto', AInhumacion.NombreResponsable);
-    Data.Add('nombre_responsable', AInhumacion.NombreResponsable);
     Data.Add('telefono_responsable', AInhumacion.TelefonoResponsable);
     if AInhumacion.EmailResponsable <> '' then
       Data.Add('email_responsable', AInhumacion.EmailResponsable);
@@ -139,6 +138,13 @@ begin
       Data.Add('observaciones', AInhumacion.Observaciones);
 
     Resp := Supabase.Insert('inhumaciones', Data);
+    if (Resp = nil) and ((AInhumacion.EmailResponsable <> '') or (AInhumacion.FacebookResponsable <> '') or (AInhumacion.InstagramResponsable <> '')) then
+    begin
+      if Data.Find('email_responsable') <> nil then Data.Delete('email_responsable');
+      if Data.Find('facebook_responsable') <> nil then Data.Delete('facebook_responsable');
+      if Data.Find('instagram_responsable') <> nil then Data.Delete('instagram_responsable');
+      Resp := Supabase.Insert('inhumaciones', Data);
+    end;
     if Resp <> nil then
     begin
       Result := True;
@@ -180,7 +186,6 @@ begin
     Data.Add('causa_defuncion', AInhumacion.CausaDefuncion);
     Data.Add('empresa_funebrera', AInhumacion.EmpresaFunebrera);
     Data.Add('responsable_contacto', AInhumacion.NombreResponsable);
-    Data.Add('nombre_responsable', AInhumacion.NombreResponsable);
     Data.Add('telefono_responsable', AInhumacion.TelefonoResponsable);
     if AInhumacion.EmailResponsable <> '' then
       Data.Add('email_responsable', AInhumacion.EmailResponsable);
@@ -191,6 +196,13 @@ begin
     Data.Add('observaciones', AInhumacion.Observaciones);
 
     Result := Supabase.Update('inhumaciones', Filter, Data);
+    if (not Result) and ((AInhumacion.EmailResponsable <> '') or (AInhumacion.FacebookResponsable <> '') or (AInhumacion.InstagramResponsable <> '')) then
+    begin
+      if Data.Find('email_responsable') <> nil then Data.Delete('email_responsable');
+      if Data.Find('facebook_responsable') <> nil then Data.Delete('facebook_responsable');
+      if Data.Find('instagram_responsable') <> nil then Data.Delete('instagram_responsable');
+      Result := Supabase.Update('inhumaciones', Filter, Data);
+    end;
   finally
     Data.Free;
   end;
