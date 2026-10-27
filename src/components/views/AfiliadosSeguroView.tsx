@@ -1188,16 +1188,16 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                 </th>
                 <th
                   onClick={() => setSortOption((prev) => (prev === 'deuda-desc' ? 'deuda-asc' : 'deuda-desc'))}
-                  className="px-2 py-2 w-[120px] text-right font-semibold bg-slate-100 whitespace-nowrap cursor-pointer hover:bg-slate-200 transition-colors"
+                  className="px-3 py-2 w-[130px] min-w-[130px] text-center font-semibold bg-slate-100 whitespace-nowrap cursor-pointer hover:bg-slate-200 transition-colors"
                   title="Ordenar por Saldo Deuda (Mayor / Menor)"
                 >
-                  <div className="flex items-center justify-end gap-1">
+                  <div className="flex items-center justify-center gap-1">
                     <span>Saldo Deuda</span>
                     {(sortOption === 'deuda-desc' || sortOption === 'saldo-desc') && <span className="material-symbols-outlined text-[13px] text-red-600">arrow_downward</span>}
                     {(sortOption === 'deuda-asc' || sortOption === 'saldo-asc') && <span className="material-symbols-outlined text-[13px] text-emerald-600">arrow_upward</span>}
                   </div>
                 </th>
-                <th className="px-2 py-2 w-[224px] text-right font-semibold bg-slate-100 whitespace-nowrap">Acciones Rápidas</th>
+                <th className="px-4 py-2 w-[340px] min-w-[340px] text-right font-semibold bg-slate-100 whitespace-nowrap">Acciones Rápidas</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/40 font-body-md text-on-surface">
@@ -1284,20 +1284,20 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                       </td>
 
                       {/* Col 5: Saldo */}
-                      <td className="px-2 py-2 align-middle text-right whitespace-nowrap">
+                      <td className="px-3 py-2 align-middle text-center whitespace-nowrap">
                         <div className="font-code-cadastral font-bold text-xs text-on-surface whitespace-nowrap">
                           {formatCurrency(saldoDeuda)}
                         </div>
                       </td>
 
                       {/* Col 6: Botones Guardar / Cancelar */}
-                      <td className="px-2 py-2 align-middle text-right" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-1">
+                      <td className="px-4 py-2 align-middle text-right border-l border-slate-200/50" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
                             id={`btn-guardar-afiliado-${afiliado.id}`}
                             onClick={saveEditRow}
-                            className="px-2 py-1 rounded text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-0.5 shadow-xs cursor-pointer"
+                            className="h-7 px-2.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 shadow-xs cursor-pointer"
                             title="Guardar cambios"
                           >
                             <span className="material-symbols-outlined text-[13px]">check</span>
@@ -1307,7 +1307,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                             type="button"
                             id={`btn-cancelar-afiliado-${afiliado.id}`}
                             onClick={cancelEditRow}
-                            className="px-2 py-1 rounded text-[11px] font-semibold bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant flex items-center gap-0.5 cursor-pointer"
+                            className="h-7 px-2.5 rounded-lg text-xs font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 flex items-center gap-1 shadow-xs cursor-pointer"
                             title="Cancelar edición"
                           >
                             <span className="material-symbols-outlined text-[13px]">close</span>
@@ -1482,41 +1482,33 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                     </td>
 
                     {/* Col 5: Saldo Total Deuda */}
-                    <td className="px-2 py-2 align-middle text-right whitespace-nowrap">
+                    <td className="px-3 py-2 align-middle text-center whitespace-nowrap">
                       {saldoDeuda > 0 ? (
-                        <div className="flex flex-col items-end whitespace-nowrap">
-                          <div className="font-code-cadastral font-bold text-red-700 text-[13.5px] whitespace-nowrap">
+                        <div className="flex flex-col items-center justify-center whitespace-nowrap">
+                          <div className="font-code-cadastral font-bold text-red-700 text-[13px] whitespace-nowrap">
                             {formatCurrency(saldoDeuda)}
                           </div>
-                          <span className="inline-flex items-center text-[9.5px] font-bold text-red-800 bg-red-100 px-1 py-0.5 rounded border border-red-200 whitespace-nowrap mt-0.5">
-                            {mesesVencidos.length} cuota{mesesVencidos.length > 1 ? 's' : ''} en mora
+                          <span className="inline-flex items-center text-[10px] font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded-full border border-red-200 whitespace-nowrap mt-0.5">
+                            {mesesVencidos.length} {mesesVencidos.length === 1 ? 'cuota en mora' : 'cuotas en mora'}
                           </span>
                         </div>
                       ) : (
-                        <div className="font-code-cadastral font-semibold text-emerald-700 text-xs whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full text-xs border border-emerald-200 shadow-xs whitespace-nowrap">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                           Al día
-                        </div>
+                        </span>
                       )}
                     </td>
 
                     {/* Col 6: Acciones Rápidas */}
-                    <td className="px-2 py-2 align-middle text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1 whitespace-nowrap">
-                        <button
-                          type="button"
-                          id={`btn-editar-afiliado-${afiliado.id}`}
-                          onClick={() => startEditRow(afiliado)}
-                          className="h-7 px-2 rounded hover:bg-surface-container text-primary text-xs font-semibold inline-flex items-center gap-0.5 border border-outline-variant/60 cursor-pointer shrink-0 whitespace-nowrap transition-colors"
-                          title="Editar en la misma tabla"
-                        >
-                          <span className="material-symbols-outlined text-[14px]">edit</span>
-                          <span>Editar</span>
-                        </button>
+                    <td className="px-4 py-2 align-middle text-right whitespace-nowrap border-l border-slate-200/50">
+                      <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                        {/* 1. Botón Cobrar (o Mora si hay múltiples) */}
                         {mesesVencidos.length > 1 && onCobrarMultiplesCuotas ? (
                           <button
                             type="button"
                             onClick={() => onCobrarMultiplesCuotas(afiliado, mesesVencidos)}
-                            className="h-7 px-2.5 rounded bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs inline-flex items-center gap-1 active:scale-[0.98] shrink-0 whitespace-nowrap cursor-pointer transition-colors"
+                            className="h-7 px-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs inline-flex items-center gap-1 active:scale-[0.98] shrink-0 cursor-pointer transition-colors"
                             title={`Cobrar ${mesesVencidos.length} cuotas vencidas juntas (${formatCurrency(saldoDeuda)})`}
                           >
                             <span className="material-symbols-outlined text-[14px]">payments</span>
@@ -1526,7 +1518,8 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                           <button
                             type="button"
                             onClick={() => onCobrarCuota(afiliado, siguienteCuotaCobrar)}
-                            className="h-7 px-2.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs inline-flex items-center gap-1 active:scale-[0.98] shrink-0 whitespace-nowrap cursor-pointer transition-colors"
+                            className="h-7 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs inline-flex items-center gap-1 active:scale-[0.98] shrink-0 cursor-pointer transition-colors"
+                            title="Cobrar cuota en caja o QR presencial"
                           >
                             <span className="material-symbols-outlined text-[15px]" data-icon="qr_code_2">
                               qr_code_2
@@ -1534,27 +1527,47 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                             <span className="whitespace-nowrap">Cobrar</span>
                           </button>
                         )}
+
+                        {/* 2. Botón Enviar Cobro Remoto (WhatsApp / Redes) */}
                         {onEnviarCobro && (
                           <button
                             type="button"
                             onClick={() => onEnviarCobro(afiliado)}
-                            className="h-7 px-2 rounded bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shadow-xs inline-flex items-center gap-1 active:scale-[0.98] shrink-0 whitespace-nowrap cursor-pointer transition-colors"
+                            className="h-7 px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shadow-xs inline-flex items-center gap-1 active:scale-[0.98] shrink-0 cursor-pointer transition-colors"
                             title="Enviar cobro a distancia por WhatsApp o Redes"
                           >
                             <span className="material-symbols-outlined text-[14px]">send_to_mobile</span>
                             <span>Enviar cobro</span>
                           </button>
                         )}
+
+                        {/* Separador vertical sutil */}
+                        <span className="h-4 w-px bg-slate-300 mx-0.5 shrink-0" aria-hidden="true"></span>
+
+                        {/* 3. Botón Editar Fila */}
+                        <button
+                          type="button"
+                          id={`btn-editar-afiliado-${afiliado.id}`}
+                          onClick={() => startEditRow(afiliado)}
+                          className="h-7 w-7 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-700 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                          title="Editar en la misma tabla"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">edit</span>
+                        </button>
+
+                        {/* 4. Botón Ficha y Grupo Familiar */}
                         <button
                           type="button"
                           onClick={() => onEditarAfiliado(afiliado)}
-                          className="h-7 w-7 rounded border border-outline-variant hover:bg-surface-container-low text-on-surface-variant flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                          className="h-7 w-7 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-700 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
                           title="Ficha completa y Grupo Familiar"
                         >
                           <span className="material-symbols-outlined text-[15px]" data-icon="family_restroom">
                             family_restroom
                           </span>
                         </button>
+
+                        {/* 5. Botón Dar de Baja */}
                         {onEliminarAfiliado && (
                           <button
                             type="button"
@@ -1563,12 +1576,10 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                                 onEliminarAfiliado(afiliado.id)
                               }
                             }}
-                            className="h-7 w-7 rounded border border-outline-variant hover:bg-red-50 text-outline hover:text-red-700 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                            className="h-7 w-7 rounded-lg border border-red-200 hover:bg-red-50 text-red-600 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
                             title="Dar de baja afiliado"
                           >
-                            <span className="material-symbols-outlined text-[15px]" data-icon="delete">
-                              delete
-                            </span>
+                            <span className="material-symbols-outlined text-[14px]">delete</span>
                           </button>
                         )}
                       </div>
