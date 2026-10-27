@@ -58,9 +58,14 @@ Todo el trámite ocurre en **un modal aparte**, que se abre con **un botón nuev
 - El cobro de varias cuotas pasa a enviar también el teléfono y las redes del afiliado, que hoy faltan.
 - Se corrige que el cobro de cuotas en ventanilla ignore el número de recibo, el medio de pago y el monto cargados en el modal.
 
-## Pendiente de respuesta del usuario
+## Clarificación del usuario: Saldo 0 en Parcelas
 
-- **Monto anual por defecto** cuando la parcela tiene saldo $0. Hoy la web usa $36.000 (pensado como cuatrimestral) y XP usa $49.000. El monto siempre se puede editar en el modal.
+- **Cuando una parcela tiene saldo $0 es porque ya pagó el mantenimiento anual ("Al Día").**
+- En ese caso, al abrir "Enviar cobro":
+  - El modal reconoce que la parcela está "Al Día".
+  - Ofrece la opción de **Enviar Comprobante del mantenimiento anual ya cancelado**, o
+  - Cobrar por adelantado el próximo período anual (monto editable por el operador).
+- Cuando la parcela tiene saldo adeudado (`saldo_mantenimiento > 0`), el monto por defecto a cobrar y reclamar es exactamente ese saldo pendiente.
 
 ## Pruebas
 
