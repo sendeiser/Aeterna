@@ -35,6 +35,9 @@ CREATE TABLE IF NOT EXISTS public.titulares (
     dni TEXT,
     telefono TEXT,
     telefono_secundario TEXT,
+    email TEXT,
+    facebook TEXT,
+    instagram TEXT,
     direccion TEXT,
     barrio TEXT,
     ciudad TEXT DEFAULT 'Chamical',
@@ -91,6 +94,9 @@ CREATE TABLE IF NOT EXISTS public.inhumaciones (
     empresa_funebrera TEXT DEFAULT 'Aeterna Sepelios',
     responsable_contacto TEXT,
     telefono_responsable TEXT,
+    email_responsable TEXT,
+    facebook_responsable TEXT,
+    instagram_responsable TEXT,
     observaciones TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -101,6 +107,10 @@ CREATE TABLE IF NOT EXISTS public.afiliados_seguro (
     numero_afiliado INT UNIQUE NOT NULL,
     titular_id UUID REFERENCES public.titulares(id) ON DELETE SET NULL,
     nombre_completo TEXT NOT NULL,
+    telefono TEXT,
+    email TEXT,
+    facebook TEXT,
+    instagram TEXT,
     direccion_cobro TEXT,
     zona_cobro TEXT, -- Ej: 'Ruta 1', 'Barrio Loma Blanca', 'Zona 1'
     cobrador_asignado TEXT,

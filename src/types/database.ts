@@ -21,6 +21,9 @@ export interface Titular {
   dni?: string | null
   telefono?: string | null
   telefono_secundario?: string | null
+  email?: string | null
+  facebook?: string | null
+  instagram?: string | null
   direccion?: string | null
   barrio?: string | null
   ciudad?: string
@@ -74,6 +77,9 @@ export interface Inhumacion {
   empresa_funebrera?: string | null
   nombre_responsable?: string | null
   telefono_responsable?: string | null
+  email_responsable?: string | null
+  facebook_responsable?: string | null
+  instagram_responsable?: string | null
   observaciones?: string | null
   parcela?: Parcela | null
   created_at?: string | null
@@ -85,6 +91,10 @@ export interface AfiliadoSeguro {
   titular_id?: string | null
   nombre_completo: string
   dni?: string | null
+  telefono?: string | null
+  email?: string | null
+  facebook?: string | null
+  instagram?: string | null
   direccion_cobro?: string | null
   zona_cobro?: string | null
   cobrador_asignado?: string | null
