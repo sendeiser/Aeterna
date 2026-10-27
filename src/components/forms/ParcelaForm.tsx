@@ -28,6 +28,7 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({
   const [titularFacebook, setTitularFacebook] = useState(initialData?.titular?.facebook || '')
   const [titularInstagram, setTitularInstagram] = useState(initialData?.titular?.instagram || '')
   const [direccion, setDireccion] = useState(initialData?.titular?.direccion || '')
+  const [barrio, setBarrio] = useState(initialData?.titular?.barrio || '')
   const [titularEstadoVital, setTitularEstadoVital] = useState<'vivo' | 'fallecido'>(
     initialData?.titular?.estado_vital ||
     (initialData?.titular?.estado_titular === 'fallecido' ? 'fallecido' : 'vivo')
@@ -76,6 +77,7 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({
             facebook: titularFacebook.trim() || null,
             instagram: titularInstagram.trim() || null,
             direccion: direccion.trim() || null,
+            barrio: barrio.trim() || null,
             estado_titular: (titularEstadoVital === 'fallecido' ? 'fallecido' : 'activo') as EstadoTitular,
             estado_vital: titularEstadoVital,
           }
@@ -171,17 +173,31 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({
               </div>
             </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-body-sm font-semibold text-on-surface-variant mb-1">
-                Domicilio en Chamical
-              </label>
-              <input
-                type="text"
-                value={direccion}
-                onChange={(e) => setDireccion(e.target.value)}
-                placeholder="Av. San Martín 452, Chamical"
-                className="w-full h-9 px-3 text-body-md bg-white border border-outline-variant rounded-lg focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none"
-              />
+            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-body-sm font-semibold text-on-surface-variant mb-1">
+                  Domicilio / Calle y N°
+                </label>
+                <input
+                  type="text"
+                  value={direccion}
+                  onChange={(e) => setDireccion(e.target.value)}
+                  placeholder="Ej. Av. San Martín 452, Chamical"
+                  className="w-full h-9 px-3 text-body-md bg-white border border-outline-variant rounded-lg focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-body-sm font-semibold text-on-surface-variant mb-1">
+                  Barrio
+                </label>
+                <input
+                  type="text"
+                  value={barrio}
+                  onChange={(e) => setBarrio(e.target.value)}
+                  placeholder="Ej. Loma Blanca / Centro"
+                  className="w-full h-9 px-3 text-body-md bg-white border border-outline-variant rounded-lg focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none"
+                />
+              </div>
             </div>
 
             {/* Canales Digitales de Contacto */}

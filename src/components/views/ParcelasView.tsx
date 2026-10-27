@@ -43,6 +43,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   const [filterTitularVital, setFilterTitularVital] = useState<'todos' | 'vivo' | 'fallecido'>('todos')
   const [filterFechaDesde, setFilterFechaDesde] = useState('')
   const [filterFechaHasta, setFilterFechaHasta] = useState('')
+  const [filterDomicilio, setFilterDomicilio] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [pageSize, setPageSize] = useState<'todas' | 50 | 100>('todas')
   const [currentPage, setCurrentPage] = useState(1)
@@ -55,7 +56,8 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
     filterSector !== 'todos' ||
     filterTitularVital !== 'todos' ||
     Boolean(filterFechaDesde) ||
-    Boolean(filterFechaHasta)
+    Boolean(filterFechaHasta) ||
+    Boolean(filterDomicilio)
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 640)
@@ -246,13 +248,22 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
       if (!pDate || pDate.slice(0, 10) > filterFechaHasta) return false
     }
 
+    if (filterDomicilio.trim()) {
+      const qDom = filterDomicilio.toLowerCase()
+      const dir = (p.titular?.direccion || '').toLowerCase()
+      const bar = (p.titular?.barrio || '').toLowerCase()
+      if (!dir.includes(qDom) && !bar.includes(qDom)) {
+        return false
+      }
+    }
+
     return true
   })
 
   // Reset de página al cambiar filtros
   useEffect(() => {
     setCurrentPage(1)
-  }, [filterSector, filterTitularVital, searchTerm, pageSize, sortOption, filterFechaDesde, filterFechaHasta])
+  }, [filterSector, filterTitularVital, searchTerm, filterDomicilio, pageSize, sortOption, filterFechaDesde, filterFechaHasta])
 
   // Ordenamiento dinámico de parcelas por columnas
   const sortedParcelas: Parcela[] = useMemo(() => {
@@ -272,6 +283,16 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
         const nomA = a.titular?.nombre_completo || ''
         const nomB = b.titular?.nombre_completo || ''
         return nomB.localeCompare(nomA)
+      }
+      if (sortOption === 'domicilio-asc') {
+        const dirA = a.titular?.direccion || 'ZZZ'
+        const dirB = b.titular?.direccion || 'ZZZ'
+        return dirA.localeCompare(dirB, 'es', { sensitivity: 'base' })
+      }
+      if (sortOption === 'domicilio-desc') {
+        const dirA = a.titular?.direccion || ''
+        const dirB = b.titular?.direccion || ''
+        return dirB.localeCompare(dirA, 'es', { sensitivity: 'base' })
       }
       if (sortOption === 'sector-asc') {
         return (a.sector_id || '').localeCompare(b.sector_id || '')
@@ -580,6 +601,31 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
             </button>
           </div>
 
+          {/* Filtro Domicilio en Móvil */}
+          <div className="relative flex items-center pt-1 border-t border-outline-variant/40">
+            <span className="material-symbols-outlined absolute left-2 text-[14px] text-outline pointer-events-none">
+              location_on
+            </span>
+            <input
+              id="filter-domicilio-parcelas-mobile"
+              type="text"
+              value={filterDomicilio}
+              onChange={(e) => setFilterDomicilio(e.target.value)}
+              placeholder="Filtrar por domicilio / barrio..."
+              className="w-full h-7 pl-6 pr-6 text-[11px] bg-white border border-outline-variant rounded focus:border-secondary focus:outline-none"
+            />
+            {filterDomicilio && (
+              <button
+                type="button"
+                onClick={() => setFilterDomicilio('')}
+                className="absolute right-1 text-outline hover:text-on-surface p-1"
+                title="Limpiar filtro de domicilio"
+              >
+                <span className="material-symbols-outlined text-[13px]">close</span>
+              </button>
+            )}
+          </div>
+
           {/* Rango de Fechas en Móvil */}
           <div className="flex items-center gap-1.5 text-[10px] pt-1 border-t border-outline-variant/40 flex-wrap">
             <span className="font-bold text-slate-500 uppercase">Fecha:</span>
@@ -604,6 +650,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                   setFilterTitularVital('todos')
                   setFilterFechaDesde('')
                   setFilterFechaHasta('')
+                  setFilterDomicilio('')
                 }}
                 className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 font-bold ml-auto cursor-pointer"
               >
@@ -651,6 +698,32 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface p-0.5"
                 >
                   <span className="material-symbols-outlined text-[14px]">close</span>
+                </button>
+              )}
+            </div>
+
+            {/* Filtro por Domicilio / Barrio */}
+            <div className="relative flex items-center shrink-0">
+              <span className="material-symbols-outlined absolute left-2.5 text-[16px] text-outline pointer-events-none">
+                location_on
+              </span>
+              <input
+                id="filter-domicilio-parcelas-desktop"
+                type="text"
+                value={filterDomicilio}
+                onChange={(e) => setFilterDomicilio(e.target.value)}
+                placeholder="Filtrar por domicilio / barrio..."
+                className="h-8 pl-8 pr-7 text-xs bg-surface-container-low border border-outline-variant rounded focus:border-secondary focus:bg-white focus:outline-none w-48 xl:w-56"
+                title="Filtrar parcelas por dirección o barrio del titular"
+              />
+              {filterDomicilio && (
+                <button
+                  type="button"
+                  onClick={() => setFilterDomicilio('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface p-0.5 rounded cursor-pointer"
+                  title="Limpiar filtro de domicilio"
+                >
+                  <span className="material-symbols-outlined text-[13px]">close</span>
                 </button>
               )}
             </div>
@@ -703,6 +776,8 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 <option value="parcela-desc">📍 Parcela (Z → A)</option>
                 <option value="alfa-asc">🔤 Titular: A → Z</option>
                 <option value="alfa-desc">🔤 Titular: Z → A</option>
+                <option value="domicilio-asc">🏠 Domicilio: A → Z</option>
+                <option value="domicilio-desc">🏠 Domicilio: Z → A</option>
                 <option value="sector-asc">🏛️ Sector</option>
                 <option value="fila-asc">🔢 Fila / Nro</option>
                 <option value="deuda-desc">💰 Mayor deuda</option>
@@ -956,6 +1031,16 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                           className="w-full text-xs font-semibold px-2 py-1 rounded border border-primary bg-surface"
                         />
                       </div>
+                      <div>
+                        <label className="text-[10px] text-outline font-medium block mb-0.5">Domicilio / Dirección:</label>
+                        <input
+                          type="text"
+                          value={editRowData.titularDireccion}
+                          onChange={(e) => setEditRowData({ ...editRowData, titularDireccion: e.target.value })}
+                          placeholder="Calle y N° / Barrio"
+                          className="w-full text-xs px-2 py-1 rounded border border-outline-variant bg-surface"
+                        />
+                      </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <label className="text-[10px] text-outline font-medium block mb-0.5">DNI:</label>
@@ -1156,6 +1241,15 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                         )}
                       </div>
                     )}
+                    {(p.titular?.direccion || p.titular?.barrio) && (
+                      <div className="flex items-center gap-1 text-[11px] text-on-surface-variant mt-1">
+                        <span className="material-symbols-outlined text-[13px] text-outline shrink-0">location_on</span>
+                        <span className="truncate">
+                          {p.titular.direccion || 'Sin calle'}
+                          {p.titular.barrio ? ` (B° ${p.titular.barrio.replace(/^b°\s*/i, '')})` : ''}
+                        </span>
+                      </div>
+                    )}
                     <div className="text-[10px] font-code-cadastral text-on-surface-variant flex items-center gap-1 mt-0.5">
                       <span className="material-symbols-outlined text-[13px] text-outline">schedule</span>
                       <span>Alta: {formatDateHour(p.created_at || p.fecha_adquisicion)}</span>
@@ -1234,6 +1328,17 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                             <span className="material-symbols-outlined text-[15px]">lock_open</span>
                             <span>Liberar</span>
                           </button>
+                          {onEnviarCobro && (
+                            <button
+                              type="button"
+                              onClick={() => onEnviarCobro(p)}
+                              className="h-8 px-2.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold inline-flex items-center gap-1 shadow-xs cursor-pointer"
+                              title="Enviar cobro a distancia (QR, Alias y Recibo) para regularizar parcela"
+                            >
+                              <span className="material-symbols-outlined text-[15px]">send_to_mobile</span>
+                              <span>Enviar cobro</span>
+                            </button>
+                          )}
                         </>
                       ) : (
                         <>
@@ -1295,6 +1400,17 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                       <span>Titular Actual</span>
                       {sortOption === 'alfa-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
                       {sortOption === 'alfa-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => setSortOption((prev) => (prev === 'domicilio-asc' ? 'domicilio-desc' : 'domicilio-asc'))}
+                    className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
+                    title="Ordenar por Domicilio (A-Z / Z-A)"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Domicilio</span>
+                      {sortOption === 'domicilio-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                      {sortOption === 'domicilio-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
                     </div>
                   </th>
                   <th
@@ -1396,6 +1512,20 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                                 <option value="fallecido">Fallecido</option>
                               </select>
                             </div>
+                          </div>
+                        </td>
+
+                        {/* Domicilio Editable */}
+                        <td className="py-2 px-3">
+                          <div className="space-y-1 max-w-[180px]">
+                            <label className="text-[10px] text-outline font-medium block">Domicilio:</label>
+                            <input
+                              type="text"
+                              value={editRowData.titularDireccion}
+                              onChange={(e) => setEditRowData({ ...editRowData, titularDireccion: e.target.value })}
+                              placeholder="Calle y N° / Barrio"
+                              className="w-full text-xs px-2 py-1 rounded border border-primary bg-surface focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
                           </div>
                         </td>
 
@@ -1571,6 +1701,23 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                         )}
                       </td>
 
+                      {/* Domicilio */}
+                      <td className="py-2.5 px-3">
+                        <div className="flex items-center gap-1 text-xs text-on-surface">
+                          <span className="material-symbols-outlined text-[14px] text-outline shrink-0">location_on</span>
+                          <span className="truncate max-w-[170px] font-medium" title={p.titular?.direccion || 'Sin domicilio registrado'}>
+                            {p.titular?.direccion || <span className="text-outline italic">Sin domicilio</span>}
+                          </span>
+                        </div>
+                        {p.titular?.barrio && (
+                          <span className="text-[10px] text-outline block pl-4 truncate max-w-[170px]" title={`Barrio ${p.titular.barrio}`}>
+                            {p.titular.barrio.toLowerCase().startsWith('b°') || p.titular.barrio.toLowerCase().startsWith('barrio')
+                              ? p.titular.barrio
+                              : `B° ${p.titular.barrio}`}
+                          </span>
+                        )}
+                      </td>
+
                       {/* Nomenclatura */}
                       <td className="py-2.5 px-3">
                         <span
@@ -1684,6 +1831,18 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                                 <span className="material-symbols-outlined text-[13px]">lock_open</span>
                                 <span>Liberar</span>
                               </button>
+                              {onEnviarCobro && (
+                                <button
+                                  type="button"
+                                  onClick={() => onEnviarCobro(p)}
+                                  title="Enviar cobro a distancia (QR, Alias y Recibo) para regularizar parcela"
+                                  className="w-7 h-7 inline-flex items-center justify-center rounded hover:bg-emerald-50 text-emerald-600 cursor-pointer"
+                                >
+                                  <span className="material-symbols-outlined text-[18px]" data-icon="send_to_mobile">
+                                    send_to_mobile
+                                  </span>
+                                </button>
+                              )}
                             </>
                           ) : (
                             <>
