@@ -213,6 +213,10 @@ export default function App() {
     monto: number
     identificador: string
     titularNombre: string
+    telefono?: string | null
+    email?: string | null
+    facebook?: string | null
+    instagram?: string | null
     onConfirm: (datos?: {
       metodo: 'efectivo' | 'transferencia_qr'
       comprobante: string
@@ -295,6 +299,10 @@ export default function App() {
       monto,
       identificador: parcela.nomenclatura,
       titularNombre,
+      telefono: parcela.titular?.telefono,
+      email: parcela.titular?.email,
+      facebook: parcela.titular?.facebook,
+      instagram: parcela.titular?.instagram,
       onConfirm: async (datos) => {
         const montoCobrado = datos?.monto ?? monto
         const nuevoSaldo = Math.max(0, (parcela.saldo_mantenimiento || 0) - montoCobrado)
@@ -357,6 +365,10 @@ export default function App() {
       monto,
       identificador: `AFI-${afiliado.numero_afiliado}-${mesNombre}`,
       titularNombre: afiliado.nombre_completo,
+      telefono: afiliado.telefono,
+      email: afiliado.email,
+      facebook: afiliado.facebook,
+      instagram: afiliado.instagram,
       onConfirm: async () => {
         const currentPaid = afiliado.cuotasPagadas || []
         const updatedPaid = currentPaid.includes(nroCuota)
@@ -1113,6 +1125,10 @@ export default function App() {
         monto={qrModal.monto}
         identificador={qrModal.identificador}
         titularNombre={qrModal.titularNombre}
+        telefono={qrModal.telefono}
+        email={qrModal.email}
+        facebook={qrModal.facebook}
+        instagram={qrModal.instagram}
         config={config}
         onConfirmarPago={(datos) => {
           qrModal.onConfirm(datos)

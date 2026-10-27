@@ -399,6 +399,52 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                       </span>
                       <span className="text-secondary font-semibold text-xs">[Nivel {inh.nivel_posicion || 1}]</span>
                     </div>
+                    {/* Familiar Responsable de Contacto */}
+                    {(inh.nombre_responsable || inh.telefono_responsable || inh.email_responsable || inh.facebook_responsable || inh.instagram_responsable) && (
+                      <div className="text-[11px] text-on-surface-variant bg-surface-container-low px-2 py-1 rounded border border-outline-variant/60 mt-1">
+                        <div>
+                          Familiar: <strong className="text-on-surface">{inh.nombre_responsable || 'Contacto Registrado'}</strong>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          {inh.telefono_responsable && (
+                            <span
+                              className="inline-flex items-center gap-0.5 text-[10px] text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200"
+                              title={`WhatsApp: ${inh.telefono_responsable}`}
+                            >
+                              <span className="material-symbols-outlined text-[11px] text-emerald-600">chat</span>
+                              <span>{inh.telefono_responsable.replace('+54 9 ', '')}</span>
+                            </span>
+                          )}
+                          {inh.email_responsable && (
+                            <span
+                              className="inline-flex items-center gap-0.5 text-[10px] text-red-800 bg-red-50 px-1.5 py-0.2 rounded border border-red-200"
+                              title={`Gmail: ${inh.email_responsable}`}
+                            >
+                              <span className="material-symbols-outlined text-[11px] text-red-600">mail</span>
+                              <span className="truncate max-w-[110px]">{inh.email_responsable}</span>
+                            </span>
+                          )}
+                          {inh.facebook_responsable && (
+                            <span
+                              className="inline-flex items-center gap-0.5 text-[10px] text-blue-800 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200"
+                              title={`Facebook: ${inh.facebook_responsable}`}
+                            >
+                              <span className="material-symbols-outlined text-[11px] text-blue-600">forum</span>
+                              <span className="truncate max-w-[85px]">{inh.facebook_responsable}</span>
+                            </span>
+                          )}
+                          {inh.instagram_responsable && (
+                            <span
+                              className="inline-flex items-center gap-0.5 text-[10px] text-purple-800 bg-purple-50 px-1.5 py-0.2 rounded border border-purple-200"
+                              title={`Instagram: @${inh.instagram_responsable}`}
+                            >
+                              <span className="material-symbols-outlined text-[11px] text-pink-600">photo_camera</span>
+                              <span className="truncate max-w-[75px]">@{inh.instagram_responsable}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Empresa fúnebre */}
@@ -541,6 +587,50 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                       <div className="text-[11px] font-code-cadastral text-outline">
                         Acta #84{90 + index}-B
                       </div>
+                      {/* Familiar Responsable de Contacto */}
+                      {(inh.nombre_responsable || inh.telefono_responsable || inh.email_responsable || inh.facebook_responsable || inh.instagram_responsable) && (
+                        <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                          <span className="text-[10px] text-on-surface-variant">
+                            Resp: <strong className="font-semibold text-on-surface">{inh.nombre_responsable || 'Contacto'}</strong>
+                          </span>
+                          {inh.telefono_responsable && (
+                            <span
+                              className="inline-flex items-center gap-0.5 text-[10px] text-emerald-800 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200"
+                              title={`WhatsApp: ${inh.telefono_responsable}`}
+                            >
+                              <span className="material-symbols-outlined text-[11px] text-emerald-600">chat</span>
+                              <span>{inh.telefono_responsable.replace('+54 9 ', '')}</span>
+                            </span>
+                          )}
+                          {inh.email_responsable && (
+                            <span
+                              className="inline-flex items-center gap-0.5 text-[10px] text-red-800 bg-red-50 px-1 py-0.2 rounded border border-red-200"
+                              title={`Gmail: ${inh.email_responsable}`}
+                            >
+                              <span className="material-symbols-outlined text-[11px] text-red-600">mail</span>
+                              <span className="truncate max-w-[100px]">{inh.email_responsable}</span>
+                            </span>
+                          )}
+                          {inh.facebook_responsable && (
+                            <span
+                              className="inline-flex items-center gap-0.5 text-[10px] text-blue-800 bg-blue-50 px-1 py-0.2 rounded border border-blue-200"
+                              title={`Facebook: ${inh.facebook_responsable}`}
+                            >
+                              <span className="material-symbols-outlined text-[11px] text-blue-600">forum</span>
+                              <span className="truncate max-w-[75px]">{inh.facebook_responsable}</span>
+                            </span>
+                          )}
+                          {inh.instagram_responsable && (
+                            <span
+                              className="inline-flex items-center gap-0.5 text-[10px] text-purple-800 bg-purple-50 px-1 py-0.2 rounded border border-purple-200"
+                              title={`Instagram: @${inh.instagram_responsable}`}
+                            >
+                              <span className="material-symbols-outlined text-[11px] text-pink-600">photo_camera</span>
+                              <span className="truncate max-w-[70px]">@{inh.instagram_responsable}</span>
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </td>
 
                     {/* Parcela y Nivel */}

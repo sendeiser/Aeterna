@@ -940,6 +940,47 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                       <span>•</span>
                       <span className="truncate">{afiliado.direccion_cobro || 'Chamical, La Rioja'}</span>
                     </div>
+                    {/* Canales de Contacto Afiliado */}
+                    {(afiliado.telefono || afiliado.email || afiliado.facebook || afiliado.instagram) && (
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        {afiliado.telefono && (
+                          <span
+                            className="inline-flex items-center gap-0.5 text-[10px] text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200"
+                            title={`WhatsApp: ${afiliado.telefono}`}
+                          >
+                            <span className="material-symbols-outlined text-[11px] text-emerald-600">chat</span>
+                            <span>{afiliado.telefono.replace('+54 9 ', '')}</span>
+                          </span>
+                        )}
+                        {afiliado.email && (
+                          <span
+                            className="inline-flex items-center gap-0.5 text-[10px] text-red-800 bg-red-50 px-1.5 py-0.5 rounded border border-red-200"
+                            title={`Gmail: ${afiliado.email}`}
+                          >
+                            <span className="material-symbols-outlined text-[11px] text-red-600">mail</span>
+                            <span className="truncate max-w-[120px]">{afiliado.email}</span>
+                          </span>
+                        )}
+                        {afiliado.facebook && (
+                          <span
+                            className="inline-flex items-center gap-0.5 text-[10px] text-blue-800 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200"
+                            title={`Facebook: ${afiliado.facebook}`}
+                          >
+                            <span className="material-symbols-outlined text-[11px] text-blue-600">forum</span>
+                            <span className="truncate max-w-[90px]">{afiliado.facebook}</span>
+                          </span>
+                        )}
+                        {afiliado.instagram && (
+                          <span
+                            className="inline-flex items-center gap-0.5 text-[10px] text-purple-800 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200"
+                            title={`Instagram: @${afiliado.instagram}`}
+                          >
+                            <span className="material-symbols-outlined text-[11px] text-pink-600">photo_camera</span>
+                            <span className="truncate max-w-[80px]">@{afiliado.instagram}</span>
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <div className="text-[10px] font-code-cadastral text-on-surface-variant flex items-center gap-1 mt-0.5">
                       <span className="material-symbols-outlined text-[13px] text-outline">schedule</span>
                       <span>Alta: {formatDateHour(afiliado.created_at || afiliado.fecha_alta)}</span>
@@ -1294,6 +1335,47 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
                           <span className="material-symbols-outlined text-[11px]">two_wheeler</span>
                           <span className="truncate">{afiliado.zona_cobro || 'Zona 1'}</span>
                         </span>
+                        {/* Canales de Contacto Afiliado */}
+                        {(afiliado.telefono || afiliado.email || afiliado.facebook || afiliado.instagram) && (
+                          <div className="flex items-center gap-1 flex-wrap">
+                            {afiliado.telefono && (
+                              <span
+                                className="inline-flex items-center gap-0.5 text-[10px] text-emerald-800 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200"
+                                title={`WhatsApp: ${afiliado.telefono}`}
+                              >
+                                <span className="material-symbols-outlined text-[11px] text-emerald-600">chat</span>
+                                <span>{afiliado.telefono.replace('+54 9 ', '')}</span>
+                              </span>
+                            )}
+                            {afiliado.email && (
+                              <span
+                                className="inline-flex items-center gap-0.5 text-[10px] text-red-800 bg-red-50 px-1 py-0.2 rounded border border-red-200"
+                                title={`Gmail: ${afiliado.email}`}
+                              >
+                                <span className="material-symbols-outlined text-[11px] text-red-600">mail</span>
+                                <span className="truncate max-w-[100px]">{afiliado.email}</span>
+                              </span>
+                            )}
+                            {afiliado.facebook && (
+                              <span
+                                className="inline-flex items-center gap-0.5 text-[10px] text-blue-800 bg-blue-50 px-1 py-0.2 rounded border border-blue-200"
+                                title={`Facebook: ${afiliado.facebook}`}
+                              >
+                                <span className="material-symbols-outlined text-[11px] text-blue-600">forum</span>
+                                <span className="truncate max-w-[80px]">{afiliado.facebook}</span>
+                              </span>
+                            )}
+                            {afiliado.instagram && (
+                              <span
+                                className="inline-flex items-center gap-0.5 text-[10px] text-purple-800 bg-purple-50 px-1 py-0.2 rounded border border-purple-200"
+                                title={`Instagram: @${afiliado.instagram}`}
+                              >
+                                <span className="material-symbols-outlined text-[11px] text-pink-600">photo_camera</span>
+                                <span className="truncate max-w-[75px]">@{afiliado.instagram}</span>
+                              </span>
+                            )}
+                          </div>
+                        )}
                         {moraInfo.enStandby && (
                           <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-bold bg-rose-100 text-rose-900 border border-rose-300 whitespace-nowrap">
                             <span className="material-symbols-outlined text-[11px]">warning</span>

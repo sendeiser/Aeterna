@@ -6,6 +6,13 @@ import {
   generateUniversalPaymentPayload,
   generateWebPaymentUrl,
 } from '../../lib/qrHelper'
+import {
+  formatPaymentShareMessage,
+  getWhatsAppShareUrl,
+  getInstagramShareData,
+  getFacebookShareData,
+  getEmailShareUrl,
+} from '../../lib/paymentShareHelper'
 import { ConfiguracionCobro } from '../../types/database'
 
 interface QRPaymentModalProps {
@@ -15,6 +22,10 @@ interface QRPaymentModalProps {
   monto: number
   identificador: string // ej: 'Parcela A-25-96' o 'Afiliado #14'
   titularNombre: string
+  telefono?: string | null
+  email?: string | null
+  facebook?: string | null
+  instagram?: string | null
   config: ConfiguracionCobro
   onConfirmarPago: (datos: {
     metodo: 'efectivo' | 'transferencia_qr'
@@ -31,6 +42,10 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
   monto,
   identificador,
   titularNombre,
+  telefono,
+  email,
+  facebook,
+  instagram,
   config,
   onConfirmarPago,
 }) => {
@@ -38,6 +53,7 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
   const [qrMode, setQrMode] = useState<'web' | 'bcra' | 'universal'>('web')
   const [comprobante, setComprobante] = useState('7849')
   const [copiedField, setCopiedField] = useState<'alias' | 'cbu' | 'link' | null>(null)
+  const [copiedNotice, setCopiedNotice] = useState<string | null>(null)
   const [pagoConfirmado, setPagoConfirmado] = useState(false)
   const [printFormat, setPrintFormat] = useState<'thermal' | 'a4'>('a4')
 
@@ -127,6 +143,100 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
   const handleWhatsApp = () => {
     const msg = `*COMPROBANTE OFICIAL - AETERNA PARQUE*\nRecibo: ${reciboNro}\nTitular: ${titularNombre}\nIdentificador: ${identificador}\nConcepto: ${concepto}\nMonto: ${formatCurrency(montoCobrar)}\nMétodo: ${metodo === 'transferencia_qr' ? 'Transferencia QR Interoperable' : 'Efectivo en Caja'}\nOficina Central de Gestión & Sepelios · Chamical, La Rioja`
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
+  }
+
+  const handleShareWhatsApp = () => {
+    const url = getWhatsAppShareUrl({
+      titularNombre,
+      identificador,
+      concepto,
+      monto: montoCobrar,
+      alias: config.alias_cbu,
+      cbu: config.cbu,
+      banco: config.banco,
+      titularCuenta: config.titular_cuenta,
+      cuit: config.cuit,
+      paymentUrl: webPaymentUrl,
+      telefono,
+    })
+    window.open(url, '_blank')
+  }
+
+  const handleShareInstagram = async () => {
+    const data = getInstagramShareData({
+      titularNombre,
+      identificador,
+      concepto,
+      monto: montoCobrar,
+      alias: config.alias_cbu,
+      cbu: config.cbu,
+      banco: config.banco,
+      titularCuenta: config.titular_cuenta,
+      cuit: config.cuit,
+      paymentUrl: webPaymentUrl,
+      instagram,
+    })
+    await copyToClipboard(data.message)
+    setCopiedNotice('¡Datos de cobro y link QR copiados! Abre Instagram para pegar en el chat.')
+    setTimeout(() => setCopiedNotice(null), 4500)
+    const targetUrl = data.profileUrl || 'https://www.instagram.com/direct/inbox/'
+    window.open(targetUrl, '_blank')
+  }
+
+  const handleShareFacebook = async () => {
+    const data = getFacebookShareData({
+      titularNombre,
+      identificador,
+      concepto,
+      monto: montoCobrar,
+      alias: config.alias_cbu,
+      cbu: config.cbu,
+      banco: config.banco,
+      titularCuenta: config.titular_cuenta,
+      cuit: config.cuit,
+      paymentUrl: webPaymentUrl,
+      facebook,
+    })
+    await copyToClipboard(data.message)
+    setCopiedNotice('¡Datos de cobro y link QR copiados! Abre Messenger para pegar en el chat.')
+    setTimeout(() => setCopiedNotice(null), 4500)
+    const targetUrl = data.messengerUrl || 'https://www.messenger.com/'
+    window.open(targetUrl, '_blank')
+  }
+
+  const handleShareEmail = () => {
+    const url = getEmailShareUrl({
+      titularNombre,
+      identificador,
+      concepto,
+      monto: montoCobrar,
+      alias: config.alias_cbu,
+      cbu: config.cbu,
+      banco: config.banco,
+      titularCuenta: config.titular_cuenta,
+      cuit: config.cuit,
+      paymentUrl: webPaymentUrl,
+      email,
+    })
+    window.open(url, '_blank')
+  }
+
+  const handleCopyPaymentMessage = async () => {
+    const msg = formatPaymentShareMessage({
+      titularNombre,
+      identificador,
+      concepto,
+      monto: montoCobrar,
+      alias: config.alias_cbu,
+      cbu: config.cbu,
+      banco: config.banco,
+      titularCuenta: config.titular_cuenta,
+      cuit: config.cuit,
+      paymentUrl: webPaymentUrl,
+    })
+    await copyToClipboard(msg)
+    setCopiedNotice('¡Mensaje oficial con Alias, CBU y Link QR copiado!')
+    setTimeout(() => setCopiedNotice(null), 3500)
   }
 
   return (
@@ -390,6 +500,85 @@ export const QRPaymentModal: React.FC<QRPaymentModalProps> = ({
                       <span>{copiedField === 'cbu' ? 'Copiado' : 'Copiar'}</span>
                     </button>
                   </div>
+                </div>
+
+                {/* ================================================================ */}
+                {/* ENVIAR ALIAS Y QR DE COBRO AL CLIENTE (OMNICANAL)               */}
+                {/* ================================================================ */}
+                <div className="p-3 bg-gradient-to-r from-primary/5 via-slate-50 to-emerald-50 rounded-xl border border-primary/25 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-primary uppercase tracking-wide">
+                      <span className="material-symbols-outlined text-[17px] text-primary">send</span>
+                      <span>Enviar Alias y QR de Pago al Cliente</span>
+                    </div>
+                    <span className="text-[10px] text-outline font-medium">WhatsApp · IG · FB · Gmail</span>
+                  </div>
+
+                  <p className="text-[11px] text-on-surface-variant leading-snug">
+                    Permite al contribuyente abonar directamente enviándole el Alias <strong className="text-primary font-mono font-bold">{config.alias_cbu}</strong> y el código QR interactivo:
+                  </p>
+
+                  {copiedNotice && (
+                    <div className="p-2 bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs rounded-md font-medium flex items-center gap-1.5 animate-fade-in shadow-2xs">
+                      <span className="material-symbols-outlined text-[16px] text-emerald-700">check_circle</span>
+                      <span>{copiedNotice}</span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-0.5">
+                    {/* WhatsApp */}
+                    <button
+                      type="button"
+                      onClick={handleShareWhatsApp}
+                      className="h-8 px-2 bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/40 text-[#075E54] rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-95"
+                      title={telefono ? `Enviar por WhatsApp al +54 9 ${telefono}` : 'Enviar datos y QR por WhatsApp'}
+                    >
+                      <span className="material-symbols-outlined text-[15px] text-[#25D366]">chat</span>
+                      <span>WhatsApp</span>
+                    </button>
+
+                    {/* Instagram */}
+                    <button
+                      type="button"
+                      onClick={handleShareInstagram}
+                      className="h-8 px-2 bg-gradient-to-r from-pink-500/10 to-purple-500/10 hover:from-pink-500/20 hover:to-purple-500/20 border border-pink-400/40 text-purple-900 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-95"
+                      title={instagram ? `Copiar datos y abrir perfil @${instagram}` : 'Copiar datos y abrir Instagram Direct'}
+                    >
+                      <span className="material-symbols-outlined text-[15px] text-pink-600">photo_camera</span>
+                      <span>Instagram</span>
+                    </button>
+
+                    {/* Facebook */}
+                    <button
+                      type="button"
+                      onClick={handleShareFacebook}
+                      className="h-8 px-2 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-400/40 text-blue-900 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-95"
+                      title={facebook ? `Copiar datos y abrir Messenger (${facebook})` : 'Copiar datos y abrir Facebook Messenger'}
+                    >
+                      <span className="material-symbols-outlined text-[15px] text-blue-600">forum</span>
+                      <span>Facebook</span>
+                    </button>
+
+                    {/* Gmail / Correo */}
+                    <button
+                      type="button"
+                      onClick={handleShareEmail}
+                      className="h-8 px-2 bg-red-600/10 hover:bg-red-600/20 border border-red-400/40 text-red-900 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-95"
+                      title={email ? `Enviar por Correo a ${email}` : 'Enviar por Correo Electrónico / Gmail'}
+                    >
+                      <span className="material-symbols-outlined text-[15px] text-red-600">mail</span>
+                      <span>Gmail</span>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyPaymentMessage}
+                    className="w-full h-7 bg-surface-container-lowest hover:bg-surface-container border border-outline-variant text-on-surface-variant hover:text-primary rounded text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">content_copy</span>
+                    <span>Copiar texto completo con CBU, Alias y enlace</span>
+                  </button>
                 </div>
               </>
             ) : (

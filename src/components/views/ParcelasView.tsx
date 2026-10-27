@@ -1113,6 +1113,47 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                     <div className="text-[11px] font-code-cadastral text-outline">
                       {p.titular?.dni ? `DNI: ${p.titular.dni}` : 'Parcela Municipal / Sin DNI'}
                     </div>
+                    {/* Canales de Contacto Titular */}
+                    {p.titular && (p.titular.telefono || p.titular.email || p.titular.facebook || p.titular.instagram) && (
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        {p.titular.telefono && (
+                          <span
+                            className="inline-flex items-center gap-0.5 text-[10px] text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200"
+                            title={`WhatsApp: ${p.titular.telefono}`}
+                          >
+                            <span className="material-symbols-outlined text-[11px] text-emerald-600">chat</span>
+                            <span>{p.titular.telefono.replace('+54 9 ', '')}</span>
+                          </span>
+                        )}
+                        {p.titular.email && (
+                          <span
+                            className="inline-flex items-center gap-0.5 text-[10px] text-red-800 bg-red-50 px-1.5 py-0.5 rounded border border-red-200"
+                            title={`Gmail: ${p.titular.email}`}
+                          >
+                            <span className="material-symbols-outlined text-[11px] text-red-600">mail</span>
+                            <span className="truncate max-w-[120px]">{p.titular.email}</span>
+                          </span>
+                        )}
+                        {p.titular.facebook && (
+                          <span
+                            className="inline-flex items-center gap-0.5 text-[10px] text-blue-800 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200"
+                            title={`Facebook: ${p.titular.facebook}`}
+                          >
+                            <span className="material-symbols-outlined text-[11px] text-blue-600">forum</span>
+                            <span className="truncate max-w-[90px]">{p.titular.facebook}</span>
+                          </span>
+                        )}
+                        {p.titular.instagram && (
+                          <span
+                            className="inline-flex items-center gap-0.5 text-[10px] text-purple-800 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200"
+                            title={`Instagram: @${p.titular.instagram}`}
+                          >
+                            <span className="material-symbols-outlined text-[11px] text-pink-600">photo_camera</span>
+                            <span className="truncate max-w-[80px]">@{p.titular.instagram}</span>
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <div className="text-[10px] font-code-cadastral text-on-surface-variant flex items-center gap-1 mt-0.5">
                       <span className="material-symbols-outlined text-[13px] text-outline">schedule</span>
                       <span>Alta: {formatDateHour(p.created_at || p.fecha_adquisicion)}</span>
@@ -1469,6 +1510,47 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                         <div className="font-code-cadastral text-[11px] text-outline">
                           {p.titular?.dni ? `DNI: ${p.titular.dni}` : 'Parcela Municipal'}
                         </div>
+                        {/* Canales de Contacto Titular */}
+                        {p.titular && (p.titular.telefono || p.titular.email || p.titular.facebook || p.titular.instagram) && (
+                          <div className="flex items-center gap-1 mt-1 flex-wrap">
+                            {p.titular.telefono && (
+                              <span
+                                className="inline-flex items-center gap-0.5 text-[10px] text-emerald-800 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200"
+                                title={`WhatsApp: ${p.titular.telefono}`}
+                              >
+                                <span className="material-symbols-outlined text-[11px] text-emerald-600">chat</span>
+                                <span>{p.titular.telefono.replace('+54 9 ', '')}</span>
+                              </span>
+                            )}
+                            {p.titular.email && (
+                              <span
+                                className="inline-flex items-center gap-0.5 text-[10px] text-red-800 bg-red-50 px-1 py-0.2 rounded border border-red-200"
+                                title={`Gmail: ${p.titular.email}`}
+                              >
+                                <span className="material-symbols-outlined text-[11px] text-red-600">mail</span>
+                                <span className="truncate max-w-[100px]">{p.titular.email}</span>
+                              </span>
+                            )}
+                            {p.titular.facebook && (
+                              <span
+                                className="inline-flex items-center gap-0.5 text-[10px] text-blue-800 bg-blue-50 px-1 py-0.2 rounded border border-blue-200"
+                                title={`Facebook: ${p.titular.facebook}`}
+                              >
+                                <span className="material-symbols-outlined text-[11px] text-blue-600">forum</span>
+                                <span className="truncate max-w-[80px]">{p.titular.facebook}</span>
+                              </span>
+                            )}
+                            {p.titular.instagram && (
+                              <span
+                                className="inline-flex items-center gap-0.5 text-[10px] text-purple-800 bg-purple-50 px-1 py-0.2 rounded border border-purple-200"
+                                title={`Instagram: @${p.titular.instagram}`}
+                              >
+                                <span className="material-symbols-outlined text-[11px] text-pink-600">photo_camera</span>
+                                <span className="truncate max-w-[75px]">@{p.titular.instagram}</span>
+                              </span>
+                            )}
+                          </div>
+                        )}
                         {p.estado === 'standby' && (
                           <div className="text-[10px] text-rose-700 font-semibold mt-0.5">
                             Últ. cuota: {p.ultima_cuota_pagada || (p.fecha_ultimo_pago ? p.fecha_ultimo_pago : 'S/D')}
