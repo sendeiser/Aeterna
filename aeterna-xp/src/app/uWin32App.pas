@@ -71,6 +71,9 @@ const
   IDC_BTN_FILTRAR_FECHA_AFIL = 2041;
   IDC_EDT_FECHA_CAJA       = 2042;
   IDC_BTN_FILTRAR_FECHA_CAJA = 2043;
+  IDC_BTN_ENVIAR_PAGO_PARC = 2050;
+  IDC_BTN_ENVIAR_PAGO_INH  = 2051;
+  IDC_BTN_ENVIAR_PAGO_AFIL = 2052;
 
   // Controles de Datos
   IDC_LV_PARCELAS     = 3001;
@@ -131,18 +134,18 @@ var
   // Controles Modulo 1 (Parcelas)
   hLblFiltrosParc, hLblSector, hLblEstadoParc, hLblSaldoParc, hCmbSaldoParc: HWND;
   hLblBuscarParc, hEdtBuscarParc, hBtnBuscarParc: HWND;
-  hBtnNuevaParc, hBtnEditParc, hBtnCobrarMantParc, hBtnRepPadronParc, hBtnDelParc, hBtnSyncParc: HWND;
+  hBtnNuevaParc, hBtnEditParc, hBtnCobrarMantParc, hBtnEnviarPagoParc, hBtnRepPadronParc, hBtnDelParc, hBtnSyncParc: HWND;
   hLblFechaDesdeParc, hEdtFechaDesdeParc, hLblFechaHastaParc, hEdtFechaHastaParc, hBtnFiltrarFechaParc: HWND;
 
   // Controles Modulo 2 (Inhumaciones)
   hLblBuscarInh, hEdtBuscarInh: HWND;
-  hBtnBuscarInh, hBtnNuevaInh, hBtnEditInh, hBtnDelInh, hBtnActaPdf, hBtnFolioPdf, hBtnSyncInh: HWND;
+  hBtnBuscarInh, hBtnNuevaInh, hBtnEditInh, hBtnDelInh, hBtnActaPdf, hBtnFolioPdf, hBtnSyncInh, hBtnEnviarPagoInh: HWND;
   hLblFechaDesdeInh, hEdtFechaDesdeInh, hLblFechaHastaInh, hEdtFechaHastaInh, hBtnFiltrarFechaInh: HWND;
 
   // Controles Modulo 3 (Afiliados)
   hLblFiltroMora, hCmbMora: HWND;
   hLblBuscarAfil, hEdtBuscarAfil, hBtnBuscarAfil: HWND;
-  hBtnNuevoAfil, hBtnEditAfil, hBtnCobrarAfil, hBtnDelAfil, hBtnPlanillaPdf, hBtnCuotaMasivaAfil, hBtnSyncAfil: HWND;
+  hBtnNuevoAfil, hBtnEditAfil, hBtnCobrarAfil, hBtnPlanillaPdf, hBtnCuotaMasivaAfil, hBtnDelAfil, hBtnSyncAfil, hBtnEnviarPagoAfil: HWND;
   hLblFechaDesdeAfil, hEdtFechaDesdeAfil, hBtnFiltrarFechaAfil: HWND;
 
   // Controles Modulo 4 (Caja)
@@ -167,17 +170,17 @@ var
   SortAscCaja: Boolean = False;
 
 const
-  ColNamesParcelas: array[0..6] of string = (
+  ColNamesParcelas: array[0..7] of string = (
     'Titular (Condicion)', 'Difuntos en Fosa (Fallecidos)', 'Parcela',
-    'Estado Parcela', 'Fecha / Registro', 'Ultimo Pago', 'Saldo'
+    'Estado Parcela', 'Fecha / Registro', 'Ultimo Pago', 'Saldo', 'Contacto (Tel / Redes)'
   );
-  ColNamesInh: array[0..6] of string = (
+  ColNamesInh: array[0..7] of string = (
     'Fecha / Hora Inh.', 'Nombre Completo del Difunto', 'DNI', 'Parcela',
-    'Nivel', 'Empresa Funebrera', 'Protocolo Sanitario'
+    'Nivel', 'Empresa Funebrera', 'Protocolo Sanitario', 'Responsable / Contacto'
   );
-  ColNamesAfil: array[0..8] of string = (
+  ColNamesAfil: array[0..9] of string = (
     'Nombre Completo del Titular', 'Nro Afiliado', 'DNI', 'Fecha Alta / Hora', 'Direccion de Cobro',
-    'Cuota', 'Mora', 'Estado Cobertura', 'Meses Pagados 2026'
+    'Cuota', 'Mora', 'Estado Cobertura', 'Meses Pagados 2026', 'Contacto / Canales'
   );
   ColNamesCaja: array[0..5] of string = (
     'Recibo Nro', 'Fecha / Hora', 'Titular / Pagador',
@@ -630,6 +633,35 @@ begin
   SetLength(Result, Len);
 end;
 
+function FormatearContactoResumido(const Tel, Email, Ig, Fb: string): string;
+var
+  S, CleanIg, CleanFb: string;
+begin
+  S := '';
+  if Trim(Tel) <> '' then
+    S := 'Tel: ' + Trim(Tel);
+
+  CleanIg := CleanSocialHandle(Ig);
+  if CleanIg <> '' then
+  begin
+    if S <> '' then S := S + ' | ';
+    S := S + 'IG: @' + CleanIg;
+  end;
+
+  CleanFb := CleanSocialHandle(Fb);
+  if CleanFb <> '' then
+  begin
+    if S <> '' then S := S + ' | ';
+    S := S + 'FB: ' + CleanFb;
+  end;
+
+  if (Trim(Email) <> '') and (S = '') then
+    S := Trim(Email);
+
+  if S = '' then S := '-';
+  Result := S;
+end;
+
 procedure SetListViewColumnText(hLv: HWND; ColIndex: Integer; const NewText: string);
 var
   Col: TLVColumn;
@@ -849,6 +881,7 @@ begin
         else if diffCurr < 0 then cmp := -1
         else cmp := 0;
       end;
+    7: cmp := CompareText(DataParcelas[Idx1].TitularTelefono, DataParcelas[Idx2].TitularTelefono);
   else
     cmp := 0;
   end;
@@ -899,6 +932,7 @@ begin
     5: cmp := CompareText(DataInhumaciones[Idx1].EmpresaFunebrera, DataInhumaciones[Idx2].EmpresaFunebrera);
     6: cmp := CompareText(BoolToTexto(DataInhumaciones[Idx1].EsCovid, 'COVID-19', 'Estandar'),
                           BoolToTexto(DataInhumaciones[Idx2].EsCovid, 'COVID-19', 'Estandar'));
+    7: cmp := CompareText(DataInhumaciones[Idx1].NombreResponsable, DataInhumaciones[Idx2].NombreResponsable);
   else
     cmp := 0;
   end;
@@ -961,6 +995,7 @@ begin
     6: cmp := DataAfiliados[Idx1].MesesMora - DataAfiliados[Idx2].MesesMora;
     7: cmp := Ord(DataAfiliados[Idx1].Estado) - Ord(DataAfiliados[Idx2].Estado);
     8: cmp := Length(DataAfiliados[Idx1].CuotasPagadas) - Length(DataAfiliados[Idx2].CuotasPagadas);
+    9: cmp := CompareText(DataAfiliados[Idx1].Telefono, DataAfiliados[Idx2].Telefono);
   else
     cmp := 0;
   end;
@@ -1164,7 +1199,8 @@ begin
       EstadoParcelaToDisplayEx(DataParcelas[Indices[i]].Estado, DataParcelas[Indices[i]].Nomenclatura),
       FechaRegStr,
       FormatearFecha(DataParcelas[Indices[i]].FechaUltimoPago),
-      FormatearMoneda(DataParcelas[Indices[i]].SaldoMantenimiento)
+      FormatearMoneda(DataParcelas[Indices[i]].SaldoMantenimiento),
+      FormatearContactoResumido(DataParcelas[Indices[i]].TitularTelefono, DataParcelas[Indices[i]].TitularEmail, DataParcelas[Indices[i]].TitularInstagram, DataParcelas[Indices[i]].TitularFacebook)
     ]);
   end;
 
@@ -1267,7 +1303,8 @@ begin
       FormatearMoneda(DataAfiliados[Indices[i]].MontoCuotaMensual),
       IntToStr(MesesM) + ' meses',
       MoraLabel,
-      PagadosStr
+      PagadosStr,
+      FormatearContactoResumido(DataAfiliados[Indices[i]].Telefono, DataAfiliados[Indices[i]].Email, DataAfiliados[Indices[i]].Instagram, DataAfiliados[Indices[i]].Facebook)
     ]);
   end;
 
@@ -1344,7 +1381,8 @@ begin
       DataInhumaciones[Indices[i]].NomenclaturaParcela,
       IntToStr(DataInhumaciones[Indices[i]].NivelPosicion),
       DataInhumaciones[Indices[i]].EmpresaFunebrera,
-      BoolToTexto(DataInhumaciones[Indices[i]].EsCovid, 'COVID-19', 'Estandar')
+      BoolToTexto(DataInhumaciones[Indices[i]].EsCovid, 'COVID-19', 'Estandar'),
+      Trim(DataInhumaciones[Indices[i]].NombreResponsable + ' ' + FormatearContactoResumido(DataInhumaciones[Indices[i]].TelefonoResponsable, DataInhumaciones[Indices[i]].EmailResponsable, DataInhumaciones[Indices[i]].InstagramResponsable, DataInhumaciones[Indices[i]].FacebookResponsable))
     ]);
   end;
 
@@ -1698,6 +1736,38 @@ begin
   end;
 end;
 
+procedure AccionEnviarPagoInhumacion;
+var
+  Idx: Integer;
+  Inh: TInhumacion;
+  Titular, Identificador, Concepto: string;
+begin
+  Idx := GetSelectedListViewDataIndex(hLvInh);
+  if (Idx < 0) or (Idx > High(DataInhumaciones)) then
+  begin
+    MessageBox(hMainWnd, 'Seleccione una inhumacion del listado para enviar los datos de cobro.', 'Atencion', MB_ICONINFORMATION or MB_OK);
+    Exit;
+  end;
+
+  Inh := DataInhumaciones[Idx];
+  Titular := Trim(Inh.NombreResponsable);
+  if Titular = '' then
+    Titular := 'Responsable de ' + Inh.NombreDifunto;
+  Identificador := 'Inhumacion / Parcela ' + Inh.NomenclaturaParcela;
+  Concepto := 'Servicios de Inhumacion y Sepelio (' + Inh.NombreDifunto + ')';
+
+  ShowDlgEnviarPagoOmnicanal(hMainWnd,
+    Titular,
+    Identificador,
+    Concepto,
+    Inh.TelefonoResponsable,
+    Inh.EmailResponsable,
+    Inh.FacebookResponsable,
+    Inh.InstagramResponsable,
+    65000
+  );
+end;
+
 // -------------------------------------------------------------
 // Operaciones CRUD: PARCELAS
 // -------------------------------------------------------------
@@ -1871,6 +1941,40 @@ begin
 
     CargarDatosIniciales;
   end;
+end;
+
+procedure AccionEnviarPagoParcela;
+var
+  Idx: Integer;
+  Parc: TParcela;
+  Monto: Currency;
+  Identificador, Concepto: string;
+begin
+  Idx := GetSelectedListViewDataIndex(hLvParcelas);
+  if (Idx < 0) or (Idx > High(DataParcelas)) then
+  begin
+    MessageBox(hMainWnd, 'Seleccione una parcela del listado para enviar los datos de cobro.', 'Atencion', MB_ICONINFORMATION or MB_OK);
+    Exit;
+  end;
+
+  Parc := DataParcelas[Idx];
+  Identificador := 'Parcela ' + Parc.Nomenclatura;
+  Concepto := 'Mantenimiento Parcela ' + Parc.Nomenclatura;
+  if Parc.SaldoMantenimiento > 0 then
+    Monto := Parc.SaldoMantenimiento
+  else
+    Monto := 49000;
+
+  ShowDlgEnviarPagoOmnicanal(hMainWnd,
+    Parc.TitularNombre,
+    Identificador,
+    Concepto,
+    Parc.TitularTelefono,
+    Parc.TitularEmail,
+    Parc.TitularFacebook,
+    Parc.TitularInstagram,
+    Monto
+  );
 end;
 
 // -------------------------------------------------------------
@@ -2049,6 +2153,38 @@ begin
 
     CargarDatosIniciales;
   end;
+end;
+
+procedure AccionEnviarPagoAfiliado;
+var
+  Idx: Integer;
+  Afi: TAfiliadoSeguro;
+  Monto: Currency;
+  Identificador, Concepto: string;
+begin
+  Idx := GetSelectedListViewDataIndex(hLvAfiliados);
+  if (Idx < 0) or (Idx > High(DataAfiliados)) then
+  begin
+    MessageBox(hMainWnd, 'Seleccione un afiliado del listado para enviar los datos de cobro.', 'Atencion', MB_ICONINFORMATION or MB_OK);
+    Exit;
+  end;
+
+  Afi := DataAfiliados[Idx];
+  Identificador := 'Afiliado #' + IntToStr(Afi.NumeroAfiliado);
+  Concepto := 'Cuota Mensual Plan Seguro de Sepelio';
+  Monto := Afi.MontoCuotaMensual;
+  if Monto <= 0 then Monto := 18000;
+
+  ShowDlgEnviarPagoOmnicanal(hMainWnd,
+    Afi.NombreCompleto,
+    Identificador,
+    Concepto,
+    Afi.Telefono,
+    Afi.Email,
+    Afi.Facebook,
+    Afi.Instagram,
+    Monto
+  );
 end;
 
 procedure AccionActualizarCuotaMasiva;
@@ -2630,38 +2766,41 @@ begin
   AddControlToModule(1, hBtnBuscarParc);
 
   // Fila 2: Botones de Accion y Filtros de Fecha
-  hBtnNuevaParc := CreateButton(hWnd, '+ Nueva Parcela', 15, 140, 120, 28, IDC_BTN_NUEVA_PARC);
+  hBtnNuevaParc := CreateButton(hWnd, '+ Nueva Parcela', 15, 140, 115, 28, IDC_BTN_NUEVA_PARC);
   AddControlToModule(1, hBtnNuevaParc);
-  hBtnEditParc := CreateButton(hWnd, '* Modificar', 140, 140, 90, 28, IDC_BTN_EDIT_PARC);
+  hBtnEditParc := CreateButton(hWnd, '* Modificar', 135, 140, 85, 28, IDC_BTN_EDIT_PARC);
   AddControlToModule(1, hBtnEditParc);
-  hBtnCobrarMantParc := CreateButton(hWnd, '$ Cobrar Mant.', 235, 140, 110, 28, IDC_BTN_COBRAR_MANT);
+  hBtnCobrarMantParc := CreateButton(hWnd, '$ Cobrar Mant.', 225, 140, 105, 28, IDC_BTN_COBRAR_MANT);
   AddControlToModule(1, hBtnCobrarMantParc);
-  hBtnRepPadronParc := CreateButton(hWnd, 'Padron (PDF)', 350, 140, 105, 28, IDC_BTN_PADRON_PARC_PDF);
+  hBtnEnviarPagoParc := CreateButton(hWnd, 'Enviar Pago / QR', 335, 140, 125, 28, IDC_BTN_ENVIAR_PAGO_PARC);
+  AddControlToModule(1, hBtnEnviarPagoParc);
+  hBtnRepPadronParc := CreateButton(hWnd, 'Padron (PDF)', 465, 140, 95, 28, IDC_BTN_PADRON_PARC_PDF);
   AddControlToModule(1, hBtnRepPadronParc);
-  hBtnDelParc := CreateButton(hWnd, '- Eliminar', 460, 140, 85, 28, IDC_BTN_DEL_PARC);
+  hBtnDelParc := CreateButton(hWnd, '- Eliminar', 565, 140, 75, 28, IDC_BTN_DEL_PARC);
   AddControlToModule(1, hBtnDelParc);
-  hBtnSyncParc := CreateButton(hWnd, 'Recargar', 550, 140, 75, 28, IDC_BTN_SYNC);
+  hBtnSyncParc := CreateButton(hWnd, 'Recargar', 645, 140, 65, 28, IDC_BTN_SYNC);
   AddControlToModule(1, hBtnSyncParc);
 
-  hLblFechaDesdeParc := CreateLabel(hWnd, 'Desde:', 635, 144, 45, 22, hBoldFont);
+  hLblFechaDesdeParc := CreateLabel(hWnd, 'Desde:', 715, 144, 45, 22, hBoldFont);
   AddControlToModule(1, hLblFechaDesdeParc);
-  hEdtFechaDesdeParc := CreateEdit(hWnd, '', 682, 141, 80, 24, IDC_EDT_FECHA_DESDE_PARC);
+  hEdtFechaDesdeParc := CreateEdit(hWnd, '', 760, 141, 75, 24, IDC_EDT_FECHA_DESDE_PARC);
   AddControlToModule(1, hEdtFechaDesdeParc);
-  hLblFechaHastaParc := CreateLabel(hWnd, 'Hasta:', 768, 144, 45, 22, hBoldFont);
+  hLblFechaHastaParc := CreateLabel(hWnd, 'Hasta:', 840, 144, 45, 22, hBoldFont);
   AddControlToModule(1, hLblFechaHastaParc);
-  hEdtFechaHastaParc := CreateEdit(hWnd, '', 815, 141, 80, 24, IDC_EDT_FECHA_HASTA_PARC);
+  hEdtFechaHastaParc := CreateEdit(hWnd, '', 885, 141, 75, 24, IDC_EDT_FECHA_HASTA_PARC);
   AddControlToModule(1, hEdtFechaHastaParc);
-  hBtnFiltrarFechaParc := CreateButton(hWnd, 'Filtrar Fecha', 902, 140, 100, 26, IDC_BTN_FILTRAR_FECHA_PARC);
+  hBtnFiltrarFechaParc := CreateButton(hWnd, 'Filtrar Fecha', 965, 140, 95, 26, IDC_BTN_FILTRAR_FECHA_PARC);
   AddControlToModule(1, hBtnFiltrarFechaParc);
 
   hLvParcelas := CreateListView(hWnd, 15, 175, 990, 435, IDC_LV_PARCELAS);
-  AddListViewColumn(hLvParcelas, 0, 'Titular (Condicion)', 210);
-  AddListViewColumn(hLvParcelas, 1, 'Difuntos en Fosa (Fallecidos)', 260);
-  AddListViewColumn(hLvParcelas, 2, 'Parcela', 110);
-  AddListViewColumn(hLvParcelas, 3, 'Estado Parcela', 110);
-  AddListViewColumn(hLvParcelas, 4, 'Fecha / Registro', 120);
-  AddListViewColumn(hLvParcelas, 5, 'Ultimo Pago', 100);
-  AddListViewColumn(hLvParcelas, 6, 'Saldo', 110);
+  AddListViewColumn(hLvParcelas, 0, 'Titular (Condicion)', 190);
+  AddListViewColumn(hLvParcelas, 1, 'Difuntos en Fosa (Fallecidos)', 220);
+  AddListViewColumn(hLvParcelas, 2, 'Parcela', 90);
+  AddListViewColumn(hLvParcelas, 3, 'Estado Parcela', 95);
+  AddListViewColumn(hLvParcelas, 4, 'Fecha / Registro', 105);
+  AddListViewColumn(hLvParcelas, 5, 'Ultimo Pago', 90);
+  AddListViewColumn(hLvParcelas, 6, 'Saldo', 90);
+  AddListViewColumn(hLvParcelas, 7, 'Contacto (Tel / Redes)', 180);
   AddControlToModule(1, hLvParcelas);
 
   // ===========================================================
@@ -2686,27 +2825,30 @@ begin
   AddControlToModule(2, hBtnFiltrarFechaInh);
 
   // Fila 2: Acciones
-  hBtnNuevaInh := CreateButton(hWnd, '+ Nueva Inhumacion', 15, 140, 150, 28, IDC_BTN_NUEVA_INH);
+  hBtnNuevaInh := CreateButton(hWnd, '+ Nueva Inhumacion', 15, 140, 145, 28, IDC_BTN_NUEVA_INH);
   AddControlToModule(2, hBtnNuevaInh);
-  hBtnEditInh := CreateButton(hWnd, '* Modificar', 170, 140, 100, 28, IDC_BTN_EDIT_INH);
+  hBtnEditInh := CreateButton(hWnd, '* Modificar', 165, 140, 95, 28, IDC_BTN_EDIT_INH);
   AddControlToModule(2, hBtnEditInh);
-  hBtnActaPdf := CreateButton(hWnd, 'Emitir Acta (PDF)', 275, 140, 130, 28, IDC_BTN_ACTA_PDF);
+  hBtnActaPdf := CreateButton(hWnd, 'Emitir Acta (PDF)', 265, 140, 125, 28, IDC_BTN_ACTA_PDF);
   AddControlToModule(2, hBtnActaPdf);
-  hBtnFolioPdf := CreateButton(hWnd, 'Folio (PDF)', 410, 140, 100, 28, IDC_BTN_FOLIO_PDF);
+  hBtnFolioPdf := CreateButton(hWnd, 'Folio (PDF)', 395, 140, 90, 28, IDC_BTN_FOLIO_PDF);
   AddControlToModule(2, hBtnFolioPdf);
-  hBtnDelInh := CreateButton(hWnd, '- Eliminar', 515, 140, 95, 28, IDC_BTN_DEL_INH);
+  hBtnDelInh := CreateButton(hWnd, '- Eliminar', 490, 140, 85, 28, IDC_BTN_DEL_INH);
   AddControlToModule(2, hBtnDelInh);
-  hBtnSyncInh := CreateButton(hWnd, 'Recargar', 615, 140, 85, 28, IDC_BTN_SYNC);
+  hBtnSyncInh := CreateButton(hWnd, 'Recargar', 580, 140, 75, 28, IDC_BTN_SYNC);
   AddControlToModule(2, hBtnSyncInh);
+  hBtnEnviarPagoInh := CreateButton(hWnd, 'Enviar Pago / QR', 660, 140, 125, 28, IDC_BTN_ENVIAR_PAGO_INH);
+  AddControlToModule(2, hBtnEnviarPagoInh);
 
   hLvInh := CreateListView(hWnd, 15, 175, 990, 435, IDC_LV_INHUMACIONES);
-  AddListViewColumn(hLvInh, 0, 'Fecha y Hora Inh.', 130);
-  AddListViewColumn(hLvInh, 1, 'Nombre Completo del Difunto', 250);
-  AddListViewColumn(hLvInh, 2, 'DNI', 100);
-  AddListViewColumn(hLvInh, 3, 'Parcela', 100);
-  AddListViewColumn(hLvInh, 4, 'Nivel', 60);
-  AddListViewColumn(hLvInh, 5, 'Empresa Funebrera', 180);
-  AddListViewColumn(hLvInh, 6, 'Protocolo Sanitario', 130);
+  AddListViewColumn(hLvInh, 0, 'Fecha y Hora Inh.', 120);
+  AddListViewColumn(hLvInh, 1, 'Nombre Completo del Difunto', 210);
+  AddListViewColumn(hLvInh, 2, 'DNI', 85);
+  AddListViewColumn(hLvInh, 3, 'Parcela', 80);
+  AddListViewColumn(hLvInh, 4, 'Nivel', 50);
+  AddListViewColumn(hLvInh, 5, 'Empresa Funebrera', 140);
+  AddListViewColumn(hLvInh, 6, 'Protocolo Sanitario', 100);
+  AddListViewColumn(hLvInh, 7, 'Responsable / Contacto', 205);
   AddControlToModule(2, hLvInh);
 
   // ===========================================================
@@ -2737,31 +2879,34 @@ begin
   AddControlToModule(3, hBtnFiltrarFechaAfil);
 
   // Fila 2: Botones de Accion
-  hBtnNuevoAfil := CreateButton(hWnd, '+ Nuevo Afiliado', 15, 140, 130, 28, IDC_BTN_NUEVO_AFIL);
+  hBtnNuevoAfil := CreateButton(hWnd, '+ Nuevo Afiliado', 15, 140, 125, 28, IDC_BTN_NUEVO_AFIL);
   AddControlToModule(3, hBtnNuevoAfil);
-  hBtnEditAfil := CreateButton(hWnd, '* Modificar', 150, 140, 100, 28, IDC_BTN_EDIT_AFIL);
+  hBtnEditAfil := CreateButton(hWnd, '* Modificar', 145, 140, 90, 28, IDC_BTN_EDIT_AFIL);
   AddControlToModule(3, hBtnEditAfil);
-  hBtnCobrarAfil := CreateButton(hWnd, '$ Cobrar Cuota', 255, 140, 125, 28, IDC_BTN_COBRAR_CUOTA);
+  hBtnCobrarAfil := CreateButton(hWnd, '$ Cobrar Cuota', 240, 140, 110, 28, IDC_BTN_COBRAR_CUOTA);
   AddControlToModule(3, hBtnCobrarAfil);
-  hBtnPlanillaPdf := CreateButton(hWnd, 'Planilla Cobrador (PDF)', 385, 140, 160, 28, IDC_BTN_PLANILLA_PDF);
+  hBtnPlanillaPdf := CreateButton(hWnd, 'Planilla Cobrador (PDF)', 355, 140, 150, 28, IDC_BTN_PLANILLA_PDF);
   AddControlToModule(3, hBtnPlanillaPdf);
-  hBtnCuotaMasivaAfil := CreateButton(hWnd, '$ Cuota Masiva', 550, 140, 120, 28, IDC_BTN_CUOTA_MASIVA);
+  hBtnCuotaMasivaAfil := CreateButton(hWnd, '$ Cuota Masiva', 510, 140, 110, 28, IDC_BTN_CUOTA_MASIVA);
   AddControlToModule(3, hBtnCuotaMasivaAfil);
-  hBtnDelAfil := CreateButton(hWnd, '- Eliminar / Baja', 675, 140, 125, 28, IDC_BTN_DEL_AFIL);
+  hBtnDelAfil := CreateButton(hWnd, '- Eliminar / Baja', 625, 140, 120, 28, IDC_BTN_DEL_AFIL);
   AddControlToModule(3, hBtnDelAfil);
-  hBtnSyncAfil := CreateButton(hWnd, 'Recargar', 805, 140, 85, 28, IDC_BTN_SYNC);
+  hBtnSyncAfil := CreateButton(hWnd, 'Recargar', 750, 140, 75, 28, IDC_BTN_SYNC);
   AddControlToModule(3, hBtnSyncAfil);
+  hBtnEnviarPagoAfil := CreateButton(hWnd, 'Enviar Pago / QR', 830, 140, 125, 28, IDC_BTN_ENVIAR_PAGO_AFIL);
+  AddControlToModule(3, hBtnEnviarPagoAfil);
 
   hLvAfiliados := CreateListView(hWnd, 15, 175, 990, 435, IDC_LV_AFILIADOS);
-  AddListViewColumn(hLvAfiliados, 0, 'Nombre Completo del Titular', 200);
-  AddListViewColumn(hLvAfiliados, 1, 'Nro Afiliado', 80);
-  AddListViewColumn(hLvAfiliados, 2, 'DNI', 90);
-  AddListViewColumn(hLvAfiliados, 3, 'Fecha de Alta / Hora', 125);
-  AddListViewColumn(hLvAfiliados, 4, 'Direccion de Cobro', 140);
-  AddListViewColumn(hLvAfiliados, 5, 'Cuota', 80);
-  AddListViewColumn(hLvAfiliados, 6, 'Mora', 60);
-  AddListViewColumn(hLvAfiliados, 7, 'Estado Cobertura', 120);
-  AddListViewColumn(hLvAfiliados, 8, 'Meses Pagados 2026', 150);
+  AddListViewColumn(hLvAfiliados, 0, 'Nombre Completo del Titular', 190);
+  AddListViewColumn(hLvAfiliados, 1, 'Nro Afiliado', 75);
+  AddListViewColumn(hLvAfiliados, 2, 'DNI', 85);
+  AddListViewColumn(hLvAfiliados, 3, 'Fecha de Alta / Hora', 115);
+  AddListViewColumn(hLvAfiliados, 4, 'Direccion de Cobro', 130);
+  AddListViewColumn(hLvAfiliados, 5, 'Cuota', 75);
+  AddListViewColumn(hLvAfiliados, 6, 'Mora', 55);
+  AddListViewColumn(hLvAfiliados, 7, 'Estado Cobertura', 110);
+  AddListViewColumn(hLvAfiliados, 8, 'Meses Pagados 2026', 130);
+  AddListViewColumn(hLvAfiliados, 9, 'Contacto / Canales', 180);
   AddControlToModule(3, hLvAfiliados);
 
   // ===========================================================
@@ -3133,6 +3278,7 @@ begin
           IDC_BTN_DEL_INH:      AccionEliminarInhumacion;
           IDC_BTN_ACTA_PDF:     AccionGenerarActaPDF;
           IDC_BTN_FOLIO_PDF:    AccionGenerarFolioPDF;
+          IDC_BTN_ENVIAR_PAGO_INH: AccionEnviarPagoInhumacion;
           IDC_BTN_BUSCAR_INH:
             begin
               SearchBuf := GetWndText(hEdtBuscarInh);
@@ -3151,6 +3297,7 @@ begin
           IDC_BTN_EDIT_PARC:    AccionModificarParcela;
           IDC_BTN_DEL_PARC:     AccionEliminarParcela;
           IDC_BTN_COBRAR_MANT:  AccionCobrarMantenimientoParcela;
+          IDC_BTN_ENVIAR_PAGO_PARC: AccionEnviarPagoParcela;
           IDC_BTN_PADRON_PARC_PDF: AccionGenerarPadronParcelasPDF;
           IDC_BTN_FILTRAR_PARC: FiltrarYMostrarParcelas;
           IDC_BTN_FILTRAR_FECHA_PARC: FiltrarYMostrarParcelas;
@@ -3160,6 +3307,7 @@ begin
           IDC_BTN_EDIT_AFIL:    AccionModificarAfiliado;
           IDC_BTN_DEL_AFIL:     AccionEliminarAfiliado;
           IDC_BTN_COBRAR_CUOTA: AccionCobrarCuotaSeguro;
+          IDC_BTN_ENVIAR_PAGO_AFIL: AccionEnviarPagoAfiliado;
           IDC_BTN_CUOTA_MASIVA: AccionActualizarCuotaMasiva;
           IDC_BTN_PLANILLA_PDF: AccionGenerarPlanillaRutaPDF;
           IDC_BTN_FILTRAR_AFIL: FiltrarYMostrarAfiliados;

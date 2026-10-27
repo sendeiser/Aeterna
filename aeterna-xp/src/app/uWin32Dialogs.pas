@@ -5,7 +5,7 @@ unit uWin32Dialogs;
 interface
 
 uses
-  Classes, SysUtils, CommCtrl, Windows, Messages,
+  Classes, SysUtils, CommCtrl, Windows, Messages, ShellAPI,
   uDataModels, uBusinessRules;
 
 function ShowDlgInhumacion(ParentWnd: HWND; IsEdit: Boolean; var Inh: TInhumacion): Boolean; overload;
@@ -19,6 +19,10 @@ function ShowDlgCobroMantenimiento(ParentWnd: HWND; const Nomenclatura, TitularD
 function ShowDlgCobroCuotaMes(ParentWnd: HWND; const Afiliado: TAfiliadoSeguro; var MesSeleccionado, AnioSeleccionado: Integer; var Monto: Currency; var Metodo: TMetodoPago; var Recibo: string): Boolean;
 function ShowDlgCuotaMasiva(ParentWnd: HWND; var NuevoMonto: Currency; var SoloActivos: Boolean): Boolean;
 function ShowDlgEgresoCaja(ParentWnd: HWND; var Concepto, Categoria, Comprobante: string; var Monto: Currency; var Metodo: TMetodoPago): Boolean;
+function ShowDlgEnviarPagoOmnicanal(ParentWnd: HWND; const Titular, Identificador, Concepto, Telefono, Email, Facebook, Instagram: string; Monto: Currency): Boolean;
+function CleanPhoneNumber(const Phone: string): string;
+function CleanSocialHandle(const Handle: string): string;
+function UrlEncode(const S: string): string;
 
 implementation
 
@@ -74,21 +78,132 @@ begin
 end;
 
 function GenerarMensajeCobro(const Titular, Identificador, Concepto: string; Monto: Currency): string;
+var
+  MontoInt: Int64;
 begin
-  Result := 'Estimado/a ' + Titular + ':' + #13#10 +
-    'Adjuntamos los datos bancarios y enlace para abonar en AETERNA PARQUE MUNICIPAL:' + #13#10#13#10 +
-    '• Concepto: ' + Concepto + #13#10 +
+  MontoInt := Round(Monto);
+  if MontoInt < 0 then MontoInt := 0;
+
+  Result := 'AETERNA PARQUE & SEPELIOS - MUNICIPALIDAD DE CHAMICAL' + #13#10 +
+    'DATOS DE PAGO Y TRANSFERENCIA OFICIAL' + #13#10#13#10 +
+    '• Titular / Contribuyente: ' + Titular + #13#10 +
     '• Identificador: ' + Identificador + #13#10 +
-    '• Monto a Pagar: $' + FormatCurr('#,##0.00', Monto) + ' ARS' + #13#10#13#10 +
-    'DATOS DE TRANSFERENCIA DIRECTA:' + #13#10 +
-    '• Banco: Banco Rioja (Cuenta Corriente Oficial)' + #13#10 +
-    '• Alias CBU: AETERNA.CHAMICAL' + #13#10 +
+    '• Concepto: ' + Concepto + #13#10 +
+    '• Monto a abonar: $' + FormatCurr('#,##0.00', Monto) + ' ARS' + #13#10#13#10 +
+    'DATOS BANCARIOS PARA TRANSFERENCIA:' + #13#10 +
+    '• Alias CBU/CVU: AETERNA.CHAMICAL' + #13#10 +
     '• CBU: 3090000201000012345678' + #13#10 +
-    '• Titular: Municipalidad de Chamical (Cementerio Parque Aeterna)' + #13#10 +
+    '• Banco: Banco Rioja (Cuenta Corriente Oficial)' + #13#10 +
+    '• Titular de Cuenta: Municipalidad de Chamical (Cementerio Parque Aeterna)' + #13#10 +
     '• CUIT: 30-67291823-4' + #13#10#13#10 +
-    'PORTAL WEB DE PAGO MOVIL & QR INTEROPERABLE:' + #13#10 +
-    'https://aeterna-parque.gob.ar/pagar?cbu=3090000201000012345678&alias=AETERNA.CHAMICAL&monto=' + IntToStr(Round(Monto)) + #13#10#13#10 +
-    'Luego de transferir, por favor envie el comprobante por WhatsApp al +54 9 3826 40-1234 o por este medio.';
+    'PAGO DIRECTO Y CODIGO QR INTERACTIVO:' + #13#10 +
+    'Puede escanear el codigo QR o ingresar al enlace web para copiar el Alias/CBU con 1 clic:' + #13#10 +
+    'https://aeterna-parque.gob.ar/pagar?cbu=3090000201000012345678&alias=AETERNA.CHAMICAL&monto=' + IntToStr(MontoInt) + #13#10#13#10 +
+    'Una vez realizada la transferencia, por favor envie su comprobante por este medio para registrar su pago y emitir el recibo oficial.' + #13#10 +
+    'Atencion al Contribuyente - Chamical, La Rioja';
+end;
+
+function CleanPhoneNumber(const Phone: string): string;
+var
+  i, Len: Integer;
+  digits: string;
+begin
+  digits := '';
+  for i := 1 to Length(Phone) do
+    if Phone[i] in ['0'..'9'] then
+      digits := digits + Phone[i];
+
+  if digits = '' then
+  begin
+    Result := '';
+    Exit;
+  end;
+
+  if Copy(digits, 1, 3) = '549' then
+  begin
+    Result := digits;
+    Exit;
+  end;
+
+  if (Copy(digits, 1, 2) = '54') and (Length(digits) >= 12) then
+  begin
+    Result := '549' + Copy(digits, 3, Length(digits) - 2);
+    Exit;
+  end;
+
+  if (Length(digits) > 0) and (digits[1] = '0') then
+    Delete(digits, 1, 1);
+
+  Len := Length(digits);
+  if (Len = 12) and (Copy(digits, 5, 2) = '15') then
+    digits := Copy(digits, 1, 4) + Copy(digits, 7, Len - 6)
+  else if (Len = 11) and (Copy(digits, 4, 2) = '15') then
+    digits := Copy(digits, 1, 3) + Copy(digits, 6, Len - 5)
+  else if (Len = 10) and (Copy(digits, 3, 2) = '15') then
+    digits := Copy(digits, 1, 2) + Copy(digits, 5, Len - 4);
+
+  Result := '549' + digits;
+end;
+
+function CleanSocialHandle(const Handle: string): string;
+var
+  S, LowerS: string;
+  p: Integer;
+begin
+  S := Trim(Handle);
+  if S = '' then
+  begin
+    Result := '';
+    Exit;
+  end;
+
+  LowerS := LowerCase(S);
+  if Pos('https://', LowerS) = 1 then Delete(S, 1, 8);
+  LowerS := LowerCase(S);
+  if Pos('http://', LowerS) = 1 then Delete(S, 1, 7);
+  LowerS := LowerCase(S);
+  if Pos('www.', LowerS) = 1 then Delete(S, 1, 4);
+  LowerS := LowerCase(S);
+  if Pos('instagram.com/', LowerS) = 1 then Delete(S, 1, 14);
+  LowerS := LowerCase(S);
+  if Pos('facebook.com/', LowerS) = 1 then Delete(S, 1, 13);
+  LowerS := LowerCase(S);
+  if Pos('m.me/', LowerS) = 1 then Delete(S, 1, 5);
+
+  while (Length(S) > 0) and (S[1] in ['@', '#', '/']) do
+    Delete(S, 1, 1);
+
+  p := Pos('/', S);
+  if p > 0 then S := Copy(S, 1, p - 1);
+  p := Pos('?', S);
+  if p > 0 then S := Copy(S, 1, p - 1);
+
+  Result := Trim(S);
+end;
+
+function UrlEncode(const S: string): string;
+var
+  i: Integer;
+  c: Char;
+begin
+  Result := '';
+  for i := 1 to Length(S) do
+  begin
+    c := S[i];
+    case c of
+      'A'..'Z', 'a'..'z', '0'..'9', '-', '_', '.', '~':
+        Result := Result + c;
+      ' ':
+        Result := Result + '%20';
+    else
+      Result := Result + '%' + IntToHex(Ord(c), 2);
+    end;
+  end;
+end;
+
+function AbrirUrl(const Url: string): Boolean;
+begin
+  Result := ShellExecute(0, 'open', PChar(Url), nil, nil, SW_SHOWNORMAL) > 32;
 end;
 
 function CreateDlgLabel(hParent: HWND; const Caption: string; X, Y, W, H: Integer): HWND;
@@ -194,6 +309,240 @@ begin
     Y := (GetSystemMetrics(SM_CYSCREEN) - H) div 2;
   end;
   Result := SetWindowPos(hWnd, 0, X, Y, 0, 0, SWP_NOSIZE or SWP_NOZORDER);
+end;
+
+// ============================================================================
+// DIALOGO OMNICANAL: ENVIAR DATOS DE PAGO Y QR (WHATSAPP, INSTAGRAM, FACEBOOK, EMAIL)
+// ============================================================================
+
+type
+  POmniPagoDlgData = ^TOmniPagoDlgData;
+  TOmniPagoDlgData = record
+    Titular: string;
+    Identificador: string;
+    Concepto: string;
+    Monto: Currency;
+    EdtMonto: HWND;
+    EdtTelefono: HWND;
+    EdtEmail: HWND;
+    EdtFacebook: HWND;
+    EdtInstagram: HWND;
+  end;
+
+function OmniPagoDlgProc(hWnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
+var
+  pData: POmniPagoDlgData;
+  CurMonto: Currency;
+  CurTel, CleanTel, CurIg, CurFb, CurEmail, Msg, Url, Subject: string;
+begin
+  pData := POmniPagoDlgData(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+  case uMsg of
+    WM_COMMAND:
+      begin
+        case LOWORD(wParam) of
+          10: // Enviar por WhatsApp
+            begin
+              if pData <> nil then
+              begin
+                CurMonto := StrToCurrDef(GetEditText(pData^.EdtMonto), pData^.Monto);
+                CurTel := GetEditText(pData^.EdtTelefono);
+                CleanTel := CleanPhoneNumber(CurTel);
+                Msg := GenerarMensajeCobro(pData^.Titular, pData^.Identificador, pData^.Concepto, CurMonto);
+                CopiarAlPortapapeles(Msg);
+                if CleanTel <> '' then
+                  Url := 'https://wa.me/' + CleanTel + '?text=' + UrlEncode(Msg)
+                else
+                  Url := 'https://wa.me/?text=' + UrlEncode(Msg);
+                AbrirUrl(Url);
+                MessageBox(hWnd,
+                  PChar('Abriendo WhatsApp para enviar los datos bancarios, Alias oficial AETERNA.CHAMICAL y enlace de pago QR.' + #13#10#13#10 +
+                    'El mensaje oficial tambien quedo copiado en el portapapeles.'),
+                  'Aeterna - Envio WhatsApp', MB_ICONINFORMATION or MB_OK);
+              end;
+              Exit(0);
+            end;
+
+          11: // Enviar por Instagram
+            begin
+              if pData <> nil then
+              begin
+                CurMonto := StrToCurrDef(GetEditText(pData^.EdtMonto), pData^.Monto);
+                CurIg := CleanSocialHandle(GetEditText(pData^.EdtInstagram));
+                Msg := GenerarMensajeCobro(pData^.Titular, pData^.Identificador, pData^.Concepto, CurMonto);
+                CopiarAlPortapapeles(Msg);
+                if CurIg <> '' then
+                  Url := 'https://www.instagram.com/' + CurIg + '/'
+                else
+                  Url := 'https://www.instagram.com/direct/inbox/';
+                AbrirUrl(Url);
+                MessageBox(hWnd,
+                  PChar('¡Datos bancarios, Alias oficial AETERNA.CHAMICAL y enlace QR copiados al portapapeles!' + #13#10#13#10 +
+                    'Abriendo Instagram... Pegue el mensaje en el chat directo (Direct Message) del cliente.'),
+                  'Aeterna - Envio Instagram', MB_ICONINFORMATION or MB_OK);
+              end;
+              Exit(0);
+            end;
+
+          12: // Enviar por Facebook
+            begin
+              if pData <> nil then
+              begin
+                CurMonto := StrToCurrDef(GetEditText(pData^.EdtMonto), pData^.Monto);
+                CurFb := CleanSocialHandle(GetEditText(pData^.EdtFacebook));
+                Msg := GenerarMensajeCobro(pData^.Titular, pData^.Identificador, pData^.Concepto, CurMonto);
+                CopiarAlPortapapeles(Msg);
+                if CurFb <> '' then
+                  Url := 'https://m.me/' + CurFb
+                else
+                  Url := 'https://www.facebook.com/messages/';
+                AbrirUrl(Url);
+                MessageBox(hWnd,
+                  PChar('¡Datos bancarios, Alias oficial AETERNA.CHAMICAL y enlace QR copiados al portapapeles!' + #13#10#13#10 +
+                    'Abriendo Facebook Messenger... Pegue el mensaje en la conversacion con el contribuyente.'),
+                  'Aeterna - Envio Facebook', MB_ICONINFORMATION or MB_OK);
+              end;
+              Exit(0);
+            end;
+
+          13: // Enviar por Gmail / Correo
+            begin
+              if pData <> nil then
+              begin
+                CurMonto := StrToCurrDef(GetEditText(pData^.EdtMonto), pData^.Monto);
+                CurEmail := Trim(GetEditText(pData^.EdtEmail));
+                Msg := GenerarMensajeCobro(pData^.Titular, pData^.Identificador, pData^.Concepto, CurMonto);
+                CopiarAlPortapapeles(Msg);
+                Subject := 'Datos de Pago Oficial - ' + pData^.Concepto + ' (' + pData^.Identificador + ')';
+                Url := 'mailto:' + CurEmail + '?subject=' + UrlEncode(Subject) + '&body=' + UrlEncode(Msg);
+                AbrirUrl(Url);
+                MessageBox(hWnd,
+                  PChar('Abriendo cliente de correo / Gmail para enviar los datos bancarios y enlace QR al contribuyente.'),
+                  'Aeterna - Envio por Correo', MB_ICONINFORMATION or MB_OK);
+              end;
+              Exit(0);
+            end;
+
+          14: // Abrir Portal Web Oficial & Ver QR
+            begin
+              if pData <> nil then
+              begin
+                CurMonto := StrToCurrDef(GetEditText(pData^.EdtMonto), pData^.Monto);
+                Url := 'https://aeterna-parque.gob.ar/pagar?cbu=3090000201000012345678&alias=AETERNA.CHAMICAL&monto=' + IntToStr(Round(CurMonto));
+                AbrirUrl(Url);
+                MessageBox(hWnd,
+                  PChar('Abriendo portal de pago movil en su navegador web.' + #13#10#13#10 +
+                    'Aqui podra visualizar el codigo QR oficial para escanear y los datos con botones de 1 clic.'),
+                  'Aeterna - Portal de Pago & QR', MB_ICONINFORMATION or MB_OK);
+              end;
+              Exit(0);
+            end;
+
+          15: // Copiar Mensaje Completo
+            begin
+              if pData <> nil then
+              begin
+                CurMonto := StrToCurrDef(GetEditText(pData^.EdtMonto), pData^.Monto);
+                Msg := GenerarMensajeCobro(pData^.Titular, pData^.Identificador, pData^.Concepto, CurMonto);
+                CopiarAlPortapapeles(Msg);
+                MessageBox(hWnd,
+                  PChar('¡Mensaje oficial completo con Alias oficial AETERNA.CHAMICAL, CBU y enlace al QR copiado exitosamente al portapapeles!'),
+                  'Aeterna - Portapapeles', MB_ICONINFORMATION or MB_OK);
+              end;
+              Exit(0);
+            end;
+
+          2: // Cerrar
+            begin
+              DestroyWindow(hWnd);
+              Exit(0);
+            end;
+        end;
+      end;
+    WM_CLOSE:
+      begin
+        DestroyWindow(hWnd);
+        Exit(0);
+      end;
+  end;
+  Result := DefWindowProc(hWnd, uMsg, wParam, lParam);
+end;
+
+function ShowDlgEnviarPagoOmnicanal(ParentWnd: HWND; const Titular, Identificador, Concepto, Telefono, Email, Facebook, Instagram: string; Monto: Currency): Boolean;
+var
+  wc: TWndClass;
+  hDlg: HWND;
+  DlgData: TOmniPagoDlgData;
+  CurMonto: Currency;
+  HeaderInfo: string;
+begin
+  EnsureDlgFonts;
+  FillChar(wc, SizeOf(wc), 0);
+  wc.style := CS_HREDRAW or CS_VREDRAW;
+  wc.lpfnWndProc := @OmniPagoDlgProc;
+  wc.hInstance := hInstance;
+  wc.hCursor := LoadCursor(0, IDC_ARROW);
+  wc.hbrBackground := HBRUSH(COLOR_BTNFACE + 1);
+  wc.lpszClassName := 'AeternaOmniPagoDlgClass';
+  RegisterClass(wc);
+
+  hDlg := CreateWindowEx(WS_EX_DLGMODALFRAME, 'AeternaOmniPagoDlgClass', 'Enviar Datos de Pago & QR Interoperable (Omnicanal)',
+    WS_POPUP or WS_CAPTION or WS_SYSMENU or WS_VISIBLE,
+    0, 0, 560, 540, ParentWnd, 0, hInstance, nil);
+
+  CenterWindow(hDlg, ParentWnd);
+
+  CurMonto := Monto;
+  if CurMonto <= 0 then CurMonto := 18000;
+
+  DlgData.Titular := Titular;
+  DlgData.Identificador := Identificador;
+  DlgData.Concepto := Concepto;
+  DlgData.Monto := CurMonto;
+
+  CreateDlgLabel(hDlg, 'DESTINATARIO / REFERENCIA:', 20, 15, 200, 16);
+  HeaderInfo := Titular;
+  if Identificador <> '' then HeaderInfo := HeaderInfo + '  (' + Identificador + ')';
+  CreateDlgLabel(hDlg, HeaderInfo, 20, 32, 500, 20);
+
+  CreateDlgLabel(hDlg, 'Concepto: ' + Concepto, 20, 54, 500, 16);
+
+  CreateDlgLabel(hDlg, 'Monto a Cobrar ($):', 20, 78, 130, 20);
+  DlgData.EdtMonto := CreateDlgEdit(hDlg, CurrToStr(CurMonto), 150, 76, 120, 24, 801);
+
+  CreateDlgLabel(hDlg, 'Alias: AETERNA.CHAMICAL   |   CBU: 3090000201000012345678', 20, 106, 500, 18);
+
+  // Canales
+  CreateDlgLabel(hDlg, 'WhatsApp / Tel:', 20, 137, 120, 20);
+  DlgData.EdtTelefono := CreateDlgEdit(hDlg, Telefono, 145, 134, 215, 24, 802);
+  CreateDlgButton(hDlg, 'Enviar por WhatsApp', 370, 132, 160, 28, 10, True);
+
+  CreateDlgLabel(hDlg, 'Instagram:', 20, 177, 120, 20);
+  DlgData.EdtInstagram := CreateDlgEdit(hDlg, Instagram, 145, 174, 215, 24, 803);
+  CreateDlgButton(hDlg, 'Enviar por Instagram', 370, 172, 160, 28, 11);
+
+  CreateDlgLabel(hDlg, 'Facebook:', 20, 217, 120, 20);
+  DlgData.EdtFacebook := CreateDlgEdit(hDlg, Facebook, 145, 214, 215, 24, 804);
+  CreateDlgButton(hDlg, 'Enviar por Facebook', 370, 212, 160, 28, 12);
+
+  CreateDlgLabel(hDlg, 'Gmail / Correo:', 20, 257, 120, 20);
+  DlgData.EdtEmail := CreateDlgEdit(hDlg, Email, 145, 254, 215, 24, 805);
+  CreateDlgButton(hDlg, 'Enviar por Gmail/Email', 370, 252, 160, 28, 13);
+
+  // Boton Portal Web & Ver QR
+  CreateDlgButton(hDlg, 'Ver Portal Web de Pago & Codigo QR en Navegador', 20, 305, 510, 34, 14);
+
+  // Boton Copiar Mensaje Completo
+  CreateDlgButton(hDlg, 'Copiar Mensaje Oficial Completo (Alias + CBU + QR)', 20, 348, 510, 34, 15);
+
+  CreateDlgLabel(hDlg, 'El mensaje incluye el Alias oficial AETERNA.CHAMICAL, CBU Banco Rioja y enlace QR interactivo.', 20, 400, 510, 32);
+
+  CreateDlgButton(hDlg, 'Cerrar', 420, 445, 110, 34, 2);
+
+  SetWindowLongPtr(hDlg, GWLP_USERDATA, LONG_PTR(@DlgData));
+  SetFocus(DlgData.EdtTelefono);
+
+  RunModalLoop(hDlg, ParentWnd);
+  Result := True;
 end;
 
 // ============================================================================
@@ -369,18 +718,20 @@ begin
               Exit(0);
             end;
 
-          3: // Copiar Datos de Pago
+          3: // Enviar / Copiar Datos de Pago Omnicanal
             begin
               if pData <> nil then
               begin
-                CopiarAlPortapapeles(GenerarMensajeCobro(
+                ShowDlgEnviarPagoOmnicanal(hWnd,
                   GetEditText(pData^.EdtResp),
                   GetEditText(pData^.EdtParcela),
                   'Inhumacion / Sepelio - ' + GetEditText(pData^.EdtNombre),
+                  GetEditText(pData^.EdtTel),
+                  GetEditText(pData^.EdtEmail),
+                  GetEditText(pData^.EdtFacebook),
+                  GetEditText(pData^.EdtInstagram),
                   25000
-                ));
-                MessageBox(hWnd, PChar('¡Datos bancarios, Alias oficial AETERNA.CHAMICAL y enlace web copiados al portapapeles!' + #13#10 +
-                  'Puede pegarlos en WhatsApp, Facebook o Instagram.'), 'Aeterna - Cobro Omnicanal', MB_ICONINFORMATION or MB_OK);
+                );
               end;
               Exit(0);
             end;
@@ -489,8 +840,8 @@ begin
   CreateDlgLabel(hDlg, 'Observaciones / Causa:', 20, 350, 540, 18);
   DlgData.EdtObs := CreateDlgEdit(hDlg, Inh.Observaciones, 20, 370, 540, 24, 110);
 
-  // Boton Copiar Cobro
-  CreateDlgButton(hDlg, 'Copiar Datos de Cobro QR / Alias Oficial', 20, 420, 540, 32, 3);
+  // Boton Copiar / Enviar Cobro
+  CreateDlgButton(hDlg, 'Enviar Datos de Cobro & QR (WhatsApp / Redes / Alias)...', 20, 420, 540, 32, 3);
 
   // Botones
   CreateDlgButton(hDlg, 'Guardar en Supabase', 280, 505, 170, 36, 1, True);
@@ -668,18 +1019,20 @@ begin
               Exit(0);
             end;
 
-          3: // Copiar Datos de Pago
+          3: // Enviar / Copiar Datos de Pago Omnicanal
             begin
               if pData <> nil then
               begin
-                CopiarAlPortapapeles(GenerarMensajeCobro(
+                ShowDlgEnviarPagoOmnicanal(hWnd,
                   GetEditText(pData^.EdtTitular),
                   GetEditText(pData^.EdtNomenclatura),
                   'Mantenimiento de Parcela ' + GetEditText(pData^.EdtNomenclatura),
-                  StrToCurrDef(GetEditText(pData^.EdtSaldo), 0)
-                ));
-                MessageBox(hWnd, PChar('¡Datos bancarios, Alias oficial AETERNA.CHAMICAL y enlace web copiados al portapapeles!' + #13#10 +
-                  'Puede pegarlos en WhatsApp, Facebook o Instagram.'), 'Aeterna - Cobro Omnicanal', MB_ICONINFORMATION or MB_OK);
+                  GetEditText(pData^.EdtTelefono),
+                  GetEditText(pData^.EdtEmail),
+                  GetEditText(pData^.EdtFacebook),
+                  GetEditText(pData^.EdtInstagram),
+                  StrToCurrDef(GetEditText(pData^.EdtSaldo), 49000)
+                );
               end;
               Exit(0);
             end;
@@ -795,8 +1148,8 @@ begin
     20, 355, 470, 120, hDlg, HMENU(209), hInstance, nil);
   SendMessage(DlgData.EdtNivelesFosa, WM_SETFONT, WPARAM(hDlgFont), 1);
 
-  // Boton Copiar Cobro
-  CreateDlgButton(hDlg, 'Copiar Datos de Cobro QR / Alias Oficial', 20, 485, 470, 32, 3);
+  // Boton Copiar / Enviar Cobro
+  CreateDlgButton(hDlg, 'Enviar Datos de Cobro & QR (WhatsApp / Redes / Alias)...', 20, 485, 470, 32, 3);
 
   // Botones
   CreateDlgButton(hDlg, 'Guardar en Supabase', 230, 535, 150, 36, 1, True);
@@ -885,18 +1238,20 @@ begin
               Exit(0);
             end;
 
-          3: // Copiar Datos de Pago
+          3: // Enviar / Copiar Datos de Pago Omnicanal
             begin
               if pData <> nil then
               begin
-                CopiarAlPortapapeles(GenerarMensajeCobro(
+                ShowDlgEnviarPagoOmnicanal(hWnd,
                   GetEditText(pData^.EdtNombre),
                   'Afiliado #' + GetEditText(pData^.EdtNro),
                   'Cuota Mensual Plan Seguro de Sepelio',
+                  GetEditText(pData^.EdtTelefono),
+                  GetEditText(pData^.EdtEmail),
+                  GetEditText(pData^.EdtFacebook),
+                  GetEditText(pData^.EdtInstagram),
                   StrToCurrDef(GetEditText(pData^.EdtCuota), 18000)
-                ));
-                MessageBox(hWnd, PChar('¡Datos bancarios, Alias oficial AETERNA.CHAMICAL y enlace web copiados al portapapeles!' + #13#10 +
-                  'Puede pegarlos en WhatsApp, Facebook o Instagram.'), 'Aeterna - Cobro Omnicanal', MB_ICONINFORMATION or MB_OK);
+                );
               end;
               Exit(0);
             end;
@@ -995,8 +1350,8 @@ begin
     SendMessage(DlgData.CmbEstado, CB_SETCURSEL, 0, 0);
   end;
 
-  // Boton Copiar Cobro
-  CreateDlgButton(hDlg, 'Copiar Datos de Cobro QR / Alias Oficial', 20, 340, 420, 32, 3);
+  // Boton Copiar / Enviar Cobro
+  CreateDlgButton(hDlg, 'Enviar Datos de Cobro & QR (WhatsApp / Redes / Alias)...', 20, 340, 420, 32, 3);
 
   // Botones
   CreateDlgButton(hDlg, 'Guardar en Supabase', 170, 395, 160, 36, 1, True);
@@ -1073,18 +1428,17 @@ begin
               Exit(0);
             end;
 
-          3: // Copiar Datos de Pago
+          3: // Enviar / Copiar Datos de Pago Omnicanal
             begin
               if pData <> nil then
               begin
-                CopiarAlPortapapeles(GenerarMensajeCobro(
+                ShowDlgEnviarPagoOmnicanal(hWnd,
                   GetEditText(pData^.EdtTitular),
                   GetEditText(pData^.EdtRecibo),
                   GetEditText(pData^.EdtConcepto),
-                  StrToCurrDef(GetEditText(pData^.EdtMonto), 0)
-                ));
-                MessageBox(hWnd, PChar('¡Datos bancarios, Alias oficial AETERNA.CHAMICAL y enlace web copiados al portapapeles!' + #13#10 +
-                  'Puede pegarlos en WhatsApp, Facebook o Instagram.'), 'Aeterna - Cobro Omnicanal', MB_ICONINFORMATION or MB_OK);
+                  '', '', '', '', // tel, email, fb, ig
+                  StrToCurrDef(GetEditText(pData^.EdtMonto), 18000)
+                );
               end;
               Exit(0);
             end;
@@ -1157,8 +1511,8 @@ begin
   else
     SendMessage(DlgData.CmbMetodo, CB_SETCURSEL, 0, 0);
 
-  // Boton Copiar Cobro
-  CreateDlgButton(hDlg, 'Copiar Datos de Cobro QR / Alias Oficial', 20, 195, 420, 32, 3);
+  // Boton Copiar / Enviar Cobro
+  CreateDlgButton(hDlg, 'Enviar Datos de Cobro & QR (WhatsApp / Redes / Alias)...', 20, 195, 420, 32, 3);
 
   // Botones
   CreateDlgButton(hDlg, 'Asentar Cobro y Emitir Recibo', 130, 280, 210, 36, 1, True);
@@ -1251,18 +1605,20 @@ begin
               DestroyWindow(hWnd);
               Exit(0);
             end;
-          3: // Copiar Datos de Pago
+          3: // Enviar / Copiar Datos de Pago Omnicanal
             begin
               if (pData <> nil) and (pData^.AfiliadoPtr <> nil) then
               begin
-                CopiarAlPortapapeles(GenerarMensajeCobro(
+                ShowDlgEnviarPagoOmnicanal(hWnd,
                   pData^.AfiliadoPtr^.NombreCompleto,
                   'Afiliado #' + IntToStr(pData^.AfiliadoPtr^.NumeroAfiliado),
                   'Cuota Mensual Plan Seguro de Sepelio',
+                  pData^.AfiliadoPtr^.Telefono,
+                  pData^.AfiliadoPtr^.Email,
+                  pData^.AfiliadoPtr^.Facebook,
+                  pData^.AfiliadoPtr^.Instagram,
                   StrToCurrDef(GetEditText(pData^.EdtMonto), 18000)
-                ));
-                MessageBox(hWnd, PChar('¡Datos bancarios, Alias oficial AETERNA.CHAMICAL y enlace web copiados al portapapeles!' + #13#10 +
-                  'Puede pegarlos en WhatsApp, Facebook o Instagram.'), 'Aeterna - Cobro Omnicanal', MB_ICONINFORMATION or MB_OK);
+                );
               end;
               Exit(0);
             end;
@@ -1379,8 +1735,8 @@ begin
   CreateDlgLabel(hDlg, 'Nro de Recibo Oficial (*):', 20, 205, 460, 18);
   DlgData.EdtRecibo := CreateDlgEdit(hDlg, Recibo, 20, 225, 460, 24, 505);
 
-  // Boton Copiar Cobro
-  CreateDlgButton(hDlg, 'Copiar Datos de Cobro QR / Alias Oficial', 20, 265, 460, 32, 3);
+  // Boton Copiar / Enviar Cobro
+  CreateDlgButton(hDlg, 'Enviar Datos de Cobro & QR (WhatsApp / Redes / Alias)...', 20, 265, 460, 32, 3);
 
   // Botones de Accion
   CreateDlgButton(hDlg, 'Asentar Pago de Cuota y Emitir Recibo', 130, 325, 250, 38, 1, True);
