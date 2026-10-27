@@ -47,8 +47,11 @@ begin
       Result[i].EsCovid := Item.Get('es_covid', False);
       Result[i].CausaDefuncion := Item.Get('causa_defuncion', '');
       Result[i].EmpresaFunebrera := Item.Get('empresa_funebrera', '');
-      Result[i].NombreResponsable := Item.Get('nombre_responsable', '');
+      Result[i].NombreResponsable := Item.Get('nombre_responsable', Item.Get('responsable_contacto', ''));
       Result[i].TelefonoResponsable := Item.Get('telefono_responsable', '');
+      Result[i].EmailResponsable := Item.Get('email_responsable', '');
+      Result[i].FacebookResponsable := Item.Get('facebook_responsable', '');
+      Result[i].InstagramResponsable := Item.Get('instagram_responsable', '');
       Result[i].Observaciones := Item.Get('observaciones', '');
 
       Result[i].NomenclaturaParcela := Item.Get('parcela_nomenclatura', '');
@@ -122,7 +125,14 @@ begin
     Data.Add('causa_defuncion', AInhumacion.CausaDefuncion);
     Data.Add('empresa_funebrera', AInhumacion.EmpresaFunebrera);
     Data.Add('responsable_contacto', AInhumacion.NombreResponsable);
+    Data.Add('nombre_responsable', AInhumacion.NombreResponsable);
     Data.Add('telefono_responsable', AInhumacion.TelefonoResponsable);
+    if AInhumacion.EmailResponsable <> '' then
+      Data.Add('email_responsable', AInhumacion.EmailResponsable);
+    if AInhumacion.FacebookResponsable <> '' then
+      Data.Add('facebook_responsable', AInhumacion.FacebookResponsable);
+    if AInhumacion.InstagramResponsable <> '' then
+      Data.Add('instagram_responsable', AInhumacion.InstagramResponsable);
     if AInhumacion.NomenclaturaParcela <> '' then
       Data.Add('observaciones', 'Parcela asignada: ' + AInhumacion.NomenclaturaParcela)
     else
@@ -170,7 +180,14 @@ begin
     Data.Add('causa_defuncion', AInhumacion.CausaDefuncion);
     Data.Add('empresa_funebrera', AInhumacion.EmpresaFunebrera);
     Data.Add('responsable_contacto', AInhumacion.NombreResponsable);
+    Data.Add('nombre_responsable', AInhumacion.NombreResponsable);
     Data.Add('telefono_responsable', AInhumacion.TelefonoResponsable);
+    if AInhumacion.EmailResponsable <> '' then
+      Data.Add('email_responsable', AInhumacion.EmailResponsable);
+    if AInhumacion.FacebookResponsable <> '' then
+      Data.Add('facebook_responsable', AInhumacion.FacebookResponsable);
+    if AInhumacion.InstagramResponsable <> '' then
+      Data.Add('instagram_responsable', AInhumacion.InstagramResponsable);
     Data.Add('observaciones', AInhumacion.Observaciones);
 
     Result := Supabase.Update('inhumaciones', Filter, Data);

@@ -45,6 +45,10 @@ begin
       Result[i].TitularId := Item.Get('titular_id', '');
       Result[i].NombreCompleto := Item.Get('nombre_completo', '');
       Result[i].Dni := Item.Get('dni', '');
+      Result[i].Telefono := Item.Get('telefono', '');
+      Result[i].Email := Item.Get('email', '');
+      Result[i].Facebook := Item.Get('facebook', '');
+      Result[i].Instagram := Item.Get('instagram', '');
       Result[i].DireccionCobro := Item.Get('direccion_cobro', '');
       Result[i].ZonaCobro := Item.Get('zona_cobro', '');
       Result[i].CobradorAsignado := Item.Get('cobrador_asignado', '');
@@ -189,7 +193,18 @@ begin
     Data.Add('numero_afiliado', AAfiliado.NumeroAfiliado);
     Data.Add('nombre_completo', AAfiliado.NombreCompleto);
     if AAfiliado.Dni <> '' then
+    begin
+      Data.Add('dni', AAfiliado.Dni);
       Data.Add('notas', 'DNI: ' + AAfiliado.Dni);
+    end;
+    if AAfiliado.Telefono <> '' then
+      Data.Add('telefono', AAfiliado.Telefono);
+    if AAfiliado.Email <> '' then
+      Data.Add('email', AAfiliado.Email);
+    if AAfiliado.Facebook <> '' then
+      Data.Add('facebook', AAfiliado.Facebook);
+    if AAfiliado.Instagram <> '' then
+      Data.Add('instagram', AAfiliado.Instagram);
     Data.Add('direccion_cobro', AAfiliado.DireccionCobro);
     Data.Add('zona_cobro', AAfiliado.ZonaCobro);
     Data.Add('cobrador_asignado', AAfiliado.CobradorAsignado);
@@ -231,7 +246,18 @@ begin
     Data.Add('numero_afiliado', AAfiliado.NumeroAfiliado);
     Data.Add('nombre_completo', AAfiliado.NombreCompleto);
     if AAfiliado.Dni <> '' then
+    begin
+      Data.Add('dni', AAfiliado.Dni);
       Data.Add('notas', 'DNI: ' + AAfiliado.Dni);
+    end;
+    if AAfiliado.Telefono <> '' then
+      Data.Add('telefono', AAfiliado.Telefono);
+    if AAfiliado.Email <> '' then
+      Data.Add('email', AAfiliado.Email);
+    if AAfiliado.Facebook <> '' then
+      Data.Add('facebook', AAfiliado.Facebook);
+    if AAfiliado.Instagram <> '' then
+      Data.Add('instagram', AAfiliado.Instagram);
     Data.Add('direccion_cobro', AAfiliado.DireccionCobro);
     Data.Add('zona_cobro', AAfiliado.ZonaCobro);
     Data.Add('cobrador_asignado', AAfiliado.CobradorAsignado);

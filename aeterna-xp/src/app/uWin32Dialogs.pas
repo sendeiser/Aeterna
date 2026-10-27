@@ -47,6 +47,50 @@ begin
   if Cond then Result := Si else Result := No;
 end;
 
+procedure CopiarAlPortapapeles(const Texto: string);
+var
+  hMem: HGLOBAL;
+  pMem: PChar;
+  Len: Integer;
+begin
+  if not OpenClipboard(0) then Exit;
+  try
+    EmptyClipboard;
+    Len := Length(Texto) + 1;
+    hMem := GlobalAlloc(GMEM_MOVEABLE, Len);
+    if hMem <> 0 then
+    begin
+      pMem := PChar(GlobalLock(hMem));
+      if pMem <> nil then
+      begin
+        Move(PChar(Texto)^, pMem^, Len);
+        GlobalUnlock(hMem);
+        SetClipboardData(CF_TEXT, hMem);
+      end;
+    end;
+  finally
+    CloseClipboard;
+  end;
+end;
+
+function GenerarMensajeCobro(const Titular, Identificador, Concepto: string; Monto: Currency): string;
+begin
+  Result := 'Estimado/a ' + Titular + ':' + #13#10 +
+    'Adjuntamos los datos bancarios y enlace para abonar en AETERNA PARQUE MUNICIPAL:' + #13#10#13#10 +
+    '• Concepto: ' + Concepto + #13#10 +
+    '• Identificador: ' + Identificador + #13#10 +
+    '• Monto a Pagar: $' + FormatCurr('#,##0.00', Monto) + ' ARS' + #13#10#13#10 +
+    'DATOS DE TRANSFERENCIA DIRECTA:' + #13#10 +
+    '• Banco: Banco Rioja (Cuenta Corriente Oficial)' + #13#10 +
+    '• Alias CBU: AETERNA.CHAMICAL' + #13#10 +
+    '• CBU: 3090000201000012345678' + #13#10 +
+    '• Titular: Municipalidad de Chamical (Cementerio Parque Aeterna)' + #13#10 +
+    '• CUIT: 30-67291823-4' + #13#10#13#10 +
+    'PORTAL WEB DE PAGO MOVIL & QR INTEROPERABLE:' + #13#10 +
+    'https://aeterna-parque.gob.ar/pagar?cbu=3090000201000012345678&alias=AETERNA.CHAMICAL&monto=' + IntToStr(Round(Monto)) + #13#10#13#10 +
+    'Luego de transferir, por favor envie el comprobante por WhatsApp al +54 9 3826 40-1234 o por este medio.';
+end;
+
 function CreateDlgLabel(hParent: HWND; const Caption: string; X, Y, W, H: Integer): HWND;
 begin
   EnsureDlgFonts;
@@ -161,7 +205,7 @@ type
   TInhDlgData = record
     InhPtr: ^TInhumacion;
     Confirmed: Boolean;
-    EdtNombre, EdtDni, EdtParcela, CmbNivel, EdtFecha, EdtEmpresa, EdtResp, EdtTel, CmbCovid, EdtObs: HWND;
+    EdtNombre, EdtDni, EdtParcela, CmbNivel, EdtFecha, EdtEmpresa, EdtResp, EdtTel, EdtEmail, EdtFacebook, EdtInstagram, CmbCovid, EdtObs: HWND;
     LblInfoNivel: HWND;
     InhumacionesPtr: ^TInhumacionArray;
   end;
@@ -299,6 +343,9 @@ begin
                 pData^.InhPtr^.EmpresaFunebrera := GetEditText(pData^.EdtEmpresa);
                 pData^.InhPtr^.NombreResponsable := GetEditText(pData^.EdtResp);
                 pData^.InhPtr^.TelefonoResponsable := GetEditText(pData^.EdtTel);
+                pData^.InhPtr^.EmailResponsable := GetEditText(pData^.EdtEmail);
+                pData^.InhPtr^.FacebookResponsable := GetEditText(pData^.EdtFacebook);
+                pData^.InhPtr^.InstagramResponsable := GetEditText(pData^.EdtInstagram);
                 pData^.InhPtr^.EsCovid := (SendMessage(pData^.CmbCovid, CB_GETCURSEL, 0, 0) = 1);
                 pData^.InhPtr^.Observaciones := GetEditText(pData^.EdtObs);
 
@@ -319,6 +366,22 @@ begin
             begin
               if pData <> nil then pData^.Confirmed := False;
               DestroyWindow(hWnd);
+              Exit(0);
+            end;
+
+          3: // Copiar Datos de Pago
+            begin
+              if pData <> nil then
+              begin
+                CopiarAlPortapapeles(GenerarMensajeCobro(
+                  GetEditText(pData^.EdtResp),
+                  GetEditText(pData^.EdtParcela),
+                  'Inhumacion / Sepelio - ' + GetEditText(pData^.EdtNombre),
+                  25000
+                ));
+                MessageBox(hWnd, PChar('¡Datos bancarios, Alias oficial AETERNA.CHAMICAL y enlace web copiados al portapapeles!' + #13#10 +
+                  'Puede pegarlos en WhatsApp, Facebook o Instagram.'), 'Aeterna - Cobro Omnicanal', MB_ICONINFORMATION or MB_OK);
+              end;
               Exit(0);
             end;
         end;
@@ -359,7 +422,7 @@ begin
 
   hDlg := CreateWindowEx(WS_EX_DLGMODALFRAME, 'AeternaInhDlgClass', PChar(Title),
     WS_POPUP or WS_CAPTION or WS_SYSMENU or WS_VISIBLE,
-    0, 0, 600, 510, ParentWnd, 0, hInstance, nil);
+    0, 0, 600, 600, ParentWnd, 0, hInstance, nil);
 
   CenterWindow(hDlg, ParentWnd);
 
@@ -402,11 +465,20 @@ begin
   CreateDlgLabel(hDlg, 'Nombre Familiar Responsable:', 20, 194, 260, 18);
   DlgData.EdtResp := CreateDlgEdit(hDlg, Inh.NombreResponsable, 20, 214, 260, 24, 107);
 
-  CreateDlgLabel(hDlg, 'Telefono Contacto:', 300, 194, 260, 18);
+  CreateDlgLabel(hDlg, 'Telefono Contacto (+54 9):', 300, 194, 260, 18);
   DlgData.EdtTel := CreateDlgEdit(hDlg, Inh.TelefonoResponsable, 300, 214, 260, 24, 108);
 
-  CreateDlgLabel(hDlg, 'Protocolo Sanitario COVID-19:', 20, 246, 260, 18);
-  DlgData.CmbCovid := CreateDlgCombo(hDlg, 20, 266, 260, 80, 109);
+  CreateDlgLabel(hDlg, 'Gmail / Correo Familiar:', 20, 246, 170, 18);
+  DlgData.EdtEmail := CreateDlgEdit(hDlg, Inh.EmailResponsable, 20, 266, 170, 24, 111);
+
+  CreateDlgLabel(hDlg, 'Facebook Familiar:', 200, 246, 170, 18);
+  DlgData.EdtFacebook := CreateDlgEdit(hDlg, Inh.FacebookResponsable, 200, 266, 170, 24, 112);
+
+  CreateDlgLabel(hDlg, 'Instagram Familiar:', 380, 246, 180, 18);
+  DlgData.EdtInstagram := CreateDlgEdit(hDlg, Inh.InstagramResponsable, 380, 266, 180, 24, 113);
+
+  CreateDlgLabel(hDlg, 'Protocolo Sanitario COVID-19:', 20, 298, 260, 18);
+  DlgData.CmbCovid := CreateDlgCombo(hDlg, 20, 318, 260, 80, 109);
   SendMessage(DlgData.CmbCovid, CB_ADDSTRING, 0, LPARAM(PChar('No (Sepelio Estandar)')));
   SendMessage(DlgData.CmbCovid, CB_ADDSTRING, 0, LPARAM(PChar('Si (Protocolo Sanitario)')));
   if Inh.EsCovid then
@@ -414,12 +486,15 @@ begin
   else
     SendMessage(DlgData.CmbCovid, CB_SETCURSEL, 0, 0);
 
-  CreateDlgLabel(hDlg, 'Observaciones / Causa:', 20, 298, 540, 18);
-  DlgData.EdtObs := CreateDlgEdit(hDlg, Inh.Observaciones, 20, 318, 540, 24, 110);
+  CreateDlgLabel(hDlg, 'Observaciones / Causa:', 20, 350, 540, 18);
+  DlgData.EdtObs := CreateDlgEdit(hDlg, Inh.Observaciones, 20, 370, 540, 24, 110);
+
+  // Boton Copiar Cobro
+  CreateDlgButton(hDlg, 'Copiar Datos de Cobro QR / Alias Oficial', 20, 420, 540, 32, 3);
 
   // Botones
-  CreateDlgButton(hDlg, 'Guardar en Supabase', 280, 410, 170, 36, 1, True);
-  CreateDlgButton(hDlg, 'Cancelar', 460, 410, 100, 36, 2);
+  CreateDlgButton(hDlg, 'Guardar en Supabase', 280, 505, 170, 36, 1, True);
+  CreateDlgButton(hDlg, 'Cancelar', 460, 505, 100, 36, 2);
 
   SetWindowLongPtr(hDlg, GWLP_USERDATA, LONG_PTR(@DlgData));
 
@@ -459,7 +534,7 @@ type
   TParcDlgData = record
     ParcPtr: ^TParcela;
     Confirmed: Boolean;
-    EdtNomenclatura, CmbSector, EdtFila, EdtNumero, CmbEstado, EdtTitular, EdtSaldo, EdtNotas: HWND;
+    EdtNomenclatura, CmbSector, EdtFila, EdtNumero, CmbEstado, EdtTitular, EdtTelefono, EdtEmail, EdtFacebook, EdtInstagram, EdtSaldo, EdtNotas: HWND;
     EdtNivelesFosa: HWND;
   end;
 
@@ -566,6 +641,10 @@ begin
                 end;
 
                 pData^.ParcPtr^.TitularNombre := GetEditText(pData^.EdtTitular);
+                pData^.ParcPtr^.TitularTelefono := GetEditText(pData^.EdtTelefono);
+                pData^.ParcPtr^.TitularEmail := GetEditText(pData^.EdtEmail);
+                pData^.ParcPtr^.TitularFacebook := GetEditText(pData^.EdtFacebook);
+                pData^.ParcPtr^.TitularInstagram := GetEditText(pData^.EdtInstagram);
                 pData^.ParcPtr^.SaldoMantenimiento := StrToCurrDef(GetEditText(pData^.EdtSaldo), 0);
                 pData^.ParcPtr^.Notas := GetEditText(pData^.EdtNotas);
 
@@ -586,6 +665,22 @@ begin
             begin
               if pData <> nil then pData^.Confirmed := False;
               DestroyWindow(hWnd);
+              Exit(0);
+            end;
+
+          3: // Copiar Datos de Pago
+            begin
+              if pData <> nil then
+              begin
+                CopiarAlPortapapeles(GenerarMensajeCobro(
+                  GetEditText(pData^.EdtTitular),
+                  GetEditText(pData^.EdtNomenclatura),
+                  'Mantenimiento de Parcela ' + GetEditText(pData^.EdtNomenclatura),
+                  StrToCurrDef(GetEditText(pData^.EdtSaldo), 0)
+                ));
+                MessageBox(hWnd, PChar('¡Datos bancarios, Alias oficial AETERNA.CHAMICAL y enlace web copiados al portapapeles!' + #13#10 +
+                  'Puede pegarlos en WhatsApp, Facebook o Instagram.'), 'Aeterna - Cobro Omnicanal', MB_ICONINFORMATION or MB_OK);
+              end;
               Exit(0);
             end;
         end;
@@ -625,7 +720,7 @@ begin
 
   hDlg := CreateWindowEx(WS_EX_DLGMODALFRAME, 'AeternaParcDlgClass', PChar(Title),
     WS_POPUP or WS_CAPTION or WS_SYSMENU or WS_VISIBLE,
-    0, 0, 530, 560, ParentWnd, 0, hInstance, nil);
+    0, 0, 530, 680, ParentWnd, 0, hInstance, nil);
 
   CenterWindow(hDlg, ParentWnd);
 
@@ -674,23 +769,38 @@ begin
   CreateDlgLabel(hDlg, 'Titular Concesion (Nombre Completo):', 20, 125, 470, 18);
   DlgData.EdtTitular := CreateDlgEdit(hDlg, Parc.TitularNombre, 20, 145, 470, 24, 206);
 
-  CreateDlgLabel(hDlg, 'Saldo Mantenimiento ($):', 20, 180, 220, 18);
-  DlgData.EdtSaldo := CreateDlgEdit(hDlg, CurrToStr(Parc.SaldoMantenimiento), 20, 200, 220, 24, 207);
+  CreateDlgLabel(hDlg, 'Tel / WhatsApp Titular (+54 9):', 20, 178, 220, 18);
+  DlgData.EdtTelefono := CreateDlgEdit(hDlg, Parc.TitularTelefono, 20, 198, 220, 24, 211);
 
-  CreateDlgLabel(hDlg, 'Notas / Observaciones:', 20, 235, 470, 18);
-  DlgData.EdtNotas := CreateDlgEdit(hDlg, Parc.Notas, 20, 255, 470, 24, 208);
+  CreateDlgLabel(hDlg, 'Gmail / Correo Titular:', 260, 178, 230, 18);
+  DlgData.EdtEmail := CreateDlgEdit(hDlg, Parc.TitularEmail, 260, 198, 230, 24, 212);
+
+  CreateDlgLabel(hDlg, 'Facebook Titular:', 20, 230, 220, 18);
+  DlgData.EdtFacebook := CreateDlgEdit(hDlg, Parc.TitularFacebook, 20, 250, 220, 24, 213);
+
+  CreateDlgLabel(hDlg, 'Instagram Titular:', 260, 230, 230, 18);
+  DlgData.EdtInstagram := CreateDlgEdit(hDlg, Parc.TitularInstagram, 260, 250, 230, 24, 214);
+
+  CreateDlgLabel(hDlg, 'Saldo Mantenimiento ($):', 20, 282, 220, 18);
+  DlgData.EdtSaldo := CreateDlgEdit(hDlg, CurrToStr(Parc.SaldoMantenimiento), 20, 302, 220, 24, 207);
+
+  CreateDlgLabel(hDlg, 'Notas / Observaciones:', 260, 282, 230, 18);
+  DlgData.EdtNotas := CreateDlgEdit(hDlg, Parc.Notas, 260, 302, 230, 24, 208);
 
   // Seccion: Ocupacion Subterranea de la Fosa (Niveles y Difuntos)
-  CreateDlgLabel(hDlg, 'Ocupacion Subterranea de la Fosa (Niveles y Difuntos):', 20, 290, 470, 18);
+  CreateDlgLabel(hDlg, 'Ocupacion Subterranea de la Fosa (Niveles y Difuntos):', 20, 335, 470, 18);
   NivelesFosaStr := InspeccionarNivelesFosaStr(Parc.Nomenclatura, Parc.CapacidadTotal, InhumacionesRef);
   DlgData.EdtNivelesFosa := CreateWindowEx(WS_EX_CLIENTEDGE, 'EDIT', PChar(NivelesFosaStr),
     WS_CHILD or WS_VISIBLE or WS_VSCROLL or ES_MULTILINE or ES_READONLY or ES_AUTOVSCROLL,
-    20, 310, 470, 135, hDlg, HMENU(209), hInstance, nil);
+    20, 355, 470, 120, hDlg, HMENU(209), hInstance, nil);
   SendMessage(DlgData.EdtNivelesFosa, WM_SETFONT, WPARAM(hDlgFont), 1);
 
+  // Boton Copiar Cobro
+  CreateDlgButton(hDlg, 'Copiar Datos de Cobro QR / Alias Oficial', 20, 485, 470, 32, 3);
+
   // Botones
-  CreateDlgButton(hDlg, 'Guardar en Supabase', 230, 465, 150, 36, 1, True);
-  CreateDlgButton(hDlg, 'Cancelar', 390, 465, 100, 36, 2);
+  CreateDlgButton(hDlg, 'Guardar en Supabase', 230, 535, 150, 36, 1, True);
+  CreateDlgButton(hDlg, 'Cancelar', 390, 535, 100, 36, 2);
 
   SetWindowLongPtr(hDlg, GWLP_USERDATA, LONG_PTR(@DlgData));
   SetFocus(DlgData.EdtNomenclatura);
@@ -716,7 +826,7 @@ type
   TAfilDlgData = record
     AfilPtr: ^TAfiliadoSeguro;
     Confirmed: Boolean;
-    EdtNro, EdtNombre, EdtDni, EdtDireccion, EdtZona, EdtCuota, EdtCobrador, CmbEstado: HWND;
+    EdtNro, EdtNombre, EdtDni, EdtTelefono, EdtEmail, EdtFacebook, EdtInstagram, EdtDireccion, EdtZona, EdtCuota, EdtCobrador, CmbEstado: HWND;
   end;
 
 function AfilDlgProc(hWnd: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): LRESULT; stdcall;
@@ -736,6 +846,10 @@ begin
                 pData^.AfilPtr^.NumeroAfiliado := StrToIntDef(GetEditText(pData^.EdtNro), 101);
                 pData^.AfilPtr^.NombreCompleto := GetEditText(pData^.EdtNombre);
                 pData^.AfilPtr^.Dni := GetEditText(pData^.EdtDni);
+                pData^.AfilPtr^.Telefono := GetEditText(pData^.EdtTelefono);
+                pData^.AfilPtr^.Email := GetEditText(pData^.EdtEmail);
+                pData^.AfilPtr^.Facebook := GetEditText(pData^.EdtFacebook);
+                pData^.AfilPtr^.Instagram := GetEditText(pData^.EdtInstagram);
                 pData^.AfilPtr^.DireccionCobro := GetEditText(pData^.EdtDireccion);
                 pData^.AfilPtr^.ZonaCobro := GetEditText(pData^.EdtZona);
                 pData^.AfilPtr^.MontoCuotaMensual := StrToCurrDef(GetEditText(pData^.EdtCuota), 18000);
@@ -768,6 +882,22 @@ begin
             begin
               if pData <> nil then pData^.Confirmed := False;
               DestroyWindow(hWnd);
+              Exit(0);
+            end;
+
+          3: // Copiar Datos de Pago
+            begin
+              if pData <> nil then
+              begin
+                CopiarAlPortapapeles(GenerarMensajeCobro(
+                  GetEditText(pData^.EdtNombre),
+                  'Afiliado #' + GetEditText(pData^.EdtNro),
+                  'Cuota Mensual Plan Seguro de Sepelio',
+                  StrToCurrDef(GetEditText(pData^.EdtCuota), 18000)
+                ));
+                MessageBox(hWnd, PChar('¡Datos bancarios, Alias oficial AETERNA.CHAMICAL y enlace web copiados al portapapeles!' + #13#10 +
+                  'Puede pegarlos en WhatsApp, Facebook o Instagram.'), 'Aeterna - Cobro Omnicanal', MB_ICONINFORMATION or MB_OK);
+              end;
               Exit(0);
             end;
         end;
@@ -807,7 +937,7 @@ begin
 
   hDlg := CreateWindowEx(WS_EX_DLGMODALFRAME, 'AeternaAfilDlgClass', PChar(Title),
     WS_POPUP or WS_CAPTION or WS_SYSMENU or WS_VISIBLE,
-    0, 0, 480, 430, ParentWnd, 0, hInstance, nil);
+    0, 0, 480, 500, ParentWnd, 0, hInstance, nil);
 
   CenterWindow(hDlg, ParentWnd);
 
@@ -821,26 +951,38 @@ begin
   CreateDlgLabel(hDlg, 'Nombre Completo Titular (*):', 160, 15, 280, 18);
   DlgData.EdtNombre := CreateDlgEdit(hDlg, Afil.NombreCompleto, 160, 35, 280, 24, 302);
 
-  CreateDlgLabel(hDlg, 'DNI:', 20, 70, 140, 18);
-  DlgData.EdtDni := CreateDlgEdit(hDlg, Afil.Dni, 20, 90, 140, 24, 303);
+  CreateDlgLabel(hDlg, 'DNI:', 20, 68, 140, 18);
+  DlgData.EdtDni := CreateDlgEdit(hDlg, Afil.Dni, 20, 88, 140, 24, 303);
 
-  CreateDlgLabel(hDlg, 'Direccion de Cobro:', 180, 70, 260, 18);
-  DlgData.EdtDireccion := CreateDlgEdit(hDlg, Afil.DireccionCobro, 180, 90, 260, 24, 304);
+  CreateDlgLabel(hDlg, 'Direccion de Cobro:', 180, 68, 260, 18);
+  DlgData.EdtDireccion := CreateDlgEdit(hDlg, Afil.DireccionCobro, 180, 88, 260, 24, 304);
 
-  CreateDlgLabel(hDlg, 'Zona / Ruta de Cobranza:', 20, 125, 200, 18);
+  CreateDlgLabel(hDlg, 'Tel / WhatsApp (+54 9):', 20, 120, 200, 18);
+  DlgData.EdtTelefono := CreateDlgEdit(hDlg, Afil.Telefono, 20, 140, 200, 24, 309);
+
+  CreateDlgLabel(hDlg, 'Gmail / Correo:', 240, 120, 200, 18);
+  DlgData.EdtEmail := CreateDlgEdit(hDlg, Afil.Email, 240, 140, 200, 24, 310);
+
+  CreateDlgLabel(hDlg, 'Facebook:', 20, 172, 200, 18);
+  DlgData.EdtFacebook := CreateDlgEdit(hDlg, Afil.Facebook, 20, 192, 200, 24, 311);
+
+  CreateDlgLabel(hDlg, 'Instagram:', 240, 172, 200, 18);
+  DlgData.EdtInstagram := CreateDlgEdit(hDlg, Afil.Instagram, 240, 192, 200, 24, 312);
+
+  CreateDlgLabel(hDlg, 'Zona / Ruta de Cobranza:', 20, 224, 200, 18);
   if Afil.ZonaCobro = '' then Afil.ZonaCobro := 'Zona Centro';
-  DlgData.EdtZona := CreateDlgEdit(hDlg, Afil.ZonaCobro, 20, 145, 200, 24, 305);
+  DlgData.EdtZona := CreateDlgEdit(hDlg, Afil.ZonaCobro, 20, 244, 200, 24, 305);
 
-  CreateDlgLabel(hDlg, 'Cuota Mensual ($):', 240, 125, 200, 18);
+  CreateDlgLabel(hDlg, 'Cuota Mensual ($):', 240, 224, 200, 18);
   if Afil.MontoCuotaMensual = 0 then Afil.MontoCuotaMensual := 18000;
-  DlgData.EdtCuota := CreateDlgEdit(hDlg, CurrToStr(Afil.MontoCuotaMensual), 240, 145, 200, 24, 306);
+  DlgData.EdtCuota := CreateDlgEdit(hDlg, CurrToStr(Afil.MontoCuotaMensual), 240, 244, 200, 24, 306);
 
-  CreateDlgLabel(hDlg, 'Cobrador Asignado:', 20, 180, 200, 18);
+  CreateDlgLabel(hDlg, 'Cobrador Asignado:', 20, 276, 200, 18);
   if Afil.CobradorAsignado = '' then Afil.CobradorAsignado := 'Cobrador 1';
-  DlgData.EdtCobrador := CreateDlgEdit(hDlg, Afil.CobradorAsignado, 20, 200, 200, 24, 307);
+  DlgData.EdtCobrador := CreateDlgEdit(hDlg, Afil.CobradorAsignado, 20, 296, 200, 24, 307);
 
-  CreateDlgLabel(hDlg, 'Estado Cobertura:', 240, 180, 200, 18);
-  DlgData.CmbEstado := CreateDlgCombo(hDlg, 240, 200, 200, 120, 308);
+  CreateDlgLabel(hDlg, 'Estado Cobertura:', 240, 276, 200, 18);
+  DlgData.CmbEstado := CreateDlgCombo(hDlg, 240, 296, 200, 120, 308);
   SendMessage(DlgData.CmbEstado, CB_ADDSTRING, 0, LPARAM(PChar('Activo (Habilitado)')));
   SendMessage(DlgData.CmbEstado, CB_ADDSTRING, 0, LPARAM(PChar('En Mora (Aviso)')));
   SendMessage(DlgData.CmbEstado, CB_ADDSTRING, 0, LPARAM(PChar('Suspendido')));
@@ -853,9 +995,12 @@ begin
     SendMessage(DlgData.CmbEstado, CB_SETCURSEL, 0, 0);
   end;
 
+  // Boton Copiar Cobro
+  CreateDlgButton(hDlg, 'Copiar Datos de Cobro QR / Alias Oficial', 20, 340, 420, 32, 3);
+
   // Botones
-  CreateDlgButton(hDlg, 'Guardar en Supabase', 200, 330, 150, 36, 1, True);
-  CreateDlgButton(hDlg, 'Cancelar', 360, 330, 80, 36, 2);
+  CreateDlgButton(hDlg, 'Guardar en Supabase', 170, 395, 160, 36, 1, True);
+  CreateDlgButton(hDlg, 'Cancelar', 340, 395, 100, 36, 2);
 
   SetWindowLongPtr(hDlg, GWLP_USERDATA, LONG_PTR(@DlgData));
   SetFocus(DlgData.EdtNombre);
@@ -927,6 +1072,22 @@ begin
               DestroyWindow(hWnd);
               Exit(0);
             end;
+
+          3: // Copiar Datos de Pago
+            begin
+              if pData <> nil then
+              begin
+                CopiarAlPortapapeles(GenerarMensajeCobro(
+                  GetEditText(pData^.EdtTitular),
+                  GetEditText(pData^.EdtRecibo),
+                  GetEditText(pData^.EdtConcepto),
+                  StrToCurrDef(GetEditText(pData^.EdtMonto), 0)
+                ));
+                MessageBox(hWnd, PChar('¡Datos bancarios, Alias oficial AETERNA.CHAMICAL y enlace web copiados al portapapeles!' + #13#10 +
+                  'Puede pegarlos en WhatsApp, Facebook o Instagram.'), 'Aeterna - Cobro Omnicanal', MB_ICONINFORMATION or MB_OK);
+              end;
+              Exit(0);
+            end;
         end;
       end;
 
@@ -958,7 +1119,7 @@ begin
 
   hDlg := CreateWindowEx(WS_EX_DLGMODALFRAME, 'AeternaCajaDlgClass', 'Registrar Cobro en Caja - Supabase Cloud',
     WS_POPUP or WS_CAPTION or WS_SYSMENU or WS_VISIBLE,
-    0, 0, 480, 360, ParentWnd, 0, hInstance, nil);
+    0, 0, 480, 390, ParentWnd, 0, hInstance, nil);
 
   CenterWindow(hDlg, ParentWnd);
 
@@ -996,9 +1157,12 @@ begin
   else
     SendMessage(DlgData.CmbMetodo, CB_SETCURSEL, 0, 0);
 
+  // Boton Copiar Cobro
+  CreateDlgButton(hDlg, 'Copiar Datos de Cobro QR / Alias Oficial', 20, 195, 420, 32, 3);
+
   // Botones
-  CreateDlgButton(hDlg, 'Asentar Cobro y Emitir Recibo', 150, 260, 200, 36, 1, True);
-  CreateDlgButton(hDlg, 'Cancelar', 360, 260, 80, 36, 2);
+  CreateDlgButton(hDlg, 'Asentar Cobro y Emitir Recibo', 130, 280, 210, 36, 1, True);
+  CreateDlgButton(hDlg, 'Cancelar', 350, 280, 90, 36, 2);
 
   SetWindowLongPtr(hDlg, GWLP_USERDATA, LONG_PTR(@DlgData));
   SetFocus(DlgData.EdtTitular);
@@ -1035,6 +1199,7 @@ end;
 
 type
   TCuotaMesDlgData = record
+    AfiliadoPtr: ^TAfiliadoSeguro;
     MesPtr: PInteger;
     AnioPtr: PInteger;
     MontoPtr: PCurrency;
@@ -1086,6 +1251,21 @@ begin
               DestroyWindow(hWnd);
               Exit(0);
             end;
+          3: // Copiar Datos de Pago
+            begin
+              if (pData <> nil) and (pData^.AfiliadoPtr <> nil) then
+              begin
+                CopiarAlPortapapeles(GenerarMensajeCobro(
+                  pData^.AfiliadoPtr^.NombreCompleto,
+                  'Afiliado #' + IntToStr(pData^.AfiliadoPtr^.NumeroAfiliado),
+                  'Cuota Mensual Plan Seguro de Sepelio',
+                  StrToCurrDef(GetEditText(pData^.EdtMonto), 18000)
+                ));
+                MessageBox(hWnd, PChar('¡Datos bancarios, Alias oficial AETERNA.CHAMICAL y enlace web copiados al portapapeles!' + #13#10 +
+                  'Puede pegarlos en WhatsApp, Facebook o Instagram.'), 'Aeterna - Cobro Omnicanal', MB_ICONINFORMATION or MB_OK);
+              end;
+              Exit(0);
+            end;
         end;
       end;
     WM_CLOSE:
@@ -1123,7 +1303,7 @@ begin
 
   hDlg := CreateWindowEx(WS_EX_DLGMODALFRAME, 'AeternaCuotaMesDlgClass', 'Cobro de Cuota Mensual - Seguro de Sepelio',
     WS_POPUP or WS_CAPTION or WS_SYSMENU or WS_VISIBLE,
-    0, 0, 520, 420, ParentWnd, 0, hInstance, nil);
+    0, 0, 520, 440, ParentWnd, 0, hInstance, nil);
 
   CenterWindow(hDlg, ParentWnd);
 
@@ -1136,6 +1316,7 @@ begin
   if AnioSeleccionado = 0 then
     AnioSeleccionado := 2026;
 
+  DlgData.AfiliadoPtr := @Afiliado;
   DlgData.MesPtr := @MesSeleccionado;
   DlgData.AnioPtr := @AnioSeleccionado;
   DlgData.MontoPtr := @Monto;
@@ -1198,9 +1379,12 @@ begin
   CreateDlgLabel(hDlg, 'Nro de Recibo Oficial (*):', 20, 205, 460, 18);
   DlgData.EdtRecibo := CreateDlgEdit(hDlg, Recibo, 20, 225, 460, 24, 505);
 
+  // Boton Copiar Cobro
+  CreateDlgButton(hDlg, 'Copiar Datos de Cobro QR / Alias Oficial', 20, 265, 460, 32, 3);
+
   // Botones de Accion
-  CreateDlgButton(hDlg, 'Asentar Pago de Cuota y Emitir Recibo', 130, 310, 250, 38, 1, True);
-  CreateDlgButton(hDlg, 'Cancelar', 395, 310, 85, 38, 2);
+  CreateDlgButton(hDlg, 'Asentar Pago de Cuota y Emitir Recibo', 130, 325, 250, 38, 1, True);
+  CreateDlgButton(hDlg, 'Cancelar', 395, 325, 85, 38, 2);
 
   SetWindowLongPtr(hDlg, GWLP_USERDATA, LONG_PTR(@DlgData));
   SetFocus(DlgData.CmbMes);

@@ -23,6 +23,9 @@ type
     Direccion: string;
     Barrio: string;
     Ciudad: string;
+    Email: string;
+    Facebook: string;
+    Instagram: string;
     EstadoVital: string; // 'vivo' | 'fallecido'
   end;
 
@@ -40,6 +43,9 @@ type
     EmpresaFunebrera: string;
     NombreResponsable: string;
     TelefonoResponsable: string;
+    EmailResponsable: string;
+    FacebookResponsable: string;
+    InstagramResponsable: string;
     Observaciones: string;
     NomenclaturaParcela: string;
     CreatedAt: string;
@@ -58,6 +64,10 @@ type
     TitularId: string;
     TitularNombre: string;
     TitularDni: string;
+    TitularTelefono: string;
+    TitularEmail: string;
+    TitularFacebook: string;
+    TitularInstagram: string;
     TitularEstadoVital: string; // 'vivo' | 'fallecido'
     Estado: TEstadoParcela;
     SaldoMantenimiento: Currency;
@@ -91,6 +101,10 @@ type
     TitularId: string;
     NombreCompleto: string;
     Dni: string;
+    Telefono: string;
+    Email: string;
+    Facebook: string;
+    Instagram: string;
     DireccionCobro: string;
     ZonaCobro: string;
     CobradorAsignado: string;

@@ -32,7 +32,7 @@ var
   Query: string;
 begin
   SetLength(Result, 0);
-  Query := 'select=id,nomenclatura,sector_id,manzana_fila,numero_parcela,capacidad_total,espacios_ocupados,estado,saldo_mantenimiento,fecha_adquisicion,created_at,notas,titular:titulares(id,nombre_completo,dni)&order=nomenclatura.asc';
+  Query := 'select=id,nomenclatura,sector_id,manzana_fila,numero_parcela,capacidad_total,espacios_ocupados,estado,saldo_mantenimiento,fecha_adquisicion,created_at,notas,titular:titulares(id,nombre_completo,dni,telefono,email,facebook,instagram)&order=nomenclatura.asc';
 
   if ASector <> '' then
     Query := Query + '&sector_id=eq.' + ASector;
@@ -66,6 +66,10 @@ begin
 
       Result[i].TitularNombre := '';
       Result[i].TitularDni := '';
+      Result[i].TitularTelefono := '';
+      Result[i].TitularEmail := '';
+      Result[i].TitularFacebook := '';
+      Result[i].TitularInstagram := '';
       Result[i].TitularId := '';
       Result[i].TitularEstadoVital := 'vivo';
       if Item.Find('titular') <> nil then
@@ -76,6 +80,10 @@ begin
           Result[i].TitularId := TitularObj.Get('id', '');
           Result[i].TitularNombre := TitularObj.Get('nombre_completo', '');
           Result[i].TitularDni := TitularObj.Get('dni', '');
+          Result[i].TitularTelefono := TitularObj.Get('telefono', '');
+          Result[i].TitularEmail := TitularObj.Get('email', '');
+          Result[i].TitularFacebook := TitularObj.Get('facebook', '');
+          Result[i].TitularInstagram := TitularObj.Get('instagram', '');
           Result[i].TitularEstadoVital := TitularObj.Get('estado_vital', '');
           if Result[i].TitularEstadoVital = '' then
             Result[i].TitularEstadoVital := TitularObj.Get('estado_titular', 'vivo');
@@ -175,6 +183,14 @@ begin
       TitData.Add('nombre_completo', AParcela.TitularNombre);
       if AParcela.TitularDni <> '' then
         TitData.Add('dni', AParcela.TitularDni);
+      if AParcela.TitularTelefono <> '' then
+        TitData.Add('telefono', AParcela.TitularTelefono);
+      if AParcela.TitularEmail <> '' then
+        TitData.Add('email', AParcela.TitularEmail);
+      if AParcela.TitularFacebook <> '' then
+        TitData.Add('facebook', AParcela.TitularFacebook);
+      if AParcela.TitularInstagram <> '' then
+        TitData.Add('instagram', AParcela.TitularInstagram);
       TitData.Add('ciudad', 'Chamical');
       TitData.Add('estado_titular', 'activo');
       TitResp := Supabase.Insert('titulares', TitData);
@@ -254,6 +270,14 @@ begin
         TitData.Add('nombre_completo', AParcela.TitularNombre);
         if AParcela.TitularDni <> '' then
           TitData.Add('dni', AParcela.TitularDni);
+        if AParcela.TitularTelefono <> '' then
+          TitData.Add('telefono', AParcela.TitularTelefono);
+        if AParcela.TitularEmail <> '' then
+          TitData.Add('email', AParcela.TitularEmail);
+        if AParcela.TitularFacebook <> '' then
+          TitData.Add('facebook', AParcela.TitularFacebook);
+        if AParcela.TitularInstagram <> '' then
+          TitData.Add('instagram', AParcela.TitularInstagram);
         Supabase.Update('titulares', 'id=eq.' + AParcela.TitularId, TitData);
       finally
         TitData.Free;
@@ -267,6 +291,14 @@ begin
       TitData.Add('nombre_completo', AParcela.TitularNombre);
       if AParcela.TitularDni <> '' then
         TitData.Add('dni', AParcela.TitularDni);
+      if AParcela.TitularTelefono <> '' then
+        TitData.Add('telefono', AParcela.TitularTelefono);
+      if AParcela.TitularEmail <> '' then
+        TitData.Add('email', AParcela.TitularEmail);
+      if AParcela.TitularFacebook <> '' then
+        TitData.Add('facebook', AParcela.TitularFacebook);
+      if AParcela.TitularInstagram <> '' then
+        TitData.Add('instagram', AParcela.TitularInstagram);
       TitData.Add('ciudad', 'Chamical');
       TitData.Add('estado_titular', 'activo');
       TitResp := Supabase.Insert('titulares', TitData);
