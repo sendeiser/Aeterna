@@ -401,6 +401,10 @@ export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
           nombre_completo,
           dni,
           telefono,
+          telefono_secundario,
+          email,
+          facebook,
+          instagram,
           direccion,
           estado_titular
         )
@@ -419,6 +423,10 @@ export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
             nombre_completo: p.titular.nombre_completo,
             dni: p.titular.dni,
             telefono: p.titular.telefono,
+            telefono_secundario: p.titular.telefono_secundario || null,
+            email: p.titular.email || null,
+            facebook: p.titular.facebook || null,
+            instagram: p.titular.instagram || null,
             direccion: p.titular.direccion,
             estado_titular: p.titular.estado_titular || 'activo',
             estado_vital: p.titular.estado_vital || (p.titular.estado_titular === 'fallecido' ? 'fallecido' : 'vivo'),
@@ -434,6 +442,10 @@ export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
             nombre_completo: seedParc.titular,
             dni: titularObj?.dni || null,
             telefono: titularObj?.telefono || null,
+            telefono_secundario: (titularObj as any)?.telefono_secundario || null,
+            email: (titularObj as any)?.email || null,
+            facebook: (titularObj as any)?.facebook || null,
+            instagram: (titularObj as any)?.instagram || null,
             direccion: seedParc.direccion || titularObj?.direccion || 'Chamical',
             estado_titular: titularObj?.estado_titular || 'activo',
             estado_vital: titularObj?.estado_vital || 'vivo',
@@ -448,6 +460,10 @@ export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
             nombre_completo: nombre,
             dni: null,
             telefono: null,
+            telefono_secundario: null,
+            email: null,
+            facebook: null,
+            instagram: null,
             direccion: 'Chamical',
             estado_titular: 'activo',
             estado_vital: 'vivo',
@@ -536,12 +552,22 @@ export async function upsertParcelaSupabase(parcela: Parcela): Promise<boolean> 
         if (existingTit?.id && isUuid(existingTit.id)) {
           titularId = existingTit.id
           // Actualizar datos de contacto si cambiaron
-          if (parcela.titular.dni || parcela.titular.telefono || parcela.titular.direccion) {
+          if (
+            parcela.titular.dni ||
+            parcela.titular.telefono ||
+            parcela.titular.email ||
+            parcela.titular.facebook ||
+            parcela.titular.instagram ||
+            parcela.titular.direccion
+          ) {
             await supabase
               .from('titulares')
               .update({
                 dni: parcela.titular.dni || null,
                 telefono: parcela.titular.telefono || null,
+                email: parcela.titular.email || null,
+                facebook: parcela.titular.facebook || null,
+                instagram: parcela.titular.instagram || null,
                 direccion: parcela.titular.direccion || 'Chamical',
               })
               .eq('id', titularId)
@@ -553,6 +579,9 @@ export async function upsertParcelaSupabase(parcela: Parcela): Promise<boolean> 
               nombre_completo: titNombre,
               dni: parcela.titular.dni || null,
               telefono: parcela.titular.telefono || null,
+              email: parcela.titular.email || null,
+              facebook: parcela.titular.facebook || null,
+              instagram: parcela.titular.instagram || null,
               direccion: parcela.titular.direccion || 'Chamical',
               estado_titular: 'activo',
             })
@@ -625,6 +654,12 @@ export async function fetchInhumacionesSupabase(): Promise<Inhumacion[] | null> 
         es_covid,
         causa_defuncion,
         empresa_funebrera,
+        responsable_contacto,
+        telefono_responsable,
+        email_responsable,
+        facebook_responsable,
+        instagram_responsable,
+        observaciones,
         parcela:parcelas (
           id,
           nomenclatura
@@ -645,6 +680,12 @@ export async function fetchInhumacionesSupabase(): Promise<Inhumacion[] | null> 
       es_covid: i.es_covid,
       causa_defuncion: i.causa_defuncion,
       empresa_funebrera: i.empresa_funebrera,
+      nombre_responsable: i.responsable_contacto || null,
+      telefono_responsable: i.telefono_responsable || null,
+      email_responsable: i.email_responsable || null,
+      facebook_responsable: i.facebook_responsable || null,
+      instagram_responsable: i.instagram_responsable || null,
+      observaciones: i.observaciones || null,
       parcela: i.parcela,
     }))
   } catch (err) {
@@ -712,6 +753,9 @@ export async function insertInhumacionSupabase(inhumacion: Inhumacion): Promise<
       empresa_funebrera: (inhumacion.empresa_funebrera || '').trim() || 'Aeterna Sepelios',
       responsable_contacto: (inhumacion as any).responsable_contacto || (inhumacion as any).nombre_responsable || null,
       telefono_responsable: (inhumacion as any).telefono_responsable || null,
+      email_responsable: (inhumacion as any).email_responsable || null,
+      facebook_responsable: (inhumacion as any).facebook_responsable || null,
+      instagram_responsable: (inhumacion as any).instagram_responsable || null,
       observaciones: (inhumacion as any).observaciones || (parcNom ? `Parcela asignada: ${parcNom}` : null),
     })
 
@@ -757,6 +801,9 @@ export async function updateInhumacionSupabase(inhumacion: Inhumacion): Promise<
       empresa_funebrera: inhumacion.empresa_funebrera || 'Aeterna Sepelios',
       responsable_contacto: (inhumacion as any).responsable_contacto || (inhumacion as any).nombre_responsable || null,
       telefono_responsable: (inhumacion as any).telefono_responsable || null,
+      email_responsable: (inhumacion as any).email_responsable || null,
+      facebook_responsable: (inhumacion as any).facebook_responsable || null,
+      instagram_responsable: (inhumacion as any).instagram_responsable || null,
       observaciones: (inhumacion as any).observaciones || (parcNom ? `Parcela asignada: ${parcNom}` : null),
     }
 
@@ -836,6 +883,10 @@ export async function fetchAfiliadosSupabase(): Promise<any[] | null> {
         numero_afiliado: a.numero_afiliado,
         nombre_completo: nombreCompleto,
         dni,
+        telefono: a.telefono || null,
+        email: a.email || null,
+        facebook: a.facebook || null,
+        instagram: a.instagram || null,
         direccion_cobro: direccionCobro,
         zona_cobro: zonaCobro,
         monto_cuota_mensual: Number(a.monto_cuota_mensual) || 18000,
@@ -883,6 +934,10 @@ export async function upsertAfiliadoSupabase(afiliado: any): Promise<boolean> {
     const payload = {
       numero_afiliado: rawNum,
       nombre_completo: String(afiliado.nombre_completo || 'Afiliado').trim(),
+      telefono: afiliado.telefono || null,
+      email: afiliado.email || null,
+      facebook: afiliado.facebook || null,
+      instagram: afiliado.instagram || null,
       direccion_cobro: String(afiliado.direccion_cobro || 'Chamical, La Rioja').trim(),
       zona_cobro: String(afiliado.zona_cobro || 'Zona 1 - Centro').trim(),
       monto_cuota_mensual: Number(afiliado.monto_cuota_mensual) || 18000,

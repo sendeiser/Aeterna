@@ -57,4 +57,31 @@ describe('Modelos de Contacto Omnicanal', () => {
     expect(afiliado.facebook).toBe('roberto.fernandez.sepelios')
     expect(afiliado.instagram).toBe('@roberto_f')
   })
+
+  it('preserva datos de contacto al serializar y deserializar en almacenamiento', () => {
+    const parcela = {
+      id: 'parc-test-1',
+      nomenclatura: 'A-10-20',
+      capacidad_total: 3,
+      espacios_ocupados: 0,
+      estado: 'disponible',
+      saldo_mantenimiento: 0,
+      titular: {
+        id: 'tit-carlos',
+        nombre_completo: 'Carlos Test',
+        telefono: '+54 9 3826 112233',
+        email: 'carlos@gmail.com',
+        facebook: 'carlos.fb',
+        instagram: 'carlos.ig',
+        estado_titular: 'activo' as const,
+      },
+    }
+
+    const serialized = JSON.stringify(parcela)
+    const parsed = JSON.parse(serialized)
+
+    expect(parsed.titular.email).toBe('carlos@gmail.com')
+    expect(parsed.titular.facebook).toBe('carlos.fb')
+    expect(parsed.titular.instagram).toBe('carlos.ig')
+  })
 })
