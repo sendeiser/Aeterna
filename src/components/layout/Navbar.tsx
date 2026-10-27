@@ -509,7 +509,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 />
 
                 <div
-                  className="fixed sm:absolute inset-x-3 sm:inset-x-auto top-16 sm:top-full sm:right-0 sm:mt-2 max-w-sm sm:max-w-none w-auto sm:w-96 mx-auto sm:mx-0 bg-surface-container-lowest border border-outline-variant rounded-2xl sm:rounded-xl shadow-2xl z-50 p-3 sm:p-3.5 space-y-2.5 sm:space-y-3 animate-in fade-in slide-in-from-top-2 duration-150"
+                  className="fixed sm:absolute inset-x-3 sm:inset-x-auto top-14 bottom-16 sm:bottom-auto sm:top-full sm:right-0 sm:mt-2 sm:max-h-[80vh] max-w-sm sm:max-w-none w-auto sm:w-96 mx-auto sm:mx-0 bg-surface-container-lowest border border-outline-variant rounded-2xl sm:rounded-xl shadow-2xl z-50 p-3 sm:p-3.5 flex flex-col gap-2.5 sm:gap-3 animate-in fade-in slide-in-from-top-2 duration-150"
                 >
                   <div className="flex items-center justify-between border-b border-outline-variant pb-2">
                     <div className="flex items-center gap-1.5">
@@ -546,7 +546,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </div>
                   </div>
 
-                  <div className="max-h-[50vh] sm:max-h-72 overflow-y-auto space-y-2 pr-1 custom-scroll">
+                  <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scroll sm:max-h-64">
                     {notifications.length === 0 ? (
                       <div className="py-6 text-center text-outline text-xs">
                         No hay notificaciones pendientes.
