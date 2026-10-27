@@ -46,6 +46,14 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   const [currentPage, setCurrentPage] = useState(1)
   const [sortOption, setSortOption] = useState<string>('parcela-asc')
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
+  const [showMobileFilters, setShowMobileFilters] = useState(false)
+  const [showDesktopFilters, setShowDesktopFilters] = useState(true)
+
+  const hasActiveFilters =
+    filterSector !== 'todos' ||
+    filterTitularVital !== 'todos' ||
+    Boolean(filterFechaDesde) ||
+    Boolean(filterFechaHasta)
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 640)
@@ -392,6 +400,21 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               )}
             </div>
 
+            {/* Botón Minimizar / Abrir Filtros Mobile */}
+            <button
+              id="btn-toggle-filtros-parcelas-mobile"
+              type="button"
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+              className={`h-7 w-7 rounded border flex items-center justify-center shrink-0 cursor-pointer transition-colors ${
+                showMobileFilters || hasActiveFilters
+                  ? 'bg-primary text-white border-primary shadow-xs'
+                  : 'border-outline-variant bg-surface-container-low hover:bg-surface-container text-slate-600'
+              }`}
+              title={showMobileFilters ? "Minimizar filtros" : "Abrir filtros"}
+            >
+              <span className="material-symbols-outlined text-[15px]">filter_list</span>
+            </button>
+
             {/* Botoncito Actualizar Mobile */}
             {onRefresh && (
               <button
@@ -420,8 +443,10 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
             )}
           </div>
 
-          {/* Row 2: Unified Horizontal Scrollable Chips (Sectores + Condición Vital) */}
-          <div className="flex items-center gap-1 overflow-x-auto custom-scroll pb-0.5 w-full text-[10px]">
+          {/* Row 2: Filtros desplegables (Sectores + Condición Vital + Fechas) */}
+          {showMobileFilters && (
+            <div className="flex flex-col gap-1.5 pt-1.5 border-t border-outline-variant/60">
+              <div className="flex items-center gap-1 overflow-x-auto custom-scroll pb-0.5 w-full text-[10px]">
             <button
               type="button"
               onClick={() => setFilterSector('todos')}
@@ -552,7 +577,41 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               <span>Fallecidos</span>
             </button>
           </div>
+
+          {/* Rango de Fechas en Móvil */}
+          <div className="flex items-center gap-1.5 text-[10px] pt-1 border-t border-outline-variant/40 flex-wrap">
+            <span className="font-bold text-slate-500 uppercase">Fecha:</span>
+            <input
+              type="date"
+              value={filterFechaDesde}
+              onChange={(e) => setFilterFechaDesde(e.target.value)}
+              className="px-1.5 py-0.5 text-[10px] border border-outline-variant rounded bg-white"
+            />
+            <span className="text-slate-400">a</span>
+            <input
+              type="date"
+              value={filterFechaHasta}
+              onChange={(e) => setFilterFechaHasta(e.target.value)}
+              className="px-1.5 py-0.5 text-[10px] border border-outline-variant rounded bg-white"
+            />
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={() => {
+                  setFilterSector('todos')
+                  setFilterTitularVital('todos')
+                  setFilterFechaDesde('')
+                  setFilterFechaHasta('')
+                }}
+                className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 font-bold ml-auto cursor-pointer"
+              >
+                Limpiar Filtros
+              </button>
+            )}
+          </div>
         </div>
+      )}
+    </div>
 
         {/* DESKTOP VIEW (>= sm): Consolidated 2-Row Toolbar */}
         <div className="hidden sm:flex flex-col gap-2">
@@ -670,6 +729,22 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               </button>
             )}
 
+            {/* Botón Minimizar / Abrir Filtros Desktop */}
+            <button
+              id="btn-toggle-filtros-parcelas-desktop"
+              type="button"
+              onClick={() => setShowDesktopFilters(!showDesktopFilters)}
+              className={`h-8 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 ${
+                showDesktopFilters || hasActiveFilters
+                  ? 'border-primary text-primary bg-primary/5'
+                  : 'border-outline-variant text-slate-700 hover:bg-surface-container'
+              }`}
+              title={showDesktopFilters ? 'Minimizar filtros secundarios' : 'Abrir filtros secundarios'}
+            >
+              <span className="material-symbols-outlined text-[16px]">filter_list</span>
+              <span>Filtros</span>
+            </button>
+
             {onNuevaParcela && (
               <button
                 id="btn-nueva-parcela"
@@ -684,7 +759,8 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
           </div>
 
           {/* Row 2: Sectores + Condición Vital */}
-          <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-outline-variant/60 flex-wrap">
+          {showDesktopFilters && (
+            <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-outline-variant/60 flex-wrap">
             <div className="flex items-center gap-1 overflow-x-auto custom-scroll">
               <button
                 type="button"
@@ -828,8 +904,9 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               {filteredParcelas.length} parcelas listadas
             </span>
           </div>
-        </div>
+        )}
       </div>
+    </div>
 
       {/* Parcel List / Interactive Data Grid & Mobile Cards */}
       <div className="bg-surface-container-lowest rounded border border-outline-variant shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden">

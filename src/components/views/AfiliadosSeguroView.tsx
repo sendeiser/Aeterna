@@ -38,6 +38,16 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
   const [filterFechaDesde, setFilterFechaDesde] = useState('')
   const [filterFechaHasta, setFilterFechaHasta] = useState('')
   const [sortOption, setSortOption] = useState<string>('numero-asc')
+  const [showMobileFilters, setShowMobileFilters] = useState(false)
+  const [showDesktopFilters, setShowDesktopFilters] = useState(true)
+
+  const hasActiveFilters =
+    zoneFilter !== 'all' ||
+    statusFilter !== 'all' ||
+    Boolean(filterFechaDesde) ||
+    Boolean(filterFechaHasta) ||
+    sortOption !== 'numero-asc'
+
   const [isTalonarioModalOpen, setIsTalonarioModalOpen] = useState(false)
   const [isPlanillaModalOpen, setIsPlanillaModalOpen] = useState(false)
 
@@ -320,6 +330,21 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             </button>
           )}
 
+          {/* Botón Minimizar / Abrir Filtros Mobile */}
+          <button
+            id="btn-toggle-filtros-afiliados-mobile"
+            type="button"
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+            className={`h-7 w-7 rounded border flex items-center justify-center shrink-0 cursor-pointer transition-colors ${
+              showMobileFilters || hasActiveFilters
+                ? 'bg-primary text-white border-primary shadow-xs'
+                : 'border-outline-variant bg-surface-container-low hover:bg-surface-container text-slate-600'
+            }`}
+            title={showMobileFilters ? "Minimizar filtros" : "Abrir filtros"}
+          >
+            <span className="material-symbols-outlined text-[15px]">filter_list</span>
+          </button>
+
           <button
             type="button"
             onClick={onNuevoAfiliado}
@@ -330,87 +355,124 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
           </button>
         </div>
 
-        {/* Row 2: Status chips + Zone selector + Talonario */}
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0 text-[10px]">
-          <button
-            type="button"
-            onClick={() => setStatusFilter('all')}
-            className={`px-2 py-0.5 rounded font-medium whitespace-nowrap shrink-0 transition-colors ${
-              statusFilter === 'all'
-                ? 'bg-primary text-white shadow-xs font-semibold'
-                : 'bg-surface-container-low text-on-surface hover:bg-surface-container'
-            }`}
-          >
-            Todos ({totalAfiliados})
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter('aldia')}
-            className={`px-2 py-0.5 rounded font-medium whitespace-nowrap shrink-0 transition-colors ${
-              statusFilter === 'aldia'
-                ? 'bg-emerald-700 text-white shadow-xs font-semibold'
-                : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-            }`}
-          >
-            Al Día ({afiliadosAlDia})
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter('deuda')}
-            className={`px-2 py-0.5 rounded font-medium whitespace-nowrap shrink-0 transition-colors ${
-              statusFilter === 'deuda'
-                ? 'bg-amber-600 text-white shadow-xs font-semibold'
-                : 'bg-amber-50 text-amber-800 border border-amber-200'
-            }`}
-          >
-            Deuda ({afiliadosDeuda})
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter('standby')}
-            className={`px-2 py-0.5 rounded font-medium whitespace-nowrap shrink-0 transition-colors ${
-              statusFilter === 'standby'
-                ? 'bg-rose-600 text-white shadow-xs font-semibold'
-                : 'bg-rose-50 text-rose-800 border border-rose-200'
-            }`}
-          >
-            Stand-by ({afiliadosStandby})
-          </button>
+        {/* Row 2: Status chips + Zone selector + Talonario (Desplegable) */}
+        {showMobileFilters && (
+          <div className="flex flex-col gap-1.5 pt-1.5 border-t border-outline-variant/60">
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0 text-[10px]">
+              <button
+                type="button"
+                onClick={() => setStatusFilter('all')}
+                className={`px-2 py-0.5 rounded font-medium whitespace-nowrap shrink-0 transition-colors ${
+                  statusFilter === 'all'
+                    ? 'bg-primary text-white shadow-xs font-semibold'
+                    : 'bg-surface-container-low text-on-surface hover:bg-surface-container'
+                }`}
+              >
+                Todos ({totalAfiliados})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('aldia')}
+                className={`px-2 py-0.5 rounded font-medium whitespace-nowrap shrink-0 transition-colors ${
+                  statusFilter === 'aldia'
+                    ? 'bg-emerald-700 text-white shadow-xs font-semibold'
+                    : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                }`}
+              >
+                Al Día ({afiliadosAlDia})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('deuda')}
+                className={`px-2 py-0.5 rounded font-medium whitespace-nowrap shrink-0 transition-colors ${
+                  statusFilter === 'deuda'
+                    ? 'bg-amber-600 text-white shadow-xs font-semibold'
+                    : 'bg-amber-50 text-amber-800 border border-amber-200'
+                }`}
+              >
+                Deuda ({afiliadosDeuda})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('standby')}
+                className={`px-2 py-0.5 rounded font-medium whitespace-nowrap shrink-0 transition-colors ${
+                  statusFilter === 'standby'
+                    ? 'bg-rose-600 text-white shadow-xs font-semibold'
+                    : 'bg-rose-50 text-rose-800 border border-rose-200'
+                }`}
+              >
+                Stand-by ({afiliadosStandby})
+              </button>
 
-          <span className="h-4 w-px bg-outline-variant/60 shrink-0"></span>
+              <span className="h-4 w-px bg-outline-variant/60 shrink-0"></span>
 
-          <select
-            value={zoneFilter}
-            onChange={(e) => setZoneFilter(e.target.value)}
-            className="h-6 text-[10px] bg-white border border-outline-variant rounded px-1.5 py-0 pr-4 shrink-0 font-medium"
-            title="Filtrar por Zona"
-          >
-            <option value="all">Todas las Zonas</option>
-            <option value="Zona 1">Zona 1</option>
-            <option value="Zona 2">Zona 2</option>
-            <option value="Zona 3">Zona 3</option>
-          </select>
+              <select
+                value={zoneFilter}
+                onChange={(e) => setZoneFilter(e.target.value)}
+                className="h-6 text-[10px] bg-white border border-outline-variant rounded px-1.5 py-0 pr-4 shrink-0 font-medium"
+                title="Filtrar por Zona"
+              >
+                <option value="all">Todas las Zonas</option>
+                <option value="Zona 1">Zona 1</option>
+                <option value="Zona 2">Zona 2</option>
+                <option value="Zona 3">Zona 3</option>
+              </select>
 
-          <button
-            type="button"
-            onClick={() => setIsTalonarioModalOpen(true)}
-            className="h-6 px-1.5 rounded border border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary text-[10px] font-semibold flex items-center gap-0.5 shrink-0 whitespace-nowrap cursor-pointer"
-            title="Imprimir talonario"
-          >
-            <span className="material-symbols-outlined text-[13px]">receipt_long</span>
-            <span>Talonario</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => setIsTalonarioModalOpen(true)}
+                className="h-6 px-1.5 rounded border border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary text-[10px] font-semibold flex items-center gap-0.5 shrink-0 whitespace-nowrap cursor-pointer"
+                title="Imprimir talonario"
+              >
+                <span className="material-symbols-outlined text-[13px]">receipt_long</span>
+                <span>Talonario</span>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setModalCuotaMasivaOpen(true)}
-            className="h-6 px-1.5 rounded border border-secondary/40 bg-secondary/5 hover:bg-secondary/10 text-secondary text-[10px] font-semibold flex items-center gap-0.5 shrink-0 whitespace-nowrap cursor-pointer"
-            title="Cambiar cuota a todos los afiliados"
-          >
-            <span className="material-symbols-outlined text-[13px]">price_change</span>
-            <span>Cuota Masiva</span>
-          </button>
-        </div>
+              <button
+                type="button"
+                onClick={() => setModalCuotaMasivaOpen(true)}
+                className="h-6 px-1.5 rounded border border-secondary/40 bg-secondary/5 hover:bg-secondary/10 text-secondary text-[10px] font-semibold flex items-center gap-0.5 shrink-0 whitespace-nowrap cursor-pointer"
+                title="Cambiar cuota a todos los afiliados"
+              >
+                <span className="material-symbols-outlined text-[13px]">price_change</span>
+                <span>Cuota Masiva</span>
+              </button>
+            </div>
+
+            {/* Fechas y Limpiar en móvil */}
+            <div className="flex items-center gap-1.5 text-[10px] pt-1 border-t border-outline-variant/40 flex-wrap">
+              <span className="font-bold text-slate-500 uppercase">Alta:</span>
+              <input
+                type="date"
+                value={filterFechaDesde}
+                onChange={(e) => setFilterFechaDesde(e.target.value)}
+                className="px-1.5 py-0.5 text-[10px] border border-outline-variant rounded bg-white"
+              />
+              <span className="text-slate-400">a</span>
+              <input
+                type="date"
+                value={filterFechaHasta}
+                onChange={(e) => setFilterFechaHasta(e.target.value)}
+                className="px-1.5 py-0.5 text-[10px] border border-outline-variant rounded bg-white"
+              />
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatusFilter('all')
+                    setZoneFilter('all')
+                    setFilterFechaDesde('')
+                    setFilterFechaHasta('')
+                    setSortOption('numero-asc')
+                  }}
+                  className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 font-bold ml-auto cursor-pointer"
+                >
+                  Limpiar Filtros
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ===================================================================== */}
@@ -484,121 +546,141 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
             </div>
           </div>
 
-          {/* Zone Selector */}
-          <div className="flex items-center gap-1 text-xs">
-            <select
-              id="zoneFilter"
-              value={zoneFilter}
-              onChange={(e) => setZoneFilter(e.target.value)}
-              className="h-8 text-xs bg-white border border-outline-variant rounded-lg px-2 py-1 pr-6 focus:border-secondary font-medium"
-            >
-              <option value="all">Todas las Zonas ({totalAfiliados})</option>
-              <option value="Zona 1">Zona 1 (Flores)</option>
-              <option value="Zona 2">Zona 2 (Gómez)</option>
-              <option value="Zona 3">Zona 3 (Mercado)</option>
-            </select>
-          </div>
+          {/* Botón Minimizar / Abrir Filtros Desktop */}
+          <button
+            id="btn-toggle-filtros-afiliados-desktop"
+            type="button"
+            onClick={() => setShowDesktopFilters(!showDesktopFilters)}
+            className={`h-8 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 ${
+              showDesktopFilters || hasActiveFilters
+                ? 'border-primary text-primary bg-primary/5'
+                : 'border-outline-variant text-slate-700 hover:bg-surface-container'
+            }`}
+            title={showDesktopFilters ? 'Minimizar filtros secundarios' : 'Abrir filtros secundarios'}
+          >
+            <span className="material-symbols-outlined text-[16px]">filter_list</span>
+            <span>Filtros</span>
+          </button>
 
-          {/* Ordenar por Alfabeto o Fecha */}
-          <div className="flex items-center gap-1 text-xs">
-            <select
-              value={sortOption}
-              onChange={(e) => setSortOption(e.target.value as any)}
-              className="h-8 text-xs bg-white border border-outline-variant rounded-lg px-2 py-1 focus:border-secondary font-medium text-slate-800 cursor-pointer"
-              title="Filtro de ordenamiento en la tabla"
-            >
-              <option value="numero-asc">🔢 N° Afiliado (1 → N)</option>
-              <option value="alfa-asc">🔤 Alfabeto: A → Z (Titular)</option>
-              <option value="alfa-desc">🔤 Alfabeto: Z → A (Titular)</option>
-              <option value="fecha-desc">📅 Fecha: Más reciente</option>
-              <option value="fecha-asc">📅 Fecha: Más antiguo</option>
-              <option value="deuda-desc">💰 Mayor deuda</option>
-            </select>
-          </div>
+          {showDesktopFilters && (
+            <>
+              {/* Zone Selector */}
+              <div className="flex items-center gap-1 text-xs">
+                <select
+                  id="zoneFilter"
+                  value={zoneFilter}
+                  onChange={(e) => setZoneFilter(e.target.value)}
+                  className="h-8 text-xs bg-white border border-outline-variant rounded-lg px-2 py-1 pr-6 focus:border-secondary font-medium"
+                >
+                  <option value="all">Todas las Zonas ({totalAfiliados})</option>
+                  <option value="Zona 1">Zona 1 (Flores)</option>
+                  <option value="Zona 2">Zona 2 (Gómez)</option>
+                  <option value="Zona 3">Zona 3 (Mercado)</option>
+                </select>
+              </div>
 
-          {/* Filtro por Rango de Fechas (Desde - Hasta) */}
-          <div className="flex items-center gap-1.5 bg-surface-container-low px-2 py-1 rounded-lg border border-outline-variant text-xs shrink-0">
-            <span className="material-symbols-outlined text-[15px] text-outline">calendar_today</span>
-            <span className="text-[11px] text-on-surface-variant font-medium">Desde:</span>
-            <input
-              id="filter-fecha-desde-afiliados"
-              type="date"
-              value={filterFechaDesde}
-              onChange={(e) => setFilterFechaDesde(e.target.value)}
-              className="h-6 text-[11px] bg-white border border-outline-variant rounded px-1.5 focus:border-secondary focus:outline-none"
-              title="Filtrar afiliados desde fecha de alta"
-            />
-            <span className="text-[11px] text-on-surface-variant font-medium">Hasta:</span>
-            <input
-              id="filter-fecha-hasta-afiliados"
-              type="date"
-              value={filterFechaHasta}
-              onChange={(e) => setFilterFechaHasta(e.target.value)}
-              className="h-6 text-[11px] bg-white border border-outline-variant rounded px-1.5 focus:border-secondary focus:outline-none"
-              title="Filtrar afiliados hasta fecha de alta"
-            />
-            {(filterFechaDesde || filterFechaHasta) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setFilterFechaDesde('')
-                  setFilterFechaHasta('')
-                }}
-                className="p-0.5 text-outline hover:text-error rounded cursor-pointer"
-                title="Limpiar filtro de fecha"
-              >
-                <span className="material-symbols-outlined text-[14px]">close</span>
-              </button>
-            )}
-          </div>
+              {/* Ordenar por Alfabeto o Fecha */}
+              <div className="flex items-center gap-1 text-xs">
+                <select
+                  value={sortOption}
+                  onChange={(e) => setSortOption(e.target.value as any)}
+                  className="h-8 text-xs bg-white border border-outline-variant rounded-lg px-2 py-1 focus:border-secondary font-medium text-slate-800 cursor-pointer"
+                  title="Filtro de ordenamiento en la tabla"
+                >
+                  <option value="numero-asc">🔢 N° Afiliado (1 → N)</option>
+                  <option value="alfa-asc">🔤 Alfabeto: A → Z (Titular)</option>
+                  <option value="alfa-desc">🔤 Alfabeto: Z → A (Titular)</option>
+                  <option value="fecha-desc">📅 Fecha: Más reciente</option>
+                  <option value="fecha-asc">📅 Fecha: Más antiguo</option>
+                  <option value="deuda-desc">💰 Mayor deuda</option>
+                </select>
+              </div>
 
-          {/* Status Filter Pills */}
-          <div className="flex items-center gap-0.5 border border-outline-variant rounded-lg p-0.5 bg-surface-container-low text-xs shrink-0">
-            <button
-              type="button"
-              onClick={() => setStatusFilter('all')}
-              className={`px-2 py-1 rounded-md transition-colors whitespace-nowrap ${
-                statusFilter === 'all'
-                  ? 'bg-white shadow-xs font-semibold text-primary'
-                  : 'text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              Todos ({totalAfiliados})
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter('deuda')}
-              className={`px-2 py-1 rounded-md transition-colors whitespace-nowrap ${
-                statusFilter === 'deuda'
-                  ? 'bg-white shadow-xs font-semibold text-amber-800'
-                  : 'text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              Deuda ({afiliadosDeuda})
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter('aldia')}
-              className={`px-2 py-1 rounded-md transition-colors whitespace-nowrap ${
-                statusFilter === 'aldia'
-                  ? 'bg-white shadow-xs font-semibold text-emerald-800'
-                  : 'text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              Al Día ({afiliadosAlDia})
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusFilter('standby')}
-              className={`px-2 py-1 rounded-md transition-colors whitespace-nowrap ${
-                statusFilter === 'standby'
-                  ? 'bg-rose-600 shadow-xs font-semibold text-white'
-                  : 'text-rose-800 hover:text-rose-950 hover:bg-rose-50'
-              }`}
-            >
-              Stand-by ({afiliadosStandby})
-            </button>
-          </div>
+              {/* Filtro por Rango de Fechas (Desde - Hasta) */}
+              <div className="flex items-center gap-1.5 bg-surface-container-low px-2 py-1 rounded-lg border border-outline-variant text-xs shrink-0">
+                <span className="material-symbols-outlined text-[15px] text-outline">calendar_today</span>
+                <span className="text-[11px] text-on-surface-variant font-medium">Desde:</span>
+                <input
+                  id="filter-fecha-desde-afiliados"
+                  type="date"
+                  value={filterFechaDesde}
+                  onChange={(e) => setFilterFechaDesde(e.target.value)}
+                  className="h-6 text-[11px] bg-white border border-outline-variant rounded px-1.5 focus:border-secondary focus:outline-none"
+                  title="Filtrar afiliados desde fecha de alta"
+                />
+                <span className="text-[11px] text-on-surface-variant font-medium">Hasta:</span>
+                <input
+                  id="filter-fecha-hasta-afiliados"
+                  type="date"
+                  value={filterFechaHasta}
+                  onChange={(e) => setFilterFechaHasta(e.target.value)}
+                  className="h-6 text-[11px] bg-white border border-outline-variant rounded px-1.5 focus:border-secondary focus:outline-none"
+                  title="Filtrar afiliados hasta fecha de alta"
+                />
+                {(filterFechaDesde || filterFechaHasta) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterFechaDesde('')
+                      setFilterFechaHasta('')
+                    }}
+                    className="p-0.5 text-outline hover:text-error rounded cursor-pointer"
+                    title="Limpiar filtro de fecha"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">close</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Status Filter Pills */}
+              <div className="flex items-center gap-0.5 border border-outline-variant rounded-lg p-0.5 bg-surface-container-low text-xs shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('all')}
+                  className={`px-2 py-1 rounded-md transition-colors whitespace-nowrap ${
+                    statusFilter === 'all'
+                      ? 'bg-white shadow-xs font-semibold text-primary'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  Todos ({totalAfiliados})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('deuda')}
+                  className={`px-2 py-1 rounded-md transition-colors whitespace-nowrap ${
+                    statusFilter === 'deuda'
+                      ? 'bg-white shadow-xs font-semibold text-amber-800'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  Deuda ({afiliadosDeuda})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('aldia')}
+                  className={`px-2 py-1 rounded-md transition-colors whitespace-nowrap ${
+                    statusFilter === 'aldia'
+                      ? 'bg-white shadow-xs font-semibold text-emerald-800'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  Al Día ({afiliadosAlDia})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter('standby')}
+                  className={`px-2 py-1 rounded-md transition-colors whitespace-nowrap ${
+                    statusFilter === 'standby'
+                      ? 'bg-rose-600 shadow-xs font-semibold text-white'
+                      : 'text-rose-800 hover:text-rose-950 hover:bg-rose-50'
+                  }`}
+                >
+                  Stand-by ({afiliadosStandby})
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Export & New Record Actions */}

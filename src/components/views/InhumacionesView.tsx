@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Inhumacion, Parcela } from '../../types/database'
 import { formatDateHour } from '../../lib/formatters'
 import { ActaInhumacionModal } from '../modals/ActaInhumacionModal'
@@ -35,6 +35,26 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
   const [filterFechaDesde, setFilterFechaDesde] = useState('')
   const [filterFechaHasta, setFilterFechaHasta] = useState('')
   const [sortOption, setSortOption] = useState<string>('fecha-desc')
+  const [showMobileFilters, setShowMobileFilters] = useState(false)
+  const [showDesktopFilters, setShowDesktopFilters] = useState(true)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const hasActiveFilters = filterProtocol !== 'all' || Boolean(filterFechaDesde) || Boolean(filterFechaHasta) || sortOption !== 'fecha-desc'
+  const isFiltersOpen = isMobile ? showMobileFilters : showDesktopFilters
+  const toggleFilters = () => {
+    if (isMobile) {
+      setShowMobileFilters((prev) => !prev)
+    } else {
+      setShowDesktopFilters((prev) => !prev)
+    }
+  }
+
   const [isFolioModalOpen, setIsFolioModalOpen] = useState(false)
   const [actaModal, setActaModal] = useState<{
     isOpen: boolean
@@ -191,11 +211,12 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
       {/* HISTORICAL RECORD & SEARCH                                            */}
       {/* ===================================================================== */}
       <section className="bg-surface-container-lowest border border-outline-variant rounded-lg shadow-[0_1px_2px_0_rgba(15,23,42,0.04)] flex-1 min-h-0 flex flex-col overflow-hidden">
-        {/* Filter Toolbar (Buscador por nombre, protocolos, orden y exportar folio) */}
-        <div className="p-2 sm:p-3 bg-surface-container-lowest border-b border-outline-variant flex flex-wrap items-center justify-between gap-2 sm:gap-3 shrink-0">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1 max-w-4xl w-full flex-wrap">
+        {/* Filter Toolbar (Buscador, botón para minimizar/abrir filtros y exportar folio) */}
+        <div className="p-2 sm:p-3 bg-surface-container-lowest border-b border-outline-variant flex flex-col gap-2 shrink-0">
+          {/* Fila 1: Buscador + Botón Minimizar/Abrir Filtros + Botón Exportar Folio */}
+          <div className="flex items-center gap-1.5 sm:gap-2 w-full">
             {/* Search bar */}
-            <div className="relative flex-1 min-w-[180px]">
+            <div className="relative flex-1 min-w-0">
               <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">
                 search
               </span>
@@ -203,87 +224,119 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Filtrar por nombre de difunto o parcela..."
-                className="w-full h-[34px] pl-8 pr-3 text-body-sm font-body-sm bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary/30 outline-none"
+                placeholder="Filtrar por difunto, DNI o parcela..."
+                className="w-full h-[34px] pl-8 pr-7 text-xs sm:text-body-sm bg-surface-container-lowest border border-outline-variant rounded focus:border-secondary focus:ring-1 focus:ring-secondary/30 outline-none"
               />
-            </div>
-
-            {/* Filtro por Rango de Fechas (Desde - Hasta) */}
-            <div className="flex items-center gap-1.5 bg-surface-container-low px-2 py-1 rounded-lg border border-outline-variant text-xs shrink-0">
-              <span className="material-symbols-outlined text-[15px] text-outline">calendar_today</span>
-              <span className="text-[11px] text-on-surface-variant font-medium">Desde:</span>
-              <input
-                id="filter-fecha-desde-inhumaciones"
-                type="date"
-                value={filterFechaDesde}
-                onChange={(e) => setFilterFechaDesde(e.target.value)}
-                className="h-6 text-[11px] bg-white border border-outline-variant rounded px-1.5 focus:border-secondary focus:outline-none"
-                title="Filtrar inhumaciones desde fecha"
-              />
-              <span className="text-[11px] text-on-surface-variant font-medium">Hasta:</span>
-              <input
-                id="filter-fecha-hasta-inhumaciones"
-                type="date"
-                value={filterFechaHasta}
-                onChange={(e) => setFilterFechaHasta(e.target.value)}
-                className="h-6 text-[11px] bg-white border border-outline-variant rounded px-1.5 focus:border-secondary focus:outline-none"
-                title="Filtrar inhumaciones hasta fecha"
-              />
-              {(filterFechaDesde || filterFechaHasta) && (
+              {searchTerm && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setFilterFechaDesde('')
-                    setFilterFechaHasta('')
-                  }}
-                  className="p-0.5 text-outline hover:text-error rounded cursor-pointer"
-                  title="Limpiar filtro de fecha"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface p-0.5 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[14px]">close</span>
                 </button>
               )}
             </div>
 
-            {/* Sanity Filter Quick Select */}
-            <select
-              value={filterProtocol}
-              onChange={(e) => setFilterProtocol(e.target.value as any)}
-              className="h-[34px] px-2.5 text-body-sm bg-surface-container-lowest border border-outline-variant rounded text-on-surface-variant focus:border-secondary outline-none shrink-0 cursor-pointer"
+            {/* Botón Minimizar / Abrir Filtros */}
+            <button
+              id="btn-toggle-filtros-inhumaciones"
+              type="button"
+              onClick={toggleFilters}
+              className={`h-[34px] px-2 sm:px-2.5 rounded border text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors shrink-0 ${
+                isFiltersOpen || hasActiveFilters
+                  ? 'bg-primary text-white border-primary shadow-xs'
+                  : 'border-outline-variant bg-surface-container-low hover:bg-surface-container text-slate-700'
+              }`}
+              title={isFiltersOpen ? "Minimizar filtros" : "Abrir filtros"}
             >
-              <option value="all">Todos los Protocolos</option>
-              <option value="covid">Solo Protocolo COVID-19</option>
-              <option value="standard">Inhumación Estándar</option>
-              <option value="judicial">Intervención Judicial / Morgue</option>
-            </select>
+              <span className="material-symbols-outlined text-[17px]">filter_list</span>
+              <span className="hidden sm:inline">Filtros</span>
+            </button>
 
-            {/* Ordenar por Alfabeto o Fecha */}
-            <select
-              value={sortOption}
-              onChange={(e) => setSortOption(e.target.value as any)}
-              className="h-[34px] px-2.5 text-body-sm bg-surface-container-lowest border border-outline-variant rounded text-on-surface-variant focus:border-secondary outline-none shrink-0 cursor-pointer font-medium"
-              title="Ordenar actas de inhumación por alfabeto o fecha"
-            >
-              <option value="fecha-desc">📅 Fecha: Más reciente</option>
-              <option value="fecha-asc">📅 Fecha: Más antiguo</option>
-              <option value="alfa-asc">🔤 Difunto: A → Z</option>
-              <option value="alfa-desc">🔤 Difunto: Z → A</option>
-              <option value="parcela-asc">📍 Parcela (A → Z)</option>
-            </select>
-          </div>
-
-          {/* Exportar Folio PDF Oficial */}
-          <div className="flex items-center gap-1 shrink-0">
+            {/* Exportar Folio PDF Oficial */}
             <button
               type="button"
               id="btn-exportar-folio"
               onClick={() => setIsFolioModalOpen(true)}
               title="Exportar Folio Oficial del Libro de Inhumaciones en PDF Estructurado A4"
-              className="h-[34px] px-3 bg-surface-container-lowest border border-outline-variant hover:border-primary hover:text-primary rounded text-body-sm font-semibold text-on-surface-variant hover:bg-surface-container-low flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors shrink-0"
+              className="h-[34px] px-2 sm:px-3 bg-surface-container-lowest border border-outline-variant hover:border-primary hover:text-primary rounded text-xs sm:text-body-sm font-semibold text-on-surface-variant hover:bg-surface-container-low flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors shrink-0"
             >
               <span className="material-symbols-outlined text-[17px] text-red-600">picture_as_pdf</span>
-              <span>Exportar Folio</span>
+              <span className="hidden sm:inline">Exportar Folio</span>
+              <span className="sm:hidden">Folio</span>
             </button>
           </div>
+
+          {/* Fila 2: Filtros Secundarios Desplegables */}
+          {isFiltersOpen && (
+            <div className="flex flex-wrap items-center gap-2 pt-1.5 border-t border-outline-variant/60 text-xs">
+              {/* Filtro por Rango de Fechas (Desde - Hasta) */}
+              <div className="flex items-center gap-1.5 bg-surface-container-low px-2 py-1 rounded-lg border border-outline-variant text-xs shrink-0">
+                <span className="material-symbols-outlined text-[15px] text-outline">calendar_today</span>
+                <span className="text-[11px] text-on-surface-variant font-medium">Desde:</span>
+                <input
+                  id="filter-fecha-desde-inhumaciones"
+                  type="date"
+                  value={filterFechaDesde}
+                  onChange={(e) => setFilterFechaDesde(e.target.value)}
+                  className="h-6 text-[11px] bg-white border border-outline-variant rounded px-1.5 focus:border-secondary focus:outline-none"
+                  title="Filtrar inhumaciones desde fecha"
+                />
+                <span className="text-[11px] text-on-surface-variant font-medium">Hasta:</span>
+                <input
+                  id="filter-fecha-hasta-inhumaciones"
+                  type="date"
+                  value={filterFechaHasta}
+                  onChange={(e) => setFilterFechaHasta(e.target.value)}
+                  className="h-6 text-[11px] bg-white border border-outline-variant rounded px-1.5 focus:border-secondary focus:outline-none"
+                  title="Filtrar inhumaciones hasta fecha"
+                />
+              </div>
+
+              {/* Sanity Filter Quick Select */}
+              <select
+                value={filterProtocol}
+                onChange={(e) => setFilterProtocol(e.target.value as any)}
+                className="h-[30px] px-2 text-xs bg-white border border-outline-variant rounded text-on-surface-variant focus:border-secondary outline-none shrink-0 cursor-pointer font-medium"
+              >
+                <option value="all">Todos los Protocolos</option>
+                <option value="covid">Solo Protocolo COVID-19</option>
+                <option value="standard">Inhumación Estándar</option>
+                <option value="judicial">Intervención Judicial / Morgue</option>
+              </select>
+
+              {/* Ordenar por Alfabeto o Fecha */}
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value as any)}
+                className="h-[30px] px-2 text-xs bg-white border border-outline-variant rounded text-on-surface-variant focus:border-secondary outline-none shrink-0 cursor-pointer font-medium"
+                title="Ordenar actas de inhumación por alfabeto o fecha"
+              >
+                <option value="fecha-desc">📅 Fecha: Más reciente</option>
+                <option value="fecha-asc">📅 Fecha: Más antiguo</option>
+                <option value="alfa-asc">🔤 Difunto: A → Z</option>
+                <option value="alfa-desc">🔤 Difunto: Z → A</option>
+                <option value="parcela-asc">📍 Parcela (A → Z)</option>
+              </select>
+
+              {/* Botón Limpiar Filtros */}
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterFechaDesde('')
+                    setFilterFechaHasta('')
+                    setFilterProtocol('all')
+                    setSortOption('fecha-desc')
+                  }}
+                  className="px-2 py-1 rounded bg-rose-50 text-rose-700 hover:bg-rose-100 font-semibold text-xs ml-auto cursor-pointer transition-colors"
+                >
+                  Limpiar Filtros
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* MOBILE VIEW (< md): Responsive Inhumaciones Cards */}
