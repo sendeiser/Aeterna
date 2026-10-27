@@ -1185,21 +1185,23 @@ export default function App() {
       />
 
       {/* Modal de Enviar Cobro a Distancia (WhatsApp, Redes y Recibo Oficial) */}
-      <EnviarCobroModal
-        isOpen={enviarCobroModal.isOpen}
-        onClose={() => setEnviarCobroModal((prev) => ({ ...prev, isOpen: false }))}
-        tipo={enviarCobroModal.tipo}
-        item={enviarCobroModal.item}
-        config={config}
-        ultimoPago={
-          enviarCobroModal.tipo === 'parcela' && enviarCobroModal.item
-            ? pagos.find(
-                (p) => p.identificador === (enviarCobroModal.item as Parcela).nomenclatura
-              )
-            : null
-        }
-        onConfirmarCobro={handleConfirmarEnviarCobro}
-      />
+      {enviarCobroModal.isOpen && enviarCobroModal.item && (
+        <EnviarCobroModal
+          isOpen={enviarCobroModal.isOpen}
+          onClose={() => setEnviarCobroModal((prev) => ({ ...prev, isOpen: false }))}
+          tipo={enviarCobroModal.tipo}
+          item={enviarCobroModal.item}
+          config={config}
+          ultimoPago={
+            enviarCobroModal.tipo === 'parcela' && enviarCobroModal.item
+              ? pagos.find(
+                  (p) => p.identificador === (enviarCobroModal.item as Parcela).nomenclatura
+                )
+              : null
+          }
+          onConfirmarCobro={handleConfirmarEnviarCobro}
+        />
+      )}
 
       {/* Modal Formulario Parcela (si se abre flotante) */}
       {formParcelaOpen && (

@@ -55,8 +55,6 @@ export const EnviarCobroModal: React.FC<EnviarCobroModalProps> = ({
   ultimoPago,
   onConfirmarCobro,
 }) => {
-  if (!isOpen || !item) return null
-
   const qrContainerRef = useRef<HTMLDivElement>(null)
   const isParcela = tipo === 'parcela'
   const parcela = isParcela ? (item as Parcela) : null
@@ -500,6 +498,8 @@ export const EnviarCobroModal: React.FC<EnviarCobroModalProps> = ({
     setCopiandoAviso('¡Texto completo del Comprobante Oficial copiado!')
     setTimeout(() => setCopiandoAviso(null), 3500)
   }
+
+  if (!isOpen || !item) return null
 
   return (
     <div
