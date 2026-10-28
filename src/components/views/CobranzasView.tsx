@@ -53,13 +53,15 @@ function formatDiaFechaPago(p: Parcela): string {
 
 function buildDeudores(parcelas: Parcela[]): DeudorCobranza[] {
   return parcelas
-    .filter((p) => (p.saldo_mantenimiento || 0) > 0 || p.estado === 'en_mora')
+    .filter((p) => p.estado !== 'disponible' && p.estado !== 'baja' && ((p.saldo_mantenimiento || 0) > 0 || p.estado === 'en_mora'))
     .map((p) => {
       const rawDate = p.fecha_ultimo_pago || p.fecha_adquisicion || p.created_at || ''
+      const cleanNom = (p.nomenclatura || '').toUpperCase()
+      const cleanSector = (p.sector_id || sectorFromNomenclatura(cleanNom)).toUpperCase()
       return {
         parcelaId: p.id,
-        nomenclatura: p.nomenclatura,
-        sector: p.sector_id || sectorFromNomenclatura(p.nomenclatura),
+        nomenclatura: cleanNom,
+        sector: ['A', 'B', 'E'].includes(cleanSector) ? cleanSector : sectorFromNomenclatura(cleanNom),
         titularNombre: p.titular?.nombre_completo || '(Sin titular asignado)',
         dni: p.titular?.dni || '',
         domicilio: p.titular?.direccion || 'S/D',

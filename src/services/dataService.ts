@@ -481,7 +481,7 @@ export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
       const baseParcela: Parcela = {
         id: p.id,
         nomenclatura: p.nomenclatura,
-        sector_id: p.nomenclatura.split('-')[0] || 'A',
+        sector_id: ((p.nomenclatura || '').split('-')[0] || 'A').toUpperCase(),
         manzana_fila: p.manzana_fila,
         numero_parcela: p.numero_parcela,
         capacidad_total: p.capacidad_total || 3,
