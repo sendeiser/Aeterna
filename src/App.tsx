@@ -977,7 +977,7 @@ export default function App() {
           <div className="flex items-start justify-between">
             <div className="space-y-1">
               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-700 block">
-                MUNICIPALIDAD DEL DEPARTAMENTO GENERAL BELGRANO · LA RIOJA
+                AETERNA PARQUE SAN NICOLÁS · ADMINISTRACIÓN Y TESORERÍA
               </span>
               <h1 className="text-xl font-black text-slate-950 uppercase tracking-tight">
                 {currentTab === 'dashboard' && 'REPORTE CONSOLIDADO DE GESTIÓN Y RECAUDACIÓN'}
@@ -1105,15 +1105,13 @@ export default function App() {
           )}
 
           {currentTab === 'cobranzas' && (
-            <div className="flex-1 min-h-0 overflow-y-auto custom-scroll pb-4">
-              <CobranzasView
+            <CobranzasView
                 parcelas={parcelas}
                 onCobrarQR={handleCobrarParcela}
                 onEnviarCobro={handleOpenEnviarCobroParcela}
                 onRefresh={() => fetchCloudData(true)}
                 isRefreshing={isRefreshing}
               />
-            </div>
           )}
 
           {currentTab === 'caja' && (

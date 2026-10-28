@@ -1,6 +1,7 @@
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Parcela } from '../../types/database'
-import { formatCurrency } from '../../lib/formatters'
+import { formatCurrency, formatDateHour } from '../../lib/formatters'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -9,12 +10,15 @@ export interface DeudorCobranza {
   nomenclatura: string
   sector: string
   titularNombre: string
+  dni: string
   domicilio: string
+  barrio: string
   telefono: string
-  diaPago: string          // "Cuota 2024" / fecha
+  diaPago: string
+  fechaPagoRaw: string
+  ultimaCuota: string
   saldo: number
   estado: string
-  // Full Parcela for payment modal
   parcela: Parcela
 }
 
@@ -28,57 +32,166 @@ interface CobranzasViewProps {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+function compareNaturalParcela(a: string, b: string): number {
+  return (a || '').localeCompare(b || '', undefined, { numeric: true, sensitivity: 'base' })
+}
+
 function sectorFromNomenclatura(nom: string): string {
-  // e.g. "A-25-96" → "A"
-  return nom?.split('-')[0]?.toUpperCase() || 'N/A'
+  return nom?.split('-')[0]?.toUpperCase() || 'A'
+}
+
+function formatDiaFechaPago(p: Parcela): string {
+  const rawDate = p.fecha_ultimo_pago || p.fecha_adquisicion || p.created_at
+  if (!rawDate) return 'Sin registro'
+  const datePart = rawDate.slice(0, 10)
+  const parts = datePart.split('-')
+  if (parts.length === 3) {
+    return `Día ${parts[2]} (${parts[2]}/${parts[1]}/${parts[0]})`
+  }
+  return formatDateHour(rawDate)
 }
 
 function buildDeudores(parcelas: Parcela[]): DeudorCobranza[] {
   return parcelas
-    .filter((p) => (p.saldo_mantenimiento || 0) > 0)
-    .map((p) => ({
-      parcelaId: p.id,
-      nomenclatura: p.nomenclatura,
-      sector: p.sector_id || sectorFromNomenclatura(p.nomenclatura),
-      titularNombre: p.titular?.nombre_completo || 'Sin titular',
-      domicilio: p.titular?.direccion || 'S/D',
-      telefono: p.titular?.telefono || 'S/D',
-      diaPago: p.fecha_ultimo_pago
-        ? new Date(p.fecha_ultimo_pago).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-        : 'S/D',
-      saldo: p.saldo_mantenimiento || 0,
-      estado: p.estado,
-      parcela: p,
-    }))
-    .sort((a, b) => b.saldo - a.saldo)
+    .filter((p) => (p.saldo_mantenimiento || 0) > 0 || p.estado === 'en_mora')
+    .map((p) => {
+      const rawDate = p.fecha_ultimo_pago || p.fecha_adquisicion || p.created_at || ''
+      return {
+        parcelaId: p.id,
+        nomenclatura: p.nomenclatura,
+        sector: p.sector_id || sectorFromNomenclatura(p.nomenclatura),
+        titularNombre: p.titular?.nombre_completo || '(Sin titular asignado)',
+        dni: p.titular?.dni || '',
+        domicilio: p.titular?.direccion || 'S/D',
+        barrio: p.titular?.barrio || '',
+        telefono: p.titular?.telefono || 'S/D',
+        diaPago: formatDiaFechaPago(p),
+        fechaPagoRaw: rawDate.slice(0, 10),
+        ultimaCuota: p.ultima_cuota_pagada || (p.fecha_ultimo_pago ? 'Último pago reg.' : 'Pendiente'),
+        saldo: p.saldo_mantenimiento || 0,
+        estado: p.estado,
+        parcela: p,
+      }
+    })
 }
 
-// ─── Print Modal ─────────────────────────────────────────────────────────────
+// ─── Estado Badge ─────────────────────────────────────────────────────────────
+
+function EstadoBadge({ estado }: { estado: string }) {
+  const cls =
+    estado === 'standby'
+      ? 'bg-rose-100 text-rose-900 border-rose-300'
+      : estado === 'en_mora'
+      ? 'bg-amber-50 text-amber-900 border-amber-200'
+      : estado === 'ocupada'
+      ? 'bg-blue-50 text-blue-900 border-blue-200'
+      : 'bg-slate-100 text-slate-700 border-slate-300'
+
+  const label =
+    estado === 'standby'
+      ? 'Stand-by'
+      : estado === 'en_mora'
+      ? 'En Mora'
+      : estado === 'ocupada'
+      ? 'Ocupada c/Deuda'
+      : estado.toUpperCase()
+
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${cls}`}>
+      {label}
+    </span>
+  )
+}
+
+// ─── Customizable PDF / Print Modal ──────────────────────────────────────────
 
 interface PrintModalProps {
-  deudores: DeudorCobranza[]
+  allDeudores: DeudorCobranza[]
+  initialSelectedIds: Set<string>
   sectores: string[]
   onClose: () => void
 }
 
-function PrintModal({ deudores, sectores, onClose }: PrintModalProps) {
-  const [selectedSectores, setSelectedSectores] = useState<Set<string>>(new Set(sectores))
+function PrintModal({ allDeudores, initialSelectedIds, sectores, onClose }: PrintModalProps) {
+  const [selectedSectores, setSelectedSectores] = useState<Set<string>>(() => new Set(sectores))
+  const [estadoFiltro, setEstadoFiltro] = useState<'todos' | 'en_mora' | 'standby' | 'ocupada'>('todos')
+  const [telefonoFiltro, setTelefonoFiltro] = useState<'todos' | 'con_telefono' | 'sin_telefono'>('todos')
+  const [domicilioFiltro, setDomicilioFiltro] = useState('')
+  const [busquedaModal, setBusquedaModal] = useState('')
   const [minSaldo, setMinSaldo] = useState('')
   const [maxSaldo, setMaxSaldo] = useState('')
-  const [soloEnMora, setSoloEnMora] = useState(false)
-  const printRef = useRef<HTMLDivElement>(null)
+  const [ordenarPor, setOrdenarPor] = useState<'saldo_desc' | 'domicilio' | 'parcela' | 'nombre' | 'fecha'>('saldo_desc')
 
-  const filteredForPrint = useMemo(() => {
-    return deudores.filter((d) => {
+  // Personalización del documento PDF
+  const [tituloReporte, setTituloReporte] = useState('PLANILLA DE COBRANZAS Y GESTIÓN DE DEUDORES')
+  const [responsableCobro, setResponsableCobro] = useState('Administración / Cobrador Asignado')
+  const [fechaEmision, setFechaEmision] = useState(
+    new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  )
+  const [colDomicilio, setColDomicilio] = useState(true)
+  const [colTelefono, setColTelefono] = useState(true)
+  const [colDiaPago, setColDiaPago] = useState(true)
+  const [colCasillerosTerreno, setColCasillerosTerreno] = useState(true)
+  const [showManualSelector, setShowManualSelector] = useState(false)
+
+  // Candidatos según filtros del modal
+  const candidatosFiltrados = useMemo(() => {
+    const list = allDeudores.filter((d) => {
       if (!selectedSectores.has(d.sector)) return false
-      if (soloEnMora && d.estado !== 'en_mora') return false
+      if (estadoFiltro !== 'todos' && d.estado !== estadoFiltro) return false
+      if (telefonoFiltro === 'con_telefono' && (d.telefono === 'S/D' || !d.telefono.trim())) return false
+      if (telefonoFiltro === 'sin_telefono' && d.telefono !== 'S/D' && Boolean(d.telefono.trim())) return false
+      if (domicilioFiltro.trim()) {
+        const qDom = domicilioFiltro.toLowerCase()
+        if (!d.domicilio.toLowerCase().includes(qDom) && !d.barrio.toLowerCase().includes(qDom)) return false
+      }
+      if (busquedaModal.trim()) {
+        const q = busquedaModal.toLowerCase()
+        if (
+          !d.titularNombre.toLowerCase().includes(q) &&
+          !d.nomenclatura.toLowerCase().includes(q) &&
+          !d.dni.toLowerCase().includes(q)
+        ) {
+          return false
+        }
+      }
       if (minSaldo && d.saldo < Number(minSaldo)) return false
       if (maxSaldo && d.saldo > Number(maxSaldo)) return false
       return true
     })
-  }, [deudores, selectedSectores, soloEnMora, minSaldo, maxSaldo])
 
-  const totalDeuda = filteredForPrint.reduce((s, d) => s + d.saldo, 0)
+    return list.sort((a, b) => {
+      if (ordenarPor === 'saldo_desc') return b.saldo - a.saldo
+      if (ordenarPor === 'domicilio') return a.domicilio.localeCompare(b.domicilio, 'es', { sensitivity: 'base' })
+      if (ordenarPor === 'parcela') return compareNaturalParcela(a.nomenclatura, b.nomenclatura)
+      if (ordenarPor === 'fecha') return (b.fechaPagoRaw || '').localeCompare(a.fechaPagoRaw || '')
+      return a.titularNombre.localeCompare(b.titularNombre, 'es', { sensitivity: 'base' })
+    })
+  }, [
+    allDeudores,
+    selectedSectores,
+    estadoFiltro,
+    telefonoFiltro,
+    domicilioFiltro,
+    busquedaModal,
+    minSaldo,
+    maxSaldo,
+    ordenarPor,
+  ])
+
+  // Selección manual de IDs a incluir en el PDF
+  const [includedIds, setIncludedIds] = useState<Set<string>>(() => {
+    if (initialSelectedIds.size > 0) return new Set(initialSelectedIds)
+    return new Set(allDeudores.map((d) => d.parcelaId))
+  })
+
+  // Sincronizar cuando cambian filtros si no había selección manual restrictiva
+  const deudoresParaImprimir = useMemo(() => {
+    return candidatosFiltrados.filter((d) => includedIds.has(d.parcelaId))
+  }, [candidatosFiltrados, includedIds])
+
+  const totalDeudaImprimir = deudoresParaImprimir.reduce((acc, d) => acc + d.saldo, 0)
+  const printRef = useRef<HTMLDivElement>(null)
 
   const handleToggleSector = (s: string) => {
     setSelectedSectores((prev) => {
@@ -89,37 +202,79 @@ function PrintModal({ deudores, sectores, onClose }: PrintModalProps) {
     })
   }
 
+  const handleToggleDeudor = (id: string) => {
+    setIncludedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const handleSelectAllFiltered = () => {
+    setIncludedIds((prev) => {
+      const next = new Set(prev)
+      candidatosFiltrados.forEach((d) => next.add(d.parcelaId))
+      return next
+    })
+  }
+
+  const handleDeselectAllFiltered = () => {
+    setIncludedIds((prev) => {
+      const next = new Set(prev)
+      candidatosFiltrados.forEach((d) => next.delete(d.parcelaId))
+      return next
+    })
+  }
+
   const handlePrint = () => {
     const printContent = printRef.current?.innerHTML || ''
     const win = window.open('', '_blank')
-    if (!win) return
+    if (!win) {
+      window.print()
+      return
+    }
     win.document.write(`
       <!DOCTYPE html>
       <html lang="es">
       <head>
         <meta charset="UTF-8">
-        <title>Planilla de Cobranzas — Aeterna Parque</title>
+        <title>${tituloReporte} — Aeterna Parque San Nicolás</title>
         <style>
           * { box-sizing: border-box; margin: 0; padding: 0; }
-          body { font-family: Arial, sans-serif; font-size: 11px; color: #111; padding: 20px; }
-          .header { border-bottom: 2px solid #1e293b; padding-bottom: 10px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; }
-          .header h1 { font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
-          .header .sub { font-size: 9px; color: #64748b; margin-top: 3px; }
-          .header .meta { text-align: right; font-size: 10px; }
-          .badge-count { display: inline-block; background: #e2e8f0; border: 1px solid #94a3b8; border-radius: 4px; padding: 2px 8px; font-size: 10px; font-weight: bold; margin-bottom: 8px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-          thead th { background: #1e293b; color: #fff; padding: 6px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
-          tbody tr { border-bottom: 1px solid #e2e8f0; }
-          tbody tr:nth-child(even) { background: #f8fafc; }
-          tbody td { padding: 5px 8px; vertical-align: middle; font-size: 10px; }
-          .saldo { font-weight: bold; text-align: right; font-family: monospace; }
-          .parcela-badge { background: #dbeafe; border: 1px solid #93c5fd; border-radius: 3px; padding: 1px 5px; font-size: 9px; font-weight: bold; }
-          .footer { margin-top: 32px; display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #94a3b8; padding-top: 16px; }
-          .firma { text-align: center; width: 180px; }
-          .firma .linea { border-top: 1px solid #1e293b; padding-top: 4px; font-size: 10px; font-weight: bold; }
-          .total-row { background: #1e293b !important; color: #fff; }
-          .total-row td { font-weight: bold; font-size: 11px; }
-          @page { margin: 15mm; size: A4; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10.5px; color: #0f172a; padding: 14px; background: #fff; }
+          .no-print { display: none !important; }
+          .doc-header { border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+          .brand-box { display: flex; align-items: center; gap: 10px; }
+          .brand-emblem { width: 40px; height: 40px; border-radius: 6px; background: #00236f; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px; border: 1px solid #00184d; }
+          .brand-title { font-size: 16px; font-weight: 900; color: #00236f; text-transform: uppercase; letter-spacing: 0.4px; }
+          .brand-subtitle { font-size: 11px; font-weight: 800; color: #1e293b; text-transform: uppercase; margin-top: 2px; }
+          .brand-caption { font-size: 9.5px; color: #475569; margin-top: 1px; }
+          .meta-box { text-align: right; font-size: 10px; }
+          .meta-badge { display: inline-block; background: #0f172a; color: #fff; font-family: monospace; font-weight: 700; font-size: 10px; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+          .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+          .kpi-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; padding: 6px 8px; }
+          .kpi-label { font-size: 8.5px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block; }
+          .kpi-val { font-size: 11px; font-weight: 800; color: #0f172a; margin-top: 2px; display: block; }
+          .kpi-val-danger { font-size: 12px; font-weight: 900; color: #b91c1c; font-family: monospace; margin-top: 2px; display: block; }
+          table { width: 100%; border-collapse: collapse; border: 1px solid #1e293b; }
+          thead th { background: #1e293b; color: #ffffff; padding: 6px 6px; text-align: left; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; border: 1px solid #334155; }
+          tbody tr { border-bottom: 1px solid #cbd5e1; page-break-inside: avoid; }
+          tbody tr:nth-child(even) { background: #f1f5f9; }
+          tbody td { padding: 5px 6px; vertical-align: middle; font-size: 10px; border-right: 1px solid #cbd5e1; }
+          .mono { font-family: 'Courier New', monospace; }
+          .bold { font-weight: 700; }
+          .right { text-align: right; }
+          .center { text-align: center; }
+          .parcela-pill { display: inline-block; background: #eff6ff; border: 1px solid #93c5fd; color: #1e3a8a; font-family: monospace; font-weight: 700; font-size: 9.5px; padding: 1px 5px; border-radius: 3px; }
+          .saldo-cell { font-family: 'Courier New', monospace; font-weight: 800; color: #b91c1c; text-align: right; background: #fef2f2; }
+          .total-row { background: #0f172a !important; color: #ffffff !important; font-weight: 800; }
+          .total-row td { padding: 7px 6px; font-size: 10.5px; border-color: #334155; color: #ffffff !important; }
+          .footer-firmas { margin-top: 28px; padding-top: 14px; border-top: 1px solid #94a3b8; display: flex; justify-content: space-between; align-items: flex-end; page-break-inside: avoid; }
+          .firma-block { width: 200px; text-align: center; }
+          .firma-line { border-top: 1px solid #0f172a; padding-top: 4px; font-size: 9.5px; font-weight: 700; color: #0f172a; }
+          .firma-sub { font-size: 8.5px; color: #64748b; margin-top: 1px; }
+          @page { margin: 12mm; size: A4; }
         </style>
       </head>
       <body>${printContent}</body>
@@ -130,224 +285,498 @@ function PrintModal({ deudores, sectores, onClose }: PrintModalProps) {
     setTimeout(() => {
       win.print()
       win.close()
-    }, 300)
+    }, 250)
   }
 
-  const fecha = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-  const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/70 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-3xl max-h-[92vh] flex flex-col bg-surface-container-lowest rounded-2xl shadow-2xl border border-outline-variant overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-outline-variant bg-surface-container">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[96vh] overflow-hidden border border-outline-variant flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* ──── Modal Top Bar ──── */}
+        <div className="bg-slate-900 text-white p-3.5 sm:p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-2.5">
-            <span className="material-symbols-outlined text-primary text-[22px]">print</span>
+            <div className="w-9 h-9 rounded-lg bg-primary text-white flex items-center justify-center shadow-sm">
+              <span className="material-symbols-outlined text-[22px]">picture_as_pdf</span>
+            </div>
             <div>
-              <h2 className="text-sm font-bold text-on-surface">Imprimir Planilla de Cobranzas</h2>
-              <p className="text-xs text-on-surface-variant">Seleccione los filtros antes de imprimir</p>
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <span>Reporte PDF y Planilla Personalizable de Cobranzas</span>
+                <span className="text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/40">
+                  {deudoresParaImprimir.length} seleccionados
+                </span>
+              </h2>
+              <p className="text-xs text-slate-300">
+                Aeterna Parque San Nicolás · Filtre y seleccione exactamente a quiénes cobrar e incluir en la planilla
+              </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-surface-container-high text-outline hover:text-on-surface transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[20px]">close</span>
-          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePrint}
+              disabled={deudoresParaImprimir.length === 0}
+              className="h-8 px-3.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[17px]">print</span>
+              <span>Imprimir / Guardar PDF ({deudoresParaImprimir.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-8 w-8 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+              title="Cerrar"
+            >
+              <span className="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className="px-5 py-4 border-b border-outline-variant bg-surface-container-low">
-          <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-3">Filtros de Impresión</p>
-          <div className="flex flex-wrap gap-4">
-            {/* Sector filter */}
-            <div>
-              <p className="text-xs text-on-surface-variant mb-1.5 font-medium">Sector</p>
-              <div className="flex gap-2 flex-wrap">
+        {/* ──── Panel de Filtros y Personalización ──── */}
+        <div className="p-3 bg-slate-50 border-b border-slate-200 flex flex-col gap-2.5 text-xs shrink-0">
+          {/* Fila 1: Filtros de Selección */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Sectores */}
+              <div className="flex items-center gap-1">
+                <span className="text-slate-600 font-bold text-[11px]">Sectores:</span>
                 {sectores.map((s) => (
                   <button
                     key={s}
                     type="button"
                     onClick={() => handleToggleSector(s)}
-                    className={`h-7 px-3 rounded-full text-xs font-semibold border transition-colors cursor-pointer ${
+                    className={`h-7 px-2.5 rounded text-xs font-semibold border transition-colors cursor-pointer ${
                       selectedSectores.has(s)
-                        ? 'bg-primary text-on-primary border-primary'
-                        : 'bg-surface border-outline-variant text-on-surface-variant hover:border-primary/50'
+                        ? 'bg-primary text-white border-primary shadow-2xs'
+                        : 'bg-white border-slate-300 text-slate-600 hover:border-primary/50'
                     }`}
                   >
-                    Sector {s}
+                    Sec. {s}
                   </button>
                 ))}
               </div>
+
+              {/* Estado */}
+              <select
+                value={estadoFiltro}
+                onChange={(e) => setEstadoFiltro(e.target.value as any)}
+                className="h-7 px-2 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-800 cursor-pointer"
+              >
+                <option value="todos">Estado: Todos con deuda</option>
+                <option value="en_mora">Solo En Mora</option>
+                <option value="standby">Solo Stand-by (+3 años)</option>
+                <option value="ocupada">Ocupada c/Deuda</option>
+              </select>
+
+              {/* Teléfono */}
+              <select
+                value={telefonoFiltro}
+                onChange={(e) => setTelefonoFiltro(e.target.value as any)}
+                className="h-7 px-2 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-800 cursor-pointer"
+              >
+                <option value="todos">Teléfono: Todos</option>
+                <option value="con_telefono">📱 Solo con Teléfono</option>
+                <option value="sin_telefono">🏠 Sin Teléfono (Visita)</option>
+              </select>
+
+              {/* Domicilio / Calle */}
+              <input
+                type="text"
+                value={domicilioFiltro}
+                onChange={(e) => setDomicilioFiltro(e.target.value)}
+                placeholder="Filtrar calle / barrio..."
+                className="h-7 px-2 w-36 bg-white border border-slate-300 rounded text-xs text-slate-800"
+              />
+
+              {/* Rango Saldo */}
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  value={minSaldo}
+                  onChange={(e) => setMinSaldo(e.target.value)}
+                  placeholder="Saldo mín $"
+                  className="h-7 px-2 w-24 bg-white border border-slate-300 rounded text-xs text-slate-800 font-mono"
+                />
+                <span className="text-slate-400">-</span>
+                <input
+                  type="number"
+                  value={maxSaldo}
+                  onChange={(e) => setMaxSaldo(e.target.value)}
+                  placeholder="Saldo máx $"
+                  className="h-7 px-2 w-24 bg-white border border-slate-300 rounded text-xs text-slate-800 font-mono"
+                />
+              </div>
+
+              {/* Orden */}
+              <select
+                value={ordenarPor}
+                onChange={(e) => setOrdenarPor(e.target.value as any)}
+                className="h-7 px-2 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-800 cursor-pointer"
+              >
+                <option value="saldo_desc">Orden: Mayor Deuda</option>
+                <option value="domicilio">Orden: Calle / Domicilio (Ruta)</option>
+                <option value="parcela">Orden: Parcela (A → Z)</option>
+                <option value="nombre">Orden: Titular (A → Z)</option>
+                <option value="fecha">Orden: Fecha de Pago</option>
+              </select>
             </div>
 
-            {/* Saldo range */}
-            <div>
-              <p className="text-xs text-on-surface-variant mb-1.5 font-medium">Saldo Mínimo</p>
-              <input
-                type="number"
-                value={minSaldo}
-                onChange={(e) => setMinSaldo(e.target.value)}
-                placeholder="$ 0"
-                className="h-7 w-28 px-2 text-xs border border-outline-variant rounded bg-surface text-on-surface focus:outline-none focus:border-primary"
-              />
-            </div>
-            <div>
-              <p className="text-xs text-on-surface-variant mb-1.5 font-medium">Saldo Máximo</p>
-              <input
-                type="number"
-                value={maxSaldo}
-                onChange={(e) => setMaxSaldo(e.target.value)}
-                placeholder="Sin límite"
-                className="h-7 w-28 px-2 text-xs border border-outline-variant rounded bg-surface text-on-surface focus:outline-none focus:border-primary"
-              />
+            {/* Botón Elegir individualmente */}
+            <button
+              type="button"
+              onClick={() => setShowManualSelector(!showManualSelector)}
+              className={`h-7 px-2.5 rounded border text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors ${
+                showManualSelector
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-white border-primary/40 text-primary hover:bg-primary/5'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[15px]">checklist</span>
+              <span>Elegir Deudores ({deudoresParaImprimir.length}/{candidatosFiltrados.length})</span>
+            </button>
+          </div>
+
+          {/* Fila 2: Personalización del PDF (Título, Cobrador, Columnas) */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/80">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1">
+                <span className="text-slate-500 font-semibold text-[11px]">Título:</span>
+                <input
+                  type="text"
+                  value={tituloReporte}
+                  onChange={(e) => setTituloReporte(e.target.value)}
+                  className="h-7 px-2 w-64 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-800"
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-slate-500 font-semibold text-[11px]">Responsable:</span>
+                <input
+                  type="text"
+                  value={responsableCobro}
+                  onChange={(e) => setResponsableCobro(e.target.value)}
+                  className="h-7 px-2 w-48 bg-white border border-slate-300 rounded text-xs text-slate-800"
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-slate-500 font-semibold text-[11px]">Fecha:</span>
+                <input
+                  type="text"
+                  value={fechaEmision}
+                  onChange={(e) => setFechaEmision(e.target.value)}
+                  className="h-7 px-2 w-24 bg-white border border-slate-300 rounded text-xs font-mono text-center text-slate-800"
+                />
+              </div>
             </div>
 
-            {/* Solo en mora */}
-            <div className="flex items-end pb-0.5">
-              <label className="flex items-center gap-2 cursor-pointer">
+            {/* Checkboxes de Columnas del PDF */}
+            <div className="flex flex-wrap items-center gap-3 bg-white px-2.5 py-1 rounded border border-slate-200">
+              <span className="text-[10px] font-bold uppercase text-slate-500">Columnas PDF:</span>
+              <label className="flex items-center gap-1 cursor-pointer text-[11px] font-medium text-slate-700">
                 <input
                   type="checkbox"
-                  checked={soloEnMora}
-                  onChange={(e) => setSoloEnMora(e.target.checked)}
-                  className="w-4 h-4 accent-primary cursor-pointer"
+                  checked={colDomicilio}
+                  onChange={(e) => setColDomicilio(e.target.checked)}
+                  className="accent-primary cursor-pointer"
                 />
-                <span className="text-xs text-on-surface font-medium">Solo "En Mora"</span>
+                <span>Domicilio</span>
+              </label>
+              <label className="flex items-center gap-1 cursor-pointer text-[11px] font-medium text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={colTelefono}
+                  onChange={(e) => setColTelefono(e.target.checked)}
+                  className="accent-primary cursor-pointer"
+                />
+                <span>Teléfono</span>
+              </label>
+              <label className="flex items-center gap-1 cursor-pointer text-[11px] font-medium text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={colDiaPago}
+                  onChange={(e) => setColDiaPago(e.target.checked)}
+                  className="accent-primary cursor-pointer"
+                />
+                <span>Día/Fecha Pago</span>
+              </label>
+              <label className="flex items-center gap-1 cursor-pointer text-[11px] font-semibold text-primary">
+                <input
+                  type="checkbox"
+                  checked={colCasillerosTerreno}
+                  onChange={(e) => setColCasillerosTerreno(e.target.checked)}
+                  className="accent-primary cursor-pointer"
+                />
+                <span>Casilleros Recibo y Firma</span>
               </label>
             </div>
           </div>
 
-          <div className="mt-3 flex items-center gap-3">
-            <span className="text-xs text-on-surface-variant">
-              Mostrando <strong className="text-on-surface">{filteredForPrint.length}</strong> deudores ·
-              Total deuda: <strong className="text-rose-600">{formatCurrency(totalDeuda)}</strong>
-            </span>
-          </div>
+          {/* Panel Desplegable para Marcar/Desmarcar Deudores Individualmente */}
+          {showManualSelector && (
+            <div className="bg-white rounded-lg border border-slate-300 p-2.5 shadow-inner flex flex-col gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-slate-200">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-slate-800 text-xs">
+                    Selección Manual de Deudores a Cobrar:
+                  </span>
+                  <input
+                    type="text"
+                    value={busquedaModal}
+                    onChange={(e) => setBusquedaModal(e.target.value)}
+                    placeholder="Buscar por nombre o parcela..."
+                    className="h-6 px-2 w-48 text-xs border border-slate-300 rounded"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handleSelectAllFiltered}
+                    className="px-2 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-semibold cursor-pointer"
+                  >
+                    ✓ Marcar todos ({candidatosFiltrados.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeselectAllFiltered}
+                    className="px-2 py-0.5 rounded bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 text-[11px] font-semibold cursor-pointer"
+                  >
+                    ✕ Desmarcar todos
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5 max-h-36 overflow-y-auto custom-scroll pr-1">
+                {candidatosFiltrados.map((d) => {
+                  const checked = includedIds.has(d.parcelaId)
+                  return (
+                    <label
+                      key={d.parcelaId}
+                      className={`flex items-center justify-between gap-2 px-2 py-1 rounded border text-[11px] cursor-pointer transition-colors ${
+                        checked
+                          ? 'bg-blue-50/70 border-primary/40 text-slate-900 font-medium'
+                          : 'bg-slate-50 border-slate-200 text-slate-400'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => handleToggleDeudor(d.parcelaId)}
+                          className="accent-primary cursor-pointer shrink-0"
+                        />
+                        <span className="font-mono font-bold text-primary shrink-0">{d.nomenclatura}</span>
+                        <span className="truncate">{d.titularNombre}</span>
+                      </div>
+                      <span className="font-mono font-bold text-red-700 shrink-0">{formatCurrency(d.saldo)}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Preview (hidden, for print) */}
-        <div className="flex-1 overflow-y-auto custom-scroll px-5 py-3">
-          <div ref={printRef}>
-            {/* Print layout */}
-            <div className="header">
-              <div>
-                <div style={{ fontSize: '9px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
-                  MUNICIPALIDAD DEL DEPARTAMENTO GENERAL BELGRANO · LA RIOJA
+        {/* ──── Vista Previa A4 Imprimible ──── */}
+        <div className="p-4 sm:p-6 overflow-y-auto custom-scroll bg-slate-200/80 flex-1">
+          <div
+            ref={printRef}
+            className="bg-white shadow-lg mx-auto p-6 sm:p-8 max-w-[210mm] border border-slate-300 text-slate-900 font-sans"
+          >
+            {/* Encabezado Institucional Aeterna (Sin Municipalidad del Depto General Belgrano) */}
+            <div className="doc-header border-b-2 border-slate-900 pb-3 mb-3 flex items-start justify-between gap-4">
+              <div className="brand-box flex items-center gap-3">
+                <div className="brand-emblem w-11 h-11 rounded bg-[#00236f] text-white flex items-center justify-center font-serif font-black text-xl shrink-0">
+                  ✝
                 </div>
-                <h1 style={{ fontSize: '15px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Planilla de Cobranzas — Deudores de Mantenimiento
-                </h1>
-                <div className="sub">Cementerio Parque Municipal Aeterna · Sistema de Gestión y Fiscalización Mortuoria</div>
+                <div>
+                  <h1 className="brand-title text-lg font-black tracking-wide text-[#00236f] uppercase">
+                    AETERNA PARQUE SAN NICOLÁS
+                  </h1>
+                  <h2 className="brand-subtitle text-xs font-bold tracking-wider text-slate-800 uppercase mt-0.5">
+                    {tituloReporte || 'PLANILLA DE COBRANZAS Y GESTIÓN DE DEUDORES'}
+                  </h2>
+                  <p className="brand-caption text-[10px] text-slate-600">
+                    Administración y Tesorería · Gestión de Mantenimiento de Parcelas
+                  </p>
+                </div>
               </div>
-              <div className="meta">
-                <div style={{ fontWeight: 'bold' }}>Fecha: {fecha}</div>
-                <div style={{ color: '#64748b' }}>Hora: {hora} hs</div>
-                <div style={{ marginTop: '4px', fontSize: '9px', fontFamily: 'monospace', fontWeight: 'bold', border: '1px solid #94a3b8', borderRadius: '3px', padding: '1px 6px', display: 'inline-block' }}>
-                  PLANILLA OFICIAL
+
+              <div className="meta-box text-right shrink-0">
+                <span className="meta-badge inline-block px-2.5 py-0.5 bg-slate-900 text-white font-mono font-bold text-[10px] uppercase tracking-wider rounded">
+                  REPORTE DE COBRANZA
+                </span>
+                <div className="text-[11px] font-mono text-slate-800 font-semibold mt-1">
+                  FECHA: <strong>{fechaEmision}</strong>
+                </div>
+                <div className="text-[10px] text-slate-500 font-mono">
+                  REGISTROS: {deudoresParaImprimir.length} TITULARES
                 </div>
               </div>
             </div>
 
-            <div className="badge-count">
-              {filteredForPrint.length} Deudores · Total Deuda: {formatCurrency(totalDeuda)}
+            {/* Resumen de la Planilla */}
+            <div className="kpi-grid grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-xs">
+              <div className="kpi-card bg-slate-50 p-2 rounded border border-slate-200">
+                <span className="kpi-label text-[9px] uppercase font-bold text-slate-500 block">Sectores Incluidos:</span>
+                <span className="kpi-val font-bold text-slate-900 text-[11px] block">
+                  {Array.from(selectedSectores).sort().join(', ') || 'Ninguno'}
+                </span>
+              </div>
+              <div className="kpi-card bg-slate-50 p-2 rounded border border-slate-200">
+                <span className="kpi-label text-[9px] uppercase font-bold text-slate-500 block">Responsable / Cobrador:</span>
+                <span className="kpi-val font-bold text-slate-900 truncate text-[11px] block">
+                  {responsableCobro || 'Administración'}
+                </span>
+              </div>
+              <div className="kpi-card bg-slate-50 p-2 rounded border border-slate-200">
+                <span className="kpi-label text-[9px] uppercase font-bold text-slate-500 block">Titulares a Cobrar:</span>
+                <span className="kpi-val font-bold text-slate-900 text-[11px] font-mono block">
+                  {deudoresParaImprimir.length} Deudores
+                </span>
+              </div>
+              <div className="kpi-card bg-slate-50 p-2 rounded border border-slate-200 text-right">
+                <span className="kpi-label text-[9px] uppercase font-bold text-slate-500 block">Total a Recaudar:</span>
+                <span className="kpi-val-danger font-bold text-red-700 text-[12px] font-mono block">
+                  {formatCurrency(totalDeudaImprimir)}
+                </span>
+              </div>
             </div>
 
-            <table>
+            {/* Tabla Imprimible */}
+            <table className="w-full text-left border-collapse text-[10px] border border-slate-800">
               <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Titular</th>
-                  <th>Parcela</th>
-                  <th>Domicilio</th>
-                  <th>Teléfono</th>
-                  <th>Último Pago</th>
-                  <th style={{ textAlign: 'right' }}>Saldo</th>
+                <tr className="bg-slate-800 text-white font-bold uppercase text-[9px] tracking-wider">
+                  <th className="p-1.5 border border-slate-700 text-center w-7">#</th>
+                  <th className="p-1.5 border border-slate-700">Nombre de Titular</th>
+                  <th className="p-1.5 border border-slate-700 text-center w-20">Parcela</th>
+                  {colDomicilio && <th className="p-1.5 border border-slate-700">Domicilio</th>}
+                  {colTelefono && <th className="p-1.5 border border-slate-700 w-24">Teléfono</th>}
+                  {colDiaPago && <th className="p-1.5 border border-slate-700 w-28">Día / Fecha Pago</th>}
+                  <th className="p-1.5 border border-slate-700 text-right w-24">Saldo</th>
+                  {colCasillerosTerreno && (
+                    <>
+                      <th className="p-1.5 border border-slate-700 text-center w-20">N° Recibo</th>
+                      <th className="p-1.5 border border-slate-700 text-center w-28">Firma / Obs.</th>
+                    </>
+                  )}
+                  <th className="p-1 border border-slate-700 text-center w-7 no-print" title="Quitar de la impresión">
+                    ✕
+                  </th>
                 </tr>
               </thead>
-              <tbody>
-                {filteredForPrint.map((d, i) => (
-                  <tr key={d.parcelaId}>
-                    <td style={{ color: '#64748b', fontFamily: 'monospace' }}>{String(i + 1).padStart(2, '0')}</td>
-                    <td style={{ fontWeight: 600 }}>{d.titularNombre}</td>
-                    <td><span className="parcela-badge">{d.nomenclatura}</span></td>
-                    <td style={{ color: '#475569' }}>{d.domicilio}</td>
-                    <td style={{ fontFamily: 'monospace', fontSize: '9px' }}>{d.telefono}</td>
-                    <td style={{ color: '#64748b' }}>{d.diaPago}</td>
-                    <td className="saldo" style={{ color: '#dc2626' }}>{formatCurrency(d.saldo)}</td>
+              <tbody className="divide-y divide-slate-300">
+                {deudoresParaImprimir.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="p-6 text-center text-slate-500 italic">
+                      No hay deudores seleccionados para imprimir. Ajuste los filtros o marque titulares arriba.
+                    </td>
                   </tr>
-                ))}
-                <tr className="total-row">
-                  <td colSpan={6} style={{ padding: '6px 8px', fontWeight: 'bold' }}>
-                    TOTAL GENERAL ({filteredForPrint.length} deudores)
-                  </td>
-                  <td className="saldo" style={{ padding: '6px 8px', color: '#fca5a5' }}>{formatCurrency(totalDeuda)}</td>
-                </tr>
+                ) : (
+                  deudoresParaImprimir.map((d, idx) => (
+                    <tr
+                      key={d.parcelaId}
+                      className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}
+                      style={{ pageBreakInside: 'avoid' }}
+                    >
+                      <td className="p-1.5 border-r border-slate-300 text-center font-mono font-bold text-slate-600">
+                        {idx + 1}
+                      </td>
+                      <td className="p-1.5 border-r border-slate-300">
+                        <div className="bold font-bold text-slate-950">{d.titularNombre}</div>
+                        {d.dni && <div className="mono text-[8.5px] text-slate-500">DNI {d.dni}</div>}
+                      </td>
+                      <td className="p-1.5 border-r border-slate-300 text-center">
+                        <span className="parcela-pill inline-block px-1.5 py-0.5 rounded bg-blue-50 border border-blue-300 text-blue-900 font-mono font-bold text-[9.5px]">
+                          {d.nomenclatura}
+                        </span>
+                      </td>
+                      {colDomicilio && (
+                        <td className="p-1.5 border-r border-slate-300 text-slate-800">
+                          <div>{d.domicilio}</div>
+                          {d.barrio && <div className="text-[8.5px] text-slate-500">B° {d.barrio}</div>}
+                        </td>
+                      )}
+                      {colTelefono && (
+                        <td className="p-1.5 border-r border-slate-300 font-mono text-[9.5px] text-slate-800">
+                          {d.telefono !== 'S/D' ? d.telefono.replace('+54 9 ', '') : '—'}
+                        </td>
+                      )}
+                      {colDiaPago && (
+                        <td className="p-1.5 border-r border-slate-300 text-[9.5px] text-slate-700 font-mono">
+                          {d.diaPago}
+                        </td>
+                      )}
+                      <td className="saldo-cell p-1.5 border-r border-slate-300 text-right font-mono font-bold text-red-700 bg-red-50/50">
+                        {formatCurrency(d.saldo)}
+                      </td>
+                      {colCasillerosTerreno && (
+                        <>
+                          <td className="p-1.5 border-r border-slate-300"></td>
+                          <td className="p-1.5 border-r border-slate-300"></td>
+                        </>
+                      )}
+                      <td className="p-1 text-center no-print">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleDeudor(d.parcelaId)}
+                          className="text-slate-400 hover:text-red-600 font-bold text-xs cursor-pointer"
+                          title="Quitar este registro del PDF"
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+                {deudoresParaImprimir.length > 0 && (
+                  <tr className="total-row bg-slate-900 text-white font-bold">
+                    <td
+                      colSpan={
+                        3 +
+                        (colDomicilio ? 1 : 0) +
+                        (colTelefono ? 1 : 0) +
+                        (colDiaPago ? 1 : 0)
+                      }
+                      className="p-2 text-right uppercase tracking-wide text-[10px]"
+                    >
+                      TOTAL GENERAL A COBRAR ({deudoresParaImprimir.length} DEUDORES):
+                    </td>
+                    <td className="p-2 text-right font-mono text-[11px] text-red-200">
+                      {formatCurrency(totalDeudaImprimir)}
+                    </td>
+                    {colCasillerosTerreno && <td colSpan={2} className="p-2"></td>}
+                    <td className="no-print"></td>
+                  </tr>
+                )}
               </tbody>
             </table>
 
-            <div className="footer">
-              <div className="firma">
-                <div className="linea">________________________</div>
-                <div style={{ fontSize: '10px', fontWeight: 'bold', marginTop: '4px' }}>Firma y Sello de Operador</div>
-                <div style={{ fontSize: '9px', color: '#64748b' }}>Mesa de Entrada / Tesorería</div>
+            {/* Pie de Firmas */}
+            <div className="footer-firmas mt-8 pt-4 border-t border-slate-400 flex items-end justify-between text-xs text-slate-700">
+              <div className="firma-block text-center w-52">
+                <div className="firma-line border-t border-slate-900 pt-1 font-bold text-[10px]">
+                  Firma y Aclaración Cobrador
+                </div>
+                <div className="firma-sub text-[9px] text-slate-500">Rendición de Cobranza</div>
               </div>
-              <div style={{ textAlign: 'center', fontSize: '9px', color: '#64748b', maxWidth: '260px' }}>
-                Documento emitido bajo Ordenanza Municipal N° 842/2024. Datos con carácter de declaración jurada oficial.
+              <div className="text-center text-[9px] text-slate-500 max-w-xs">
+                Aeterna Parque San Nicolás · Planilla de control interno y gestión de cobranza de mantenimiento.
               </div>
-              <div className="firma">
-                <div className="linea">________________________</div>
-                <div style={{ fontSize: '10px', fontWeight: 'bold', marginTop: '4px' }}>Dirección de Servicios Públicos</div>
-                <div style={{ fontSize: '9px', color: '#64748b' }}>Municipio de Chamical</div>
+              <div className="firma-block text-center w-52">
+                <div className="firma-line border-t border-slate-900 pt-1 font-bold text-[10px]">
+                  Administración y Tesorería
+                </div>
+                <div className="firma-sub text-[9px] text-slate-500">Aeterna Parque San Nicolás</div>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Footer actions */}
-        <div className="px-5 py-3 border-t border-outline-variant flex items-center justify-between bg-surface-container">
-          <span className="text-xs text-on-surface-variant">
-            {filteredForPrint.length === 0 && (
-              <span className="text-amber-600 font-semibold">⚠ Sin deudores para imprimir con los filtros seleccionados</span>
-            )}
-          </span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-8 px-4 rounded border border-outline-variant text-xs font-medium text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handlePrint}
-              disabled={filteredForPrint.length === 0}
-              className="h-8 px-4 rounded bg-primary text-on-primary text-xs font-semibold flex items-center gap-1.5 hover:bg-secondary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-            >
-              <span className="material-symbols-outlined text-[16px]">print</span>
-              Imprimir Planilla
-            </button>
-          </div>
-        </div>
       </div>
-    </div>
-  )
-}
-
-// ─── Estado badge ─────────────────────────────────────────────────────────────
-
-function EstadoBadge({ estado }: { estado: string }) {
-  const map: Record<string, { label: string; cls: string }> = {
-    en_mora: { label: 'En Mora', cls: 'bg-rose-100 text-rose-700 border-rose-200' },
-    ocupada: { label: 'Ocupada c/Deuda', cls: 'bg-amber-100 text-amber-700 border-amber-200' },
-    standby: { label: 'Stand-by', cls: 'bg-slate-100 text-slate-600 border-slate-300' },
-  }
-  const info = map[estado] || { label: estado, cls: 'bg-slate-100 text-slate-500 border-slate-200' }
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${info.cls}`}>
-      {info.label}
-    </span>
+    </div>,
+    document.body
   )
 }
 
@@ -360,353 +789,1022 @@ export const CobranzasView: React.FC<CobranzasViewProps> = ({
   onRefresh,
   isRefreshing = false,
 }) => {
-  const [busqueda, setBusqueda] = useState('')
-  const [sectorFiltro, setSectorFiltro] = useState<string>('todos')
-  const [estadoFiltro, setEstadoFiltro] = useState<string>('todos')
-  const [ordenarPor, setOrdenarPor] = useState<'saldo_desc' | 'saldo_asc' | 'nombre' | 'parcela'>('saldo_desc')
+  // Búsqueda general y filtros superiores
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterSector, setFilterSector] = useState<'todos' | 'A' | 'B' | 'E' | 'en_mora' | 'standby'>('todos')
+  const [sortOption, setSortOption] = useState<string>('saldo-desc')
+  const [showMobileFilters, setShowMobileFilters] = useState(false)
+  const [showDesktopFilters, setShowDesktopFilters] = useState(true)
+  const [showColumnFilters, setShowColumnFilters] = useState(true)
+
+  // Filtros por columna específicos
+  const [colFilterTitular, setColFilterTitular] = useState('')
+  const [colFilterParcela, setColFilterParcela] = useState('')
+  const [colFilterDomicilio, setColFilterDomicilio] = useState('')
+  const [colFilterTelefono, setColFilterTelefono] = useState('')
+  const [colFilterDiaPago, setColFilterDiaPago] = useState('')
+  const [colFilterSaldoMin, setColFilterSaldoMin] = useState('')
+
+  // Selección de filas para personalizar a quiénes cobrar/imprimir
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [printModalOpen, setPrintModalOpen] = useState(false)
 
-  // Build deudores from parcelas
+  // Paginación (igual que ParcelasView)
+  const [pageSize, setPageSize] = useState<'todas' | 50 | 100>('todas')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Lista base de deudores
   const deudores = useMemo(() => buildDeudores(parcelas), [parcelas])
 
-  // Available sectors
   const sectores = useMemo(() => {
     const s = new Set(deudores.map((d) => d.sector))
     return Array.from(s).sort()
   }, [deudores])
 
-  // Filtered and sorted list
+  const hasColumnFilters = Boolean(
+    colFilterTitular.trim() ||
+      colFilterParcela.trim() ||
+      colFilterDomicilio.trim() ||
+      colFilterTelefono.trim() ||
+      colFilterDiaPago.trim() ||
+      colFilterSaldoMin.trim()
+  )
+
+  const hasActiveFilters = filterSector !== 'todos' || Boolean(searchTerm.trim()) || hasColumnFilters
+
+  const clearAllFilters = () => {
+    setSearchTerm('')
+    setFilterSector('todos')
+    setColFilterTitular('')
+    setColFilterParcela('')
+    setColFilterDomicilio('')
+    setColFilterTelefono('')
+    setColFilterDiaPago('')
+    setColFilterSaldoMin('')
+  }
+
+  // Filtrado por barra superior + filtros por cada columna
   const deudoresFiltrados = useMemo(() => {
-    let list = [...deudores]
+    const list = deudores.filter((d) => {
+      // Filtro rápido de sector/estado
+      if (filterSector !== 'todos') {
+        if (filterSector === 'en_mora') {
+          if (d.estado !== 'en_mora') return false
+        } else if (filterSector === 'standby') {
+          if (d.estado !== 'standby') return false
+        } else if (d.sector !== filterSector) {
+          return false
+        }
+      }
 
-    // Sector filter
-    if (sectorFiltro !== 'todos') {
-      list = list.filter((d) => d.sector === sectorFiltro)
+      // Búsqueda general
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase()
+        if (
+          !d.titularNombre.toLowerCase().includes(q) &&
+          !d.nomenclatura.toLowerCase().includes(q) &&
+          !d.domicilio.toLowerCase().includes(q) &&
+          !d.telefono.toLowerCase().includes(q) &&
+          !d.dni.toLowerCase().includes(q)
+        ) {
+          return false
+        }
+      }
+
+      // Filtros por columna
+      if (colFilterTitular.trim()) {
+        const q = colFilterTitular.toLowerCase()
+        if (!d.titularNombre.toLowerCase().includes(q) && !d.dni.toLowerCase().includes(q)) return false
+      }
+      if (colFilterParcela.trim()) {
+        const q = colFilterParcela.toLowerCase()
+        if (!d.nomenclatura.toLowerCase().includes(q) && !d.sector.toLowerCase().includes(q)) return false
+      }
+      if (colFilterDomicilio.trim()) {
+        const q = colFilterDomicilio.toLowerCase()
+        if (!d.domicilio.toLowerCase().includes(q) && !d.barrio.toLowerCase().includes(q)) return false
+      }
+      if (colFilterTelefono.trim()) {
+        const q = colFilterTelefono.toLowerCase()
+        if (!d.telefono.toLowerCase().includes(q)) return false
+      }
+      if (colFilterDiaPago.trim()) {
+        const q = colFilterDiaPago.toLowerCase()
+        if (!d.diaPago.toLowerCase().includes(q) && !d.ultimaCuota.toLowerCase().includes(q)) return false
+      }
+      if (colFilterSaldoMin.trim()) {
+        const min = Number(colFilterSaldoMin)
+        if (!isNaN(min) && d.saldo < min) return false
+      }
+
+      return true
+    })
+
+    return list.sort((a, b) => {
+      if (sortOption === 'saldo-desc') return b.saldo - a.saldo
+      if (sortOption === 'saldo-asc') return a.saldo - b.saldo
+      if (sortOption === 'titular-asc') return a.titularNombre.localeCompare(b.titularNombre, 'es', { sensitivity: 'base' })
+      if (sortOption === 'titular-desc') return b.titularNombre.localeCompare(a.titularNombre, 'es', { sensitivity: 'base' })
+      if (sortOption === 'parcela-asc') return compareNaturalParcela(a.nomenclatura, b.nomenclatura)
+      if (sortOption === 'parcela-desc') return compareNaturalParcela(b.nomenclatura, a.nomenclatura)
+      if (sortOption === 'domicilio-asc') return a.domicilio.localeCompare(b.domicilio, 'es', { sensitivity: 'base' })
+      if (sortOption === 'domicilio-desc') return b.domicilio.localeCompare(a.domicilio, 'es', { sensitivity: 'base' })
+      if (sortOption === 'telefono-asc') return a.telefono.localeCompare(b.telefono)
+      if (sortOption === 'telefono-desc') return b.telefono.localeCompare(a.telefono)
+      if (sortOption === 'fecha-desc') return (b.fechaPagoRaw || '').localeCompare(a.fechaPagoRaw || '')
+      if (sortOption === 'fecha-asc') return (a.fechaPagoRaw || '').localeCompare(b.fechaPagoRaw || '')
+      return b.saldo - a.saldo
+    })
+  }, [
+    deudores,
+    filterSector,
+    searchTerm,
+    colFilterTitular,
+    colFilterParcela,
+    colFilterDomicilio,
+    colFilterTelefono,
+    colFilterDiaPago,
+    colFilterSaldoMin,
+    sortOption,
+  ])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [
+    filterSector,
+    searchTerm,
+    colFilterTitular,
+    colFilterParcela,
+    colFilterDomicilio,
+    colFilterTelefono,
+    colFilterDiaPago,
+    colFilterSaldoMin,
+    pageSize,
+    sortOption,
+  ])
+
+  const effectivePageSize = isMobile ? 'todas' : pageSize
+  const displayedDeudores =
+    effectivePageSize === 'todas'
+      ? deudoresFiltrados
+      : deudoresFiltrados.slice((currentPage - 1) * effectivePageSize, currentPage * effectivePageSize)
+
+  // Contadores igual que en ParcelasView
+  const countSecA = deudores.filter((d) => d.sector === 'A').length
+  const countSecB = deudores.filter((d) => d.sector === 'B').length
+  const countSecE = deudores.filter((d) => d.sector === 'E').length
+  const countEnMora = deudores.filter((d) => d.estado === 'en_mora').length
+  const countStandby = deudores.filter((d) => d.estado === 'standby').length
+  const totalDeudaFiltrada = deudoresFiltrados.reduce((acc, d) => acc + d.saldo, 0)
+
+  const allFilteredSelected =
+    deudoresFiltrados.length > 0 && deudoresFiltrados.every((d) => selectedIds.has(d.parcelaId))
+
+  const handleToggleSelectAll = () => {
+    if (allFilteredSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        deudoresFiltrados.forEach((d) => next.delete(d.parcelaId))
+        return next
+      })
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        deudoresFiltrados.forEach((d) => next.add(d.parcelaId))
+        return next
+      })
     }
+  }
 
-    // Estado filter
-    if (estadoFiltro !== 'todos') {
-      list = list.filter((d) => d.estado === estadoFiltro)
-    }
-
-    // Search
-    if (busqueda.trim()) {
-      const q = busqueda.toLowerCase()
-      list = list.filter(
-        (d) =>
-          d.titularNombre.toLowerCase().includes(q) ||
-          d.nomenclatura.toLowerCase().includes(q) ||
-          d.domicilio.toLowerCase().includes(q) ||
-          d.telefono.toLowerCase().includes(q)
-      )
-    }
-
-    // Sort
-    switch (ordenarPor) {
-      case 'saldo_desc':
-        list.sort((a, b) => b.saldo - a.saldo)
-        break
-      case 'saldo_asc':
-        list.sort((a, b) => a.saldo - b.saldo)
-        break
-      case 'nombre':
-        list.sort((a, b) => a.titularNombre.localeCompare(b.titularNombre))
-        break
-      case 'parcela':
-        list.sort((a, b) => a.nomenclatura.localeCompare(b.nomenclatura))
-        break
-    }
-
-    return list
-  }, [deudores, sectorFiltro, estadoFiltro, busqueda, ordenarPor])
-
-  // Summary stats
-  const totalDeuda = deudoresFiltrados.reduce((s, d) => s + d.saldo, 0)
-  const totalDeudaGlobal = deudores.reduce((s, d) => s + d.saldo, 0)
+  const handleToggleSelectRow = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-      {/* ──── Header ──── */}
-      <div className="flex-shrink-0 flex flex-col gap-3 pb-3 print:hidden">
-        {/* Title row */}
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-rose-600/10 border border-rose-200 flex items-center justify-center">
-              <span className="material-symbols-outlined text-rose-600 text-[22px]">account_balance_wallet</span>
+    <div className="w-full h-full flex flex-col overflow-hidden space-y-1.5 sm:space-y-3">
+      {/* ===================================================================== */}
+      {/* TOOLBAR SUPERIOR (Mismo diseño que Padrón de Parcelas)                */}
+      {/* ===================================================================== */}
+      <div className="bg-surface-container-lowest rounded border border-outline-variant p-2 sm:p-3 shadow-sm shrink-0 flex flex-col gap-1.5 sm:gap-2.5">
+        {/* MOBILE VIEW (< sm) */}
+        <div className="sm:hidden flex flex-col gap-1.5">
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="material-symbols-outlined text-primary text-[18px]">account_balance_wallet</span>
+              <span className="font-bold text-xs text-primary whitespace-nowrap">Cobranzas</span>
+              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-800">
+                {deudoresFiltrados.length}
+              </span>
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-on-surface leading-tight">Cobranzas</h1>
-              <p className="text-xs text-on-surface-variant">Gestión de Deudores de Mantenimiento</p>
-            </div>
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-              {deudores.length} deudores
-            </span>
-          </div>
 
-          <div className="flex items-center gap-2">
-            {onRefresh && (
-              <button
-                type="button"
-                onClick={onRefresh}
-                disabled={isRefreshing}
-                className="h-8 px-2.5 rounded border border-outline-variant bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-primary transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer disabled:opacity-50"
-                title="Actualizar datos"
-              >
-                <span className={`material-symbols-outlined text-[16px] text-primary ${isRefreshing ? 'animate-spin' : ''}`}>sync</span>
-                <span className="hidden sm:inline">{isRefreshing ? 'Actualizando...' : 'Actualizar'}</span>
-              </button>
-            )}
+            <div className="relative flex-1 min-w-0">
+              <span className="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-outline text-[14px]">
+                search
+              </span>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar titular, parcela, domicilio..."
+                className="w-full h-7 pl-6 pr-6 text-[11px] bg-surface-container-low border border-outline-variant rounded focus:border-secondary focus:bg-white focus:outline-none"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface p-0.5"
+                >
+                  <span className="material-symbols-outlined text-[13px]">close</span>
+                </button>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+              className={`h-7 w-7 rounded border flex items-center justify-center shrink-0 cursor-pointer transition-colors ${
+                showMobileFilters || hasActiveFilters
+                  ? 'bg-primary text-white border-primary shadow-xs'
+                  : 'border-outline-variant bg-surface-container-low text-slate-600'
+              }`}
+              title="Filtros"
+            >
+              <span className="material-symbols-outlined text-[15px]">filter_list</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setPrintModalOpen(true)}
-              className="h-8 px-3 rounded bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-slate-700 transition-colors cursor-pointer shadow-sm"
+              className="h-7 px-2 bg-primary text-on-primary font-semibold text-[11px] rounded flex items-center gap-1 shadow-xs shrink-0 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[16px]">print</span>
-              <span className="hidden sm:inline">Imprimir Lista</span>
+              <span className="material-symbols-outlined text-[14px]">picture_as_pdf</span>
+              <span>PDF</span>
             </button>
           </div>
+
+          {showMobileFilters && (
+            <div className="flex flex-col gap-1.5 pt-1.5 border-t border-outline-variant/60 text-[10px]">
+              <div className="flex items-center gap-1 overflow-x-auto custom-scroll pb-0.5">
+                <button
+                  type="button"
+                  onClick={() => setFilterSector('todos')}
+                  className={`px-2 py-0.5 rounded font-semibold whitespace-nowrap shrink-0 ${
+                    filterSector === 'todos' ? 'bg-primary text-white' : 'bg-surface-container text-on-surface'
+                  }`}
+                >
+                  Todos ({deudores.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterSector('A')}
+                  className={`px-2 py-0.5 rounded whitespace-nowrap shrink-0 ${
+                    filterSector === 'A' ? 'bg-primary text-white font-semibold' : 'bg-surface-container text-on-surface'
+                  }`}
+                >
+                  Sec. A ({countSecA})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterSector('E')}
+                  className={`px-2 py-0.5 rounded whitespace-nowrap shrink-0 ${
+                    filterSector === 'E' ? 'bg-primary text-white font-semibold' : 'bg-surface-container text-on-surface'
+                  }`}
+                >
+                  Sec. E ({countSecE})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterSector('B')}
+                  className={`px-2 py-0.5 rounded whitespace-nowrap shrink-0 ${
+                    filterSector === 'B' ? 'bg-primary text-white font-semibold' : 'bg-surface-container text-on-surface'
+                  }`}
+                >
+                  Sec. B ({countSecB})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterSector('en_mora')}
+                  className={`px-2 py-0.5 rounded border whitespace-nowrap shrink-0 ${
+                    filterSector === 'en_mora'
+                      ? 'border-amber-600 bg-amber-600 text-white font-semibold'
+                      : 'border-amber-300 bg-amber-50 text-amber-900'
+                  }`}
+                >
+                  En Mora ({countEnMora})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterSector('standby')}
+                  className={`px-2 py-0.5 rounded border whitespace-nowrap shrink-0 ${
+                    filterSector === 'standby'
+                      ? 'border-rose-600 bg-rose-600 text-white font-semibold'
+                      : 'border-rose-300 bg-rose-50 text-rose-900'
+                  }`}
+                >
+                  Stand-by ({countStandby})
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* KPI cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <div className="bg-surface-container rounded-xl border border-outline-variant px-3 py-2.5">
-            <p className="text-[10px] text-on-surface-variant font-medium uppercase tracking-wide">Total Deudores</p>
-            <p className="text-xl font-black text-on-surface font-mono mt-0.5">{deudores.length}</p>
-          </div>
-          <div className="bg-rose-50 border border-rose-200 rounded-xl px-3 py-2.5">
-            <p className="text-[10px] text-rose-600 font-medium uppercase tracking-wide">Deuda Total</p>
-            <p className="text-lg font-black text-rose-700 font-mono mt-0.5">{formatCurrency(totalDeudaGlobal)}</p>
-          </div>
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
-            <p className="text-[10px] text-amber-600 font-medium uppercase tracking-wide">En Mora</p>
-            <p className="text-xl font-black text-amber-700 font-mono mt-0.5">{deudores.filter((d) => d.estado === 'en_mora').length}</p>
-          </div>
-          <div className="bg-surface-container rounded-xl border border-outline-variant px-3 py-2.5">
-            <p className="text-[10px] text-on-surface-variant font-medium uppercase tracking-wide">Filtrado</p>
-            <p className="text-xl font-black text-on-surface font-mono mt-0.5">{deudoresFiltrados.length}</p>
-          </div>
-        </div>
+        {/* DESKTOP VIEW (>= sm): Mismo diseño de barra de herramientas que ParcelasView */}
+        <div className="hidden sm:flex flex-col gap-2">
+          {/* Row 1 */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="material-symbols-outlined text-primary text-[22px]">account_balance_wallet</span>
+              <div className="flex items-baseline gap-2">
+                <h2 className="text-headline-sm font-semibold text-on-surface leading-tight">
+                  Padrón de Cobranzas
+                </h2>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200">
+                  {deudores.length} con deuda
+                </span>
+                <span className="text-xs font-code-cadastral font-bold px-2 py-0.5 rounded-full bg-surface-container text-error border border-outline-variant">
+                  Total: {formatCurrency(totalDeudaFiltrada)}
+                </span>
+              </div>
+            </div>
 
-        {/* Filters bar */}
-        <div className="flex flex-wrap gap-2 items-center">
-          {/* Search */}
-          <div className="relative flex-1 min-w-[180px] max-w-xs">
-            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[15px]">search</span>
-            <input
-              type="text"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar titular, parcela..."
-              className="w-full h-8 pl-8 pr-3 text-xs border border-outline-variant rounded-lg bg-surface text-on-surface focus:outline-none focus:border-primary placeholder:text-outline"
-            />
+            {/* Buscador General */}
+            <div className="relative flex-1 min-w-[220px] max-w-sm">
+              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[18px]">
+                search
+              </span>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar por titular, parcela, domicilio, teléfono o DNI..."
+                className="w-full h-8 pl-8 pr-8 text-xs bg-surface-container-low border border-outline-variant rounded focus:border-secondary focus:bg-white focus:outline-none"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface p-0.5"
+                >
+                  <span className="material-symbols-outlined text-[14px]">close</span>
+                </button>
+              )}
+            </div>
+
+            {/* Selector Ordenar */}
+            <div className="flex items-center gap-1 text-xs shrink-0">
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value)}
+                className="h-8 text-xs bg-white border border-outline-variant rounded px-2 py-1 focus:border-secondary font-medium text-slate-800 cursor-pointer"
+                title="Ordenar deudores"
+              >
+                <option value="saldo-desc">💰 Mayor deuda primero</option>
+                <option value="saldo-asc">💰 Menor deuda primero</option>
+                <option value="titular-asc">🔤 Titular: A → Z</option>
+                <option value="titular-desc">🔤 Titular: Z → A</option>
+                <option value="parcela-asc">📍 Parcela (A → Z)</option>
+                <option value="parcela-desc">📍 Parcela (Z → A)</option>
+                <option value="domicilio-asc">🏠 Domicilio: A → Z</option>
+                <option value="domicilio-desc">🏠 Domicilio: Z → A</option>
+                <option value="fecha-desc">📅 Fecha Pago: Más reciente</option>
+                <option value="fecha-asc">📅 Fecha Pago: Más antiguo</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              {/* Toggle Filtros por Columna */}
+              <button
+                type="button"
+                onClick={() => setShowColumnFilters(!showColumnFilters)}
+                className={`h-8 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors ${
+                  showColumnFilters || hasColumnFilters
+                    ? 'border-primary text-primary bg-primary/5'
+                    : 'border-outline-variant text-slate-700 hover:bg-surface-container'
+                }`}
+                title="Mostrar u ocultar filtros en las columnas de la tabla"
+              >
+                <span className="material-symbols-outlined text-[16px]">view_column</span>
+                <span>Filtro Columnas</span>
+              </button>
+
+              {/* Toggle Filtros de Sector */}
+              <button
+                type="button"
+                onClick={() => setShowDesktopFilters(!showDesktopFilters)}
+                className={`h-8 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors ${
+                  showDesktopFilters || filterSector !== 'todos'
+                    ? 'border-primary text-primary bg-primary/5'
+                    : 'border-outline-variant text-slate-700 hover:bg-surface-container'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">filter_list</span>
+                <span>Sectores</span>
+              </button>
+
+              {onRefresh && (
+                <button
+                  type="button"
+                  onClick={onRefresh}
+                  disabled={isRefreshing}
+                  className="h-8 px-2.5 rounded-lg border border-outline-variant bg-surface-container-low hover:bg-surface-container hover:border-primary/50 text-on-surface-variant hover:text-primary transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer shadow-2xs disabled:opacity-50"
+                  title="Actualizar datos"
+                >
+                  <span className={`material-symbols-outlined text-[16px] text-primary ${isRefreshing ? 'animate-spin' : ''}`}>
+                    sync
+                  </span>
+                  <span className="hidden xl:inline">{isRefreshing ? 'Actualizando...' : 'Actualizar'}</span>
+                </button>
+              )}
+
+              {/* Botón Reporte PDF / Imprimir Planilla */}
+              <button
+                type="button"
+                onClick={() => setPrintModalOpen(true)}
+                className="h-8 px-3 bg-primary text-on-primary hover:bg-primary/90 font-semibold text-xs rounded-lg flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer shrink-0"
+                title="Configurar e imprimir reporte PDF de deudores"
+              >
+                <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+                <span>
+                  Reporte PDF {selectedIds.size > 0 ? `(${selectedIds.size})` : ''}
+                </span>
+              </button>
+            </div>
           </div>
 
-          {/* Sector */}
-          <select
-            value={sectorFiltro}
-            onChange={(e) => setSectorFiltro(e.target.value)}
-            className="h-8 pl-2.5 pr-7 text-xs border border-outline-variant rounded-lg bg-surface text-on-surface focus:outline-none focus:border-primary cursor-pointer appearance-none"
-          >
-            <option value="todos">Todos los sectores</option>
-            {sectores.map((s) => (
-              <option key={s} value={s}>
-                Sector {s}
-              </option>
-            ))}
-          </select>
+          {/* Row 2: Botones de Sector y Estado (idénticos a ParcelasView) */}
+          {showDesktopFilters && (
+            <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-outline-variant/60 flex-wrap">
+              <div className="flex items-center gap-1 overflow-x-auto custom-scroll">
+                <button
+                  type="button"
+                  onClick={() => setFilterSector('todos')}
+                  className={`px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
+                    filterSector === 'todos'
+                      ? 'bg-primary text-on-primary shadow-xs'
+                      : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
+                  }`}
+                >
+                  Todos ({deudores.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterSector('A')}
+                  className={`px-2.5 py-1 rounded text-xs font-medium whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
+                    filterSector === 'A'
+                      ? 'bg-primary text-on-primary shadow-xs font-semibold'
+                      : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
+                  }`}
+                >
+                  Sector A ({countSecA})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterSector('E')}
+                  className={`px-2.5 py-1 rounded text-xs font-medium whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
+                    filterSector === 'E'
+                      ? 'bg-primary text-on-primary shadow-xs font-semibold'
+                      : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
+                  }`}
+                >
+                  Sector E ({countSecE})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterSector('B')}
+                  className={`px-2.5 py-1 rounded text-xs font-medium whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
+                    filterSector === 'B'
+                      ? 'bg-primary text-on-primary shadow-xs font-semibold'
+                      : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
+                  }`}
+                >
+                  Sector B ({countSecB})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterSector('en_mora')}
+                  className={`px-2.5 py-1 rounded text-xs font-medium border whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
+                    filterSector === 'en_mora'
+                      ? 'border-amber-600 bg-amber-600 text-white font-semibold'
+                      : 'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                  }`}
+                >
+                  En Mora ({countEnMora})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterSector('standby')}
+                  className={`px-2.5 py-1 rounded text-xs font-medium border whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
+                    filterSector === 'standby'
+                      ? 'border-rose-600 bg-rose-600 text-white font-semibold'
+                      : 'border-rose-300 bg-rose-50 text-rose-900 hover:bg-rose-100'
+                  }`}
+                >
+                  ⚠️ Stand-by ({countStandby})
+                </button>
 
-          {/* Estado */}
-          <select
-            value={estadoFiltro}
-            onChange={(e) => setEstadoFiltro(e.target.value)}
-            className="h-8 pl-2.5 pr-7 text-xs border border-outline-variant rounded-lg bg-surface text-on-surface focus:outline-none focus:border-primary cursor-pointer appearance-none"
-          >
-            <option value="todos">Todos los estados</option>
-            <option value="en_mora">En Mora</option>
-            <option value="ocupada">Ocupada c/Deuda</option>
-            <option value="standby">Stand-by</option>
-          </select>
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="px-2.5 py-1 rounded text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors cursor-pointer ml-1"
+                  >
+                    Limpiar filtros ✕
+                  </button>
+                )}
+              </div>
 
-          {/* Sort */}
-          <select
-            value={ordenarPor}
-            onChange={(e) => setOrdenarPor(e.target.value as typeof ordenarPor)}
-            className="h-8 pl-2.5 pr-7 text-xs border border-outline-variant rounded-lg bg-surface text-on-surface focus:outline-none focus:border-primary cursor-pointer appearance-none"
-          >
-            <option value="saldo_desc">Mayor deuda primero</option>
-            <option value="saldo_asc">Menor deuda primero</option>
-            <option value="nombre">Por nombre A-Z</option>
-            <option value="parcela">Por parcela</option>
-          </select>
-
-          {/* Clear filters */}
-          {(busqueda || sectorFiltro !== 'todos' || estadoFiltro !== 'todos') && (
-            <button
-              type="button"
-              onClick={() => { setBusqueda(''); setSectorFiltro('todos'); setEstadoFiltro('todos') }}
-              className="h-8 px-2.5 rounded border border-outline-variant text-xs text-on-surface-variant hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer flex items-center gap-1"
-            >
-              <span className="material-symbols-outlined text-[14px]">filter_alt_off</span>
-              Limpiar
-            </button>
+              <div className="flex items-center gap-2">
+                {selectedIds.size > 0 && (
+                  <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                    {selectedIds.size} marcados para cobrar/imprimir
+                  </span>
+                )}
+                <span className="text-xs font-code-cadastral text-outline shrink-0 hidden lg:inline">
+                  {deudoresFiltrados.length} deudores listados
+                </span>
+              </div>
+            </div>
           )}
         </div>
       </div>
 
-      {/* ──── Table ──── */}
-      <div className="flex-1 min-h-0 overflow-y-auto custom-scroll rounded-xl border border-outline-variant bg-surface-container-lowest shadow-sm print:hidden">
-        {deudoresFiltrados.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 gap-3 text-on-surface-variant">
-            <span className="material-symbols-outlined text-[40px] text-outline">sentiment_satisfied</span>
-            <div className="text-center">
-              <p className="font-semibold text-sm">Sin deudores encontrados</p>
-              <p className="text-xs mt-1">
-                {deudores.length === 0
-                  ? 'No hay parcelas con saldo pendiente registradas.'
-                  : 'Pruebe ajustando los filtros de búsqueda.'}
-              </p>
-            </div>
+      {/* ===================================================================== */}
+      {/* TABLA PRINCIPAL (Mismo diseño visual que Padrón de Parcelas)          */}
+      {/* ===================================================================== */}
+      <div className="bg-surface-container-lowest rounded border border-outline-variant shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden">
+        {/* Subheader institucional */}
+        <div className="hidden sm:flex px-2.5 py-1.5 sm:px-3 sm:py-2 bg-surface-container-low border-b border-outline-variant items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] sm:text-label-caps font-semibold uppercase text-outline">
+              Listado de Deudores de Mantenimiento
+            </span>
+            {selectedIds.size > 0 && (
+              <button
+                type="button"
+                onClick={() => setSelectedIds(new Set())}
+                className="text-[11px] text-primary hover:underline font-semibold cursor-pointer"
+              >
+                (Desmarcar {selectedIds.size} seleccionados)
+              </button>
+            )}
           </div>
-        ) : (
-          <>
-            {/* Desktop table */}
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-outline-variant bg-surface-container">
-                    <th className="text-left px-4 py-2.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-wide w-10">#</th>
-                    <th className="text-left px-3 py-2.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-wide">Titular</th>
-                    <th className="text-left px-3 py-2.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-wide w-24">Parcela</th>
-                    <th className="text-left px-3 py-2.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-wide">Domicilio</th>
-                    <th className="text-left px-3 py-2.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-wide w-32">Teléfono</th>
-                    <th className="text-left px-3 py-2.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-wide w-28">Fecha Pago</th>
-                    <th className="text-right px-3 py-2.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-wide w-32">Saldo</th>
-                    <th className="text-center px-3 py-2.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-wide w-36">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {deudoresFiltrados.map((d, i) => (
-                    <tr
-                      key={d.parcelaId}
-                      className="border-b border-outline-variant/50 hover:bg-surface-container/50 transition-colors group"
-                    >
-                      <td className="px-4 py-3 text-[11px] font-mono text-outline">{String(i + 1).padStart(2, '0')}</td>
-                      <td className="px-3 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
-                            {d.titularNombre.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-on-surface leading-tight">{d.titularNombre}</p>
-                            <EstadoBadge estado={d.estado} />
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-3 py-3">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-100 border border-blue-200 text-blue-800 text-[11px] font-bold font-mono">
-                          {d.nomenclatura}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 text-xs text-on-surface-variant max-w-[160px] truncate">{d.domicilio}</td>
-                      <td className="px-3 py-3 text-xs font-mono text-on-surface-variant">{d.telefono}</td>
-                      <td className="px-3 py-3 text-xs text-on-surface-variant">{d.diaPago}</td>
-                      <td className="px-3 py-3 text-right">
-                        <span className="text-sm font-black text-rose-600 font-mono">{formatCurrency(d.saldo)}</span>
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {/* Cobrar QR */}
-                          <button
-                            type="button"
-                            onClick={() => onCobrarQR(d.parcela)}
-                            className="h-7 px-2 rounded bg-primary text-on-primary text-[10px] font-semibold flex items-center gap-1 hover:bg-secondary transition-colors cursor-pointer shadow-sm"
-                            title="Cobrar con QR"
-                          >
-                            <span className="material-symbols-outlined text-[13px]">qr_code_scanner</span>
-                            <span>Cobrar</span>
-                          </button>
-                          {/* Enviar cobro */}
-                          <button
-                            type="button"
-                            onClick={() => onEnviarCobro(d.parcela)}
-                            className="h-7 w-7 rounded border border-outline-variant flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors cursor-pointer"
-                            title="Enviar Cobro Remoto (WhatsApp)"
-                          >
-                            <span className="material-symbols-outlined text-[14px]">send</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <span className="text-[10px] sm:text-[11px] text-outline font-code-cadastral">
+            {deudoresFiltrados.length} registros · Saldo acumulado: <strong className="text-error">{formatCurrency(totalDeudaFiltrada)}</strong>
+          </span>
+        </div>
 
-            {/* Mobile cards */}
-            <div className="sm:hidden divide-y divide-outline-variant/50">
-              {deudoresFiltrados.map((d, i) => (
-                <div key={d.parcelaId} className="px-4 py-3 hover:bg-surface-container/40 transition-colors">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono text-outline">{String(i + 1).padStart(2, '0')}</span>
-                      <span className="font-semibold text-xs text-on-surface">{d.titularNombre}</span>
+        {/* MOBILE VIEW (< md): Cards con mismo estilo que ParcelasView */}
+        <div className="md:hidden divide-y divide-outline-variant/40 p-2 space-y-2 flex-1 min-h-0 overflow-y-auto custom-scroll">
+          {displayedDeudores.map((d, index) => {
+            const isEven = index % 2 === 0
+            const isSelected = selectedIds.has(d.parcelaId)
+            return (
+              <div
+                key={d.parcelaId}
+                className={`p-3 rounded-lg border transition-all flex flex-col gap-2 ${
+                  isSelected
+                    ? 'bg-primary/10 border-primary shadow-xs ring-1 ring-primary/40'
+                    : isEven
+                    ? 'bg-white border-slate-200/90 shadow-xs'
+                    : 'bg-[#eaf0f6] border-slate-200/90 shadow-xs'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="font-semibold text-on-surface text-sm">{d.titularNombre}</div>
+                    <div className="text-[11px] font-code-cadastral text-outline">
+                      {d.dni ? `DNI: ${d.dni}` : 'Sin DNI registrado'}
                     </div>
-                    <span className="text-sm font-black text-rose-600 font-mono">{formatCurrency(d.saldo)}</span>
                   </div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 rounded bg-blue-100 border border-blue-200 text-blue-800 text-[10px] font-bold font-mono">{d.nomenclatura}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-code-cadastral font-bold text-primary text-sm">
+                      {d.nomenclatura}
+                    </span>
                     <EstadoBadge estado={d.estado} />
                   </div>
-                  <div className="flex items-center gap-4 text-[10px] text-on-surface-variant mb-3">
-                    <span className="flex items-center gap-0.5">
-                      <span className="material-symbols-outlined text-[12px]">home</span>
-                      {d.domicilio}
+                </div>
+
+                <div className="text-xs text-on-surface-variant space-y-1">
+                  <div className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[13px] text-outline">location_on</span>
+                    <span>{d.domicilio !== 'S/D' ? d.domicilio : 'Sin domicilio'}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1 font-code-cadastral text-[11px]">
+                      <span className="material-symbols-outlined text-[13px] text-emerald-600">call</span>
+                      <span>{d.telefono !== 'S/D' ? d.telefono.replace('+54 9 ', '') : 'Sin teléfono'}</span>
                     </span>
-                    <span className="flex items-center gap-0.5">
-                      <span className="material-symbols-outlined text-[12px]">phone</span>
-                      {d.telefono}
+                    <span className="font-code-cadastral text-[11px] text-outline">
+                      Pago: {d.diaPago}
                     </span>
                   </div>
-                  <div className="flex gap-2">
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-outline-variant/40 gap-2">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-outline block">Saldo</span>
+                    <span className="font-code-cadastral font-bold text-sm text-error">
+                      {formatCurrency(d.saldo)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => onCobrarQR(d.parcela)}
-                      className="flex-1 h-7 rounded bg-primary text-on-primary text-[11px] font-semibold flex items-center justify-center gap-1 hover:bg-secondary transition-colors cursor-pointer"
+                      className="h-8 px-2.5 rounded bg-secondary hover:bg-primary text-white text-xs font-semibold inline-flex items-center gap-1 shadow-xs cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-[13px]">qr_code_scanner</span>
-                      Cobrar
+                      <span className="material-symbols-outlined text-[15px]">qr_code_2</span>
+                      <span>Cobrar</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => onEnviarCobro(d.parcela)}
-                      className="h-7 px-3 rounded border border-outline-variant text-[11px] font-semibold flex items-center gap-1 text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+                      className="h-8 px-2.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold inline-flex items-center gap-1 shadow-xs cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-[13px]">send</span>
-                      Enviar
+                      <span className="material-symbols-outlined text-[15px]">send_to_mobile</span>
+                      <span>Enviar cobro</span>
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            )
+          })}
+        </div>
 
-            {/* Table footer with totals */}
-            <div className="sticky bottom-0 border-t border-outline-variant bg-surface-container flex items-center justify-between px-4 py-2.5">
-              <span className="text-xs text-on-surface-variant">
-                Mostrando <strong className="text-on-surface">{deudoresFiltrados.length}</strong> de {deudores.length} deudores
-              </span>
-              <span className="text-xs font-black text-rose-600 font-mono">
-                Total: {formatCurrency(totalDeuda)}
-              </span>
-            </div>
-          </>
-        )}
+        {/* DESKTOP VIEW (>= md): High Density Table con mismo diseño de ParcelasView */}
+        <div className="hidden md:block overflow-x-auto flex-1 min-h-0 custom-scroll">
+          <table className="w-full text-left border-collapse">
+            <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
+              {/* Fila de Encabezados Ordenables */}
+              <tr className="text-label-caps font-label-caps text-slate-700 uppercase bg-slate-100 select-none">
+                <th className="py-2.5 px-3 bg-slate-100 w-9 text-center">
+                  <input
+                    type="checkbox"
+                    checked={allFilteredSelected}
+                    onChange={handleToggleSelectAll}
+                    className="accent-primary cursor-pointer"
+                    title="Seleccionar o deseleccionar todos para el reporte PDF"
+                  />
+                </th>
+                <th
+                  onClick={() => setSortOption((prev) => (prev === 'titular-asc' ? 'titular-desc' : 'titular-asc'))}
+                  className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
+                  title="Ordenar por Nombre de Titular (A-Z / Z-A)"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Nombre de Titular</span>
+                    {sortOption === 'titular-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                    {sortOption === 'titular-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                  </div>
+                </th>
+                <th
+                  onClick={() => setSortOption((prev) => (prev === 'parcela-asc' ? 'parcela-desc' : 'parcela-asc'))}
+                  className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
+                  title="Ordenar por Parcela (A-Z / Z-A)"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Parcela</span>
+                    {sortOption === 'parcela-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                    {sortOption === 'parcela-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                  </div>
+                </th>
+                <th
+                  onClick={() => setSortOption((prev) => (prev === 'domicilio-asc' ? 'domicilio-desc' : 'domicilio-asc'))}
+                  className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
+                  title="Ordenar por Domicilio (A-Z / Z-A)"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Domicilio</span>
+                    {sortOption === 'domicilio-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                    {sortOption === 'domicilio-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                  </div>
+                </th>
+                <th
+                  onClick={() => setSortOption((prev) => (prev === 'telefono-asc' ? 'telefono-desc' : 'telefono-asc'))}
+                  className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
+                  title="Ordenar por Número de Teléfono"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Número de Teléfono</span>
+                    {sortOption === 'telefono-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                    {sortOption === 'telefono-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                  </div>
+                </th>
+                <th
+                  onClick={() => setSortOption((prev) => (prev === 'fecha-desc' ? 'fecha-asc' : 'fecha-desc'))}
+                  className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
+                  title="Ordenar por Día / Fecha de Pago"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Día / Fecha de Pago</span>
+                    {sortOption === 'fecha-desc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_downward</span>}
+                    {sortOption === 'fecha-asc' && <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>}
+                  </div>
+                </th>
+                <th
+                  onClick={() => setSortOption((prev) => (prev === 'saldo-desc' ? 'saldo-asc' : 'saldo-desc'))}
+                  className="py-2.5 px-3 bg-slate-100 text-right cursor-pointer hover:bg-slate-200 transition-colors"
+                  title="Ordenar por Saldo (Mayor / Menor deuda)"
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    <span>Saldo</span>
+                    {sortOption === 'saldo-desc' && <span className="material-symbols-outlined text-[13px] text-red-600">arrow_downward</span>}
+                    {sortOption === 'saldo-asc' && <span className="material-symbols-outlined text-[13px] text-emerald-600">arrow_upward</span>}
+                  </div>
+                </th>
+                <th className="py-2.5 px-3 bg-slate-100 text-center">Acción</th>
+              </tr>
+
+              {/* Fila de Filtros por Columna */}
+              {showColumnFilters && (
+                <tr className="bg-slate-50 border-t border-slate-200 text-xs">
+                  <th className="py-1.5 px-2 text-center">
+                    <span className="material-symbols-outlined text-[14px] text-slate-400" title="Filtros por columna">
+                      filter_alt
+                    </span>
+                  </th>
+                  <th className="py-1.5 px-2">
+                    <input
+                      type="text"
+                      value={colFilterTitular}
+                      onChange={(e) => setColFilterTitular(e.target.value)}
+                      placeholder="Filtrar titular o DNI..."
+                      className="w-full h-6 px-2 text-[11px] font-normal bg-white border border-slate-300 rounded focus:border-primary focus:outline-none"
+                    />
+                  </th>
+                  <th className="py-1.5 px-2">
+                    <input
+                      type="text"
+                      value={colFilterParcela}
+                      onChange={(e) => setColFilterParcela(e.target.value)}
+                      placeholder="Ej. A-25..."
+                      className="w-full h-6 px-2 text-[11px] font-normal bg-white border border-slate-300 rounded focus:border-primary focus:outline-none font-code-cadastral"
+                    />
+                  </th>
+                  <th className="py-1.5 px-2">
+                    <input
+                      type="text"
+                      value={colFilterDomicilio}
+                      onChange={(e) => setColFilterDomicilio(e.target.value)}
+                      placeholder="Filtrar domicilio..."
+                      className="w-full h-6 px-2 text-[11px] font-normal bg-white border border-slate-300 rounded focus:border-primary focus:outline-none"
+                    />
+                  </th>
+                  <th className="py-1.5 px-2">
+                    <input
+                      type="text"
+                      value={colFilterTelefono}
+                      onChange={(e) => setColFilterTelefono(e.target.value)}
+                      placeholder="Filtrar teléfono..."
+                      className="w-full h-6 px-2 text-[11px] font-normal bg-white border border-slate-300 rounded focus:border-primary focus:outline-none font-code-cadastral"
+                    />
+                  </th>
+                  <th className="py-1.5 px-2">
+                    <input
+                      type="text"
+                      value={colFilterDiaPago}
+                      onChange={(e) => setColFilterDiaPago(e.target.value)}
+                      placeholder="Día o fecha..."
+                      className="w-full h-6 px-2 text-[11px] font-normal bg-white border border-slate-300 rounded focus:border-primary focus:outline-none"
+                    />
+                  </th>
+                  <th className="py-1.5 px-2">
+                    <input
+                      type="number"
+                      value={colFilterSaldoMin}
+                      onChange={(e) => setColFilterSaldoMin(e.target.value)}
+                      placeholder="Saldo mín $..."
+                      className="w-full h-6 px-2 text-[11px] font-normal text-right bg-white border border-slate-300 rounded focus:border-primary focus:outline-none font-code-cadastral"
+                    />
+                  </th>
+                  <th className="py-1.5 px-2 text-center">
+                    {hasColumnFilters && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setColFilterTitular('')
+                          setColFilterParcela('')
+                          setColFilterDomicilio('')
+                          setColFilterTelefono('')
+                          setColFilterDiaPago('')
+                          setColFilterSaldoMin('')
+                        }}
+                        className="px-2 py-0.5 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-semibold cursor-pointer"
+                        title="Limpiar filtros de columnas"
+                      >
+                        Limpiar ✕
+                      </button>
+                    )}
+                  </th>
+                </tr>
+              )}
+            </thead>
+
+            <tbody className="divide-y divide-outline-variant/40 text-body-sm font-body-sm">
+              {displayedDeudores.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-10 text-center text-outline">
+                    No se encontraron registros con deuda para los filtros aplicados.
+                  </td>
+                </tr>
+              ) : (
+                displayedDeudores.map((d, index) => {
+                  const isEven = index % 2 === 0
+                  const isSelected = selectedIds.has(d.parcelaId)
+
+                  return (
+                    <tr
+                      key={d.parcelaId}
+                      onClick={() => handleToggleSelectRow(d.parcelaId)}
+                      className={`transition-colors cursor-pointer border-b border-slate-200/80 ${
+                        isSelected
+                          ? 'bg-primary/10 hover:bg-primary/15 border-l-4 border-l-primary font-medium'
+                          : isEven
+                          ? 'bg-white hover:bg-blue-50/80'
+                          : 'bg-[#eaf0f6] hover:bg-blue-50/80'
+                      }`}
+                    >
+                      {/* Checkbox Selección */}
+                      <td className="py-2.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelectRow(d.parcelaId)}
+                          className="accent-primary cursor-pointer"
+                        />
+                      </td>
+
+                      {/* 1. Nombre de Titular (SIN círculo con letra, igual a ParcelasView) */}
+                      <td className="py-2.5 px-3">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-medium text-on-surface truncate max-w-[210px]">
+                            {d.titularNombre}
+                          </span>
+                          <EstadoBadge estado={d.estado} />
+                        </div>
+                        <div className="font-code-cadastral text-[11px] text-outline">
+                          {d.dni ? `DNI: ${d.dni}` : 'Parcela registrada'}
+                        </div>
+                      </td>
+
+                      {/* 2. Parcela */}
+                      <td className="py-2.5 px-3">
+                        <span className="font-code-cadastral text-code-cadastral font-bold block text-on-surface">
+                          {d.nomenclatura}
+                        </span>
+                        <span className="text-[11px] text-outline">
+                          Sec. {d.sector === 'B' ? 'Sector B' : d.sector === 'A' ? 'Tradicional' : d.sector === 'E' ? 'Parque Central' : d.sector}
+                        </span>
+                      </td>
+
+                      {/* 3. Domicilio */}
+                      <td className="py-2.5 px-3">
+                        <div className="flex items-center gap-1 text-xs text-on-surface">
+                          <span className="material-symbols-outlined text-[14px] text-outline shrink-0">location_on</span>
+                          <span className="truncate max-w-[200px] font-medium" title={d.domicilio}>
+                            {d.domicilio !== 'S/D' ? d.domicilio : <span className="text-outline italic">Sin domicilio</span>}
+                          </span>
+                        </div>
+                        {d.barrio && (
+                          <span className="text-[10px] text-outline block pl-4 truncate max-w-[200px]">
+                            {d.barrio.toLowerCase().startsWith('b°') || d.barrio.toLowerCase().startsWith('barrio')
+                              ? d.barrio
+                              : `B° ${d.barrio}`}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* 4. Número de Teléfono */}
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        {d.telefono !== 'S/D' ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-code-cadastral text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                            <span className="material-symbols-outlined text-[13px] text-emerald-600">call</span>
+                            <span>{d.telefono.replace('+54 9 ', '')}</span>
+                          </span>
+                        ) : (
+                          <span className="text-xs text-outline italic">Sin teléfono</span>
+                        )}
+                      </td>
+
+                      {/* 5. Día / Fecha de Pago */}
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <div className="text-xs text-on-surface-variant font-code-cadastral font-medium">
+                          {d.diaPago}
+                        </div>
+                        <div className="text-[10px] text-outline">
+                          {d.ultimaCuota}
+                        </div>
+                      </td>
+
+                      {/* 6. Saldo */}
+                      <td className="py-2.5 px-3 text-right font-code-cadastral font-semibold text-error whitespace-nowrap">
+                        {formatCurrency(d.saldo)}
+                      </td>
+
+                      {/* 7. Acciones: "Cobrar" y "Enviar cobro" */}
+                      <td className="py-2.5 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => onCobrarQR(d.parcela)}
+                            title="Cobrar mantenimiento en caja o con QR"
+                            className="h-7 px-2.5 rounded bg-secondary hover:bg-primary text-white text-xs font-semibold inline-flex items-center gap-1 shadow-xs cursor-pointer transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">qr_code_2</span>
+                            <span>Cobrar</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => onEnviarCobro(d.parcela)}
+                            title="Enviar cobro a distancia (WhatsApp, Redes y Recibo)"
+                            className="h-7 px-2.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold inline-flex items-center gap-1 shadow-xs cursor-pointer transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">send_to_mobile</span>
+                            <span>Enviar cobro</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer de Tabla (Mismo estilo que ParcelasView) */}
+        <div className="shrink-0 p-2 sm:p-2.5 bg-surface-container-low border-t border-outline-variant flex flex-wrap items-center justify-between gap-2 text-body-sm text-on-surface-variant">
+          <div className="flex items-center gap-3">
+            <span className="font-medium text-on-surface text-xs sm:text-sm">
+              {effectivePageSize === 'todas'
+                ? `Mostrando todos los ${deudoresFiltrados.length} deudores`
+                : `Mostrando ${(currentPage - 1) * (effectivePageSize as number) + 1} - ${Math.min(
+                    currentPage * (effectivePageSize as number),
+                    deudoresFiltrados.length
+                  )} de ${deudoresFiltrados.length} deudores`}
+            </span>
+            <span className="text-xs font-code-cadastral font-bold text-error">
+              Saldo Total: {formatCurrency(totalDeudaFiltrada)}
+            </span>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-1.5 sm:gap-2">
+            <span className="text-[11px] text-outline">Mostrar:</span>
+            <button
+              type="button"
+              onClick={() => setPageSize('todas')}
+              className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                pageSize === 'todas'
+                  ? 'bg-primary text-on-primary shadow-xs'
+                  : 'bg-surface hover:bg-surface-container border border-outline-variant text-on-surface'
+              }`}
+            >
+              Todas ({deudoresFiltrados.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setPageSize(100)}
+              className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                pageSize === 100
+                  ? 'bg-primary text-on-primary shadow-xs'
+                  : 'bg-surface hover:bg-surface-container border border-outline-variant text-on-surface'
+              }`}
+            >
+              100
+            </button>
+            <button
+              type="button"
+              onClick={() => setPageSize(50)}
+              className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
+                pageSize === 50
+                  ? 'bg-primary text-on-primary shadow-xs'
+                  : 'bg-surface hover:bg-surface-container border border-outline-variant text-on-surface'
+              }`}
+            >
+              50
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* ──── Print modal ──── */}
+      {/* Modal de Impresión y Reporte PDF Personalizable */}
       {printModalOpen && (
         <PrintModal
-          deudores={deudoresFiltrados.length > 0 ? deudoresFiltrados : deudores}
+          allDeudores={deudoresFiltrados.length > 0 ? deudoresFiltrados : deudores}
+          initialSelectedIds={selectedIds}
           sectores={sectores}
           onClose={() => setPrintModalOpen(false)}
         />
