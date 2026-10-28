@@ -1,7 +1,7 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { Parcela, Inhumacion, AfiliadoSeguro, ConfiguracionCobro } from '../types/database'
 import seedData from '../data/initial_seed.json' with { type: 'json' }
-import { evaluarMoraParcela, evaluarMoraAfiliado } from '../lib/reglasNegocio'
+import { evaluarMoraParcela, evaluarMoraAfiliado, sincronizarRenovacionAnualParcela, inyectarMetaAnualEnNotas } from '../lib/reglasNegocio'
 
 const STORAGE_KEYS = {
   PARCELAS: 'aeterna_parcelas_v4',
@@ -101,6 +101,24 @@ export function loadInitialData() {
     let hasChanges = false
     parcelas = parcelas.map((p) => {
       if (p.estado !== 'disponible' && p.titular) {
+        const synced = sincronizarRenovacionAnualParcela(p)
+        if (synced.saldo_mantenimiento !== p.saldo_mantenimiento || synced.ultimo_monto_anual !== p.ultimo_monto_anual || synced.ultimo_anio_pagado !== p.ultimo_anio_pagado) {
+          hasChanges = true
+        }
+        const ev = evaluarMoraParcela(synced)
+        if (ev.enStandby && synced.estado !== 'standby') {
+          hasChanges = true
+          return {
+            ...synced,
+            estado: 'standby',
+            motivo_bloqueo: 'Titularidad caduca por mora superior a 3 años',
+            fecha_ultimo_pago: synced.fecha_ultimo_pago || ev.fechaUltimoPago,
+            ultima_cuota_pagada: synced.ultima_cuota_pagada || ev.ultimaCuotaPagada,
+          }
+        }
+        return synced
+      }
+      if (false) {
         const ev = evaluarMoraParcela(p)
         if (ev.enStandby && p.estado !== 'standby') {
           hasChanges = true
@@ -497,6 +515,10 @@ export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
       }
 
       if (baseParcela.titular && baseParcela.estado !== 'disponible') {
+        const synced = sincronizarRenovacionAnualParcela(baseParcela)
+        baseParcela.saldo_mantenimiento = synced.saldo_mantenimiento
+        baseParcela.ultimo_monto_anual = synced.ultimo_monto_anual
+        baseParcela.ultimo_anio_pagado = synced.ultimo_anio_pagado
         const ev = evaluarMoraParcela(baseParcela)
         if (ev.enStandby) {
           baseParcela.estado = 'standby'
@@ -632,6 +654,9 @@ export async function upsertParcelaSupabase(parcela: Parcela): Promise<boolean> 
     }
     if (parcela.estado === 'standby' && !notasTexto.includes('Stand-by')) {
       notasTexto = `[Stand-by: Mora prolongada] ${notasTexto}`.trim()
+    }
+    if (parcela.ultimo_monto_anual && parcela.ultimo_anio_pagado) {
+      notasTexto = inyectarMetaAnualEnNotas(notasTexto, parcela.ultimo_monto_anual, parcela.ultimo_anio_pagado)
     }
 
     const rawSector = parcela.sector_id || (parcela.nomenclatura ? parcela.nomenclatura.split('-')[0] : 'A')

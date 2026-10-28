@@ -5,6 +5,7 @@ import {
   CobroParcelaInput,
   CobroCuotasInput,
 } from '../services/cobroService'
+import { sincronizarRenovacionAnualParcela } from '../lib/reglasNegocio'
 import { Parcela, AfiliadoSeguro } from '../types/database'
 
 describe('cobroService - Reglas Contables Puras', () => {
@@ -91,6 +92,51 @@ describe('cobroService - Reglas Contables Puras', () => {
       expect(result.updatedParcela.estado).toBe('ocupada')
       expect(result.nuevoPago.concepto).toBe('Mantenimiento Anual 2027 (Adelantado) - Parcela A-01-05')
       expect(result.nuevoPago.monto).toBe(36000)
+    })
+
+    it('guarda el monto anual abonado y al iniciar el año siguiente le vuelve a cobrar exactamente el mismo monto', () => {
+      const parcelaConDeudaPersonalizada: Parcela = {
+        ...mockParcelaEnMora,
+        saldo_mantenimiento: 45000,
+      }
+
+      // 1. Paga $45.000 en octubre de 2026
+      const { updatedParcela } = aplicarCobroParcela({
+        parcela: parcelaConDeudaPersonalizada,
+        montoCobrado: 45000,
+        fecha: '2026-10-28T14:00:00.000Z',
+      })
+
+      expect(updatedParcela.saldo_mantenimiento).toBe(0)
+      expect(updatedParcela.ultimo_monto_anual).toBe(45000)
+      expect(updatedParcela.ultimo_anio_pagado).toBe(2026)
+
+      // Durante el resto de 2026 sigue en $0
+      const enDiciembre2026 = sincronizarRenovacionAnualParcela(updatedParcela, '2026-12-31')
+      expect(enDiciembre2026.saldo_mantenimiento).toBe(0)
+
+      // 2. Al iniciar el año siguiente (2027), se le vuelve a cobrar el mismo monto ($45.000)
+      const enEnero2027 = sincronizarRenovacionAnualParcela(updatedParcela, '2027-01-01')
+      expect(enEnero2027.saldo_mantenimiento).toBe(45000)
+      expect(enEnero2027.ultimo_monto_anual).toBe(45000)
+
+      // 3. Si pasa un año más sin pagar (2028), acumula 2 años del mismo monto ($90.000)
+      const enEnero2028 = sincronizarRenovacionAnualParcela(updatedParcela, '2028-01-01')
+      expect(enEnero2028.saldo_mantenimiento).toBe(90000)
+    })
+
+    it('recupera el último monto anual y año pagado desde las notas de Supabase al renovar el año', () => {
+      const parcelaDesdeSupabase: Parcela = {
+        ...mockParcelaEnMora,
+        estado: 'ocupada',
+        saldo_mantenimiento: 0,
+        notas: 'Titular: Juan Perez. [CuotaAnual:52000|AnioPago:2026]',
+      }
+
+      const renovada2027 = sincronizarRenovacionAnualParcela(parcelaDesdeSupabase, '2027-01-02')
+      expect(renovada2027.ultimo_monto_anual).toBe(52000)
+      expect(renovada2027.ultimo_anio_pagado).toBe(2026)
+      expect(renovada2027.saldo_mantenimiento).toBe(52000)
     })
   })
 

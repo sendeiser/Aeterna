@@ -1,5 +1,6 @@
 import { Parcela, AfiliadoSeguro, CuotaSeguro } from '../types/database'
 import { PagoRecibo } from './dataService'
+import { inyectarMetaAnualEnNotas, extraerMetaAnualDeNotas } from '../lib/reglasNegocio'
 
 export interface CobroParcelaInput {
   parcela: Parcela
@@ -17,22 +18,38 @@ export function aplicarCobroParcela(input: CobroParcelaInput): {
   nuevoPago: PagoRecibo
 } {
   const { parcela, montoCobrado } = input
-  const nuevoSaldo = Math.max(0, (parcela.saldo_mantenimiento || 0) - montoCobrado)
+  const saldoAnterior = parcela.saldo_mantenimiento || 0
+  const nuevoSaldo = Math.max(0, saldoAnterior - montoCobrado)
   const nuevoEstado =
     nuevoSaldo <= 0 && (parcela.estado === 'en_mora' || parcela.estado === 'standby')
       ? 'ocupada'
       : parcela.estado
 
   const fechaIso = input.fecha || new Date().toISOString()
-  const anioActual = new Date().getFullYear()
+  const anioCobro = Number(fechaIso.slice(0, 4)) || new Date().getFullYear()
+  const metaPrevia = extraerMetaAnualDeNotas(parcela.notas)
+  const anioPrevioPagado = parcela.ultimo_anio_pagado || metaPrevia.ultimoAnioPagado
+
+  // Si estaba al día (saldo 0) y ya tenía cubierto el año actual, el pago adelantado cubre el año siguiente
+  const anioCubierto =
+    saldoAnterior <= 0 && anioPrevioPagado && anioPrevioPagado >= anioCobro
+      ? anioPrevioPagado + 1
+      : anioCobro
+
+  const ultimoMontoAnual = montoCobrado > 0 ? montoCobrado : (parcela.ultimo_monto_anual || metaPrevia.ultimoMontoAnual || 36000)
+  const notasActualizadas = inyectarMetaAnualEnNotas(parcela.notas, ultimoMontoAnual, anioCubierto)
 
   const updatedParcela: Parcela = {
     ...parcela,
     saldo_mantenimiento: nuevoSaldo,
+    ultimo_monto_anual: ultimoMontoAnual,
+    ultimo_anio_pagado: nuevoSaldo <= 0 ? anioCubierto : (anioPrevioPagado || anioCobro - 1),
+    notas: notasActualizadas,
     estado: nuevoEstado,
     fecha_ultimo_pago: fechaIso,
     ultima_cuota_pagada:
-      input.periodo || parcela.ultima_cuota_pagada || `Cuota Anual ${anioActual}`,
+      input.periodo ||
+      (nuevoSaldo <= 0 ? `Cuota Anual ${anioCubierto}` : parcela.ultima_cuota_pagada || `Pago parcial ${anioCobro}`),
   }
 
   const nroRecibo =

@@ -304,7 +304,8 @@ export default function App() {
 
   // Handlers para cobro con QR
   const handleCobrarParcela = (parcela: Parcela) => {
-    const monto = parcela.saldo_mantenimiento > 0 ? parcela.saldo_mantenimiento : 36000
+    const montoBaseAnual = parcela.ultimo_monto_anual && parcela.ultimo_monto_anual > 0 ? parcela.ultimo_monto_anual : 36000
+    const monto = parcela.saldo_mantenimiento > 0 ? parcela.saldo_mantenimiento : montoBaseAnual
     const concepto = `Mantenimiento Anual - Parcela ${parcela.nomenclatura}`
     const titularNombre = parcela.titular?.nombre_completo || 'Titular Parcela'
 

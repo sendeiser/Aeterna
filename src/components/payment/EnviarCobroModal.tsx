@@ -115,7 +115,11 @@ export const EnviarCobroModal: React.FC<EnviarCobroModalProps> = ({
   // Cálculo de monto a cobrar
   const defaultMonto = useMemo(() => {
     if (isParcela && parcela) {
-      return parcela.saldo_mantenimiento > 0 ? parcela.saldo_mantenimiento : 36000
+      const montoBaseAnual =
+        parcela.ultimo_monto_anual && parcela.ultimo_monto_anual > 0
+          ? parcela.ultimo_monto_anual
+          : 36000
+      return parcela.saldo_mantenimiento > 0 ? parcela.saldo_mantenimiento : montoBaseAnual
     }
     if (afiliado) {
       return valorCuotaSeguro * selectedCuotas.length

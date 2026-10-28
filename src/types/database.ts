@@ -52,6 +52,8 @@ export interface Parcela {
   titular_id?: string | null
   estado: EstadoParcela
   saldo_mantenimiento: number
+  ultimo_monto_anual?: number | null
+  ultimo_anio_pagado?: number | null
   fecha_adquisicion?: string | null
   fecha_ultimo_pago?: string | null
   ultima_cuota_pagada?: string | null

@@ -107,30 +107,19 @@ function EstadoBadge({ estado }: { estado: string }) {
 
 // ─── Styles shared between A4 Preview and Print Popup ────────────────────────
 
-const PRINT_STYLES = `
-  * {
+export const A4_SHEET_STYLES = `
+  .a4-sheet, .a4-sheet * {
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
-  }
-  body {
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
-    font-size: 10px;
-    color: #0f172a;
-    background: #ffffff;
-    padding: 8mm;
   }
   .a4-sheet {
     width: 100%;
     color: #0f172a;
     background: #ffffff;
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
-  }
-  .no-print {
-    display: none !important;
+    font-size: 10px;
   }
   .doc-header {
     display: flex;
@@ -138,7 +127,7 @@ const PRINT_STYLES = `
     align-items: center;
     padding-bottom: 12px;
     margin-bottom: 14px;
-    border-bottom: 2.5px solid #0f172a;
+    border-bottom: 2px solid #0f172a;
     gap: 16px;
   }
   .brand-box {
@@ -162,6 +151,7 @@ const PRINT_STYLES = `
     text-transform: uppercase;
     letter-spacing: 0.5px;
     line-height: 1.15;
+    margin: 0;
   }
   .brand-subtitle {
     font-size: 11px;
@@ -169,12 +159,12 @@ const PRINT_STYLES = `
     color: #1e293b;
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    margin-top: 2px;
+    margin: 2px 0 0 0;
   }
   .brand-caption {
     font-size: 9.5px;
     color: #475569;
-    margin-top: 2px;
+    margin: 2px 0 0 0;
     font-weight: 500;
   }
   .meta-box {
@@ -185,7 +175,7 @@ const PRINT_STYLES = `
     display: inline-block;
     background-color: #f1f5f9 !important;
     color: #0f172a !important;
-    border: 1.5px solid #0f172a !important;
+    border: 2px solid #0f172a !important;
     font-family: 'Courier New', monospace;
     font-weight: 900;
     font-size: 9.5px;
@@ -214,15 +204,15 @@ const PRINT_STYLES = `
   }
   .kpi-card {
     background-color: #f8fafc !important;
-    border: 1px solid #cbd5e1;
-    border-left: 3.5px solid #00236f;
+    border: 1px solid #94a3b8;
+    border-left: 4px solid #00236f;
     border-radius: 5px;
     padding: 7px 10px;
   }
   .kpi-card-danger {
     background-color: #fff1f2 !important;
-    border: 1px solid #fecdd3;
-    border-left: 3.5px solid #be123c;
+    border: 1px solid #fda4af;
+    border-left: 4px solid #be123c;
     border-radius: 5px;
     padding: 7px 10px;
     text-align: right;
@@ -256,25 +246,36 @@ const PRINT_STYLES = `
   }
   .report-table {
     width: 100%;
-    border-collapse: collapse;
-    border: 1.5px solid #0f172a;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    border: 2px solid #0f172a !important;
+    font-variant-numeric: tabular-nums;
+  }
+  .report-table thead tr {
+    background-color: #e2e8f0 !important;
+    border-top: 2px solid #0f172a !important;
+    border-bottom: 2px solid #0f172a !important;
   }
   .report-table thead th {
     background-color: #e2e8f0 !important;
     color: #0f172a !important;
-    padding: 7px 7px;
+    padding: 7px 8px;
     font-size: 9.5px;
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 0.4px;
     border-top: 2px solid #0f172a !important;
     border-bottom: 2px solid #0f172a !important;
-    border-left: 1px solid #64748b;
-    border-right: 1px solid #64748b;
+    border-left: 1px solid #475569 !important;
+    border-right: 1px solid #475569 !important;
     white-space: nowrap;
   }
+  .report-table thead th:first-child {
+    border-left: 2px solid #0f172a !important;
+  }
   .report-table tbody tr {
-    border-bottom: 1px solid #cbd5e1;
+    border-top: 1px solid #475569 !important;
+    border-bottom: 1px solid #475569 !important;
     page-break-inside: avoid;
   }
   .report-table tbody tr.row-even {
@@ -284,19 +285,24 @@ const PRINT_STYLES = `
     background-color: #f8fafc !important;
   }
   .report-table tbody td {
-    padding: 6px 7px;
+    padding: 6px 8px;
     vertical-align: middle;
     font-size: 10px;
-    border-right: 1px solid #cbd5e1;
-    border-bottom: 1px solid #cbd5e1;
+    line-height: 1.3;
+    border: 1px solid #475569 !important;
+    border-left: 1px solid #475569 !important;
+    border-right: 1px solid #475569 !important;
     color: #0f172a;
+  }
+  .report-table tbody td:first-child {
+    border-left: 2px solid #0f172a !important;
   }
   .col-num {
     width: 30px;
     text-align: center;
     font-family: 'Courier New', monospace;
     font-weight: 700;
-    color: #475569 !important;
+    color: #334155 !important;
   }
   .col-titular {
     text-align: left;
@@ -310,7 +316,7 @@ const PRINT_STYLES = `
   .titular-dni {
     font-family: 'Courier New', monospace;
     font-size: 8.5px;
-    color: #64748b;
+    color: #475569;
     margin-top: 1px;
   }
   .col-parcela {
@@ -322,7 +328,7 @@ const PRINT_STYLES = `
     display: inline-block;
     white-space: nowrap !important;
     background-color: #eff6ff !important;
-    border: 1px solid #93c5fd;
+    border: 1px solid #60a5fa;
     color: #1e3a8a !important;
     font-family: 'Courier New', monospace;
     font-weight: 800;
@@ -332,11 +338,13 @@ const PRINT_STYLES = `
   }
   .col-domicilio {
     text-align: left;
-    color: #1e293b;
+    color: #0f172a;
+    font-weight: 500;
   }
   .domicilio-barrio {
     font-size: 8.5px;
-    color: #64748b;
+    color: #475569;
+    margin-top: 1px;
   }
   .col-telefono {
     width: 98px;
@@ -344,15 +352,16 @@ const PRINT_STYLES = `
     white-space: nowrap !important;
     font-family: 'Courier New', monospace;
     font-size: 9.5px;
-    font-weight: 600;
-    color: #1e293b;
+    font-weight: 700;
+    color: #0f172a;
   }
   .col-fecha {
     width: 112px;
     text-align: center;
     white-space: nowrap !important;
     font-size: 9.5px;
-    color: #334155;
+    font-weight: 600;
+    color: #1e293b;
   }
   .col-saldo {
     width: 105px;
@@ -362,15 +371,21 @@ const PRINT_STYLES = `
     font-weight: 800;
     font-size: 10.5px;
     color: #b91c1c !important;
-    background-color: #fff5f5 !important;
+    background-color: #fff1f2 !important;
   }
   .col-recibo {
-    width: 72px;
+    width: 76px;
     text-align: center;
   }
   .col-firma {
-    width: 96px;
+    width: 100px;
     text-align: center;
+  }
+  .field-guide-line {
+    border-bottom: 1px dashed #64748b;
+    width: 100%;
+    height: 14px;
+    display: block;
   }
   .total-row {
     background-color: #e2e8f0 !important;
@@ -385,8 +400,11 @@ const PRINT_STYLES = `
     font-size: 10.5px;
     border-top: 2px solid #0f172a !important;
     border-bottom: 2px solid #0f172a !important;
-    border-left: 1px solid #64748b;
-    border-right: 1px solid #64748b;
+    border-left: 1px solid #475569 !important;
+    border-right: 1px solid #475569 !important;
+  }
+  .total-row td:first-child {
+    border-left: 2px solid #0f172a !important;
   }
   .total-amount {
     text-align: right !important;
@@ -395,11 +413,12 @@ const PRINT_STYLES = `
     font-size: 12px !important;
     font-weight: 900 !important;
     color: #b91c1c !important;
+    background-color: #ffe4e6 !important;
   }
   .footer-firmas {
     margin-top: 28px;
     padding-top: 14px;
-    border-top: 1px solid #94a3b8;
+    border-top: 1px solid #64748b;
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
@@ -410,7 +429,7 @@ const PRINT_STYLES = `
     text-align: center;
   }
   .firma-line {
-    border-top: 1.5px solid #0f172a;
+    border-top: 2px solid #0f172a;
     padding-top: 5px;
     font-size: 9.5px;
     font-weight: 800;
@@ -418,16 +437,43 @@ const PRINT_STYLES = `
   }
   .firma-sub {
     font-size: 8.5px;
-    color: #64748b;
+    color: #475569;
     margin-top: 2px;
   }
   .footer-note {
     text-align: center;
     font-size: 8.5px;
-    color: #64748b;
+    color: #475569;
     max-width: 260px;
     line-height: 1.35;
   }
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+  }
+`
+
+export const PRINT_STYLES = `
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+    font-size: 10px;
+    color: #0f172a;
+    background: #ffffff;
+    padding: 8mm;
+  }
+  .no-print {
+    display: none !important;
+  }
+  ${A4_SHEET_STYLES}
   @page {
     margin: 10mm;
     size: A4 portrait;
@@ -596,7 +642,7 @@ function PrintModal({ allDeudores, initialSelectedIds, sectores, onClose }: Prin
       className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200"
       onClick={onClose}
     >
-      <style>{PRINT_STYLES}</style>
+      <style>{A4_SHEET_STYLES}</style>
       <div
         className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[96vh] overflow-hidden border border-outline-variant flex flex-col"
         onClick={(e) => e.stopPropagation()}
@@ -994,8 +1040,12 @@ function PrintModal({ allDeudores, initialSelectedIds, sectores, onClose }: Prin
                       <td className="col-saldo">{formatCurrency(d.saldo)}</td>
                       {colCasillerosTerreno && (
                         <>
-                          <td className="col-recibo"></td>
-                          <td className="col-firma"></td>
+                          <td className="col-recibo">
+                            <span className="field-guide-line" />
+                          </td>
+                          <td className="col-firma">
+                            <span className="field-guide-line" />
+                          </td>
                         </>
                       )}
                       <td className="no-print" style={{ textAlign: 'center', padding: '4px' }}>
