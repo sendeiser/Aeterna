@@ -46,7 +46,7 @@ function formatDiaFechaPago(p: Parcela): string {
   const datePart = rawDate.slice(0, 10)
   const parts = datePart.split('-')
   if (parts.length === 3) {
-    return `Día ${parts[2]} (${parts[2]}/${parts[1]}/${parts[0]})`
+    return `${parts[2]}/${parts[1]}/${parts[0]} (Día ${parts[2]})`
   }
   return formatDateHour(rawDate)
 }
@@ -103,6 +103,335 @@ function EstadoBadge({ estado }: { estado: string }) {
   )
 }
 
+// ─── Styles shared between A4 Preview and Print Popup ────────────────────────
+
+const PRINT_STYLES = `
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+    font-size: 10px;
+    color: #0f172a;
+    background: #ffffff;
+    padding: 8mm;
+  }
+  .a4-sheet {
+    width: 100%;
+    color: #0f172a;
+    background: #ffffff;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .doc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+    border-bottom: 2.5px solid #0f172a;
+    gap: 16px;
+  }
+  .brand-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-logo {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #00236f;
+    background: #0f172a;
+    flex-shrink: 0;
+  }
+  .brand-title {
+    font-size: 17px;
+    font-weight: 900;
+    color: #00236f;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.15;
+  }
+  .brand-subtitle {
+    font-size: 11px;
+    font-weight: 800;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-top: 2px;
+  }
+  .brand-caption {
+    font-size: 9.5px;
+    color: #475569;
+    margin-top: 2px;
+    font-weight: 500;
+  }
+  .meta-box {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .meta-badge {
+    display: inline-block;
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1.5px solid #0f172a !important;
+    font-family: 'Courier New', monospace;
+    font-weight: 900;
+    font-size: 9.5px;
+    padding: 3px 9px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .meta-line {
+    font-size: 10px;
+    color: #1e293b;
+    margin-top: 4px;
+    font-weight: 600;
+  }
+  .meta-sub {
+    font-size: 9px;
+    color: #64748b;
+    margin-top: 1px;
+    font-weight: 600;
+  }
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .kpi-card {
+    background-color: #f8fafc !important;
+    border: 1px solid #cbd5e1;
+    border-left: 3.5px solid #00236f;
+    border-radius: 5px;
+    padding: 7px 10px;
+  }
+  .kpi-card-danger {
+    background-color: #fff1f2 !important;
+    border: 1px solid #fecdd3;
+    border-left: 3.5px solid #be123c;
+    border-radius: 5px;
+    padding: 7px 10px;
+    text-align: right;
+  }
+  .kpi-label {
+    font-size: 8.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #64748b;
+    letter-spacing: 0.4px;
+    display: block;
+  }
+  .kpi-val {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-top: 3px;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .kpi-val-danger {
+    font-size: 13px;
+    font-weight: 900;
+    color: #be123c !important;
+    font-family: 'Courier New', monospace;
+    margin-top: 2px;
+    display: block;
+    white-space: nowrap;
+  }
+  .report-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1.5px solid #0f172a;
+  }
+  .report-table thead th {
+    background-color: #e2e8f0 !important;
+    color: #0f172a !important;
+    padding: 7px 7px;
+    font-size: 9.5px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-top: 2px solid #0f172a !important;
+    border-bottom: 2px solid #0f172a !important;
+    border-left: 1px solid #64748b;
+    border-right: 1px solid #64748b;
+    white-space: nowrap;
+  }
+  .report-table tbody tr {
+    border-bottom: 1px solid #cbd5e1;
+    page-break-inside: avoid;
+  }
+  .report-table tbody tr.row-even {
+    background-color: #ffffff !important;
+  }
+  .report-table tbody tr.row-odd {
+    background-color: #f8fafc !important;
+  }
+  .report-table tbody td {
+    padding: 6px 7px;
+    vertical-align: middle;
+    font-size: 10px;
+    border-right: 1px solid #cbd5e1;
+    border-bottom: 1px solid #cbd5e1;
+    color: #0f172a;
+  }
+  .col-num {
+    width: 30px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    color: #475569 !important;
+  }
+  .col-titular {
+    text-align: left;
+  }
+  .titular-name {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 10.5px;
+    line-height: 1.2;
+  }
+  .titular-dni {
+    font-family: 'Courier New', monospace;
+    font-size: 8.5px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+  .col-parcela {
+    width: 82px;
+    text-align: center;
+    white-space: nowrap !important;
+  }
+  .parcela-pill {
+    display: inline-block;
+    white-space: nowrap !important;
+    background-color: #eff6ff !important;
+    border: 1px solid #93c5fd;
+    color: #1e3a8a !important;
+    font-family: 'Courier New', monospace;
+    font-weight: 800;
+    font-size: 9.5px;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .col-domicilio {
+    text-align: left;
+    color: #1e293b;
+  }
+  .domicilio-barrio {
+    font-size: 8.5px;
+    color: #64748b;
+  }
+  .col-telefono {
+    width: 98px;
+    text-align: left;
+    white-space: nowrap !important;
+    font-family: 'Courier New', monospace;
+    font-size: 9.5px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  .col-fecha {
+    width: 112px;
+    text-align: center;
+    white-space: nowrap !important;
+    font-size: 9.5px;
+    color: #334155;
+  }
+  .col-saldo {
+    width: 105px;
+    text-align: right !important;
+    white-space: nowrap !important;
+    font-family: 'Courier New', monospace;
+    font-weight: 800;
+    font-size: 10.5px;
+    color: #b91c1c !important;
+    background-color: #fff5f5 !important;
+  }
+  .col-recibo {
+    width: 72px;
+    text-align: center;
+  }
+  .col-firma {
+    width: 96px;
+    text-align: center;
+  }
+  .total-row {
+    background-color: #e2e8f0 !important;
+    color: #0f172a !important;
+    page-break-inside: avoid;
+  }
+  .total-row td {
+    background-color: #e2e8f0 !important;
+    color: #0f172a !important;
+    padding: 8px 8px;
+    font-weight: 900;
+    font-size: 10.5px;
+    border-top: 2px solid #0f172a !important;
+    border-bottom: 2px solid #0f172a !important;
+    border-left: 1px solid #64748b;
+    border-right: 1px solid #64748b;
+  }
+  .total-amount {
+    text-align: right !important;
+    white-space: nowrap !important;
+    font-family: 'Courier New', monospace;
+    font-size: 12px !important;
+    font-weight: 900 !important;
+    color: #b91c1c !important;
+  }
+  .footer-firmas {
+    margin-top: 28px;
+    padding-top: 14px;
+    border-top: 1px solid #94a3b8;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    page-break-inside: avoid;
+  }
+  .firma-block {
+    width: 200px;
+    text-align: center;
+  }
+  .firma-line {
+    border-top: 1.5px solid #0f172a;
+    padding-top: 5px;
+    font-size: 9.5px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+  .firma-sub {
+    font-size: 8.5px;
+    color: #64748b;
+    margin-top: 2px;
+  }
+  .footer-note {
+    text-align: center;
+    font-size: 8.5px;
+    color: #64748b;
+    max-width: 260px;
+    line-height: 1.35;
+  }
+  @page {
+    margin: 10mm;
+    size: A4 portrait;
+  }
+`
+
 // ─── Customizable PDF / Print Modal ──────────────────────────────────────────
 
 interface PrintModalProps {
@@ -120,18 +449,18 @@ function PrintModal({ allDeudores, initialSelectedIds, sectores, onClose }: Prin
   const [busquedaModal, setBusquedaModal] = useState('')
   const [minSaldo, setMinSaldo] = useState('')
   const [maxSaldo, setMaxSaldo] = useState('')
-  const [ordenarPor, setOrdenarPor] = useState<'saldo_desc' | 'domicilio' | 'parcela' | 'nombre' | 'fecha'>('saldo_desc')
+  const [ordenarPor, setOrdenarPor] = useState<'parcela' | 'saldo_desc' | 'domicilio' | 'nombre' | 'fecha'>('parcela')
 
   // Personalización del documento PDF
   const [tituloReporte, setTituloReporte] = useState('PLANILLA DE COBRANZAS Y GESTIÓN DE DEUDORES')
-  const [responsableCobro, setResponsableCobro] = useState('Administración / Cobrador Asignado')
+  const [responsableCobro, setResponsableCobro] = useState('Administración Central')
   const [fechaEmision, setFechaEmision] = useState(
     new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
   )
   const [colDomicilio, setColDomicilio] = useState(true)
   const [colTelefono, setColTelefono] = useState(true)
   const [colDiaPago, setColDiaPago] = useState(true)
-  const [colCasillerosTerreno, setColCasillerosTerreno] = useState(true)
+  const [colCasillerosTerreno, setColCasillerosTerreno] = useState(false)
   const [showManualSelector, setShowManualSelector] = useState(false)
 
   // Candidatos según filtros del modal
@@ -185,7 +514,6 @@ function PrintModal({ allDeudores, initialSelectedIds, sectores, onClose }: Prin
     return new Set(allDeudores.map((d) => d.parcelaId))
   })
 
-  // Sincronizar cuando cambian filtros si no había selección manual restrictiva
   const deudoresParaImprimir = useMemo(() => {
     return candidatosFiltrados.filter((d) => includedIds.has(d.parcelaId))
   }, [candidatosFiltrados, includedIds])
@@ -240,44 +568,11 @@ function PrintModal({ allDeudores, initialSelectedIds, sectores, onClose }: Prin
       <head>
         <meta charset="UTF-8">
         <title>${tituloReporte} — Aeterna Parque San Nicolás</title>
-        <style>
-          * { box-sizing: border-box; margin: 0; padding: 0; }
-          body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10.5px; color: #0f172a; padding: 14px; background: #fff; }
-          .no-print { display: none !important; }
-          .doc-header { border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-          .brand-box { display: flex; align-items: center; gap: 10px; }
-          .brand-emblem { width: 40px; height: 40px; border-radius: 6px; background: #00236f; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px; border: 1px solid #00184d; }
-          .brand-title { font-size: 16px; font-weight: 900; color: #00236f; text-transform: uppercase; letter-spacing: 0.4px; }
-          .brand-subtitle { font-size: 11px; font-weight: 800; color: #1e293b; text-transform: uppercase; margin-top: 2px; }
-          .brand-caption { font-size: 9.5px; color: #475569; margin-top: 1px; }
-          .meta-box { text-align: right; font-size: 10px; }
-          .meta-badge { display: inline-block; background: #0f172a; color: #fff; font-family: monospace; font-weight: 700; font-size: 10px; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-          .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
-          .kpi-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; padding: 6px 8px; }
-          .kpi-label { font-size: 8.5px; font-weight: 700; text-transform: uppercase; color: #64748b; display: block; }
-          .kpi-val { font-size: 11px; font-weight: 800; color: #0f172a; margin-top: 2px; display: block; }
-          .kpi-val-danger { font-size: 12px; font-weight: 900; color: #b91c1c; font-family: monospace; margin-top: 2px; display: block; }
-          table { width: 100%; border-collapse: collapse; border: 1px solid #1e293b; }
-          thead th { background: #1e293b; color: #ffffff; padding: 6px 6px; text-align: left; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; border: 1px solid #334155; }
-          tbody tr { border-bottom: 1px solid #cbd5e1; page-break-inside: avoid; }
-          tbody tr:nth-child(even) { background: #f1f5f9; }
-          tbody td { padding: 5px 6px; vertical-align: middle; font-size: 10px; border-right: 1px solid #cbd5e1; }
-          .mono { font-family: 'Courier New', monospace; }
-          .bold { font-weight: 700; }
-          .right { text-align: right; }
-          .center { text-align: center; }
-          .parcela-pill { display: inline-block; background: #eff6ff; border: 1px solid #93c5fd; color: #1e3a8a; font-family: monospace; font-weight: 700; font-size: 9.5px; padding: 1px 5px; border-radius: 3px; }
-          .saldo-cell { font-family: 'Courier New', monospace; font-weight: 800; color: #b91c1c; text-align: right; background: #fef2f2; }
-          .total-row { background: #0f172a !important; color: #ffffff !important; font-weight: 800; }
-          .total-row td { padding: 7px 6px; font-size: 10.5px; border-color: #334155; color: #ffffff !important; }
-          .footer-firmas { margin-top: 28px; padding-top: 14px; border-top: 1px solid #94a3b8; display: flex; justify-content: space-between; align-items: flex-end; page-break-inside: avoid; }
-          .firma-block { width: 200px; text-align: center; }
-          .firma-line { border-top: 1px solid #0f172a; padding-top: 4px; font-size: 9.5px; font-weight: 700; color: #0f172a; }
-          .firma-sub { font-size: 8.5px; color: #64748b; margin-top: 1px; }
-          @page { margin: 12mm; size: A4; }
-        </style>
+        <style>${PRINT_STYLES}</style>
       </head>
-      <body>${printContent}</body>
+      <body>
+        <div class="a4-sheet">${printContent}</div>
+      </body>
       </html>
     `)
     win.document.close()
@@ -285,14 +580,21 @@ function PrintModal({ allDeudores, initialSelectedIds, sectores, onClose }: Prin
     setTimeout(() => {
       win.print()
       win.close()
-    }, 250)
+    }, 300)
   }
+
+  const sectoresTexto =
+    Array.from(selectedSectores)
+      .sort()
+      .map((s) => `Sector ${s}`)
+      .join(', ') || 'Ninguno'
 
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200"
       onClick={onClose}
     >
+      <style>{PRINT_STYLES}</style>
       <div
         className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[96vh] overflow-hidden border border-outline-variant flex flex-col"
         onClick={(e) => e.stopPropagation()}
@@ -418,9 +720,9 @@ function PrintModal({ allDeudores, initialSelectedIds, sectores, onClose }: Prin
                 onChange={(e) => setOrdenarPor(e.target.value as any)}
                 className="h-7 px-2 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-800 cursor-pointer"
               >
+                <option value="parcela">Orden: Parcela (A → Z)</option>
                 <option value="saldo_desc">Orden: Mayor Deuda</option>
                 <option value="domicilio">Orden: Calle / Domicilio (Ruta)</option>
-                <option value="parcela">Orden: Parcela (A → Z)</option>
                 <option value="nombre">Orden: Titular (A → Z)</option>
                 <option value="fecha">Orden: Fecha de Pago</option>
               </select>
@@ -459,7 +761,7 @@ function PrintModal({ allDeudores, initialSelectedIds, sectores, onClose }: Prin
                   type="text"
                   value={responsableCobro}
                   onChange={(e) => setResponsableCobro(e.target.value)}
-                  className="h-7 px-2 w-48 bg-white border border-slate-300 rounded text-xs text-slate-800"
+                  className="h-7 px-2 w-44 bg-white border border-slate-300 rounded text-xs text-slate-800"
                 />
               </div>
               <div className="flex items-center gap-1">
@@ -579,150 +881,133 @@ function PrintModal({ allDeudores, initialSelectedIds, sectores, onClose }: Prin
           )}
         </div>
 
-        {/* ──── Vista Previa A4 Imprimible ──── */}
+        {/* ──── Vista Previa A4 Imprimible (100% fiel a la hoja impresa) ──── */}
         <div className="p-4 sm:p-6 overflow-y-auto custom-scroll bg-slate-200/80 flex-1">
           <div
             ref={printRef}
-            className="bg-white shadow-lg mx-auto p-6 sm:p-8 max-w-[210mm] border border-slate-300 text-slate-900 font-sans"
+            className="a4-sheet bg-white shadow-lg mx-auto p-6 sm:p-8 max-w-[210mm] border border-slate-300"
           >
-            {/* Encabezado Institucional Aeterna (Sin Municipalidad del Depto General Belgrano) */}
-            <div className="doc-header border-b-2 border-slate-900 pb-3 mb-3 flex items-start justify-between gap-4">
-              <div className="brand-box flex items-center gap-3">
-                <div className="brand-emblem w-11 h-11 rounded bg-[#00236f] text-white flex items-center justify-center font-serif font-black text-xl shrink-0">
-                  ✝
-                </div>
+            {/* Encabezado Institucional Aeterna */}
+            <div className="doc-header">
+              <div className="brand-box">
+                <img
+                  src={`${typeof window !== 'undefined' ? window.location.origin : ''}/logo_aeterna.png`}
+                  alt="Aeterna Parque San Nicolás"
+                  className="brand-logo"
+                />
                 <div>
-                  <h1 className="brand-title text-lg font-black tracking-wide text-[#00236f] uppercase">
-                    AETERNA PARQUE SAN NICOLÁS
-                  </h1>
-                  <h2 className="brand-subtitle text-xs font-bold tracking-wider text-slate-800 uppercase mt-0.5">
+                  <h1 className="brand-title">AETERNA PARQUE SAN NICOLÁS</h1>
+                  <h2 className="brand-subtitle">
                     {tituloReporte || 'PLANILLA DE COBRANZAS Y GESTIÓN DE DEUDORES'}
                   </h2>
-                  <p className="brand-caption text-[10px] text-slate-600">
-                    Administración y Tesorería · Gestión de Mantenimiento de Parcelas
+                  <p className="brand-caption">
+                    Administración y Tesorería · Gestión y Control de Mantenimiento de Parcelas
                   </p>
                 </div>
               </div>
 
-              <div className="meta-box text-right shrink-0">
-                <span className="meta-badge inline-block px-2.5 py-0.5 bg-slate-900 text-white font-mono font-bold text-[10px] uppercase tracking-wider rounded">
-                  REPORTE DE COBRANZA
-                </span>
-                <div className="text-[11px] font-mono text-slate-800 font-semibold mt-1">
+              <div className="meta-box">
+                <span className="meta-badge">REPORTE DE COBRANZA</span>
+                <div className="meta-line">
                   FECHA: <strong>{fechaEmision}</strong>
                 </div>
-                <div className="text-[10px] text-slate-500 font-mono">
+                <div className="meta-sub">
                   REGISTROS: {deudoresParaImprimir.length} TITULARES
                 </div>
               </div>
             </div>
 
-            {/* Resumen de la Planilla */}
-            <div className="kpi-grid grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-xs">
-              <div className="kpi-card bg-slate-50 p-2 rounded border border-slate-200">
-                <span className="kpi-label text-[9px] uppercase font-bold text-slate-500 block">Sectores Incluidos:</span>
-                <span className="kpi-val font-bold text-slate-900 text-[11px] block">
-                  {Array.from(selectedSectores).sort().join(', ') || 'Ninguno'}
-                </span>
+            {/* Tarjetas de Resumen */}
+            <div className="kpi-grid">
+              <div className="kpi-card">
+                <span className="kpi-label">Sectores Incluidos</span>
+                <span className="kpi-val">{sectoresTexto}</span>
               </div>
-              <div className="kpi-card bg-slate-50 p-2 rounded border border-slate-200">
-                <span className="kpi-label text-[9px] uppercase font-bold text-slate-500 block">Responsable / Cobrador:</span>
-                <span className="kpi-val font-bold text-slate-900 truncate text-[11px] block">
-                  {responsableCobro || 'Administración'}
-                </span>
+              <div className="kpi-card">
+                <span className="kpi-label">Responsable / Cobrador</span>
+                <span className="kpi-val">{responsableCobro || 'Administración Central'}</span>
               </div>
-              <div className="kpi-card bg-slate-50 p-2 rounded border border-slate-200">
-                <span className="kpi-label text-[9px] uppercase font-bold text-slate-500 block">Titulares a Cobrar:</span>
-                <span className="kpi-val font-bold text-slate-900 text-[11px] font-mono block">
-                  {deudoresParaImprimir.length} Deudores
-                </span>
+              <div className="kpi-card">
+                <span className="kpi-label">Titulares a Cobrar</span>
+                <span className="kpi-val">{deudoresParaImprimir.length} Deudores</span>
               </div>
-              <div className="kpi-card bg-slate-50 p-2 rounded border border-slate-200 text-right">
-                <span className="kpi-label text-[9px] uppercase font-bold text-slate-500 block">Total a Recaudar:</span>
-                <span className="kpi-val-danger font-bold text-red-700 text-[12px] font-mono block">
-                  {formatCurrency(totalDeudaImprimir)}
-                </span>
+              <div className="kpi-card-danger">
+                <span className="kpi-label">Total a Recaudar</span>
+                <span className="kpi-val-danger">{formatCurrency(totalDeudaImprimir)}</span>
               </div>
             </div>
 
             {/* Tabla Imprimible */}
-            <table className="w-full text-left border-collapse text-[10px] border border-slate-800">
+            <table className="report-table">
               <thead>
-                <tr className="bg-slate-800 text-white font-bold uppercase text-[9px] tracking-wider">
-                  <th className="p-1.5 border border-slate-700 text-center w-7">#</th>
-                  <th className="p-1.5 border border-slate-700">Nombre de Titular</th>
-                  <th className="p-1.5 border border-slate-700 text-center w-20">Parcela</th>
-                  {colDomicilio && <th className="p-1.5 border border-slate-700">Domicilio</th>}
-                  {colTelefono && <th className="p-1.5 border border-slate-700 w-24">Teléfono</th>}
-                  {colDiaPago && <th className="p-1.5 border border-slate-700 w-28">Día / Fecha Pago</th>}
-                  <th className="p-1.5 border border-slate-700 text-right w-24">Saldo</th>
+                <tr>
+                  <th style={{ textAlign: 'center', width: '30px' }}>#</th>
+                  <th style={{ textAlign: 'left' }}>Nombre de Titular</th>
+                  <th style={{ textAlign: 'center', width: '82px' }}>Parcela</th>
+                  {colDomicilio && <th style={{ textAlign: 'left' }}>Domicilio</th>}
+                  {colTelefono && <th style={{ textAlign: 'left', width: '98px' }}>Teléfono</th>}
+                  {colDiaPago && <th style={{ textAlign: 'center', width: '112px' }}>Día / Fecha Pago</th>}
+                  <th style={{ textAlign: 'right', width: '105px' }}>Saldo</th>
                   {colCasillerosTerreno && (
                     <>
-                      <th className="p-1.5 border border-slate-700 text-center w-20">N° Recibo</th>
-                      <th className="p-1.5 border border-slate-700 text-center w-28">Firma / Obs.</th>
+                      <th style={{ textAlign: 'center', width: '72px' }}>N° Recibo</th>
+                      <th style={{ textAlign: 'center', width: '96px' }}>Firma / Obs.</th>
                     </>
                   )}
-                  <th className="p-1 border border-slate-700 text-center w-7 no-print" title="Quitar de la impresión">
+                  <th className="no-print" style={{ textAlign: 'center', width: '28px' }} title="Quitar de la lista">
                     ✕
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-300">
+              <tbody>
                 {deudoresParaImprimir.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="p-6 text-center text-slate-500 italic">
+                    <td colSpan={10} style={{ padding: '24px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
                       No hay deudores seleccionados para imprimir. Ajuste los filtros o marque titulares arriba.
                     </td>
                   </tr>
                 ) : (
                   deudoresParaImprimir.map((d, idx) => (
-                    <tr
-                      key={d.parcelaId}
-                      className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}
-                      style={{ pageBreakInside: 'avoid' }}
-                    >
-                      <td className="p-1.5 border-r border-slate-300 text-center font-mono font-bold text-slate-600">
-                        {idx + 1}
+                    <tr key={d.parcelaId} className={idx % 2 === 0 ? 'row-even' : 'row-odd'}>
+                      <td className="col-num">{idx + 1}</td>
+                      <td className="col-titular">
+                        <div className="titular-name">{d.titularNombre}</div>
+                        {d.dni && <div className="titular-dni">DNI {d.dni}</div>}
                       </td>
-                      <td className="p-1.5 border-r border-slate-300">
-                        <div className="bold font-bold text-slate-950">{d.titularNombre}</div>
-                        {d.dni && <div className="mono text-[8.5px] text-slate-500">DNI {d.dni}</div>}
-                      </td>
-                      <td className="p-1.5 border-r border-slate-300 text-center">
-                        <span className="parcela-pill inline-block px-1.5 py-0.5 rounded bg-blue-50 border border-blue-300 text-blue-900 font-mono font-bold text-[9.5px]">
-                          {d.nomenclatura}
-                        </span>
+                      <td className="col-parcela">
+                        <span className="parcela-pill">{d.nomenclatura}</span>
                       </td>
                       {colDomicilio && (
-                        <td className="p-1.5 border-r border-slate-300 text-slate-800">
-                          <div>{d.domicilio}</div>
-                          {d.barrio && <div className="text-[8.5px] text-slate-500">B° {d.barrio}</div>}
+                        <td className="col-domicilio">
+                          <div>{d.domicilio !== 'S/D' ? d.domicilio : '—'}</div>
+                          {d.barrio && <div className="domicilio-barrio">B° {d.barrio}</div>}
                         </td>
                       )}
                       {colTelefono && (
-                        <td className="p-1.5 border-r border-slate-300 font-mono text-[9.5px] text-slate-800">
+                        <td className="col-telefono">
                           {d.telefono !== 'S/D' ? d.telefono.replace('+54 9 ', '') : '—'}
                         </td>
                       )}
-                      {colDiaPago && (
-                        <td className="p-1.5 border-r border-slate-300 text-[9.5px] text-slate-700 font-mono">
-                          {d.diaPago}
-                        </td>
-                      )}
-                      <td className="saldo-cell p-1.5 border-r border-slate-300 text-right font-mono font-bold text-red-700 bg-red-50/50">
-                        {formatCurrency(d.saldo)}
-                      </td>
+                      {colDiaPago && <td className="col-fecha">{d.diaPago}</td>}
+                      <td className="col-saldo">{formatCurrency(d.saldo)}</td>
                       {colCasillerosTerreno && (
                         <>
-                          <td className="p-1.5 border-r border-slate-300"></td>
-                          <td className="p-1.5 border-r border-slate-300"></td>
+                          <td className="col-recibo"></td>
+                          <td className="col-firma"></td>
                         </>
                       )}
-                      <td className="p-1 text-center no-print">
+                      <td className="no-print" style={{ textAlign: 'center', padding: '4px' }}>
                         <button
                           type="button"
                           onClick={() => handleToggleDeudor(d.parcelaId)}
-                          className="text-slate-400 hover:text-red-600 font-bold text-xs cursor-pointer"
+                          style={{
+                            color: '#94a3b8',
+                            fontWeight: 'bold',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            border: 'none',
+                            background: 'transparent',
+                          }}
                           title="Quitar este registro del PDF"
                         >
                           ✕
@@ -732,7 +1017,7 @@ function PrintModal({ allDeudores, initialSelectedIds, sectores, onClose }: Prin
                   ))
                 )}
                 {deudoresParaImprimir.length > 0 && (
-                  <tr className="total-row bg-slate-900 text-white font-bold">
+                  <tr className="total-row">
                     <td
                       colSpan={
                         3 +
@@ -740,14 +1025,12 @@ function PrintModal({ allDeudores, initialSelectedIds, sectores, onClose }: Prin
                         (colTelefono ? 1 : 0) +
                         (colDiaPago ? 1 : 0)
                       }
-                      className="p-2 text-right uppercase tracking-wide text-[10px]"
+                      style={{ textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.5px' }}
                     >
                       TOTAL GENERAL A COBRAR ({deudoresParaImprimir.length} DEUDORES):
                     </td>
-                    <td className="p-2 text-right font-mono text-[11px] text-red-200">
-                      {formatCurrency(totalDeudaImprimir)}
-                    </td>
-                    {colCasillerosTerreno && <td colSpan={2} className="p-2"></td>}
+                    <td className="total-amount">{formatCurrency(totalDeudaImprimir)}</td>
+                    {colCasillerosTerreno && <td colSpan={2}></td>}
                     <td className="no-print"></td>
                   </tr>
                 )}
@@ -755,21 +1038,17 @@ function PrintModal({ allDeudores, initialSelectedIds, sectores, onClose }: Prin
             </table>
 
             {/* Pie de Firmas */}
-            <div className="footer-firmas mt-8 pt-4 border-t border-slate-400 flex items-end justify-between text-xs text-slate-700">
-              <div className="firma-block text-center w-52">
-                <div className="firma-line border-t border-slate-900 pt-1 font-bold text-[10px]">
-                  Firma y Aclaración Cobrador
-                </div>
-                <div className="firma-sub text-[9px] text-slate-500">Rendición de Cobranza</div>
+            <div className="footer-firmas">
+              <div className="firma-block">
+                <div className="firma-line">Firma y Aclaración Cobrador</div>
+                <div className="firma-sub">Rendición de Cobranza</div>
               </div>
-              <div className="text-center text-[9px] text-slate-500 max-w-xs">
-                Aeterna Parque San Nicolás · Planilla de control interno y gestión de cobranza de mantenimiento.
+              <div className="footer-note">
+                Aeterna Parque San Nicolás · Planilla oficial de control y gestión de cobranza de mantenimiento.
               </div>
-              <div className="firma-block text-center w-52">
-                <div className="firma-line border-t border-slate-900 pt-1 font-bold text-[10px]">
-                  Administración y Tesorería
-                </div>
-                <div className="firma-sub text-[9px] text-slate-500">Aeterna Parque San Nicolás</div>
+              <div className="firma-block">
+                <div className="firma-line">Administración y Tesorería</div>
+                <div className="firma-sub">Aeterna Parque San Nicolás</div>
               </div>
             </div>
           </div>

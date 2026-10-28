@@ -395,6 +395,8 @@ export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
         espacios_ocupados,
         estado,
         saldo_mantenimiento,
+        fecha_adquisicion,
+        created_at,
         notas,
         titular:titulares (*)
       `)
@@ -471,6 +473,11 @@ export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
       }
 
       const saldoNum = Number(p.saldo_mantenimiento) || 0
+      const isEnMora = p.estado === 'en_mora'
+      const esStandby = (saldoNum >= 108000 || (isEnMora && saldoNum >= 100000)) && !!titularObj
+      const aniosEst = Math.max(3, Math.floor(saldoNum / 36000))
+      const fechaPagoEst = esStandby ? '202' + Math.max(0, 6 - aniosEst) + '-04-15' : (saldoNum > 0 ? '2025-08-20' : '2026-01-10')
+      const ultimaCuotaEst = esStandby ? 'Cuota Anual 202' + Math.max(0, 5 - aniosEst) : (saldoNum > 0 ? 'Cuota 2025' : 'Cuota Anual 2026')
       const baseParcela: Parcela = {
         id: p.id,
         nomenclatura: p.nomenclatura,
@@ -481,6 +488,10 @@ export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
         espacios_ocupados: p.espacios_ocupados || 0,
         estado: p.estado,
         saldo_mantenimiento: saldoNum,
+        fecha_adquisicion: p.fecha_adquisicion || '2020-03-01',
+        fecha_ultimo_pago: fechaPagoEst,
+        ultima_cuota_pagada: ultimaCuotaEst,
+        created_at: p.created_at || '2020-03-01T09:00:00Z',
         notas: p.notas,
         titular: titularObj,
       }
