@@ -17,7 +17,8 @@ interface CajaViewProps {
     metodo: 'efectivo' | 'transferencia'
   }) => Promise<void> | void
   onAnularPago: (pago: PagoRecibo) => Promise<void> | void
-  onCierreCaja: () => void
+  onAnularMultiplesPagos?: (pagos: PagoRecibo[]) => Promise<void> | void
+  onCierreCaja: (selectedIds?: string[]) => void
   onRefresh?: () => void
   isRefreshing?: boolean
   isOnline?: boolean
@@ -32,6 +33,7 @@ export const CajaView: React.FC<CajaViewProps> = ({
   onNuevoCobro,
   onNuevoEgreso,
   onAnularPago,
+  onAnularMultiplesPagos,
   onCierreCaja,
   onRefresh,
   isRefreshing = false,
@@ -46,6 +48,11 @@ export const CajaView: React.FC<CajaViewProps> = ({
   const [sortField, setSortField] = useState<SortField>('fecha')
   const [sortAsc, setSortAsc] = useState<boolean>(false)
   const [showMobileFilters, setShowMobileFilters] = useState(false)
+
+  // Selección múltiple
+  const [multiSelectMode, setMultiSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [isDeletingBatch, setIsDeletingBatch] = useState(false)
 
   // Estados de modales
   const [cobroModalOpen, setCobroModalOpen] = useState(false)
@@ -124,6 +131,46 @@ export const CajaView: React.FC<CajaViewProps> = ({
     [movimientosFiltrados]
   )
 
+  // Movimientos seleccionados y su balance
+  const movimientosSeleccionados = useMemo(
+    () => movimientosOrdenados.filter((m) => selectedIds.has(m.id || m.nroRecibo)),
+    [movimientosOrdenados, selectedIds]
+  )
+
+  const balanceSeleccionado = useMemo(
+    () => calcularBalanceCaja(movimientosSeleccionados),
+    [movimientosSeleccionados]
+  )
+
+  const allFilteredSelected =
+    movimientosOrdenados.length > 0 &&
+    movimientosOrdenados.every((m) => selectedIds.has(m.id || m.nroRecibo))
+
+  const handleToggleSelectAll = () => {
+    if (allFilteredSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        movimientosOrdenados.forEach((m) => next.delete(m.id || m.nroRecibo))
+        return next
+      })
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        movimientosOrdenados.forEach((m) => next.add(m.id || m.nroRecibo))
+        return next
+      })
+    }
+  }
+
+  const handleToggleSelectRow = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   // Acciones de fecha rápidas
   const handleFiltroHoy = () => {
     const hoy = new Date().toISOString().slice(0, 10)
@@ -156,15 +203,29 @@ export const CajaView: React.FC<CajaViewProps> = ({
     }
   }
 
-  // Exportar listado filtrado a CSV
-  const handleExportCSV = () => {
-    if (movimientosOrdenados.length === 0) {
+  // Exportar listado (filtrado o seleccionado) a CSV
+  const handleExportCSV = (onlySelected = false) => {
+    const targetList =
+      onlySelected && movimientosSeleccionados.length > 0
+        ? movimientosSeleccionados
+        : movimientosOrdenados
+
+    if (targetList.length === 0) {
       alert('No hay movimientos para exportar con los filtros actuales.')
       return
     }
 
-    const headers = ['Nro Recibo', 'Fecha y Hora', 'Tipo', 'Titular/Pagador', 'Concepto', 'Categoria', 'Metodo', 'Monto']
-    const rows = movimientosOrdenados.map((m) => {
+    const headers = [
+      'Nro Recibo',
+      'Fecha y Hora',
+      'Tipo',
+      'Titular/Pagador',
+      'Concepto',
+      'Categoria',
+      'Metodo',
+      'Monto',
+    ]
+    const rows = targetList.map((m) => {
       const isEgreso = m.tipo === 'egreso' || (m.concepto && m.concepto.includes('[EGRESO]'))
       return [
         `"${m.nroRecibo || ''}"`,
@@ -178,17 +239,22 @@ export const CajaView: React.FC<CajaViewProps> = ({
       ]
     })
 
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
+    const csvContent =
+      'data:text/csv;charset=utf-8,\uFEFF' +
+      [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
     const encodedUri = encodeURI(csvContent)
     const link = document.createElement('a')
     link.setAttribute('href', encodedUri)
-    link.setAttribute('download', `Caja_Diaria_Aeterna_${new Date().toISOString().slice(0, 10)}.csv`)
+    link.setAttribute(
+      'download',
+      `Caja_Diaria_Aeterna_${new Date().toISOString().slice(0, 10)}.csv`
+    )
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
   }
 
-  // Confirmar anulación
+  // Confirmar anulación individual
   const handleConfirmarAnular = async () => {
     if (!pagoParaAnular) return
     try {
@@ -200,6 +266,34 @@ export const CajaView: React.FC<CajaViewProps> = ({
       alert('Ocurrió un error al intentar anular el movimiento.')
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  // Anular múltiples seleccionados
+  const handleAnularSeleccionados = async () => {
+    if (movimientosSeleccionados.length === 0) return
+    if (
+      !confirm(
+        `¿Confirma anular los ${movimientosSeleccionados.length} movimientos seleccionados de la caja?`
+      )
+    ) {
+      return
+    }
+    setIsDeletingBatch(true)
+    try {
+      if (onAnularMultiplesPagos) {
+        await onAnularMultiplesPagos(movimientosSeleccionados)
+      } else {
+        for (const mov of movimientosSeleccionados) {
+          await onAnularPago(mov)
+        }
+      }
+      setSelectedIds(new Set())
+    } catch (err) {
+      console.error('Error al anular movimientos seleccionados:', err)
+      alert('Ocurrió un error al intentar anular los movimientos seleccionados.')
+    } finally {
+      setIsDeletingBatch(false)
     }
   }
 
@@ -232,7 +326,11 @@ export const CajaView: React.FC<CajaViewProps> = ({
                 className="w-7 h-7 flex items-center justify-center rounded-lg border border-outline-variant text-slate-600 hover:bg-surface-container"
                 title="Sincronizar"
               >
-                <span className={`material-symbols-outlined text-[15px] ${isRefreshing ? 'animate-spin text-primary' : ''}`}>
+                <span
+                  className={`material-symbols-outlined text-[15px] ${
+                    isRefreshing ? 'animate-spin text-primary' : ''
+                  }`}
+                >
                   refresh
                 </span>
               </button>
@@ -240,12 +338,14 @@ export const CajaView: React.FC<CajaViewProps> = ({
 
             <button
               type="button"
-              onClick={onCierreCaja}
+              onClick={() =>
+                onCierreCaja(selectedIds.size > 0 ? Array.from(selectedIds) : undefined)
+              }
               className="h-7 px-2 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 text-[11px] font-bold flex items-center gap-1"
               title="Arqueo / Cierre"
             >
               <span className="material-symbols-outlined text-[14px]">receipt_long</span>
-              <span>Arqueo</span>
+              <span>Arqueo{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}</span>
             </button>
 
             <button
@@ -308,7 +408,9 @@ export const CajaView: React.FC<CajaViewProps> = ({
               type="button"
               onClick={() => setTipoFilter('ingreso')}
               className={`px-2 py-1 rounded transition-colors ${
-                tipoFilter === 'ingreso' ? 'bg-emerald-600 text-white shadow-xs font-bold' : 'text-slate-600'
+                tipoFilter === 'ingreso'
+                  ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                  : 'text-slate-600'
               }`}
             >
               Ingresos
@@ -317,12 +419,27 @@ export const CajaView: React.FC<CajaViewProps> = ({
               type="button"
               onClick={() => setTipoFilter('egreso')}
               className={`px-2 py-1 rounded transition-colors ${
-                tipoFilter === 'egreso' ? 'bg-rose-700 text-white shadow-xs font-bold' : 'text-slate-600'
+                tipoFilter === 'egreso'
+                  ? 'bg-rose-700 text-white shadow-xs font-bold'
+                  : 'text-slate-600'
               }`}
             >
               Egresos
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setMultiSelectMode(!multiSelectMode)}
+            className={`w-7 h-7 flex items-center justify-center rounded-lg border text-xs shrink-0 ${
+              multiSelectMode || selectedIds.size > 0
+                ? 'bg-primary text-white border-primary'
+                : 'border-outline-variant text-slate-600 bg-surface'
+            }`}
+            title="Seleccionar varios registros"
+          >
+            <span className="material-symbols-outlined text-[15px]">checklist</span>
+          </button>
 
           <button
             type="button"
@@ -340,13 +457,21 @@ export const CajaView: React.FC<CajaViewProps> = ({
 
         {/* Fila 3: Resumen rápido de totales en móvil */}
         <div className="flex items-center justify-between text-[11px] font-mono px-1 pt-1 border-t border-outline-variant/50">
-          <span className="text-emerald-700 font-bold">+{formatCurrency(balanceGlobal.totalIngresos)}</span>
-          <span className="text-rose-700 font-bold">-{formatCurrency(balanceGlobal.totalEgresos)}</span>
-          <span className="text-amber-800 font-medium">Ef: {formatCurrency(balanceGlobal.totalEfectivo)}</span>
-          <span className="text-sky-800 font-medium">QR: {formatCurrency(balanceGlobal.totalDigital)}</span>
+          <span className="text-emerald-700 font-bold">
+            +{formatCurrency(balanceGlobal.totalIngresos)}
+          </span>
+          <span className="text-rose-700 font-bold">
+            -{formatCurrency(balanceGlobal.totalEgresos)}
+          </span>
+          <span className="text-amber-800 font-medium">
+            Ef: {formatCurrency(balanceGlobal.totalEfectivo)}
+          </span>
+          <span className="text-sky-800 font-medium">
+            QR: {formatCurrency(balanceGlobal.totalDigital)}
+          </span>
         </div>
 
-        {/* Filtros avanzados desplegables para móvil (si el usuario los abre) */}
+        {/* Filtros avanzados desplegables para móvil */}
         {showMobileFilters && (
           <div className="pt-2 border-t border-outline-variant/60 flex flex-col gap-2 text-xs">
             <div className="flex items-center gap-2">
@@ -358,7 +483,9 @@ export const CajaView: React.FC<CajaViewProps> = ({
                     type="button"
                     onClick={() => setMetodoFilter(met)}
                     className={`px-2 py-0.5 rounded text-[11px] font-medium ${
-                      metodoFilter === met ? 'bg-primary text-white font-bold' : 'bg-surface-container text-slate-700'
+                      metodoFilter === met
+                        ? 'bg-primary text-white font-bold'
+                        : 'bg-surface-container text-slate-700'
                     }`}
                   >
                     {met === 'todos' ? 'Todos' : met === 'efectivo' ? 'Efectivo' : 'Digital QR'}
@@ -411,10 +538,14 @@ export const CajaView: React.FC<CajaViewProps> = ({
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary/20">
               <span className="material-symbols-outlined text-[14px]">point_of_sale</span>
-              <span>TESORERÍA MUNICIPAL & CAJA</span>
+              <span>TESORERÍA & CAJA CENTRAL</span>
             </span>
             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-600 animate-pulse' : 'bg-amber-500'}`} />
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  isOnline ? 'bg-emerald-600 animate-pulse' : 'bg-amber-500'
+                }`}
+              />
               <span>{isOnline ? 'Supabase Cloud Activo' : 'Modo Offline'}</span>
             </span>
           </div>
@@ -437,7 +568,9 @@ export const CajaView: React.FC<CajaViewProps> = ({
               title="Sincronizar con Supabase Cloud"
             >
               <span
-                className={`material-symbols-outlined text-[17px] ${isRefreshing ? 'animate-spin text-primary' : 'text-slate-600'}`}
+                className={`material-symbols-outlined text-[17px] ${
+                  isRefreshing ? 'animate-spin text-primary' : 'text-slate-600'
+                }`}
               >
                 refresh
               </span>
@@ -447,14 +580,34 @@ export const CajaView: React.FC<CajaViewProps> = ({
 
           <button
             type="button"
-            onClick={onCierreCaja}
+            onClick={() => setMultiSelectMode(!multiSelectMode)}
+            className={`h-9 px-3 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+              multiSelectMode || selectedIds.size > 0
+                ? 'border-primary bg-primary/10 text-primary shadow-xs'
+                : 'border-outline-variant text-slate-700 hover:bg-surface-container'
+            }`}
+            title="Habilitar selección de varios comprobantes a la vez"
+          >
+            <span className="material-symbols-outlined text-[17px]">checklist</span>
+            <span>
+              Seleccionar varios{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              onCierreCaja(selectedIds.size > 0 ? Array.from(selectedIds) : undefined)
+            }
             className="h-9 px-3.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
             title="Realizar Arqueo y Cierre Oficial de Caja"
           >
             <span className="material-symbols-outlined text-[17px] text-amber-700">
               receipt_long
             </span>
-            <span>Arqueo / Cierre</span>
+            <span>
+              Arqueo / Cierre{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}
+            </span>
           </button>
 
           <button
@@ -487,7 +640,9 @@ export const CajaView: React.FC<CajaViewProps> = ({
         <div className="bg-surface-container-lowest p-3.5 rounded-xl border border-emerald-200/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-emerald-800">
             <span className="text-[11px] font-bold uppercase tracking-wider">Total Ingresos</span>
-            <span className="material-symbols-outlined text-[18px] text-emerald-700">trending_up</span>
+            <span className="material-symbols-outlined text-[18px] text-emerald-700">
+              trending_up
+            </span>
           </div>
           <div className="mt-2">
             <span className="text-base sm:text-lg font-black font-mono text-emerald-800 block truncate">
@@ -501,7 +656,9 @@ export const CajaView: React.FC<CajaViewProps> = ({
         <div className="bg-surface-container-lowest p-3.5 rounded-xl border border-rose-200/80 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-rose-800">
             <span className="text-[11px] font-bold uppercase tracking-wider">Total Egresos</span>
-            <span className="material-symbols-outlined text-[18px] text-rose-700">trending_down</span>
+            <span className="material-symbols-outlined text-[18px] text-rose-700">
+              trending_down
+            </span>
           </div>
           <div className="mt-2">
             <span className="text-base sm:text-lg font-black font-mono text-rose-800 block truncate">
@@ -704,7 +861,11 @@ export const CajaView: React.FC<CajaViewProps> = ({
               >
                 Mes Actual
               </button>
-              {(fechaDesde || fechaHasta || searchTerm || tipoFilter !== 'todos' || metodoFilter !== 'todos') && (
+              {(fechaDesde ||
+                fechaHasta ||
+                searchTerm ||
+                tipoFilter !== 'todos' ||
+                metodoFilter !== 'todos') && (
                 <button
                   type="button"
                   onClick={handleLimpiarFiltros}
@@ -720,7 +881,7 @@ export const CajaView: React.FC<CajaViewProps> = ({
           <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
               type="button"
-              onClick={handleExportCSV}
+              onClick={() => handleExportCSV(false)}
               className="px-2.5 py-1 rounded-lg border border-outline-variant text-slate-700 hover:bg-surface-container text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
               title="Descargar archivo CSV"
             >
@@ -739,6 +900,101 @@ export const CajaView: React.FC<CajaViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* ========================================================================= */}
+      {/* BARRA DE ACCIONES EN LOTE (Cuando hay selección múltiple activa)          */}
+      {/* ========================================================================= */}
+      {(multiSelectMode || selectedIds.size > 0) && (
+        <div className="bg-primary/5 border border-primary/30 rounded-xl px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0 animate-in fade-in duration-150">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              type="button"
+              onClick={handleToggleSelectAll}
+              className="px-2.5 py-1 rounded-lg bg-white border border-primary/30 text-primary font-bold flex items-center gap-1 hover:bg-primary/10 transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[15px]">
+                {allFilteredSelected ? 'deselect' : 'select_all'}
+              </span>
+              <span>
+                {allFilteredSelected
+                  ? 'Desmarcar todos'
+                  : `Seleccionar todos (${movimientosOrdenados.length})`}
+              </span>
+            </button>
+
+            <span className="font-bold text-primary">
+              {selectedIds.size} comprobante{selectedIds.size === 1 ? '' : 's'} seleccionado
+              {selectedIds.size === 1 ? '' : 's'}
+            </span>
+
+            {selectedIds.size > 0 && (
+              <div className="hidden md:flex items-center gap-2 font-mono text-[11px] bg-white px-2.5 py-1 rounded-lg border border-outline-variant">
+                <span className="text-emerald-700 font-bold">
+                  +Ing: {formatCurrency(balanceSeleccionado.totalIngresos)}
+                </span>
+                <span>•</span>
+                <span className="text-rose-700 font-bold">
+                  -Egr: {formatCurrency(balanceSeleccionado.totalEgresos)}
+                </span>
+                <span>•</span>
+                <span className="text-slate-900 font-black">
+                  Neto: {formatCurrency(balanceSeleccionado.balanceNeto)}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {selectedIds.size > 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onCierreCaja(Array.from(selectedIds))}
+                  className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+                  title="Abrir Arqueo de Cierre únicamente con los registros seleccionados"
+                >
+                  <span className="material-symbols-outlined text-[15px]">receipt_long</span>
+                  <span>Arqueo con seleccionados ({selectedIds.size})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleExportCSV(true)}
+                  className="px-2.5 py-1 rounded-lg bg-white border border-outline-variant hover:bg-surface-container text-slate-700 font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Exportar a CSV solo los seleccionados"
+                >
+                  <span className="material-symbols-outlined text-[15px]">download</span>
+                  <span>CSV ({selectedIds.size})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleAnularSeleccionados}
+                  disabled={isDeletingBatch}
+                  className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold flex items-center gap-1 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                  title="Anular todos los comprobantes seleccionados"
+                >
+                  <span className="material-symbols-outlined text-[15px]">delete</span>
+                  <span>
+                    {isDeletingBatch ? 'Anulando...' : `Anular (${selectedIds.size})`}
+                  </span>
+                </button>
+              </>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedIds(new Set())
+                setMultiSelectMode(false)
+              }}
+              className="px-2 py-1 rounded-lg text-slate-600 hover:bg-slate-200/70 font-semibold cursor-pointer"
+            >
+              Cerrar selección ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* 4. TABLA DE MOVIMIENTOS DE CAJA (DESKTOP) & LISTADO RESPONSIVO (MOBILE)   */}
@@ -777,33 +1033,59 @@ export const CajaView: React.FC<CajaViewProps> = ({
             {/* MOBILE VIEW (< md): Responsive Interactive Cards */}
             <div className="md:hidden divide-y divide-outline-variant/60 p-2 space-y-2 flex-1 min-h-0 overflow-y-auto custom-scroll">
               {movimientosOrdenados.map((mov) => {
-                const isEgreso = mov.tipo === 'egreso' || (mov.concepto && mov.concepto.includes('[EGRESO]'))
+                const rowId = mov.id || mov.nroRecibo
+                const isChecked = selectedIds.has(rowId)
+                const isEgreso =
+                  mov.tipo === 'egreso' || (mov.concepto && mov.concepto.includes('[EGRESO]'))
                 const isEfectivo = mov.metodo === 'efectivo'
 
                 return (
-                  <div key={mov.id || mov.nroRecibo} className="p-3 bg-white rounded-xl border border-outline-variant/80 shadow-2xs space-y-2">
+                  <div
+                    key={rowId}
+                    onClick={() => {
+                      if (multiSelectMode || selectedIds.size > 0) {
+                        handleToggleSelectRow(rowId)
+                      }
+                    }}
+                    className={`p-3 rounded-xl border shadow-2xs space-y-2 transition-colors ${
+                      isChecked
+                        ? 'bg-primary/10 border-primary ring-1 ring-primary/30'
+                        : 'bg-white border-outline-variant/80'
+                    }`}
+                  >
                     <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span
-                            className={`w-2 h-2 rounded-full ${
-                              isEgreso ? 'bg-rose-500' : 'bg-emerald-500'
-                            }`}
-                          />
-                          <span className="font-mono font-bold text-xs text-slate-900">
-                            {mov.nroRecibo || 'REC-S/N'}
-                          </span>
-                          <span
-                            className={`text-[10px] px-1.5 py-0.2 rounded font-bold uppercase ${
-                              isEgreso ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                            }`}
-                          >
-                            {isEgreso ? 'Egreso' : 'Ingreso'}
+                      <div className="flex items-start gap-2">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleToggleSelectRow(rowId)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-4 h-4 mt-0.5 rounded accent-primary cursor-pointer shrink-0"
+                        />
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                isEgreso ? 'bg-rose-500' : 'bg-emerald-500'
+                              }`}
+                            />
+                            <span className="font-mono font-bold text-xs text-slate-900">
+                              {mov.nroRecibo || 'REC-S/N'}
+                            </span>
+                            <span
+                              className={`text-[10px] px-1.5 py-0.2 rounded font-bold uppercase ${
+                                isEgreso
+                                  ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                                  : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              }`}
+                            >
+                              {isEgreso ? 'Egreso' : 'Ingreso'}
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-slate-500 font-mono block mt-0.5">
+                            {formatDateHour(mov.fecha)}
                           </span>
                         </div>
-                        <span className="text-[11px] text-slate-500 font-mono block mt-0.5">
-                          {formatDateHour(mov.fecha)}
-                        </span>
                       </div>
                       <div className="text-right shrink-0">
                         <span
@@ -822,7 +1104,8 @@ export const CajaView: React.FC<CajaViewProps> = ({
 
                     <div className="text-xs">
                       <div className="font-semibold text-slate-900">
-                        {mov.titularNombre || (isEgreso ? 'Egreso Operativo' : 'Contribuyente General')}
+                        {mov.titularNombre ||
+                          (isEgreso ? 'Egreso Operativo' : 'Contribuyente General')}
                       </div>
                       <div className="text-slate-600 text-[11px] mt-0.5 flex items-center gap-1 flex-wrap">
                         {mov.categoria && (
@@ -834,7 +1117,10 @@ export const CajaView: React.FC<CajaViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-2 pt-1.5 border-t border-dashed border-outline-variant">
+                    <div
+                      className="flex items-center justify-end gap-2 pt-1.5 border-t border-dashed border-outline-variant"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <button
                         type="button"
                         onClick={() => setReciboDetallePago(mov)}
@@ -860,171 +1146,210 @@ export const CajaView: React.FC<CajaViewProps> = ({
             {/* DESKTOP VIEW (>= md): Full Data Table */}
             <div className="hidden md:block flex-1 min-h-0 overflow-auto custom-scroll">
               <table className="w-full text-left text-xs border-collapse">
-              <thead className="sticky top-0 z-10 bg-surface-container border-b border-outline-variant text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                <tr>
-                  <th
-                    className="py-3 px-3.5 cursor-pointer hover:text-primary transition-colors"
-                    onClick={() => handleToggleSort('recibo')}
-                  >
-                    <div className="flex items-center gap-1">
-                      <span>N° Comprobante</span>
-                      {sortField === 'recibo' && (
-                        <span className="material-symbols-outlined text-[14px]">
-                          {sortAsc ? 'arrow_upward' : 'arrow_downward'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th
-                    className="py-3 px-3.5 cursor-pointer hover:text-primary transition-colors"
-                    onClick={() => handleToggleSort('fecha')}
-                  >
-                    <div className="flex items-center gap-1">
-                      <span>Fecha / Hora</span>
-                      {sortField === 'fecha' && (
-                        <span className="material-symbols-outlined text-[14px]">
-                          {sortAsc ? 'arrow_upward' : 'arrow_downward'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th
-                    className="py-3 px-3.5 cursor-pointer hover:text-primary transition-colors"
-                    onClick={() => handleToggleSort('titular')}
-                  >
-                    <div className="flex items-center gap-1">
-                      <span>Titular / Pagador</span>
-                      {sortField === 'titular' && (
-                        <span className="material-symbols-outlined text-[14px]">
-                          {sortAsc ? 'arrow_upward' : 'arrow_downward'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th className="py-3 px-3.5">Concepto Imputado</th>
-                  <th className="py-3 px-3.5">Canal</th>
-                  <th
-                    className="py-3 px-3.5 text-right cursor-pointer hover:text-primary transition-colors"
-                    onClick={() => handleToggleSort('monto')}
-                  >
-                    <div className="flex items-center justify-end gap-1">
-                      <span>Importe</span>
-                      {sortField === 'monto' && (
-                        <span className="material-symbols-outlined text-[14px]">
-                          {sortAsc ? 'arrow_upward' : 'arrow_downward'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th className="py-3 px-3.5 text-center w-28">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-outline-variant">
-                {movimientosOrdenados.map((mov) => {
-                  const isEgreso = mov.tipo === 'egreso' || (mov.concepto && mov.concepto.includes('[EGRESO]'))
-                  const isEfectivo = mov.metodo === 'efectivo'
-
-                  return (
-                    <tr
-                      key={mov.id || mov.nroRecibo}
-                      className="hover:bg-surface-container-low transition-colors group"
+                <thead className="sticky top-0 z-10 bg-surface-container border-b border-outline-variant text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                  <tr>
+                    <th className="py-3 px-3 w-9 text-center">
+                      <input
+                        type="checkbox"
+                        checked={allFilteredSelected}
+                        onChange={handleToggleSelectAll}
+                        className="w-3.5 h-3.5 rounded accent-primary cursor-pointer"
+                        title="Seleccionar o desmarcar todos los comprobantes"
+                      />
+                    </th>
+                    <th
+                      className="py-3 px-3.5 cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => handleToggleSort('recibo')}
                     >
-                      {/* N° Comprobante */}
-                      <td className="py-2.5 px-3.5 font-mono font-bold text-slate-900 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className={`w-2 h-2 rounded-full ${
-                              isEgreso ? 'bg-rose-500' : 'bg-emerald-500'
-                            }`}
-                          />
-                          <span>{mov.nroRecibo || 'REC-S/N'}</span>
-                        </div>
-                      </td>
-
-                      {/* Fecha y Hora */}
-                      <td className="py-2.5 px-3.5 whitespace-nowrap text-slate-600 font-mono text-[11px]">
-                        {formatDateHour(mov.fecha)}
-                      </td>
-
-                      {/* Titular */}
-                      <td className="py-2.5 px-3.5 font-semibold text-slate-900 max-w-[200px] truncate">
-                        {mov.titularNombre || (isEgreso ? 'Egreso Operativo' : 'Contribuyente General')}
-                      </td>
-
-                      {/* Concepto & Categoría */}
-                      <td className="py-2.5 px-3.5 text-slate-700">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {mov.categoria && (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
-                              {mov.categoria}
-                            </span>
-                          )}
-                          <span className="truncate max-w-xs">{mov.concepto}</span>
-                        </div>
-                      </td>
-
-                      {/* Canal */}
-                      <td className="py-2.5 px-3.5 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold ${
-                            isEfectivo
-                              ? 'bg-amber-100/80 text-amber-900 border border-amber-300'
-                              : 'bg-sky-100/80 text-sky-900 border border-sky-300'
-                          }`}
-                        >
-                          <span className="material-symbols-outlined text-[13px]">
-                            {isEfectivo ? 'payments' : 'qr_code_2'}
+                      <div className="flex items-center gap-1">
+                        <span>N° Comprobante</span>
+                        {sortField === 'recibo' && (
+                          <span className="material-symbols-outlined text-[14px]">
+                            {sortAsc ? 'arrow_upward' : 'arrow_downward'}
                           </span>
-                          <span>{isEfectivo ? 'Efectivo' : 'Digital/QR'}</span>
-                        </span>
-                      </td>
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="py-3 px-3.5 cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => handleToggleSort('fecha')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Fecha / Hora</span>
+                        {sortField === 'fecha' && (
+                          <span className="material-symbols-outlined text-[14px]">
+                            {sortAsc ? 'arrow_upward' : 'arrow_downward'}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="py-3 px-3.5 cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => handleToggleSort('titular')}
+                    >
+                      <div className="flex items-center gap-1">
+                        <span>Titular / Pagador</span>
+                        {sortField === 'titular' && (
+                          <span className="material-symbols-outlined text-[14px]">
+                            {sortAsc ? 'arrow_upward' : 'arrow_downward'}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th className="py-3 px-3.5">Concepto Imputado</th>
+                    <th className="py-3 px-3.5">Canal</th>
+                    <th
+                      className="py-3 px-3.5 text-right cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => handleToggleSort('monto')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        <span>Importe</span>
+                        {sortField === 'monto' && (
+                          <span className="material-symbols-outlined text-[14px]">
+                            {sortAsc ? 'arrow_upward' : 'arrow_downward'}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th className="py-3 px-3.5 text-center w-28">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-outline-variant">
+                  {movimientosOrdenados.map((mov) => {
+                    const rowId = mov.id || mov.nroRecibo
+                    const isChecked = selectedIds.has(rowId)
+                    const isEgreso =
+                      mov.tipo === 'egreso' || (mov.concepto && mov.concepto.includes('[EGRESO]'))
+                    const isEfectivo = mov.metodo === 'efectivo'
 
-                      {/* Importe */}
-                      <td className="py-2.5 px-3.5 text-right whitespace-nowrap font-mono font-bold text-sm">
-                        <span className={isEgreso ? 'text-rose-700' : 'text-emerald-700'}>
-                          {isEgreso ? '-' : '+'}
-                          {formatCurrency(mov.monto)}
-                        </span>
-                      </td>
+                    return (
+                      <tr
+                        key={rowId}
+                        onClick={() => handleToggleSelectRow(rowId)}
+                        className={`transition-colors group cursor-pointer ${
+                          isChecked
+                            ? 'bg-primary/10 hover:bg-primary/15'
+                            : 'hover:bg-surface-container-low'
+                        }`}
+                      >
+                        <td
+                          className="py-2.5 px-3 text-center"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleToggleSelectRow(rowId)}
+                            className="w-3.5 h-3.5 rounded accent-primary cursor-pointer"
+                          />
+                        </td>
 
-                      {/* Acciones */}
-                      <td className="py-2.5 px-3.5 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => setReciboDetallePago(mov)}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-600 hover:text-primary hover:bg-slate-100 transition-colors cursor-pointer"
-                            title="Ver / Reimprimir Recibo Oficial"
+                        {/* N° Comprobante */}
+                        <td className="py-2.5 px-3.5 font-mono font-bold text-slate-900 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                isEgreso ? 'bg-rose-500' : 'bg-emerald-500'
+                              }`}
+                            />
+                            <span>{mov.nroRecibo || 'REC-S/N'}</span>
+                          </div>
+                        </td>
+
+                        {/* Fecha y Hora */}
+                        <td className="py-2.5 px-3.5 whitespace-nowrap text-slate-600 font-mono text-[11px]">
+                          {formatDateHour(mov.fecha)}
+                        </td>
+
+                        {/* Titular */}
+                        <td className="py-2.5 px-3.5 font-semibold text-slate-900 max-w-[200px] truncate">
+                          {mov.titularNombre ||
+                            (isEgreso ? 'Egreso Operativo' : 'Contribuyente General')}
+                        </td>
+
+                        {/* Concepto & Categoría */}
+                        <td className="py-2.5 px-3.5 text-slate-700">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {mov.categoria && (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+                                {mov.categoria}
+                              </span>
+                            )}
+                            <span className="truncate max-w-xs">{mov.concepto}</span>
+                          </div>
+                        </td>
+
+                        {/* Canal */}
+                        <td className="py-2.5 px-3.5 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold ${
+                              isEfectivo
+                                ? 'bg-amber-100/80 text-amber-900 border border-amber-300'
+                                : 'bg-sky-100/80 text-sky-900 border border-sky-300'
+                            }`}
                           >
-                            <span className="material-symbols-outlined text-[17px]">
-                              receipt_long
+                            <span className="material-symbols-outlined text-[13px]">
+                              {isEfectivo ? 'payments' : 'qr_code_2'}
                             </span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPagoParaAnular(mov)}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
-                            title="Anular Movimiento de Caja"
-                          >
-                            <span className="material-symbols-outlined text-[17px]">delete</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+                            <span>{isEfectivo ? 'Efectivo' : 'Digital/QR'}</span>
+                          </span>
+                        </td>
+
+                        {/* Importe */}
+                        <td className="py-2.5 px-3.5 text-right whitespace-nowrap font-mono font-bold text-sm">
+                          <span className={isEgreso ? 'text-rose-700' : 'text-emerald-700'}>
+                            {isEgreso ? '-' : '+'}
+                            {formatCurrency(mov.monto)}
+                          </span>
+                        </td>
+
+                        {/* Acciones */}
+                        <td
+                          className="py-2.5 px-3.5 text-center whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setReciboDetallePago(mov)}
+                              className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-600 hover:text-primary hover:bg-slate-100 transition-colors cursor-pointer"
+                              title="Ver / Reimprimir Recibo Oficial"
+                            >
+                              <span className="material-symbols-outlined text-[17px]">
+                                receipt_long
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPagoParaAnular(mov)}
+                              className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Anular Movimiento de Caja"
+                            >
+                              <span className="material-symbols-outlined text-[17px]">delete</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
 
         {/* Resumen al pie del listado */}
         {movimientosOrdenados.length > 0 && (
           <div className="p-2.5 sm:p-3 bg-surface-container border-t border-outline-variant flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-600 gap-1.5 sm:gap-2 shrink-0">
             <div>
               Mostrando <strong>{movimientosOrdenados.length}</strong> movimientos en el periodo
-              seleccionado.
+              seleccionado
+              {selectedIds.size > 0 && (
+                <span className="ml-2 font-bold text-primary">
+                  ({selectedIds.size} seleccionados)
+                </span>
+              )}
+              .
             </div>
             <div className="flex items-center gap-4 font-mono font-bold text-[11px]">
               <span className="text-emerald-800">

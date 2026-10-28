@@ -79,6 +79,7 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('dashboard')
   const [searchOpen, setSearchOpen] = useState(false)
   const [cierreCajaOpen, setCierreCajaOpen] = useState(false)
+  const [cierreCajaSelectedIds, setCierreCajaSelectedIds] = useState<string[] | undefined>(undefined)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('aeterna_sidebar_collapsed') === 'true'
@@ -672,6 +673,18 @@ export default function App() {
     }
   }
 
+  const handleAnularMultiplesPagos = async (pagosToDelete: PagoRecibo[]) => {
+    const idsToDelete = new Set(pagosToDelete.map((p) => p.id || p.nroRecibo))
+    for (const id of idsToDelete) {
+      deletePagoFromStorage(id)
+    }
+    setPagos((prev) => prev.filter((p) => !idsToDelete.has(p.id || p.nroRecibo)))
+    if (isSupabaseConfigured) {
+      await Promise.all(Array.from(idsToDelete).map((id) => anularPagoSupabase(id)))
+      await fetchCloudData()
+    }
+  }
+
   // Guardar Parcela (CRUD: Create / Update)
   const handleSaveParcela = async (datos: Partial<Parcela>) => {
     let parcelaTarget: Parcela | null = null
@@ -847,6 +860,41 @@ export default function App() {
     }
   }
 
+  const handleBatchUpdateParcelas = async (ids: string[], changes: Partial<Parcela>) => {
+    const idSet = new Set(ids)
+    const targets: Parcela[] = []
+    setParcelas((prev) => {
+      const updated = prev.map((p) => {
+        if (idSet.has(p.id)) {
+          const nextP = { ...p, ...changes }
+          targets.push(nextP)
+          return nextP
+        }
+        return p
+      })
+      saveParcelasToStorage(updated)
+      return updated
+    })
+    if (isSupabaseConfigured && targets.length > 0) {
+      await Promise.all(targets.map((p) => upsertParcelaSupabase(p)))
+      await fetchCloudData()
+    }
+  }
+
+  const handleBatchDeleteParcelas = async (ids: string[]) => {
+    const idSet = new Set(ids)
+    const targets = parcelas.filter((p) => idSet.has(p.id))
+    setParcelas((prev) => {
+      const updated = prev.filter((p) => !idSet.has(p.id))
+      saveParcelasToStorage(updated)
+      return updated
+    })
+    if (isSupabaseConfigured && targets.length > 0) {
+      await Promise.all(targets.map((t) => deleteParcelaSupabase(t.nomenclatura || t.id)))
+      await fetchCloudData()
+    }
+  }
+
   // Operaciones DELETE (CRUD Completo)
   const handleDeleteParcela = async (parcelaId: string) => {
     const target = parcelas.find((p) => p.id === parcelaId)
@@ -956,7 +1004,10 @@ export default function App() {
             setFormParcelaOpen(true)
           }
         }}
-        onCierreCaja={() => setCierreCajaOpen(true)}
+        onCierreCaja={() => {
+          setCierreCajaSelectedIds(undefined)
+          setCierreCajaOpen(true)
+        }}
         isOnline={isSupabaseConfigured}
         currentUser={currentUser}
         onLogout={handleLogout}
@@ -1030,7 +1081,10 @@ export default function App() {
               onVerParcelasMora={() => setCurrentTab('parcelas')}
               onOpenSearch={() => setSearchOpen(true)}
               onSelectTab={setCurrentTab}
-              onCierreCaja={() => setCierreCajaOpen(true)}
+              onCierreCaja={() => {
+          setCierreCajaSelectedIds(undefined)
+          setCierreCajaOpen(true)
+        }}
             />
             </div>
           )}
@@ -1043,6 +1097,8 @@ export default function App() {
               onEnviarCobro={handleOpenEnviarCobroParcela}
               onSaveParcela={handleSaveParcela}
               onDeleteParcela={handleDeleteParcela}
+              onBatchDeleteParcelas={handleBatchDeleteParcelas}
+              onBatchUpdateParcelas={handleBatchUpdateParcelas}
               onNuevaParcela={() => {
                 setEditingParcela(null)
                 setFormParcelaOpen(true)
@@ -1120,7 +1176,11 @@ export default function App() {
               onNuevoCobro={handleNuevoCobroCaja}
               onNuevoEgreso={handleRegistrarEgreso}
               onAnularPago={handleAnularPago}
-              onCierreCaja={() => setCierreCajaOpen(true)}
+              onAnularMultiplesPagos={handleAnularMultiplesPagos}
+              onCierreCaja={(selectedIds) => {
+                setCierreCajaSelectedIds(selectedIds)
+                setCierreCajaOpen(true)
+              }}
               onRefresh={() => fetchCloudData(true)}
               isRefreshing={isRefreshing}
               isOnline={isSupabaseConfigured}
@@ -1176,6 +1236,8 @@ export default function App() {
         totalRecaudado={recaudacionHoy}
         pagos={pagos}
         onRegistrarEgreso={handleRegistrarEgreso}
+        initialSelectedIds={cierreCajaSelectedIds}
+        onAnularMultiplesPagos={handleAnularMultiplesPagos}
       />
 
       {/* Modal de Cobro con Código QR (CBU/Alias) */}

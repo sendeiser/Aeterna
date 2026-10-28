@@ -11,6 +11,8 @@ interface ParcelasViewProps {
   onEnviarCobro?: (parcela: Parcela) => void
   onSaveParcela: (parcela: Partial<Parcela>) => void
   onDeleteParcela?: (id: string) => void
+  onBatchDeleteParcelas?: (ids: string[]) => Promise<void> | void
+  onBatchUpdateParcelas?: (ids: string[], changes: Partial<Parcela>) => Promise<void> | void
   onNuevaInhumacionParaParcela?: (nomenclatura: string) => void
   onReactivarParcela?: (parcela: Parcela) => void
   onLiberarParcela?: (parcela: Parcela) => void
@@ -31,6 +33,8 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   onEnviarCobro,
   onSaveParcela,
   onDeleteParcela,
+  onBatchDeleteParcelas,
+  onBatchUpdateParcelas,
   onNuevaInhumacionParaParcela,
   onReactivarParcela,
   onLiberarParcela,
@@ -51,6 +55,12 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
   const [showMobileFilters, setShowMobileFilters] = useState(false)
   const [showDesktopFilters, setShowDesktopFilters] = useState(true)
+
+  // Selección múltiple de parcelas
+  const [multiSelectMode, setMultiSelectMode] = useState(false)
+  const [selectedParcelaIds, setSelectedParcelaIds] = useState<Set<string>>(new Set())
+  const [batchEstado, setBatchEstado] = useState<'disponible' | 'ocupada' | 'en_mora' | 'standby' | 'baja'>('ocupada')
+  const [isApplyingBatch, setIsApplyingBatch] = useState(false)
 
   const hasActiveFilters =
     filterSector !== 'todos' ||
@@ -93,6 +103,14 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
 
   const handleSelectParcela = (p: Parcela) => {
     setSelectedParcelaId(p.id)
+    if (multiSelectMode) {
+      setSelectedParcelaIds((prev) => {
+        const next = new Set(prev)
+        if (next.has(p.id)) next.delete(p.id)
+        else next.add(p.id)
+        return next
+      })
+    }
   }
 
   const startEditRow = (p: Parcela) => {
@@ -374,6 +392,138 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
     const hasInh = (inhumadosMap.get(p.nomenclatura) || 0) > 0
     return esBaja && !hasInh
   }).length
+  // Lógica de selección múltiple
+  const parcelasSeleccionadas = useMemo(
+    () => sortedParcelas.filter((p) => selectedParcelaIds.has(p.id)),
+    [sortedParcelas, selectedParcelaIds]
+  )
+
+  const totalSaldoSeleccionadas = useMemo(
+    () => parcelasSeleccionadas.reduce((acc, p) => acc + (p.saldo_mantenimiento || 0), 0),
+    [parcelasSeleccionadas]
+  )
+
+  const allFilteredSelected =
+    sortedParcelas.length > 0 && sortedParcelas.every((p) => selectedParcelaIds.has(p.id))
+
+  const handleToggleSelectAll = () => {
+    if (allFilteredSelected) {
+      setSelectedParcelaIds((prev) => {
+        const next = new Set(prev)
+        sortedParcelas.forEach((p) => next.delete(p.id))
+        return next
+      })
+    } else {
+      setSelectedParcelaIds((prev) => {
+        const next = new Set(prev)
+        sortedParcelas.forEach((p) => next.add(p.id))
+        return next
+      })
+    }
+  }
+
+  const handleToggleSelectRow = (id: string) => {
+    setSelectedParcelaIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const handleBatchCambiarEstado = async () => {
+    if (parcelasSeleccionadas.length === 0) return
+    if (
+      !confirm(
+        `¿Confirma cambiar el estado de las ${parcelasSeleccionadas.length} parcelas seleccionadas a "${batchEstado.toUpperCase()}"?`
+      )
+    ) {
+      return
+    }
+    setIsApplyingBatch(true)
+    try {
+      const ids = parcelasSeleccionadas.map((p) => p.id)
+      if (onBatchUpdateParcelas) {
+        await onBatchUpdateParcelas(ids, { estado: batchEstado })
+      } else {
+        for (const p of parcelasSeleccionadas) {
+          onSaveParcela({ ...p, estado: batchEstado })
+        }
+      }
+      setSelectedParcelaIds(new Set())
+    } finally {
+      setIsApplyingBatch(false)
+    }
+  }
+
+  const handleBatchEliminar = async () => {
+    if (parcelasSeleccionadas.length === 0) return
+    if (
+      !confirm(
+        `⚠️ ¿Confirma eliminar las ${parcelasSeleccionadas.length} parcelas seleccionadas del padrón?`
+      )
+    ) {
+      return
+    }
+    setIsApplyingBatch(true)
+    try {
+      const ids = parcelasSeleccionadas.map((p) => p.id)
+      if (onBatchDeleteParcelas) {
+        await onBatchDeleteParcelas(ids)
+      } else if (onDeleteParcela) {
+        for (const id of ids) {
+          onDeleteParcela(id)
+        }
+      }
+      setSelectedParcelaIds(new Set())
+    } finally {
+      setIsApplyingBatch(false)
+    }
+  }
+
+  const handleExportSelectedCSV = () => {
+    const targetList =
+      parcelasSeleccionadas.length > 0 ? parcelasSeleccionadas : sortedParcelas
+    if (targetList.length === 0) return
+
+    const headers = [
+      'Nomenclatura',
+      'Sector',
+      'Titular',
+      'DNI',
+      'Domicilio',
+      'Telefono',
+      'Estado',
+      'Ocupados/Capacidad',
+      'Saldo Mantenimiento',
+    ]
+    const rows = targetList.map((p) => [
+      `"${p.nomenclatura || ''}"`,
+      `"${p.sector_id || ''}"`,
+      `"${(p.titular?.nombre_completo || '').replace(/"/g, '""')}"`,
+      `"${p.titular?.dni || ''}"`,
+      `"${(p.titular?.direccion || '').replace(/"/g, '""')}"`,
+      `"${p.titular?.telefono || ''}"`,
+      `"${p.estado || ''}"`,
+      `"${p.espacios_ocupados || 0}/${p.capacidad_total || 3}"`,
+      `${p.saldo_mantenimiento || 0}`,
+    ])
+
+    const csvContent =
+      'data:text/csv;charset=utf-8,\uFEFF' +
+      [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute(
+      'download',
+      `Padron_Parcelas_Aeterna_${new Date().toISOString().slice(0, 10)}.csv`
+    )
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   const countBajaInhumados = parcelas.filter((p) => {
     const esBaja = p.estado === 'baja' || p.estado === 'standby'
     const hasInh = (inhumadosMap.get(p.nomenclatura) || 0) > 0
@@ -422,6 +572,20 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 </button>
               )}
             </div>
+
+            {/* Botón Seleccionar Varios Mobile */}
+            <button
+              type="button"
+              onClick={() => setMultiSelectMode(!multiSelectMode)}
+              className={`h-7 w-7 rounded border flex items-center justify-center shrink-0 cursor-pointer transition-colors ${
+                multiSelectMode || selectedParcelaIds.size > 0
+                  ? 'bg-primary text-white border-primary shadow-xs'
+                  : 'border-outline-variant bg-surface-container-low hover:bg-surface-container text-slate-600'
+              }`}
+              title="Seleccionar varias parcelas"
+            >
+              <span className="material-symbols-outlined text-[15px]">checklist</span>
+            </button>
 
             {/* Botón Minimizar / Abrir Filtros Mobile */}
             <button
@@ -806,6 +970,25 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               </button>
             )}
 
+            {/* Botón Seleccionar Varios Desktop */}
+            <button
+              id="btn-multi-select-parcelas"
+              type="button"
+              onClick={() => setMultiSelectMode(!multiSelectMode)}
+              className={`h-8 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 ${
+                multiSelectMode || selectedParcelaIds.size > 0
+                  ? 'border-primary text-primary bg-primary/10 shadow-xs'
+                  : 'border-outline-variant text-slate-700 hover:bg-surface-container'
+              }`}
+              title="Habilitar selección de varias parcelas a la vez"
+            >
+              <span className="material-symbols-outlined text-[16px]">checklist</span>
+              <span>
+                Seleccionar varios
+                {selectedParcelaIds.size > 0 ? ` (${selectedParcelaIds.size})` : ''}
+              </span>
+            </button>
+
             {/* Botón Minimizar / Abrir Filtros Desktop */}
             <button
               id="btn-toggle-filtros-parcelas-desktop"
@@ -985,6 +1168,102 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
       </div>
     </div>
 
+      {/* Barra de Acciones en Lote (Selección Múltiple) */}
+      {(multiSelectMode || selectedParcelaIds.size > 0) && (
+        <div className="bg-primary/5 border border-primary/30 rounded-lg px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0 animate-in fade-in duration-150">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              type="button"
+              onClick={handleToggleSelectAll}
+              className="px-2.5 py-1 rounded bg-white border border-primary/30 text-primary font-bold flex items-center gap-1 hover:bg-primary/10 transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[15px]">
+                {allFilteredSelected ? 'deselect' : 'select_all'}
+              </span>
+              <span>
+                {allFilteredSelected
+                  ? 'Desmarcar todas'
+                  : `Seleccionar todas (${sortedParcelas.length})`}
+              </span>
+            </button>
+
+            <span className="font-bold text-primary">
+              {selectedParcelaIds.size} parcela{selectedParcelaIds.size === 1 ? '' : 's'}{' '}
+              seleccionada{selectedParcelaIds.size === 1 ? '' : 's'}
+            </span>
+
+            {selectedParcelaIds.size > 0 && (
+              <span className="font-code-cadastral font-bold text-error bg-white px-2.5 py-1 rounded border border-outline-variant">
+                Saldo acum.: {formatCurrency(totalSaldoSeleccionadas)}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {selectedParcelaIds.size > 0 && (
+              <>
+                <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-outline-variant">
+                  <span className="text-[11px] text-slate-600 font-semibold">Estado:</span>
+                  <select
+                    value={batchEstado}
+                    onChange={(e) => setBatchEstado(e.target.value as any)}
+                    className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-none py-0.5 cursor-pointer"
+                  >
+                    <option value="disponible">Disponible</option>
+                    <option value="ocupada">Ocupada</option>
+                    <option value="en_mora">En Mora</option>
+                    <option value="standby">Stand-by</option>
+                    <option value="baja">Baja</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleBatchCambiarEstado}
+                    disabled={isApplyingBatch}
+                    className="px-2 py-0.5 rounded bg-primary hover:bg-secondary text-white font-bold text-[11px] transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    Aplicar ({selectedParcelaIds.size})
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleExportSelectedCSV}
+                  className="px-2.5 py-1 rounded bg-white border border-outline-variant hover:bg-surface-container text-slate-700 font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Exportar parcelas seleccionadas a CSV"
+                >
+                  <span className="material-symbols-outlined text-[15px]">download</span>
+                  <span>CSV ({selectedParcelaIds.size})</span>
+                </button>
+
+                {(onDeleteParcela || onBatchDeleteParcelas) && (
+                  <button
+                    type="button"
+                    onClick={handleBatchEliminar}
+                    disabled={isApplyingBatch}
+                    className="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-700 text-white font-bold flex items-center gap-1 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                    title="Eliminar parcelas seleccionadas"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">delete</span>
+                    <span>Eliminar ({selectedParcelaIds.size})</span>
+                  </button>
+                )}
+              </>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedParcelaIds(new Set())
+                setMultiSelectMode(false)
+              }}
+              className="px-2 py-1 rounded text-slate-600 hover:bg-slate-200/70 font-semibold cursor-pointer"
+            >
+              Cerrar selección ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Parcel List / Interactive Data Grid & Mobile Cards */}
       <div className="bg-surface-container-lowest rounded border border-outline-variant shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden">
         {/* Subheader: Hidden on mobile (< sm) so cards start right under the toolbar */}
@@ -1000,7 +1279,9 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
         {/* MOBILE VIEW (< md): Responsive Interactive Cards */}
         <div className="md:hidden divide-y divide-outline-variant/40 p-2 space-y-2 flex-1 min-h-0 overflow-y-auto custom-scroll">
             {displayedParcelas.map((p, index) => {
-              const isSelected = p.id === selectedParcela?.id
+              const isSelected =
+                selectedParcelaIds.has(p.id) ||
+                (!multiSelectMode && selectedParcelaIds.size === 0 && p.id === selectedParcela?.id)
               const isEditing = editingRowId === p.id && editRowData
               const ocupados = p.espacios_ocupados || (p.estado === 'ocupada' || p.estado === 'en_mora' ? 1 : 0)
               const totalNiveles = p.capacidad_total || 3
@@ -1142,6 +1423,17 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                   }`}
                 >
                   {/* Card Header: Nomenclatura, Sector, Estado */}
+                  <div className="flex items-center gap-2 pb-1 border-b border-outline-variant/30" onClick={(e) => e.stopPropagation()}>
+                    <label className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={selectedParcelaIds.has(p.id)}
+                        onChange={() => handleToggleSelectRow(p.id)}
+                        className="w-4 h-4 rounded accent-primary cursor-pointer"
+                      />
+                      <span>Seleccionar parcela</span>
+                    </label>
+                  </div>
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-1.5 flex-wrap">
@@ -1391,6 +1683,15 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 z-20 shadow-xs bg-slate-100 border-b-2 border-slate-300">
                 <tr className="text-label-caps font-label-caps text-slate-700 uppercase bg-slate-100 select-none">
+                  <th className="py-2.5 px-2.5 bg-slate-100 w-9 text-center">
+                    <input
+                      type="checkbox"
+                      checked={allFilteredSelected}
+                      onChange={handleToggleSelectAll}
+                      className="w-3.5 h-3.5 rounded accent-primary cursor-pointer"
+                      title="Seleccionar o desmarcar todas las parcelas filtradas"
+                    />
+                  </th>
                   <th
                     onClick={() => setSortOption((prev) => (prev === 'alfa-asc' ? 'alfa-desc' : 'alfa-asc'))}
                     className="py-2.5 px-3 bg-slate-100 cursor-pointer hover:bg-slate-200 transition-colors"
@@ -1473,7 +1774,9 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               </thead>
               <tbody className="divide-y divide-outline-variant/40 text-body-sm font-body-sm">
                 {displayedParcelas.map((p, index) => {
-                  const isSelected = p.id === selectedParcela?.id
+                  const isSelected =
+                selectedParcelaIds.has(p.id) ||
+                (!multiSelectMode && selectedParcelaIds.size === 0 && p.id === selectedParcela?.id)
                   const isEditing = editingRowId === p.id && editRowData
                   const ocupados =
                     p.espacios_ocupados || (p.estado === 'ocupada' || p.estado === 'en_mora' ? 1 : 0)
@@ -1485,6 +1788,14 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                         key={p.id}
                         className="bg-primary/5 border-l-4 border-l-primary"
                       >
+                        <td className="py-2 px-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedParcelaIds.has(p.id)}
+                            onChange={() => handleToggleSelectRow(p.id)}
+                            className="w-3.5 h-3.5 rounded accent-primary cursor-pointer"
+                          />
+                        </td>
                         {/* Titular Editable */}
                         <td className="py-2 px-3">
                           <div className="space-y-1 max-w-[220px]">
@@ -1634,6 +1945,16 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                           : 'bg-[#eaf0f6] hover:bg-blue-50/80'
                       }`}
                     >
+                      {/* Checkbox Selección Múltiple */}
+                      <td className="py-2.5 px-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedParcelaIds.has(p.id)}
+                          onChange={() => handleToggleSelectRow(p.id)}
+                          className="w-3.5 h-3.5 rounded accent-primary cursor-pointer"
+                          title={`Seleccionar parcela ${p.nomenclatura}`}
+                        />
+                      </td>
                       {/* Titular */}
                       <td className="py-2.5 px-3">
                         <div className="flex items-center gap-1.5">

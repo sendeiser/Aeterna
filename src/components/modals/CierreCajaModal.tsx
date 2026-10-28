@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { formatCurrency } from '../../lib/formatters'
 import { PagoRecibo } from '../../services/dataService'
 import { EgresoCajaModal } from './EgresoCajaModal'
@@ -8,6 +8,7 @@ interface CierreCajaModalProps {
   onClose: () => void
   totalRecaudado: number
   pagos: PagoRecibo[]
+  initialSelectedIds?: string[]
   onRegistrarEgreso?: (egreso: {
     concepto: string
     categoria: string
@@ -15,17 +16,36 @@ interface CierreCajaModalProps {
     comprobante: string
     metodo: 'efectivo' | 'transferencia'
   }) => void
+  onAnularMultiplesPagos?: (pagos: PagoRecibo[]) => Promise<void> | void
 }
 
 export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({
   isOpen,
   onClose,
-  totalRecaudado,
   pagos,
+  initialSelectedIds,
   onRegistrarEgreso,
+  onAnularMultiplesPagos,
 }) => {
   const [cajaCerrada, setCajaCerrada] = useState(false)
   const [egresoModalOpen, setEgresoModalOpen] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [isDeletingBatch, setIsDeletingBatch] = useState(false)
+
+  // Inicializar selección al abrir el modal o cambiar pagos/initialSelectedIds
+  useEffect(() => {
+    if (!isOpen) return
+    if (initialSelectedIds && initialSelectedIds.length > 0) {
+      setSelectedIds(new Set(initialSelectedIds))
+    } else {
+      setSelectedIds(new Set(pagos.map((p) => p.id || p.nroRecibo)))
+    }
+  }, [isOpen, initialSelectedIds, pagos])
+
+  const pagosSeleccionados = useMemo(
+    () => pagos.filter((p) => selectedIds.has(p.id || p.nroRecibo)),
+    [pagos, selectedIds]
+  )
 
   if (!isOpen) return null
 
@@ -36,9 +56,60 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({
     day: 'numeric',
   })
 
-  // Separación de Ingresos y Egresos
-  const ingresos = pagos.filter((p) => p.tipo !== 'egreso')
-  const egresos = pagos.filter((p) => p.tipo === 'egreso')
+  const allSelected =
+    pagos.length > 0 && pagos.every((p) => selectedIds.has(p.id || p.nroRecibo))
+
+  const handleToggleSelectRow = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(pagos.map((p) => p.id || p.nroRecibo)))
+    }
+  }
+
+  const handleSelectByFilter = (
+    filterType: 'ingresos' | 'egresos' | 'efectivo' | 'digital'
+  ) => {
+    const filtered = pagos.filter((p) => {
+      const isEgr = p.tipo === 'egreso' || (p.concepto && p.concepto.includes('[EGRESO]'))
+      if (filterType === 'ingresos') return !isEgr
+      if (filterType === 'egresos') return isEgr
+      if (filterType === 'efectivo') return p.metodo === 'efectivo'
+      if (filterType === 'digital') return p.metodo !== 'efectivo'
+      return true
+    })
+    setSelectedIds(new Set(filtered.map((p) => p.id || p.nroRecibo)))
+  }
+
+  const handleAnularSeleccionados = async () => {
+    if (!onAnularMultiplesPagos || pagosSeleccionados.length === 0) return
+    if (
+      !confirm(
+        `¿Confirma anular y eliminar los ${pagosSeleccionados.length} comprobantes seleccionados del arqueo?`
+      )
+    ) {
+      return
+    }
+    setIsDeletingBatch(true)
+    try {
+      await onAnularMultiplesPagos(pagosSeleccionados)
+    } finally {
+      setIsDeletingBatch(false)
+    }
+  }
+
+  // Separación de Ingresos y Egresos sobre los comprobantes seleccionados
+  const ingresos = pagosSeleccionados.filter((p) => p.tipo !== 'egreso')
+  const egresos = pagosSeleccionados.filter((p) => p.tipo === 'egreso')
 
   const totalIngresos = ingresos.reduce((sum, p) => sum + (p.monto || 0), 0)
   const totalEgresos = egresos.reduce((sum, p) => sum + (p.monto || 0), 0)
@@ -73,8 +144,8 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({
       balanceNeto,
       totalQR: totalIngresosQR,
       totalEfectivo: totalIngresosEfectivo,
-      cantOperaciones: pagos.length,
-      operador: 'Of. Registro Civil - Chamical',
+      cantOperaciones: pagosSeleccionados.length,
+      operador: 'Administración - Parque Aeterna',
     }
     const cierresPrevios = JSON.parse(localStorage.getItem('aeterna_cierres_caja') || '[]')
     cierresPrevios.unshift(cierreLog)
@@ -104,7 +175,7 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({
               </div>
               <div>
                 <span className="text-[10px] uppercase font-bold tracking-wider text-white/80 block">
-                  Municipalidad de Chamical · Tesorería
+                  Aeterna Parque San Nicolás · Tesorería
                 </span>
                 <h2 className="text-title-lg font-title-lg font-bold">
                   Acta de Balance & Cierre Diario de Caja
@@ -138,13 +209,20 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({
             {/* Membrete y Fecha */}
             <div className="text-center pb-3 border-b border-dashed border-outline-variant space-y-1">
               <div className="flex items-center justify-between text-xs text-outline font-code-cadastral">
-                <span>N° ACTA: <strong>{nroCierre}</strong></span>
-                <span>TERMINAL: 01 (REGISTRO CIVIL)</span>
+                <span>
+                  N° ACTA: <strong>{nroCierre}</strong>
+                </span>
+                <span>TERMINAL: 01 (ADMINISTRACIÓN CENTRAL)</span>
               </div>
               <h3 className="text-lg font-bold text-primary capitalize pt-1">{fechaHoy}</h3>
               <span className="text-xs text-on-surface-variant block">
-                Parque & Sepelios Aeterna Chamical · Ejercicio Fiscal 2026
+                Parque & Sepelios Aeterna · Ejercicio Fiscal 2026
               </span>
+              {pagosSeleccionados.length < pagos.length && (
+                <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-semibold">
+                  Arqueo parcial sobre {pagosSeleccionados.length} de {pagos.length} comprobantes seleccionados
+                </span>
+              )}
             </div>
 
             {/* Metric Hero Cards: Ingresos, Egresos, Balance Neto */}
@@ -158,7 +236,8 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({
                   +{formatCurrency(totalIngresos)}
                 </span>
                 <span className="text-[11px] text-emerald-600 block">
-                  {ingresos.length} cobranza{ingresos.length === 1 ? '' : 's'}
+                  {ingresos.length} cobranza{ingresos.length === 1 ? '' : 's'} seleccionada
+                  {ingresos.length === 1 ? '' : 's'}
                 </span>
               </div>
 
@@ -171,16 +250,19 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({
                   -{formatCurrency(totalEgresos)}
                 </span>
                 <span className="text-[11px] text-rose-600 block">
-                  {egresos.length} egreso{egresos.length === 1 ? '' : 's'} operativo{egresos.length === 1 ? '' : 's'}
+                  {egresos.length} egreso{egresos.length === 1 ? '' : 's'} operativo
+                  {egresos.length === 1 ? '' : 's'}
                 </span>
               </div>
 
               {/* Card 3: Balance Neto */}
-              <div className={`p-3.5 rounded-xl border space-y-0.5 ${
-                balanceNeto >= 0
-                  ? 'bg-primary/5 border-primary/20 text-primary'
-                  : 'bg-red-50 border-red-300 text-red-900'
-              }`}>
+              <div
+                className={`p-3.5 rounded-xl border space-y-0.5 ${
+                  balanceNeto >= 0
+                    ? 'bg-primary/5 border-primary/20 text-primary'
+                    : 'bg-red-50 border-red-300 text-red-900'
+                }`}
+              >
                 <span className="text-[10px] uppercase font-bold opacity-80 block">
                   Balance Neto de Caja
                 </span>
@@ -199,7 +281,8 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({
                 <div>
                   <span className="font-bold text-on-surface block">Efectivo en Mostrador:</span>
                   <span className="text-[10px] text-on-surface-variant">
-                    Ingresos: {formatCurrency(totalIngresosEfectivo)} | Egresos: {formatCurrency(totalEgresosEfectivo)}
+                    Ingresos: {formatCurrency(totalIngresosEfectivo)} | Egresos:{' '}
+                    {formatCurrency(totalEgresosEfectivo)}
                   </span>
                 </div>
                 <span className="font-bold font-code-cadastral text-sm text-slate-800">
@@ -211,7 +294,8 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({
                 <div>
                   <span className="font-bold text-on-surface block">Bancos & QR BCRA:</span>
                   <span className="text-[10px] text-on-surface-variant">
-                    Ingresos: {formatCurrency(totalIngresosQR)} | Egresos: {formatCurrency(totalEgresosQR)}
+                    Ingresos: {formatCurrency(totalIngresosQR)} | Egresos:{' '}
+                    {formatCurrency(totalEgresosQR)}
                   </span>
                 </div>
                 <span className="font-bold font-code-cadastral text-sm text-emerald-700">
@@ -223,11 +307,13 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({
             {/* Estado de Caja */}
             {cajaCerrada ? (
               <div className="p-4 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-950 flex items-center gap-3">
-                <span className="material-symbols-outlined text-emerald-700 text-2xl">verified</span>
+                <span className="material-symbols-outlined text-emerald-700 text-2xl">
+                  verified
+                </span>
                 <div>
                   <h4 className="font-bold text-sm">Caja Cerrada y Auditada con Éxito</h4>
                   <p className="text-xs text-emerald-800 mt-0.5">
-                    El balance de la jornada ha sido archivado y enviado a la Dirección de Rentas y Tesorería.
+                    El balance de la jornada ha sido archivado y registrado en Tesorería.
                   </p>
                 </div>
               </div>
@@ -243,61 +329,159 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({
               </div>
             )}
 
-            {/* Listado de Operaciones Recientes */}
+            {/* Listado de Operaciones con Selección Múltiple */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase text-outline tracking-wider">
-                  Detalle de Comprobantes Registrados ({pagos.length})
-                </span>
-                <span className="text-[10px] text-outline">Orden cronológico</span>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold uppercase text-outline tracking-wider">
+                    Detalle de Comprobantes ({pagosSeleccionados.length} de {pagos.length}{' '}
+                    seleccionados)
+                  </span>
+                </div>
+
+                {/* Controles de Selección Múltiple (no se imprimen) */}
+                {pagos.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 print:hidden">
+                    <button
+                      type="button"
+                      onClick={handleSelectAll}
+                      className="px-2 py-1 rounded text-[11px] font-semibold bg-primary/10 hover:bg-primary/20 text-primary transition-colors cursor-pointer flex items-center gap-1"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">
+                        {allSelected ? 'deselect' : 'select_all'}
+                      </span>
+                      <span>{allSelected ? 'Desmarcar todos' : 'Seleccionar todos'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSelectByFilter('ingresos')}
+                      className="px-2 py-1 rounded text-[10px] font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition-colors cursor-pointer"
+                      title="Seleccionar únicamente los ingresos"
+                    >
+                      Solo Ingresos
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSelectByFilter('egresos')}
+                      className="px-2 py-1 rounded text-[10px] font-semibold bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 transition-colors cursor-pointer"
+                      title="Seleccionar únicamente los egresos"
+                    >
+                      Solo Egresos
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSelectByFilter('efectivo')}
+                      className="px-2 py-1 rounded text-[10px] font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition-colors cursor-pointer"
+                      title="Seleccionar únicamente pagos en efectivo"
+                    >
+                      Solo Efectivo
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSelectByFilter('digital')}
+                      className="px-2 py-1 rounded text-[10px] font-semibold bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 transition-colors cursor-pointer"
+                      title="Seleccionar únicamente pagos por QR / Transferencia"
+                    >
+                      Solo QR/Digital
+                    </button>
+
+                    {onAnularMultiplesPagos &&
+                      pagosSeleccionados.length > 0 &&
+                      !cajaCerrada && (
+                        <button
+                          type="button"
+                          onClick={handleAnularSeleccionados}
+                          disabled={isDeletingBatch}
+                          className="px-2 py-1 rounded text-[10px] font-bold bg-rose-600 hover:bg-rose-700 text-white transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                          title="Anular y eliminar los comprobantes seleccionados"
+                        >
+                          <span className="material-symbols-outlined text-[13px]">delete</span>
+                          <span>
+                            {isDeletingBatch
+                              ? 'Anulando...'
+                              : `Anular (${pagosSeleccionados.length})`}
+                          </span>
+                        </button>
+                      )}
+                  </div>
+                )}
               </div>
-              <div className="border border-outline-variant rounded-xl divide-y divide-outline-variant/50 max-h-56 overflow-y-auto custom-scroll shadow-xs">
+
+              <div className="border border-outline-variant rounded-xl divide-y divide-outline-variant/50 max-h-64 overflow-y-auto custom-scroll shadow-xs">
                 {pagos.length === 0 ? (
                   <div className="p-6 text-center text-xs text-outline">
                     No se han registrado cobros ni egresos en la jornada actual.
                   </div>
                 ) : (
                   pagos.map((p) => {
+                    const rowId = p.id || p.nroRecibo
+                    const isChecked = selectedIds.has(rowId)
                     const isEgreso = p.tipo === 'egreso'
                     return (
                       <div
-                        key={p.id}
-                        className={`p-3 flex items-center justify-between text-xs transition-colors ${
-                          isEgreso ? 'bg-rose-50/40 hover:bg-rose-50/70' : 'hover:bg-surface-container-low/70'
+                        key={rowId}
+                        onClick={() => handleToggleSelectRow(rowId)}
+                        className={`p-3 flex items-center justify-between gap-3 text-xs transition-colors cursor-pointer select-none ${
+                          !isChecked
+                            ? 'opacity-45 bg-slate-50/70 print:hidden'
+                            : isEgreso
+                            ? 'bg-rose-50/40 hover:bg-rose-50/70'
+                            : 'bg-white hover:bg-surface-container-low/70'
                         }`}
                       >
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            {isEgreso ? (
-                              <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-100 text-rose-800 border border-rose-300">
-                                EGRESO
+                        <div className="flex items-center gap-3 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => handleToggleSelectRow(rowId)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-4 h-4 rounded accent-primary cursor-pointer shrink-0 print:hidden"
+                            title="Incluir u omitir comprobante en el arqueo"
+                          />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {isEgreso ? (
+                                <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-100 text-rose-800 border border-rose-300">
+                                  EGRESO
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                  INGRESO
+                                </span>
+                              )}
+                              <span className="font-semibold text-on-surface block text-sm truncate">
+                                {p.concepto}
                               </span>
-                            ) : (
-                              <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                INGRESO
+                            </div>
+                            <div className="text-[11px] text-on-surface-variant flex items-center gap-1.5 mt-0.5 flex-wrap">
+                              <span className="font-medium">{p.titularNombre}</span>
+                              <span>•</span>
+                              <span className="font-code-cadastral text-outline">
+                                {p.nroRecibo}
                               </span>
-                            )}
-                            <span className="font-semibold text-on-surface block text-sm">
-                              {p.concepto}
-                            </span>
-                          </div>
-                          <div className="text-[11px] text-on-surface-variant flex items-center gap-1.5 mt-0.5">
-                            <span className="font-medium">{p.titularNombre}</span>
-                            <span>•</span>
-                            <span className="font-code-cadastral text-outline">{p.nroRecibo}</span>
-                            {p.categoria && (
-                              <>
-                                <span>•</span>
-                                <span className="text-[10px] italic text-outline">{p.categoria}</span>
-                              </>
-                            )}
+                              {p.categoria && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-[10px] italic text-outline">
+                                    {p.categoria}
+                                  </span>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <span className={`font-code-cadastral font-bold text-sm block ${
-                            isEgreso ? 'text-rose-700' : 'text-emerald-700'
-                          }`}>
-                            {isEgreso ? '-' : '+'}{formatCurrency(p.monto)}
+                        <div className="text-right shrink-0">
+                          <span
+                            className={`font-code-cadastral font-bold text-sm block ${
+                              isEgreso ? 'text-rose-700' : 'text-emerald-700'
+                            }`}
+                          >
+                            {isEgreso ? '-' : '+'}
+                            {formatCurrency(p.monto)}
                           </span>
                           <span className="inline-flex items-center gap-1 text-[10px] text-on-surface-variant font-medium bg-surface-container px-2 py-0.5 rounded border border-outline-variant">
                             {p.metodo === 'efectivo' ? 'Efectivo' : 'QR / Transf.'}
@@ -315,13 +499,15 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({
               <div>
                 <div className="border-t border-outline-variant/80 mx-6 pt-1">
                   <span className="font-bold text-primary block">Operador de Turno</span>
-                  <span className="text-[10px] text-outline">Oficina Registro Civil & Sepelios</span>
+                  <span className="text-[10px] text-outline">
+                    Administración & Recepción Aeterna
+                  </span>
                 </div>
               </div>
               <div>
                 <div className="border-t border-outline-variant/80 mx-6 pt-1">
-                  <span className="font-bold text-primary block">Tesorería Municipal</span>
-                  <span className="text-[10px] text-outline">Municipalidad de Chamical</span>
+                  <span className="font-bold text-primary block">Tesorería y Auditoría</span>
+                  <span className="text-[10px] text-outline">Aeterna Parque San Nicolás</span>
                 </div>
               </div>
             </div>
@@ -332,10 +518,13 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({
             <button
               type="button"
               onClick={handlePrint}
-              className="px-4 h-9 rounded-xl border border-outline-variant bg-white text-on-surface text-xs font-semibold flex items-center gap-2 hover:bg-surface-container transition-colors shadow-xs cursor-pointer"
+              disabled={pagosSeleccionados.length === 0}
+              className="px-4 h-9 rounded-xl border border-outline-variant bg-white text-on-surface text-xs font-semibold flex items-center gap-2 hover:bg-surface-container transition-colors shadow-xs cursor-pointer disabled:opacity-50"
             >
               <span className="material-symbols-outlined text-[18px]">print</span>
-              <span>Imprimir Acta de Cierre</span>
+              <span>
+                Imprimir Acta ({pagosSeleccionados.length})
+              </span>
             </button>
 
             <div className="flex items-center gap-2">
@@ -350,9 +539,10 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({
                 <button
                   type="button"
                   onClick={handleConfirmarCierre}
-                  className="px-4 h-9 rounded-xl bg-primary hover:bg-secondary text-white text-xs font-bold shadow-md transition-transform active:scale-[0.98] cursor-pointer"
+                  disabled={pagosSeleccionados.length === 0}
+                  className="px-4 h-9 rounded-xl bg-primary hover:bg-secondary text-white text-xs font-bold shadow-md transition-transform active:scale-[0.98] cursor-pointer disabled:opacity-50"
                 >
-                  Confirmar y Cerrar Caja
+                  Confirmar y Cerrar Caja ({pagosSeleccionados.length})
                 </button>
               )}
             </div>
