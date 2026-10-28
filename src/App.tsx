@@ -13,6 +13,7 @@ import { InhumacionesView } from './components/views/InhumacionesView'
 import { AfiliadosSeguroView } from './components/views/AfiliadosSeguroView'
 import { CajaView } from './components/views/CajaView'
 import { ConfiguracionView } from './components/views/ConfiguracionView'
+import { CobranzasView } from './components/views/CobranzasView'
 import { CobroCajaData } from './components/modals/CobroCajaModal'
 import { CierreCajaModal } from './components/modals/CierreCajaModal'
 import { PortalPagoPublico } from './components/payment/PortalPagoPublico'
@@ -983,6 +984,7 @@ export default function App() {
                 {currentTab === 'parcelas' && 'PADRÓN GENERAL Y REGISTRO DE PARCELAS'}
                 {currentTab === 'inhumaciones' && 'LIBRO OFICIAL DE INHUMACIONES Y REGISTRO DE DIFUNTOS'}
                 {currentTab === 'seguro' && 'PADRÓN DE AFILIADOS Y ESTADO DE COBRANZA PLAN SEGURO INTEGRAL'}
+                {currentTab === 'cobranzas' && 'PLANILLA DE COBRANZAS — DEUDORES DE MANTENIMIENTO'}
                 {currentTab === 'caja' && 'LIBRO DIARIO DE CAJA Y ARQUEO DE TESORERÍA'}
                 {currentTab === 'configuracion' && 'CONSTANCIA DE PARÁMETROS Y ARANCELES MUNICIPALES'}
               </h1>
@@ -1100,6 +1102,18 @@ export default function App() {
               onRefresh={() => fetchCloudData(true)}
               isRefreshing={isRefreshing}
             />
+          )}
+
+          {currentTab === 'cobranzas' && (
+            <div className="flex-1 min-h-0 overflow-y-auto custom-scroll pb-4">
+              <CobranzasView
+                parcelas={parcelas}
+                onCobrarQR={handleCobrarParcela}
+                onEnviarCobro={handleOpenEnviarCobroParcela}
+                onRefresh={() => fetchCloudData(true)}
+                isRefreshing={isRefreshing}
+              />
+            </div>
           )}
 
           {currentTab === 'caja' && (

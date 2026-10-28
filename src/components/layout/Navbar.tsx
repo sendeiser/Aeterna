@@ -3,7 +3,7 @@ import { AuditoriaModal } from '../modals/AuditoriaModal'
 import { Parcela, AfiliadoSeguro } from '../../types/database'
 import { evaluarMoraAfiliado, evaluarMoraParcela } from '../../lib/reglasNegocio'
 
-export type TabType = 'dashboard' | 'parcelas' | 'inhumaciones' | 'seguro' | 'caja' | 'configuracion'
+export type TabType = 'dashboard' | 'parcelas' | 'inhumaciones' | 'seguro' | 'cobranzas' | 'caja' | 'configuracion'
 
 interface NavbarProps {
   currentTab: TabType
@@ -217,6 +217,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'parcelas' as TabType, label: 'Parcelas', icon: 'domain' },
     { id: 'inhumaciones' as TabType, label: 'Inhumaciones', icon: 'calendar_month' },
     { id: 'seguro' as TabType, label: 'Plan Seguro Integral', icon: 'security' },
+    { id: 'cobranzas' as TabType, label: 'Cobranzas', icon: 'account_balance_wallet' },
     { id: 'caja' as TabType, label: 'Caja Diaria', icon: 'payments' },
     { id: 'configuracion' as TabType, label: 'Configuración', icon: 'settings' },
   ]
@@ -226,6 +227,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     parcelas: 'Módulo de Gestión de Parcelas',
     inhumaciones: 'Libro Digital de Inhumaciones',
     seguro: 'Padrón de Plan Seguro Integral',
+    cobranzas: 'Gestión de Deudores y Cobranza de Mantenimiento',
     caja: 'Caja Diaria, Arqueo & Movimientos de Tesorería',
     configuracion: 'Configuración CBU / Alias de Tesorería',
   }
