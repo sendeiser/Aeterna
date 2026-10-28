@@ -298,8 +298,8 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({
                 className="w-full h-9 px-3 text-body-md bg-white border border-outline-variant rounded-lg focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none"
               >
                 <option value="A">Sector A (Tradicional)</option>
+                <option value="B">Sector B</option>
                 <option value="E">Sector E (Parque Central)</option>
-                <option value="SALINAS">Sector Salinas (Panteón)</option>
               </select>
             </div>
 

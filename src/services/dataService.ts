@@ -624,7 +624,7 @@ export async function upsertParcelaSupabase(parcela: Parcela): Promise<boolean> 
     }
 
     const rawSector = parcela.sector_id || (parcela.nomenclatura ? parcela.nomenclatura.split('-')[0] : 'A')
-    const sectorId = ['A', 'B', 'E', 'SALINAS'].includes(rawSector?.toUpperCase()) ? rawSector.toUpperCase() : 'A'
+    const sectorId = ['A', 'B', 'E'].includes(rawSector?.toUpperCase()) ? rawSector.toUpperCase() : 'A'
     const fila = parcela.manzana_fila || (parcela.nomenclatura ? parcela.nomenclatura.split('-')[1] || '01' : '01')
     const num = parcela.numero_parcela ? String(parcela.numero_parcela) : (parcela.nomenclatura ? parcela.nomenclatura.split('-')[2] || '1' : '1')
 
@@ -676,7 +676,8 @@ export async function fetchInhumacionesSupabase(): Promise<Inhumacion[] | null> 
 
     return data.map((i: any) => ({
       id: i.id,
-      parcela_id: i.parcela?.id || '',
+      parcela_id: i.parcela?.id || i.parcela_id || '',
+      parcela_nomenclatura: i.parcela?.nomenclatura || i.parcela_nomenclatura || null,
       nombre_difunto: i.nombre_difunto,
       dni_difunto: i.dni_difunto,
       fecha_fallecimiento: i.fecha_fallecimiento,
@@ -691,7 +692,7 @@ export async function fetchInhumacionesSupabase(): Promise<Inhumacion[] | null> 
       facebook_responsable: i.facebook_responsable || null,
       instagram_responsable: i.instagram_responsable || null,
       observaciones: i.observaciones || null,
-      parcela: i.parcela,
+      parcela: i.parcela || i.parcela_nomenclatura,
     }))
   } catch (err) {
     return null
@@ -1475,20 +1476,19 @@ export async function syncDataToSupabase(onProgress?: (msg: string) => void) {
   const { parcelas, afiliados, inhumaciones } = loadInitialData()
 
   // 1. Sincronizar Sectores
-  onProgress?.('Asegurando sectores (A, B, E, Salinas)...')
+  onProgress?.('Asegurando sectores (A, B, E)...')
   await supabase.from('sectores').upsert([
     { codigo: 'A', nombre: 'Sector A', descripcion: 'Sector A Tradicional' },
-    { codigo: 'B', nombre: 'Sector B', descripcion: 'Sector B Tradicional' },
+    { codigo: 'B', nombre: 'Sector B', descripcion: 'Sector B' },
     { codigo: 'E', nombre: 'Sector E', descripcion: 'Sector E Ampliación' },
-    { codigo: 'SALINAS', nombre: 'Sector Salinas', descripcion: 'Sector Salinas' },
   ], { onConflict: 'codigo' })
 
   // 2. Sincronizar Parcelas en lotes de 50
   onProgress?.(`Migrando ${parcelas.length} parcelas extraídas de documentos...`)
   for (let i = 0; i < parcelas.length; i += 50) {
     const chunk = parcelas.slice(i, i + 50).map((p) => {
-      const rawSector = p.sector_id || (p.nomenclatura.startsWith('E') ? 'E' : p.nomenclatura.startsWith('SAL') ? 'SALINAS' : 'A')
-      const sectorCode = ['A', 'B', 'E', 'SALINAS'].includes(rawSector?.toUpperCase()) ? rawSector.toUpperCase() : 'A'
+      const rawSector = p.sector_id || (p.nomenclatura.startsWith('E') ? 'E' : 'A')
+      const sectorCode = ['A', 'B', 'E'].includes(rawSector?.toUpperCase()) ? rawSector.toUpperCase() : 'A'
       return {
         nomenclatura: p.nomenclatura,
         sector_id: sectorCode,
@@ -1561,4 +1561,68 @@ export async function syncDataToSupabase(onProgress?: (msg: string) => void) {
 
   onProgress?.('¡Migración completa a Supabase finalizada con éxito!')
   return true
+}
+
+// =========================================================================
+// CRUD DE SECTORES DEL PARQUE
+// =========================================================================
+
+export interface SectorParque {
+  codigo: string
+  nombre: string
+  descripcion?: string | null
+}
+
+export async function fetchSectores(): Promise<SectorParque[]> {
+  if (!isSupabaseConfigured) {
+    return [
+      { codigo: 'A', nombre: 'Sector A', descripcion: 'Sector A Tradicional' },
+      { codigo: 'B', nombre: 'Sector B', descripcion: 'Sector B' },
+      { codigo: 'E', nombre: 'Sector E', descripcion: 'Sector E Ampliación' },
+    ]
+  }
+  const { data, error } = await supabase
+    .from('sectores')
+    .select('codigo, nombre, descripcion')
+    .order('codigo')
+  if (error) {
+    console.error('Error al cargar sectores:', error.message)
+    return []
+  }
+  return (data || []) as SectorParque[]
+}
+
+export async function upsertSector(sector: SectorParque): Promise<boolean> {
+  if (!isSupabaseConfigured) return false
+  const codigo = sector.codigo.trim().toUpperCase()
+  if (!codigo || !sector.nombre.trim()) return false
+  const { error } = await supabase
+    .from('sectores')
+    .upsert(
+      { codigo, nombre: sector.nombre.trim(), descripcion: sector.descripcion?.trim() || null },
+      { onConflict: 'codigo' }
+    )
+  if (error) {
+    console.error('Error al guardar sector:', error.message)
+    return false
+  }
+  return true
+}
+
+export async function deleteSector(codigo: string): Promise<{ ok: boolean; msg?: string }> {
+  if (!isSupabaseConfigured) return { ok: false, msg: 'Sin conexión' }
+  // Verificar si hay parcelas con este sector antes de eliminar
+  const { count } = await supabase
+    .from('parcelas')
+    .select('id', { count: 'exact', head: true })
+    .eq('sector_id', codigo)
+  if ((count ?? 0) > 0) {
+    return { ok: false, msg: `No se puede eliminar: ${count} parcela(s) pertenecen a este sector.` }
+  }
+  const { error } = await supabase.from('sectores').delete().eq('codigo', codigo)
+  if (error) {
+    console.error('Error al eliminar sector:', error.message)
+    return { ok: false, msg: error.message }
+  }
+  return { ok: true }
 }

@@ -50,15 +50,15 @@ CREATE TABLE IF NOT EXISTS public.titulares (
 
 -- 4. TABLA DE SECTORES DEL PARQUE
 CREATE TABLE IF NOT EXISTS public.sectores (
-    codigo TEXT PRIMARY KEY, -- 'A', 'E', 'SALINAS'
+    codigo TEXT PRIMARY KEY, -- 'A', 'B', 'E'
     nombre TEXT NOT NULL,
     descripcion TEXT
 );
 
 INSERT INTO public.sectores (codigo, nombre, descripcion) VALUES
 ('A', 'Sector A', 'Sector principal parquizado A'),
-('E', 'Sector E', 'Sector parquizado E'),
-('SALINAS', 'Sector Salinas', 'Sector Salinas tradicional')
+('B', 'Sector B', 'Sector B'),
+('E', 'Sector E', 'Sector parquizado E')
 ON CONFLICT (codigo) DO NOTHING;
 
 -- 5. TABLA DE PARCELAS

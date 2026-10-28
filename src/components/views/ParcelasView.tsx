@@ -39,7 +39,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   onRefresh,
   isRefreshing = false,
 }) => {
-  const [filterSector, setFilterSector] = useState<'todos' | 'A' | 'E' | 'SALINAS' | 'mora' | 'standby' | 'baja_libre' | 'baja_inhumados'>('todos')
+  const [filterSector, setFilterSector] = useState<'todos' | 'A' | 'B' | 'E' | 'mora' | 'standby' | 'baja_libre' | 'baja_inhumados'>('todos')
   const [filterTitularVital, setFilterTitularVital] = useState<'todos' | 'vivo' | 'fallecido'>('todos')
   const [filterFechaDesde, setFilterFechaDesde] = useState('')
   const [filterFechaHasta, setFilterFechaHasta] = useState('')
@@ -365,8 +365,8 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
 
   // Counters
   const countSecA = parcelas.filter((p) => p.sector_id === 'A').length
+  const countSecB = parcelas.filter((p) => p.sector_id === 'B').length
   const countSecE = parcelas.filter((p) => p.sector_id === 'E').length
-  const countSalinas = parcelas.filter((p) => p.sector_id === 'SALINAS').length
   const countMora = parcelas.filter((p) => p.estado === 'en_mora' || (p.saldo_mantenimiento || 0) > 0).length
   const countStandby = parcelas.filter((p) => p.estado === 'standby').length
   const countBajaLibre = parcelas.filter((p) => {
@@ -505,14 +505,14 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => setFilterSector('SALINAS')}
+              onClick={() => setFilterSector('B')}
               className={`px-2 py-0.5 rounded whitespace-nowrap shrink-0 transition-colors ${
-                filterSector === 'SALINAS'
+                filterSector === 'B'
                   ? 'bg-primary text-on-primary shadow-xs font-semibold'
                   : 'bg-surface-container text-on-surface'
               }`}
             >
-              Salinas ({countSalinas})
+              Sec. B ({countSecB})
             </button>
             <button
               type="button"
@@ -874,14 +874,14 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setFilterSector('SALINAS')}
+                onClick={() => setFilterSector('B')}
                 className={`px-2.5 py-1 rounded text-xs font-medium whitespace-nowrap transition-colors shrink-0 ${
-                  filterSector === 'SALINAS'
+                  filterSector === 'B'
                     ? 'bg-primary text-on-primary shadow-xs font-semibold'
                     : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
                 }`}
               >
-                Salinas ({countSalinas})
+                Sector B ({countSecB})
               </button>
               <button
                 type="button"
@@ -1149,7 +1149,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                           {p.nomenclatura}
                         </span>
                         <span className="text-[10px] text-outline font-medium px-1.5 py-0.5 rounded bg-surface border border-outline-variant">
-                          Sec. {p.sector_id === 'SALINAS' ? 'Salinas' : p.sector_id === 'A' ? 'A (Trad.)' : 'E (Parque)'}
+                          Sec. {p.sector_id === 'B' ? 'B' : p.sector_id === 'A' ? 'A (Trad.)' : p.sector_id === 'E' ? 'E (Parque)' : p.sector_id}
                         </span>
                       </div>
                       <div className="text-[11px] text-outline">
@@ -1535,7 +1535,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                             {p.nomenclatura}
                           </span>
                           <span className="text-[11px] text-outline">
-                            Sec. {p.sector_id === 'SALINAS' ? 'Salinas (Panteón)' : p.sector_id === 'A' ? 'Tradicional' : 'Parque Central'}
+                            Sec. {p.sector_id === 'B' ? 'Sector B' : p.sector_id === 'A' ? 'Tradicional' : p.sector_id === 'E' ? 'Parque Central' : p.sector_id}
                           </span>
                         </td>
 
@@ -1728,7 +1728,7 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                           {p.nomenclatura}
                         </span>
                         <span className="text-[11px] text-outline">
-                          Sec. {p.sector_id === 'SALINAS' ? 'Salinas (Panteón)' : p.sector_id === 'A' ? 'Tradicional' : 'Parque Central'}
+                          Sec. {p.sector_id === 'B' ? 'Sector B' : p.sector_id === 'A' ? 'Tradicional' : p.sector_id === 'E' ? 'Parque Central' : p.sector_id}
                         </span>
                       </td>
 

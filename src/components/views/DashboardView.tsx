@@ -827,7 +827,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </thead>
               <tbody className="divide-y divide-outline-variant/40 font-body-md text-on-surface">
                 {displayedInhumaciones.slice(0, limitCount).map((i, index) => {
-                  const parcNom = typeof i.parcela === 'object' ? i.parcela?.nomenclatura : i.parcela
+                  const parcNom = typeof i.parcela === 'object' ? i.parcela?.nomenclatura : (i.parcela || i.parcela_nomenclatura)
                   return (
                     <tr
                       key={i.id}
@@ -845,7 +845,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         </div>
                       </td>
                       <td className="px-4 py-2 align-middle font-code-cadastral font-bold text-primary">
-                        {parcNom || 'A-25-96'}
+                        {parcNom || 'S/D'}
                       </td>
                       <td className="px-4 py-2 align-middle text-body-sm text-outline">
                         Nivel {i.nivel_posicion || 1}
@@ -991,7 +991,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                 {/* Inhumaciones */}
                 {displayedInhumaciones.slice(0, 5).map((i, index) => {
-                  const parcNom = typeof i.parcela === 'object' ? i.parcela?.nomenclatura : i.parcela
+                  const parcNom = typeof i.parcela === 'object' ? i.parcela?.nomenclatura : (i.parcela || i.parcela_nomenclatura)
                   return (
                     <tr
                       key={`i-${i.id}`}
@@ -1003,7 +1003,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         </span>
                       </td>
                       <td className="px-4 py-2 align-middle font-code-cadastral font-bold text-primary">
-                        {parcNom || 'A-25-96'}
+                        {parcNom || 'S/D'}
                       </td>
                       <td className="px-4 py-2 align-middle">
                         <div className="font-semibold text-on-surface">{i.nombre_difunto}</div>

@@ -81,7 +81,8 @@ export interface Inhumacion {
   facebook_responsable?: string | null
   instagram_responsable?: string | null
   observaciones?: string | null
-  parcela?: Parcela | null
+  parcela?: Parcela | string | null
+  parcela_nomenclatura?: string | null
   created_at?: string | null
 }
 

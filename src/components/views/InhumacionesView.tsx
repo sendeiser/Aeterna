@@ -345,7 +345,7 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
             <div className="p-4 text-center text-outline text-sm">No se encontraron actas de inhumación.</div>
           ) : (
             sortedInhumaciones.map((inh, index) => {
-              const parcNom = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela
+              const parcNom = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : (inh.parcela || inh.parcela_nomenclatura)
               const fechaInh = inh.fecha_inhumacion?.slice(0, 10) || '2026-03-30'
               const hora = inh.fecha_inhumacion?.includes('T')
                 ? `${inh.fecha_inhumacion.split('T')[1].slice(0, 5)} hs`
@@ -395,7 +395,7 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                     <div className="text-[12px] text-on-surface-variant flex items-center gap-2 mt-0.5">
                       <span>Fosa:</span>
                       <span className="font-code-cadastral font-bold text-primary bg-surface px-1.5 py-0.5 rounded border border-outline-variant">
-                        {parcNom || 'A-25-96'}
+                        {parcNom || 'S/D'}
                       </span>
                       <span className="text-secondary font-semibold text-xs">[Nivel {inh.nivel_posicion || 1}]</span>
                     </div>
@@ -558,7 +558,7 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
             </thead>
             <tbody className="divide-y divide-outline-variant/40 text-body-md font-body-md">
               {sortedInhumaciones.map((inh, index) => {
-                const parcNom = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela
+                const parcNom = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : (inh.parcela || inh.parcela_nomenclatura)
                 const fechaInh = inh.fecha_inhumacion?.slice(0, 10) || '2026-03-30'
                 const hora = inh.fecha_inhumacion?.includes('T')
                   ? `${inh.fecha_inhumacion.split('T')[1].slice(0, 5)} hs`
@@ -636,7 +636,7 @@ export const InhumacionesView: React.FC<InhumacionesViewProps> = ({
                     {/* Parcela y Nivel */}
                     <td className="py-1 px-3 whitespace-nowrap">
                       <span className="font-code-cadastral text-code-cadastral font-bold text-on-surface bg-surface-container-low px-1.5 py-0.5 rounded border border-outline-variant/60">
-                        {parcNom || 'A-25-96'}
+                        {parcNom || 'S/D'}
                       </span>
                       <span className="text-[11px] text-secondary font-medium ml-1">
                         [Nivel {inh.nivel_posicion || 1}]

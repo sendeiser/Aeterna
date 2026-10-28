@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { ConfiguracionCobro } from '../../types/database'
 import { QRCodeSVG } from 'qrcode.react'
 import { generateBCRAEMVCoQR } from '../../lib/qrHelper'
+import { fetchSectores, upsertSector, deleteSector, SectorParque } from '../../services/dataService'
 
 interface ConfiguracionViewProps {
   config: ConfiguracionCobro
@@ -16,6 +17,49 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({ config, on
   const [cuit, setCuit] = useState(config.cuit)
   const [mensaje, setMensaje] = useState(config.mensaje_recibo)
   const [guardado, setGuardado] = useState(false)
+
+  // ── Sectores del Parque ──
+  const [sectores, setSectores] = useState<SectorParque[]>([])
+  const [loadingSectores, setLoadingSectores] = useState(false)
+  const [editingSector, setEditingSector] = useState<SectorParque | null>(null)
+  const [newSector, setNewSector] = useState<SectorParque>({ codigo: '', nombre: '', descripcion: '' })
+  const [sectorMsg, setSectorMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
+
+  const showSectorMsg = (type: 'ok' | 'err', text: string) => {
+    setSectorMsg({ type, text })
+    setTimeout(() => setSectorMsg(null), 3500)
+  }
+
+  const loadSectores = useCallback(async () => {
+    setLoadingSectores(true)
+    const data = await fetchSectores()
+    setSectores(data)
+    setLoadingSectores(false)
+  }, [])
+
+  useEffect(() => { loadSectores() }, [loadSectores])
+
+  const handleSaveSector = async (s: SectorParque) => {
+    const ok = await upsertSector(s)
+    if (ok) {
+      showSectorMsg('ok', `Sector "${s.codigo}" guardado correctamente.`)
+      setEditingSector(null)
+      setNewSector({ codigo: '', nombre: '', descripcion: '' })
+      loadSectores()
+    } else {
+      showSectorMsg('err', 'No se pudo guardar el sector. Verificá la conexión.')
+    }
+  }
+
+  const handleDeleteSector = async (codigo: string) => {
+    const res = await deleteSector(codigo)
+    if (res.ok) {
+      showSectorMsg('ok', `Sector "${codigo}" eliminado.`)
+      loadSectores()
+    } else {
+      showSectorMsg('err', res.msg || 'Error al eliminar.')
+    }
+  }
 
   // Single-User Admin Credentials State
   const [adminUsername, setAdminUsername] = useState(() => {
@@ -355,6 +399,174 @@ export const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({ config, on
           </div>
         </div>
       </div>
+      {/* ─── Panel de Gestión de Sectores del Parque ─── */}
+      <div className="bg-surface-container-lowest border border-outline-variant p-5 sm:p-6 rounded-xl shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-outline-variant pb-3">
+          <div className="flex items-center gap-2.5">
+            <span className="material-symbols-outlined text-primary text-[22px]">grid_4x4</span>
+            <div>
+              <h3 className="text-base font-bold text-on-surface">Sectores del Parque</h3>
+              <p className="text-xs text-on-surface-variant">Añadí, editá o eliminá sectores. No podés eliminar sectores con parcelas asignadas.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={loadSectores}
+            disabled={loadingSectores}
+            className="flex items-center gap-1 text-xs text-primary font-semibold hover:underline cursor-pointer disabled:opacity-50"
+          >
+            <span className={`material-symbols-outlined text-[15px] ${loadingSectores ? 'animate-spin' : ''}`}>sync</span>
+            Actualizar
+          </button>
+        </div>
+
+        {/* Mensaje de estado */}
+        {sectorMsg && (
+          <div className={`px-3 py-2 rounded-lg text-xs font-semibold ${
+            sectorMsg.type === 'ok'
+              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+              : 'bg-rose-50 text-rose-800 border border-rose-200'
+          }`}>
+            {sectorMsg.type === 'ok' ? '✓ ' : '✕ '}{sectorMsg.text}
+          </div>
+        )}
+
+        {/* Lista de sectores existentes */}
+        <div className="space-y-2">
+          {loadingSectores ? (
+            <div className="py-4 text-center text-xs text-outline">Cargando sectores...</div>
+          ) : sectores.length === 0 ? (
+            <div className="py-4 text-center text-xs text-outline">No hay sectores registrados.</div>
+          ) : sectores.map((s) => (
+            <div key={s.codigo} className="flex items-center gap-3 p-3 rounded-lg bg-surface-container border border-outline-variant">
+              {editingSector?.codigo === s.codigo ? (
+                /* Modo edición inline */
+                <>
+                  <span className="font-mono font-bold text-primary text-sm w-12 shrink-0">{s.codigo}</span>
+                  <input
+                    type="text"
+                    value={editingSector.nombre}
+                    onChange={(e) => setEditingSector({ ...editingSector, nombre: e.target.value })}
+                    placeholder="Nombre"
+                    className="flex-1 h-8 px-2 text-xs border border-outline-variant rounded focus:border-secondary focus:outline-none bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={editingSector.descripcion || ''}
+                    onChange={(e) => setEditingSector({ ...editingSector, descripcion: e.target.value })}
+                    placeholder="Descripción (opcional)"
+                    className="flex-1 h-8 px-2 text-xs border border-outline-variant rounded focus:border-secondary focus:outline-none bg-white hidden sm:block"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleSaveSector(editingSector)}
+                    className="h-8 px-3 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">check</span>
+                    Guardar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingSector(null)}
+                    className="h-8 px-2 rounded border border-outline-variant text-xs text-outline hover:text-on-surface cursor-pointer shrink-0"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">close</span>
+                  </button>
+                </>
+              ) : (
+                /* Vista normal */
+                <>
+                  <span className="font-mono font-bold text-primary text-sm w-12 shrink-0">{s.codigo}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-on-surface">{s.nombre}</div>
+                    {s.descripcion && <div className="text-xs text-outline truncate">{s.descripcion}</div>}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditingSector({ ...s })}
+                    title="Editar sector"
+                    className="h-8 w-8 flex items-center justify-center rounded border border-outline-variant text-outline hover:text-primary hover:border-primary cursor-pointer shrink-0 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">edit</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm(`¿Eliminar el sector "${s.codigo} - ${s.nombre}"? Esta acción es irreversible.`)) {
+                        handleDeleteSector(s.codigo)
+                      }
+                    }}
+                    title="Eliminar sector"
+                    className="h-8 w-8 flex items-center justify-center rounded border border-rose-200 text-rose-400 hover:text-rose-700 hover:border-rose-400 cursor-pointer shrink-0 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Formulario para añadir nuevo sector */}
+        <div className="pt-3 border-t border-outline-variant">
+          <h4 className="text-xs font-bold text-on-surface uppercase mb-2 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[15px] text-primary">add_circle</span>
+            Añadir Nuevo Sector
+          </h4>
+          <div className="flex flex-wrap gap-2 items-end">
+            <div>
+              <label className="text-[10px] font-bold text-outline uppercase block mb-1">Código</label>
+              <input
+                type="text"
+                value={newSector.codigo}
+                onChange={(e) => setNewSector({ ...newSector, codigo: e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '') })}
+                placeholder="Ej: C"
+                maxLength={10}
+                className="h-9 w-24 px-3 font-mono font-bold text-sm text-primary bg-white border border-outline-variant rounded-lg focus:border-secondary focus:outline-none uppercase text-center"
+              />
+            </div>
+            <div className="flex-1 min-w-[140px]">
+              <label className="text-[10px] font-bold text-outline uppercase block mb-1">Nombre</label>
+              <input
+                type="text"
+                value={newSector.nombre}
+                onChange={(e) => setNewSector({ ...newSector, nombre: e.target.value })}
+                placeholder="Ej: Sector C"
+                className="w-full h-9 px-3 text-sm bg-white border border-outline-variant rounded-lg focus:border-secondary focus:outline-none"
+              />
+            </div>
+            <div className="flex-1 min-w-[160px] hidden sm:block">
+              <label className="text-[10px] font-bold text-outline uppercase block mb-1">Descripción</label>
+              <input
+                type="text"
+                value={newSector.descripcion || ''}
+                onChange={(e) => setNewSector({ ...newSector, descripcion: e.target.value })}
+                placeholder="Opcional"
+                className="w-full h-9 px-3 text-sm bg-white border border-outline-variant rounded-lg focus:border-secondary focus:outline-none"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (!newSector.codigo.trim() || !newSector.nombre.trim()) {
+                  showSectorMsg('err', 'El código y el nombre son obligatorios.')
+                  return
+                }
+                if (sectores.some((s) => s.codigo === newSector.codigo)) {
+                  showSectorMsg('err', `El código "${newSector.codigo}" ya existe.`)
+                  return
+                }
+                handleSaveSector(newSector)
+              }}
+              className="h-9 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0"
+            >
+              <span className="material-symbols-outlined text-[16px]">add</span>
+              Añadir
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
   )
 }
