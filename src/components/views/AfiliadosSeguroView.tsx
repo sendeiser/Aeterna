@@ -16,6 +16,10 @@ interface AfiliadosSeguroViewProps {
   onNuevoAfiliado: () => void
   onEditarAfiliado: (afiliado: AfiliadoSeguro) => void
   onSaveAfiliado?: (afiliado: Partial<AfiliadoSeguro>) => void
+  onActualizarCuotaMasiva?: (
+    nuevoMonto: number,
+    soloActivos: boolean
+  ) => Promise<{ success: boolean; count: number }>
   onEliminarAfiliado?: (id: string) => void
   onRefresh?: () => void
   isRefreshing?: boolean
@@ -30,6 +34,7 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
   onNuevoAfiliado,
   onEditarAfiliado,
   onSaveAfiliado,
+  onActualizarCuotaMasiva,
   onEliminarAfiliado,
   onRefresh,
   isRefreshing = false,
@@ -55,7 +60,10 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
 
   // Modal Cuota Masiva
   const [modalCuotaMasivaOpen, setModalCuotaMasivaOpen] = useState(false)
-  const [nuevaCuotaInput, setNuevaCuotaInput] = useState<number>(18000)
+  const [nuevaCuotaInput, setNuevaCuotaInput] = useState<number>(() => {
+    const firstActive = afiliados.find((a) => a.estado !== 'baja')
+    return Number(firstActive?.monto_cuota_mensual) || 25000
+  })
   const [soloActivos, setSoloActivos] = useState(true)
   const [guardandoCuotaMasiva, setGuardandoCuotaMasiva] = useState(false)
 
@@ -66,15 +74,11 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
     }
     setGuardandoCuotaMasiva(true)
     try {
-      const res = await actualizarCuotaMasivaSupabase(nuevaCuotaInput, soloActivos)
+      const res = onActualizarCuotaMasiva
+        ? await onActualizarCuotaMasiva(nuevaCuotaInput, soloActivos)
+        : await actualizarCuotaMasivaSupabase(nuevaCuotaInput, soloActivos)
+
       if (res.success) {
-        if (onSaveAfiliado) {
-          for (const a of afiliados) {
-            if (!soloActivos || a.estado !== 'baja') {
-              onSaveAfiliado({ ...a, monto_cuota_mensual: nuevaCuotaInput })
-            }
-          }
-        }
         alert(`¡Cuota actualizada con éxito! Se aplicó el nuevo monto de ${formatCurrency(nuevaCuotaInput)} a ${res.count} afiliados.`)
         setModalCuotaMasivaOpen(false)
       } else {
@@ -725,7 +729,13 @@ export const AfiliadosSeguroView: React.FC<AfiliadosSeguroViewProps> = ({
           <button
             id="btn-cuota-masiva"
             type="button"
-            onClick={() => setModalCuotaMasivaOpen(true)}
+            onClick={() => {
+              const firstActive = afiliados.find((a) => a.estado !== 'baja')
+              if (firstActive?.monto_cuota_mensual) {
+                setNuevaCuotaInput(Number(firstActive.monto_cuota_mensual))
+              }
+              setModalCuotaMasivaOpen(true)
+            }}
             className="h-8 px-2.5 rounded-lg border border-secondary/40 bg-secondary/10 hover:bg-secondary/20 text-secondary-dark font-semibold text-xs transition-colors active:scale-[0.99] flex items-center justify-center gap-1 shadow-xs cursor-pointer"
             title="Actualizar el monto de la cuota mensual a todos los afiliados a la vez"
           >

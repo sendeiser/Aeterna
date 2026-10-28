@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { createPortal } from 'react-dom'
 
 interface EgresoCajaModalProps {
   isOpen: boolean
@@ -51,9 +52,9 @@ export const EgresoCajaModal: React.FC<EgresoCajaModalProps> = ({
     onClose()
   }
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-60 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-[70] flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
@@ -189,6 +190,7 @@ export const EgresoCajaModal: React.FC<EgresoCajaModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

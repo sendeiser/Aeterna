@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Inhumacion, Parcela } from '../../types/database'
+import { normalizeNomenclatura, getOcupacionParcela } from '../../lib/formatters'
 
 interface InhumacionFormProps {
   parcelasDisponibles: Parcela[]
@@ -59,19 +60,19 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
 
   const parcelaSeleccionada = useMemo(() => {
     const bTrim = (busquedaParcela || '').trim().toUpperCase()
-    const bClean = (busquedaParcela || '').replace(/[\s-]/g, '').trim().toUpperCase()
+    const bNorm = normalizeNomenclatura(busquedaParcela)
 
-    // 1. Prioridad: Coincidencia por texto buscado (limpiando espacios y guiones, ej: A 11 40 -> A-11-40)
-    if (bClean) {
-      const matchClean = parcelasDisponibles.find(
-        (p) => (p.nomenclatura || '').replace(/[\s-]/g, '').toUpperCase() === bClean
-      )
-      if (matchClean) return matchClean
-
+    // 1. Prioridad: Coincidencia por nomenclatura normalizada (ej: A 01 01 -> A-01-01 o A-1-1)
+    if (bNorm) {
       const matchExact = parcelasDisponibles.find(
         (p) => (p.nomenclatura || '').toUpperCase() === bTrim
       )
       if (matchExact) return matchExact
+
+      const matchNorm = parcelasDisponibles.find(
+        (p) => normalizeNomenclatura(p.nomenclatura) === bNorm
+      )
+      if (matchNorm) return matchNorm
     }
 
     // 2. Coincidencia por parcelaId
@@ -90,69 +91,40 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
     }
   }, [parcelaSeleccionada?.id])
 
-  // Difuntos actualmente registrados en la parcela seleccionada
-  const difuntosEnParcela = useMemo(() => {
-    const rawTargetNom = (parcelaSeleccionada?.nomenclatura || busquedaParcela || '').trim().toUpperCase()
-    const targetNomClean = rawTargetNom.replace(/[\s-]/g, '')
-    const targetId = parcelaSeleccionada?.id || parcelaId
+  // Estado de ocupación por niveles para la parcela seleccionada
+  const ocupacionActual = useMemo(
+    () =>
+      getOcupacionParcela<Inhumacion>(
+        {
+          id: parcelaSeleccionada?.id || parcelaId,
+          nomenclatura: parcelaSeleccionada?.nomenclatura || busquedaParcela,
+          capacidad_total: parcelaSeleccionada?.capacidad_total || 3,
+        },
+        inhumaciones,
+        initialData?.id || null
+      ),
+    [inhumaciones, parcelaSeleccionada, busquedaParcela, parcelaId, initialData?.id]
+  )
 
-    if (!rawTargetNom && !targetId) return []
-
-    return (inhumaciones || []).filter((inh) => {
-      if (!inh) return false
-      // Ignorar el registro que se está editando para no auto-bloquearse
-      if (initialData?.id && inh.id === initialData.id) return false
-
-      let rawInhNom = ''
-      if (inh.parcela && typeof inh.parcela === 'object' && inh.parcela.nomenclatura) {
-        rawInhNom = String(inh.parcela.nomenclatura)
-      } else if (typeof inh.parcela === 'string') {
-        rawInhNom = inh.parcela
-      } else if ((inh as any)?.parcela_nomenclatura) {
-        rawInhNom = String((inh as any).parcela_nomenclatura)
-      }
-
-      const inhNom = (rawInhNom || '').trim().toUpperCase()
-      const inhNomClean = inhNom.replace(/[\s-]/g, '')
-
-      const matchesNom = Boolean(
-        rawTargetNom &&
-          (inhNom === rawTargetNom ||
-            (inhNomClean && targetNomClean && inhNomClean === targetNomClean))
-      )
-
-      const matchesId = Boolean(
-        targetId &&
-          (inh.parcela_id === targetId ||
-            (inh.parcela && typeof inh.parcela === 'object' && inh.parcela.id === targetId))
-      )
-
-      return matchesNom || matchesId
-    })
-  }, [inhumaciones, parcelaSeleccionada, busquedaParcela, parcelaId, initialData?.id])
-
-  const capacidadFosa = parcelaSeleccionada?.capacidad_total || 3
-
-  // Mapa de ocupación por nivel: nivel -> Inhumacion
-  const ocupacionPorNivel = useMemo(() => {
-    const map = new Map<number, Inhumacion>()
-    for (const d of difuntosEnParcela) {
-      const lvl = Number(d.nivel_posicion) || 1
-      map.set(lvl, d)
-    }
-    return map
-  }, [difuntosEnParcela])
+  const difuntosEnParcela = ocupacionActual.difuntos
+  const capacidadFosa = ocupacionActual.capacidad
+  const ocupacionPorNivel = ocupacionActual.porNivel
 
   // Auto-seleccionar primer nivel disponible cuando cambia la parcela
   useEffect(() => {
-    if (!initialData) {
+    if (!initialData?.id) {
+      const preferred = initialData?.nivel_posicion
+      if (preferred && !ocupacionPorNivel.has(preferred)) {
+        setNivelPosicion(preferred)
+        return
+      }
       const nivelesPosibles = Array.from({ length: capacidadFosa }, (_, i) => i + 1)
       const primerLibre = nivelesPosibles.find((lvl) => !ocupacionPorNivel.has(lvl))
       if (primerLibre) {
         setNivelPosicion(primerLibre)
       }
     }
-  }, [difuntosEnParcela, capacidadFosa, initialData, ocupacionPorNivel])
+  }, [difuntosEnParcela, capacidadFosa, initialData?.id, initialData?.nivel_posicion, ocupacionPorNivel])
 
   // Opciones combinadas para que no se pierda la parcela asignada actualmente
   const parcelasOptions = useMemo(() => {
@@ -321,7 +293,7 @@ export const InhumacionForm: React.FC<InhumacionFormProps> = ({
                         </div>
                         <div className="text-right shrink-0">
                           <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface border border-outline-variant text-on-surface-variant font-mono">
-                            {p.espacios_ocupados || 0}/{p.capacidad_total || 3} niveles
+                            {getOcupacionParcela(p, inhumaciones).ocupados}/{p.capacidad_total || 3} niveles
                           </span>
                         </div>
                       </button>

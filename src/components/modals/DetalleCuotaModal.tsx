@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AfiliadoSeguro } from '../../types/database'
 import { formatCurrency, montoEnLetras } from '../../lib/formatters'
 import { ReciboSeguroFisico } from '../recibos/ReciboSeguroFisico'
+import { ReportModeToggle } from '../../lib/reportPrintHelper'
 
 interface DetalleCuotaModalProps {
   isOpen: boolean
@@ -34,6 +36,7 @@ export const DetalleCuotaModal: React.FC<DetalleCuotaModalProps> = ({
 }) => {
   const [tabVista, setTabVista] = useState<'recibo' | 'auditoria'>('recibo')
   const [confirmingRevert, setConfirmingRevert] = useState(false)
+  const [isBW, setIsBW] = useState(true)
 
   if (!isOpen || !afiliado) return null
 
@@ -59,9 +62,9 @@ export const DetalleCuotaModal: React.FC<DetalleCuotaModalProps> = ({
     }
   }
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
@@ -126,9 +129,10 @@ export const DetalleCuotaModal: React.FC<DetalleCuotaModalProps> = ({
 
         {/* Cuerpo del Recibo */}
         <div className="p-4 sm:p-5 space-y-4 overflow-y-auto max-h-[75vh] print:max-h-none print:overflow-visible print:p-2">
-          {/* VISTA 1: Recibo Físico Tradicional (CEMENTERIO PARQUE SAN NICOLÁS) */}
+          {/* VISTA 1: Recibo Físico Tradicional (AETERNA PARQUE SAN NICOLÁS) */}
           <div className={tabVista === 'recibo' ? 'block' : 'hidden print:block'}>
             <ReciboSeguroFisico
+              isBW={isBW}
               recibiDe={afiliado.nombre_completo}
               certificado={afiliado.numero_afiliado}
               laSumaDePesos={`${montoEnLetras(monto)} (${formatCurrency(monto)})`}
@@ -263,10 +267,11 @@ export const DetalleCuotaModal: React.FC<DetalleCuotaModalProps> = ({
 
         {/* Línea de corte punteada y Duplicado para Administración en Impresión */}
         <div className="hidden print:block pt-4">
-          <div className="flex items-center justify-center my-3 py-1 border-t-2 border-dashed border-slate-700 text-[10px] text-slate-500 font-mono">
+          <div className="flex items-center justify-center my-3 py-1 border-t-2 border-dashed border-black text-[10px] text-black font-mono font-bold">
             ✂️ ------------------ CORTE PARA ARCHIVO Y TESORERÍA (TALÓN DUPLICADO) ------------------ ✂️
           </div>
           <ReciboSeguroFisico
+            isBW={isBW}
             recibiDe={afiliado.nombre_completo}
             certificado={afiliado.numero_afiliado}
             laSumaDePesos={`${montoEnLetras(monto)} (${formatCurrency(monto)})`}
@@ -278,24 +283,28 @@ export const DetalleCuotaModal: React.FC<DetalleCuotaModalProps> = ({
         </div>
 
         {/* Acciones del Modal */}
-        <div className="p-4 bg-surface-container-low border-t border-outline-variant flex items-center justify-between gap-3 print:hidden">
+        <div className="p-4 bg-surface-container-low border-t border-outline-variant flex flex-wrap items-center justify-between gap-3 print:hidden">
           <button
             type="button"
             onClick={onClose}
-            className="h-10 px-4 rounded-xl border border-outline-variant bg-white hover:bg-surface-container text-on-surface text-sm font-semibold transition-colors"
+            className="h-9 px-4 rounded-xl border border-outline-variant bg-white hover:bg-surface-container text-on-surface text-xs font-semibold transition-colors cursor-pointer"
           >
             Cerrar
           </button>
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="h-10 px-5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold shadow-md flex items-center gap-2 transition-transform active:scale-[0.98]"
-          >
-            <span className="material-symbols-outlined text-[18px]">print</span>
-            <span>Imprimir Recibo Físico Oficial (Doble Talón)</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <ReportModeToggle isBW={isBW} onChange={setIsBW} darkBg={false} />
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="h-9 px-4 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold shadow-md flex items-center gap-2 transition-transform active:scale-[0.98] cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px]">print</span>
+              <span>Imprimir Recibo (Doble Talón)</span>
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

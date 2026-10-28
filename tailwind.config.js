@@ -65,6 +65,13 @@ export default {
         "2xl": "0.75rem",
         "full": "9999px"
       },
+      zIndex: {
+        "60": "60",
+        "70": "70",
+        "80": "80",
+        "90": "90",
+        "100": "100"
+      },
       spacing: {
         "space-xxs": "0.125rem",
         "space-xs": "0.25rem",

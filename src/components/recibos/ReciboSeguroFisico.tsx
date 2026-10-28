@@ -9,6 +9,7 @@ export interface ReciboSeguroFisicoProps {
   reciboNro?: string
   fecha?: string
   esBlanco?: boolean
+  isBW?: boolean
   className?: string
   variante?: 'default' | 'talonario' | 'a4-grid'
 }
@@ -43,6 +44,7 @@ export const ReciboSeguroFisico: React.FC<ReciboSeguroFisicoProps> = ({
   reciboNro = '',
   fecha,
   esBlanco = false,
+  isBW = true,
   className = '',
   variante = 'default',
 }) => {
@@ -50,7 +52,7 @@ export const ReciboSeguroFisico: React.FC<ReciboSeguroFisicoProps> = ({
 
   return (
     <div
-      className={`relative bg-white border border-slate-900 rounded-none text-slate-900 font-sans shadow-none overflow-hidden flex flex-col justify-between select-none ${
+      className={`relative bg-white border-2 border-black rounded-none text-black font-sans shadow-none overflow-hidden flex flex-col justify-between select-none ${
         isA4Grid
           ? 'p-2 w-full h-[66mm] box-border'
           : 'p-6 w-full max-w-xl mx-auto min-h-[280px] shadow-sm'
@@ -59,36 +61,36 @@ export const ReciboSeguroFisico: React.FC<ReciboSeguroFisicoProps> = ({
         boxSizing: 'border-box',
         printColorAdjust: 'exact',
         WebkitPrintColorAdjust: 'exact',
+        filter: isBW ? 'grayscale(100%)' : undefined,
       }}
     >
       {/* Marca de Agua Central de Palomas de Alta Fidelidad */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden pt-4">
         <PalomasWatermark
           className={isA4Grid ? 'w-[78%] max-h-[74%]' : 'w-[88%] max-h-[80%]'}
-          opacity="opacity-90"
+          opacity={isBW ? 'opacity-30' : 'opacity-90'}
         />
       </div>
 
       {/* Contenido Por Encima de la Marca de Agua (z-10) */}
       <div className="relative z-10 flex flex-col justify-between h-full">
         {/* Encabezado Idéntico al Documento Escaneado Oficial */}
-        <div className="text-center pt-0.5 pb-1">
+        <div className="text-center pt-0.5 pb-1 border-b border-black/80">
           <h2
             className={`font-serif font-black tracking-wide uppercase leading-none ${
               isA4Grid ? 'text-[13px] sm:text-[14px]' : 'text-[20px] sm:text-[22px]'
             }`}
             style={{
-              color: '#22338A',
+              color: isBW ? '#000000' : '#22338A',
               letterSpacing: '0.03em',
-              textShadow: '0 0.5px 1px rgba(34, 51, 138, 0.25)',
               printColorAdjust: 'exact',
               WebkitPrintColorAdjust: 'exact',
             }}
           >
-            CEMENTERIO PARQUE SAN NICOLÁS
+            AETERNA PARQUE SAN NICOLÁS
           </h2>
           <h3
-            className={`font-sans font-bold tracking-[0.14em] uppercase text-slate-900 mt-0.5 leading-none ${
+            className={`font-sans font-bold tracking-[0.14em] uppercase text-black mt-0.5 leading-none ${
               isA4Grid ? 'text-[8.5px] sm:text-[9.5px]' : 'text-[12px] sm:text-[13px]'
             }`}
           >

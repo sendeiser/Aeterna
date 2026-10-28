@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { Parcela, Inhumacion, EstadoParcela, EstadoTitular } from '../../types/database'
-import { formatNomenclatura } from '../../lib/formatters'
+import { formatNomenclatura, getOcupacionParcela } from '../../lib/formatters'
 
 interface ParcelaFormProps {
   initialData?: Parcela | null
   inhumaciones?: Inhumacion[]
   onSave: (parcela: Partial<Parcela>) => void
   onCancel: () => void
-  onNuevaInhumacionParaParcela?: (nomenclatura: string) => void
+  onNuevaInhumacionParaParcela?: (nomenclatura: string, nivel?: number) => void
 }
 
 export const ParcelaForm: React.FC<ParcelaFormProps> = ({
@@ -34,25 +34,32 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({
     (initialData?.titular?.estado_titular === 'fallecido' ? 'fallecido' : 'vivo')
   )
   const [capacidad, setCapacidad] = useState(initialData?.capacidad_total || 3)
-  const [estado, setEstado] = useState<EstadoParcela>(initialData?.estado || 'disponible')
   const [saldo, setSaldo] = useState(initialData?.saldo_mantenimiento?.toString() || '0')
   const [notas, setNotas] = useState(initialData?.notas || '')
 
   const previewNomenclatura = formatNomenclatura(sector, manzana || '00', numero || '00')
   const nomActual = initialData?.nomenclatura || previewNomenclatura
 
-  const difuntosEnParcela = useMemo(() => {
-    if (!inhumaciones || !nomActual) return []
-    const normTarget = nomActual.toUpperCase().replace(/[\s-]/g, '')
-    return inhumaciones
-      .filter((inh) => {
-        const inhParc = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela
-        if (!inhParc) return false
-        const normInh = inhParc.toUpperCase().replace(/[\s-]/g, '')
-        return normInh === normTarget
-      })
-      .sort((a, b) => (a.nivel_posicion || 1) - (b.nivel_posicion || 1))
-  }, [inhumaciones, nomActual])
+  const ocupacionParcela = useMemo(
+    () =>
+      getOcupacionParcela(
+        {
+          id: initialData?.id || '',
+          nomenclatura: nomActual,
+          capacidad_total: Number(capacidad) || 3,
+        },
+        inhumaciones
+      ),
+    [initialData?.id, nomActual, capacidad, inhumaciones]
+  )
+  const difuntosEnParcela = ocupacionParcela.difuntos
+
+  const [estado, setEstado] = useState<EstadoParcela>(() => {
+    const rawEstado = initialData?.estado || 'disponible'
+    if (ocupacionParcela.ocupados === 0 && rawEstado === 'ocupada') return 'disponible'
+    if (ocupacionParcela.ocupados > 0 && rawEstado === 'disponible') return 'ocupada'
+    return rawEstado
+  })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,7 +70,7 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({
       manzana_fila: manzana,
       numero_parcela: numero ? String(numero) : '1',
       capacidad_total: Number(capacidad),
-      espacios_ocupados: initialData?.espacios_ocupados || 0,
+      espacios_ocupados: ocupacionParcela.ocupados,
       estado,
       saldo_mantenimiento: parseFloat(saldo) || 0,
       notas,
@@ -388,8 +395,8 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            {Array.from({ length: Math.max(Number(capacidad) || 1, difuntosEnParcela.length) }, (_, i) => i + 1).map((lvl) => {
-              const difunto = difuntosEnParcela.find((d) => (d.nivel_posicion || 1) === lvl)
+            {Array.from({ length: ocupacionParcela.capacidad }, (_, i) => i + 1).map((lvl) => {
+              const difunto = ocupacionParcela.porNivel.get(lvl)
               const isOccupied = !!difunto
 
               return (
@@ -457,10 +464,10 @@ export const ParcelaForm: React.FC<ParcelaFormProps> = ({
                       type="button"
                       onClick={() => {
                         onCancel()
-                        onNuevaInhumacionParaParcela(nomActual)
+                        onNuevaInhumacionParaParcela(nomActual, lvl)
                       }}
                       className="px-2.5 py-1 text-xs font-semibold bg-emerald-700 hover:bg-emerald-800 text-white rounded-md flex items-center gap-1 shrink-0 shadow-xs cursor-pointer self-start sm:self-auto"
-                      title="Asentar nueva inhumación en este nivel"
+                      title={`Asentar nueva inhumación en el Nivel ${lvl}`}
                     >
                       <span className="material-symbols-outlined text-[14px]">add</span>
                       <span>Asentar Inhumación</span>

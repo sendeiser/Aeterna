@@ -104,8 +104,9 @@
     display: none !important;
   }
 
-  /* Si un modal oficial está abierto para impresión, ocultar la aplicación de fondo (#root) */
-  body:has([data-printable-modal="true"]) #root,
+  /* Si un modal oficial está abierto fuera de #root (Portal), ocultar #root. Si está dentro de #root, ocultar solo main */
+  body:has(> [data-printable-modal="true"]) #root,
+  body:has(> div > [data-printable-modal="true"]) #root,
   body:has([data-printable-modal="true"]) main {
     display: none !important;
   }
@@ -142,11 +143,12 @@
     box-shadow: none !important;
   }
 
-  .border, .border-outline-variant {
-    border-color: #94a3b8 !important;
+  .border, .border-outline-variant, .border-slate-200, .border-slate-300 {
+    border-color: #000000 !important;
   }
 
   /* Desactivar límites de altura de scroll en tablas para que se impriman todas las filas */
+  .max-h-64,
   .max-h-\[460px\],
   .max-h-\[380px\],
   .max-h-\[500px\],
@@ -158,10 +160,11 @@
     overflow: visible !important;
   }
 
-  /* Tablas oficiales nítidas */
+  /* Tablas oficiales nítidas con bordes marcados */
   table {
     width: 100% !important;
     border-collapse: collapse !important;
+    border: 2px solid #000000 !important;
   }
 
   thead {
@@ -170,11 +173,12 @@
 
   tr, td, th {
     page-break-inside: avoid !important;
+    border: 1px solid #000000 !important;
   }
 
-  /* Alto contraste para legibilidad legal y municipal */
+  /* Alto contraste para legibilidad en impresoras B&N */
   .text-primary, .text-secondary, .text-on-surface, .text-on-surface-variant {
-    color: #0f172a !important;
+    color: #000000 !important;
   }
 
   .bg-primary, .bg-primary-container, .bg-secondary {

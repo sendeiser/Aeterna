@@ -5,6 +5,8 @@ import { CobroCajaModal, CobroCajaData } from '../modals/CobroCajaModal'
 import { EgresoCajaModal } from '../modals/EgresoCajaModal'
 import { ConfirmarAnulacionModal } from '../modals/ConfirmarAnulacionModal'
 import { ReciboDetalleModal } from '../modals/ReciboDetalleModal'
+import { printArqueoCajaPDF } from '../modals/CierreCajaModal'
+import { ReportModeToggle } from '../../lib/reportPrintHelper'
 
 interface CajaViewProps {
   pagos: PagoRecibo[]
@@ -53,6 +55,7 @@ export const CajaView: React.FC<CajaViewProps> = ({
   const [multiSelectMode, setMultiSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [isDeletingBatch, setIsDeletingBatch] = useState(false)
+  const [isBW, setIsBW] = useState(true)
 
   // Estados de modales
   const [cobroModalOpen, setCobroModalOpen] = useState(false)
@@ -878,7 +881,8 @@ export const CajaView: React.FC<CajaViewProps> = ({
           </div>
 
           {/* Botones de Exportar / Imprimir */}
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
+            <ReportModeToggle isBW={isBW} onChange={setIsBW} darkBg={false} />
             <button
               type="button"
               onClick={() => handleExportCSV(false)}
@@ -890,12 +894,24 @@ export const CajaView: React.FC<CajaViewProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => window.print()}
-              className="px-2.5 py-1 rounded-lg border border-outline-variant text-slate-700 hover:bg-surface-container text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+              onClick={() => {
+                const targetList =
+                  selectedIds.size > 0 ? movimientosSeleccionados : movimientosOrdenados
+                const opened = printArqueoCajaPDF(targetList, {
+                  titulo: 'LIBRO DIARIO Y ARQUEO DE CAJA',
+                  isBW,
+                })
+                if (!opened) {
+                  window.print()
+                }
+              }}
+              className="px-2.5 py-1 rounded-lg border border-slate-400 bg-white text-slate-900 hover:bg-surface-container text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
               title="Imprimir Libro de Caja en A4"
             >
-              <span className="material-symbols-outlined text-[15px] text-slate-500">print</span>
-              <span>Imprimir Libro</span>
+              <span className="material-symbols-outlined text-[15px] text-slate-700">print</span>
+              <span>
+                Imprimir Libro{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}
+              </span>
             </button>
           </div>
         </div>

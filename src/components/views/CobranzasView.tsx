@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Parcela } from '../../types/database'
 import { formatCurrency, formatDateHour } from '../../lib/formatters'
+import { getA4ReportStyles, openA4PrintWindow, ReportModeToggle } from '../../lib/reportPrintHelper'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -510,6 +511,7 @@ function PrintModal({ allDeudores, initialSelectedIds, sectores, onClose }: Prin
   const [colDiaPago, setColDiaPago] = useState(true)
   const [colCasillerosTerreno, setColCasillerosTerreno] = useState(false)
   const [showManualSelector, setShowManualSelector] = useState(false)
+  const [isBW, setIsBW] = useState(true)
 
   // Candidatos según filtros del modal
   const candidatosFiltrados = useMemo(() => {
@@ -605,30 +607,14 @@ function PrintModal({ allDeudores, initialSelectedIds, sectores, onClose }: Prin
 
   const handlePrint = () => {
     const printContent = printRef.current?.innerHTML || ''
-    const win = window.open('', '_blank')
-    if (!win) {
+    const opened = openA4PrintWindow(
+      `${tituloReporte} — Aeterna Parque San Nicolás`,
+      printContent,
+      isBW
+    )
+    if (!opened) {
       window.print()
-      return
     }
-    win.document.write(`
-      <!DOCTYPE html>
-      <html lang="es">
-      <head>
-        <meta charset="UTF-8">
-        <title>${tituloReporte} — Aeterna Parque San Nicolás</title>
-        <style>${PRINT_STYLES}</style>
-      </head>
-      <body>
-        <div class="a4-sheet">${printContent}</div>
-      </body>
-      </html>
-    `)
-    win.document.close()
-    win.focus()
-    setTimeout(() => {
-      win.print()
-      win.close()
-    }, 300)
   }
 
   const sectoresTexto =
@@ -642,7 +628,7 @@ function PrintModal({ allDeudores, initialSelectedIds, sectores, onClose }: Prin
       className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200"
       onClick={onClose}
     >
-      <style>{A4_SHEET_STYLES}</style>
+      <style>{getA4ReportStyles(isBW)}</style>
       <div
         className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[96vh] overflow-hidden border border-outline-variant flex flex-col"
         onClick={(e) => e.stopPropagation()}
@@ -666,7 +652,8 @@ function PrintModal({ allDeudores, initialSelectedIds, sectores, onClose }: Prin
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <ReportModeToggle isBW={isBW} onChange={setIsBW} darkBg={true} />
             <button
               type="button"
               onClick={handlePrint}

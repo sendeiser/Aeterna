@@ -1,4 +1,5 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 import { PagoRecibo } from '../../services/dataService'
 import { formatCurrency } from '../../lib/formatters'
 
@@ -21,9 +22,9 @@ export const ConfirmarAnulacionModal: React.FC<ConfirmarAnulacionModalProps> = (
 
   const isEgreso = pago.tipo === 'egreso'
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-60 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-[70] flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
@@ -132,6 +133,7 @@ export const ConfirmarAnulacionModal: React.FC<ConfirmarAnulacionModalProps> = (
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

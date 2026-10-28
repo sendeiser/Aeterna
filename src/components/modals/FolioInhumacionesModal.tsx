@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Inhumacion } from '../../types/database'
+import { getA4ReportStyles, openA4PrintWindow, ReportModeToggle } from '../../lib/reportPrintHelper'
 
 interface FolioInhumacionesModalProps {
   isOpen: boolean
@@ -24,6 +25,8 @@ export const FolioInhumacionesModal: React.FC<FolioInhumacionesModalProps> = ({
   const [fechaEmision, setFechaEmision] = useState<string>(
     new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
   )
+  const [isBW, setIsBW] = useState(true)
+  const printRef = useRef<HTMLDivElement>(null)
 
   // Filtrado de actas para el folio
   const actasFolio = useMemo(() => {
@@ -80,7 +83,15 @@ export const FolioInhumacionesModal: React.FC<FolioInhumacionesModalProps> = ({
   const totalEstandarEnFolio = actasFolio.length - totalCovidEnFolio
 
   const handlePrint = () => {
-    window.print()
+    const printContent = printRef.current?.innerHTML || ''
+    const opened = openA4PrintWindow(
+      `Folio Oficial de Inhumaciones (${tomoFolio}) — Aeterna`,
+      printContent,
+      isBW
+    )
+    if (!opened) {
+      window.print()
+    }
   }
 
   return createPortal(
@@ -89,6 +100,7 @@ export const FolioInhumacionesModal: React.FC<FolioInhumacionesModalProps> = ({
       data-printable-modal="true"
       onClick={onClose}
     >
+      <style>{getA4ReportStyles(isBW)}</style>
       <div
         className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[96vh] overflow-hidden border border-outline-variant flex flex-col print:border-none print:shadow-none print:max-w-none print:w-full print:max-h-none print:m-0 print:p-0 print:overflow-visible print:static"
         onClick={(e) => e.stopPropagation()}
@@ -109,12 +121,13 @@ export const FolioInhumacionesModal: React.FC<FolioInhumacionesModalProps> = ({
                 </span>
               </h2>
               <p className="text-xs text-slate-300">
-                Cementerio Parque San Nicolás · Documento Oficial Estructurado para Impresión y Legajo
+                Aeterna Parque San Nicolás · Documento Oficial Estructurado para Impresión y Legajo
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <ReportModeToggle isBW={isBW} onChange={setIsBW} darkBg={true} />
             <button
               type="button"
               id="btn-imprimir-folio-pdf"
@@ -203,200 +216,143 @@ export const FolioInhumacionesModal: React.FC<FolioInhumacionesModalProps> = ({
         {/* DOCUMENTO IMPRIMIBLE A4 (PREVIEW EN PANTALLA & MOTOR DE IMPRESIÓN)    */}
         {/* ===================================================================== */}
         <div className="p-4 sm:p-6 overflow-y-auto custom-scroll bg-slate-200/80 flex-1 print:p-0 print:m-0 print:bg-white print:overflow-visible">
-          <div className="bg-white shadow-lg mx-auto p-6 sm:p-8 max-w-[210mm] border border-slate-300 print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-none text-slate-900 font-sans">
-            
+          <div
+            ref={printRef}
+            className="a4-sheet bg-white shadow-lg mx-auto p-6 sm:p-8 max-w-[210mm] border border-slate-300 print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-none"
+          >
             {/* Encabezado Institucional del Folio */}
-            <div className="border-b-2 border-slate-900 pb-3 mb-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded bg-[#00236f] text-white flex items-center justify-center font-serif font-black text-xl shrink-0 print:border print:border-black">
-                    ✝
-                  </div>
-                  <div>
-                    <h1 className="text-lg font-black tracking-wide text-[#00236f] uppercase font-serif leading-tight">
-                      CEMENTERIO PARQUE SAN NICOLÁS
-                    </h1>
-                    <h2 className="text-xs font-bold tracking-wider text-slate-800 uppercase mt-0.5">
-                      LIBRO GENERAL DE INHUMACIONES Y SEPULTURAS · FOLIO OFICIAL
-                    </h2>
-                    <p className="text-[10px] text-slate-600 italic">
-                      Parroquia El Salvador & Municipalidad de Chamical · Provincia de La Rioja · Ley Sanitaria N° 4.120
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-right shrink-0">
-                  <span className="inline-block px-2.5 py-0.5 bg-slate-900 text-white font-mono font-bold text-xs uppercase tracking-wider rounded">
-                    FOLIO REGISTRAL
-                  </span>
-                  <div className="text-[11px] font-mono text-slate-800 font-bold mt-1">
-                    {tomoFolio}
-                  </div>
-                  <div className="text-[10px] text-slate-600 font-mono">
-                    EMISIÓN: <strong>{fechaEmision}</strong>
-                  </div>
+            <div className="doc-header">
+              <div className="brand-box">
+                <img
+                  src={`${typeof window !== 'undefined' ? window.location.origin : ''}/logo_aeterna.png`}
+                  alt="Aeterna Parque San Nicolás"
+                  className="brand-logo"
+                />
+                <div>
+                  <h1 className="brand-title">AETERNA PARQUE SAN NICOLÁS</h1>
+                  <h2 className="brand-subtitle">
+                    LIBRO GENERAL DE INHUMACIONES Y SEPULTURAS · FOLIO OFICIAL
+                  </h2>
+                  <p className="brand-caption">
+                    Registro Catastral y Archivo de Sepulturas · Ley Sanitaria N° 4.120
+                  </p>
                 </div>
               </div>
 
-              {/* Metadatos del Folio */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-2 border-t border-slate-200 text-xs">
-                <div className="bg-slate-50 p-1.5 rounded border border-slate-200">
-                  <span className="text-[9px] uppercase font-bold text-slate-500 block">Total Inhumaciones:</span>
-                  <span className="font-bold text-slate-900 text-[11px] font-mono">
-                    {actasFolio.length} Actas Asentadas
-                  </span>
-                </div>
-                <div className="bg-slate-50 p-1.5 rounded border border-slate-200">
-                  <span className="text-[9px] uppercase font-bold text-slate-500 block">Protocolo Estándar:</span>
-                  <span className="font-bold text-emerald-800 text-[11px]">
-                    {totalEstandarEnFolio} Registros
-                  </span>
-                </div>
-                <div className="bg-slate-50 p-1.5 rounded border border-slate-200">
-                  <span className="text-[9px] uppercase font-bold text-slate-500 block">Bioseguridad COVID-19:</span>
-                  <span className="font-bold text-purple-900 text-[11px]">
-                    {totalCovidEnFolio} Registros
-                  </span>
-                </div>
-                <div className="bg-slate-50 p-1.5 rounded border border-slate-200 text-right">
-                  <span className="text-[9px] uppercase font-bold text-slate-500 block">Responsable de Archivo:</span>
-                  <span className="font-bold text-slate-900 text-[10px] truncate block">
-                    {responsableRegistro}
-                  </span>
+              <div className="meta-box">
+                <span className="meta-badge">FOLIO REGISTRAL</span>
+                <div className="meta-line">{tomoFolio}</div>
+                <div className="meta-sub">
+                  EMISIÓN: <strong>{fechaEmision}</strong>
                 </div>
               </div>
             </div>
 
-            {/* TABLA OFICIAL FOLIADA DE INHUMACIONES */}
-            <div className="overflow-visible mb-6">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-900 text-white font-mono uppercase text-[9.5px] tracking-wider print:bg-slate-900 print:text-white">
-                    <th className="p-1.5 border border-slate-700 w-14 text-center">Acta N°</th>
-                    <th className="p-1.5 border border-slate-700 w-24 text-center">Fecha / Hora</th>
-                    <th className="p-1.5 border border-slate-700">Fallecido / Difunto</th>
-                    <th className="p-1.5 border border-slate-700 w-24 text-center">Parcela</th>
-                    <th className="p-1.5 border border-slate-700 w-16 text-center">Nivel</th>
-                    <th className="p-1.5 border border-slate-700 w-24 text-center">Protocolo</th>
-                    <th className="p-1.5 border border-slate-700 w-32">Causa / Empresa</th>
+            {/* Metadatos KPI del Folio */}
+            <div className="kpi-grid">
+              <div className="kpi-card">
+                <span className="kpi-label">Total Inhumaciones</span>
+                <span className="kpi-val">{actasFolio.length} Actas Asentadas</span>
+              </div>
+              <div className="kpi-card-ingreso">
+                <span className="kpi-label">Protocolo Estándar</span>
+                <span className="kpi-val">{totalEstandarEnFolio} Registros</span>
+              </div>
+              <div className="kpi-card-egreso">
+                <span className="kpi-label">Bioseguridad COVID-19</span>
+                <span className="kpi-val">{totalCovidEnFolio} Registros</span>
+              </div>
+              <div className="kpi-card-neto">
+                <span className="kpi-label">Responsable de Archivo</span>
+                <span className="kpi-val" style={{ fontSize: '10.5px' }}>
+                  {responsableRegistro}
+                </span>
+              </div>
+            </div>
+
+            {/* TABLA OFICIAL FOLIADA DE INHUMACIONES CON BORDES NÍTIDOS */}
+            <table className="report-table">
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'center', width: '68px' }}>Acta N°</th>
+                  <th style={{ textAlign: 'center', width: '88px' }}>Fecha / Hora</th>
+                  <th style={{ textAlign: 'left' }}>Fallecido / Difunto & DNI</th>
+                  <th style={{ textAlign: 'center', width: '84px' }}>Parcela</th>
+                  <th style={{ textAlign: 'center', width: '62px' }}>Nivel</th>
+                  <th style={{ textAlign: 'center', width: '84px' }}>Protocolo</th>
+                  <th style={{ textAlign: 'left', width: '140px' }}>Causa / Servicio</th>
+                </tr>
+              </thead>
+              <tbody>
+                {actasFolio.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ padding: '20px', textAlign: 'center', fontStyle: 'italic' }}>
+                      No se encontraron registros de inhumación con los criterios seleccionados.
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-300">
-                  {actasFolio.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="p-6 text-center text-slate-500 italic">
-                        No se encontraron registros de inhumación con los criterios seleccionados.
-                      </td>
-                    </tr>
-                  ) : (
-                    actasFolio.map((inh, idx) => {
-                      const parcNom = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela || 'S/D'
-                      const fecha = inh.fecha_inhumacion?.slice(0, 10) || '2026-03-30'
-                      const hora = inh.fecha_inhumacion?.includes('T')
-                        ? `${inh.fecha_inhumacion.split('T')[1].slice(0, 5)} hs`
-                        : '10:30 hs'
-                      const actaNum = `#84${String(90 + idx).padStart(2, '0')}-B`
+                ) : (
+                  actasFolio.map((inh, idx) => {
+                    const parcNom =
+                      typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela || 'S/D'
+                    const fecha = inh.fecha_inhumacion?.slice(0, 10) || '2026-03-30'
+                    const hora = inh.fecha_inhumacion?.includes('T')
+                      ? `${inh.fecha_inhumacion.split('T')[1].slice(0, 5)} hs`
+                      : '10:30 hs'
+                    const actaNum = `#84${String(90 + idx).padStart(2, '0')}-B`
 
-                      return (
-                        <tr
-                          key={inh.id}
-                          className={`page-break-inside-avoid text-[10.5px] ${
-                            idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/80'
-                          }`}
-                        >
-                          {/* Acta N° */}
-                          <td className="p-1.5 border border-slate-300 text-center font-mono font-bold text-slate-800 whitespace-nowrap">
-                            {actaNum}
-                          </td>
-
-                          {/* Fecha / Hora */}
-                          <td className="p-1.5 border border-slate-300 text-center font-mono text-[10px] whitespace-nowrap">
-                            <span className="font-semibold block">{fecha}</span>
-                            <span className="text-slate-500 block">{hora}</span>
-                          </td>
-
-                          {/* Fallecido / DNI */}
-                          <td className="p-1.5 border border-slate-300">
-                            <div className="font-bold text-slate-900 leading-tight">
-                              {inh.nombre_difunto}
-                            </div>
-                            <div className="text-[9.5px] text-slate-600 font-mono mt-0.5">
-                              {inh.dni_difunto ? `DNI: ${inh.dni_difunto}` : 'DNI: Constatado en defunción'}
-                            </div>
-                          </td>
-
-                          {/* Parcela */}
-                          <td className="p-1.5 border border-slate-300 text-center font-mono font-bold text-[#00236f] whitespace-nowrap">
-                            {parcNom}
-                          </td>
-
-                          {/* Nivel */}
-                          <td className="p-1.5 border border-slate-300 text-center font-semibold text-slate-800 whitespace-nowrap">
-                            Nivel {inh.nivel_posicion || 1}
-                          </td>
-
-                          {/* Protocolo */}
-                          <td className="p-1.5 border border-slate-300 text-center whitespace-nowrap">
-                            {inh.es_covid ? (
-                              <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-900 border border-purple-300">
-                                COVID-19
-                              </span>
-                            ) : (
-                              <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
-                                Estándar
-                              </span>
-                            )}
-                          </td>
-
-                          {/* Causa / Empresa */}
-                          <td className="p-1.5 border border-slate-300 text-[9.5px] text-slate-700">
-                            <div className="truncate font-medium">{inh.causa_defuncion || 'Causa Natural'}</div>
-                            <div className="text-slate-500 truncate text-[8.5px]">
-                              {inh.empresa_funebrera || 'Servicio Parroquial'}
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    return (
+                      <tr key={inh.id} className={idx % 2 === 0 ? 'row-even' : 'row-odd'}>
+                        <td style={{ textAlign: 'center', fontFamily: "'Courier New', monospace", fontWeight: 900, whiteSpace: 'nowrap' }}>
+                          {actaNum}
+                        </td>
+                        <td style={{ textAlign: 'center', fontFamily: "'Courier New', monospace", fontWeight: 700, whiteSpace: 'nowrap' }}>
+                          <div>{fecha}</div>
+                          <div style={{ fontSize: '8.5px' }}>{hora}</div>
+                        </td>
+                        <td className="col-titular">
+                          <div className="titular-name">{inh.nombre_difunto}</div>
+                          <div className="titular-dni">
+                            {inh.dni_difunto ? `DNI: ${inh.dni_difunto}` : 'DNI: Constatado en acta'}
+                          </div>
+                        </td>
+                        <td className="col-parcela">
+                          <span className="parcela-pill">{parcNom}</span>
+                        </td>
+                        <td style={{ textAlign: 'center', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                          Nivel {inh.nivel_posicion || 1}
+                        </td>
+                        <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                          <span className={inh.es_covid ? 'badge-egreso' : 'badge-ingreso'}>
+                            {inh.es_covid ? 'COVID-19' : 'Estándar'}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 700 }}>{inh.causa_defuncion || 'Causa Natural'}</div>
+                          <div style={{ fontSize: '8.5px', fontWeight: 600 }}>
+                            {inh.empresa_funebrera || 'Servicio Aeterna'}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
 
             {/* SECCIÓN DE CERTIFICACIÓN Y FIRMAS LEGALES */}
-            <div className="pt-4 border-t-2 border-slate-900 page-break-inside-avoid">
-              <div className="text-[10px] text-slate-600 italic text-center mb-6">
-                El presente Folio Oficial del Libro Digital de Inhumaciones da fe registral de las sepulturas practicadas conforme a las normas del Código de Procedimientos Administrativos y Sanitarios Municipales.
+            <div className="footer-firmas">
+              <div className="firma-block">
+                <div className="firma-line">Capataz / Campo</div>
+                <div className="firma-sub">Verificación de Fosa y Nivel</div>
               </div>
-
-              <div className="grid grid-cols-3 gap-6 text-center text-xs">
-                {/* Firma 1 */}
-                <div className="flex flex-col items-center">
-                  <div className="w-full border-b border-dashed border-slate-800 mb-1.5 h-10"></div>
-                  <span className="font-bold text-slate-900 text-[10.5px]">Capataz / Campo</span>
-                  <span className="text-[9px] text-slate-500 uppercase">Verificación de Fosa y Nivel</span>
-                </div>
-
-                {/* Firma 2 */}
-                <div className="flex flex-col items-center">
-                  <div className="w-full border-b border-dashed border-slate-800 mb-1.5 h-10"></div>
-                  <span className="font-bold text-slate-900 text-[10.5px]">Registro y Archivo Parroquial</span>
-                  <span className="text-[9px] text-slate-500 uppercase">Firma y Sello Oficial</span>
-                </div>
-
-                {/* Firma 3 */}
-                <div className="flex flex-col items-center">
-                  <div className="w-full border-b border-dashed border-slate-800 mb-1.5 h-10"></div>
-                  <span className="font-bold text-slate-900 text-[10.5px]">Dirección Municipal</span>
-                  <span className="text-[9px] text-slate-500 uppercase">Visado Legal y Tesorería</span>
-                </div>
+              <div className="footer-note">
+                Aeterna Parque San Nicolás · Folio Oficial del Libro Digital de Inhumaciones.
               </div>
-
-              <div className="text-center text-[9px] text-slate-400 font-mono mt-5">
-                Aeterna Parque San Nicolás · Sistema Mortuorio Municipal · Folio emitido electrónicamente con validez legal
+              <div className="firma-block">
+                <div className="firma-line">Dirección y Archivo</div>
+                <div className="firma-sub">Firma y Sello Oficial</div>
               </div>
             </div>
-
           </div>
         </div>
 

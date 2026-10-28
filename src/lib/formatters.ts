@@ -152,3 +152,126 @@ export function formatDateHour(isoString?: string | null): string {
   }
 }
 
+/**
+ * Normaliza una nomenclatura catastral para comparaciones exactas sin importar ceros a la izquierda
+ * ni espacios. Ejemplo: "A-01-01" -> "A-1-1", "a 11 05" -> "A-11-5", "A-1-15" -> "A-1-15".
+ */
+export function normalizeNomenclatura(nom?: string | null): string {
+  if (!nom) return ''
+  const raw = String(nom).trim().toUpperCase()
+  if (!raw) return ''
+  const parts = raw
+    .split(/[\s-]+/)
+    .map((part) => {
+      if (/^\d+$/.test(part)) {
+        return String(parseInt(part, 10))
+      }
+      return part
+    })
+    .filter(Boolean)
+  return parts.join('-')
+}
+
+/**
+ * Extrae la nomenclatura de parcela asociada a un registro de inhumación.
+ */
+export function extractInhumacionNomenclatura(inh?: any): string {
+  if (!inh) return ''
+  if (inh.parcela && typeof inh.parcela === 'object' && inh.parcela.nomenclatura) {
+    return String(inh.parcela.nomenclatura).trim()
+  }
+  if (typeof inh.parcela === 'string' && inh.parcela.trim()) {
+    return inh.parcela.trim()
+  }
+  if (inh.parcela_nomenclatura) {
+    return String(inh.parcela_nomenclatura).trim()
+  }
+  return ''
+}
+
+/**
+ * Obtiene la lista de difuntos inhumados en una parcela específica comparando por ID y por
+ * nomenclatura normalizada.
+ */
+export function getDifuntosEnParcela<T extends Record<string, any> = any>(
+  parcela: { id?: string | null; nomenclatura?: string | null } | string | null | undefined,
+  inhumaciones: T[] = [],
+  ignoreInhumacionId?: string | null
+): T[] {
+  if (!parcela || !Array.isArray(inhumaciones) || inhumaciones.length === 0) return []
+
+  const targetId = typeof parcela === 'object' ? (parcela.id || '').trim() : ''
+  const rawNom = typeof parcela === 'string' ? parcela : parcela.nomenclatura || ''
+  const normTargetNom = normalizeNomenclatura(rawNom)
+
+  if (!targetId && !normTargetNom) return []
+
+  return inhumaciones
+    .filter((inh) => {
+      if (!inh) return false
+      if (ignoreInhumacionId && inh.id === ignoreInhumacionId) return false
+
+      const inhParcId =
+        inh.parcela_id ||
+        (inh.parcela && typeof inh.parcela === 'object' ? inh.parcela.id : '') ||
+        ''
+
+      if (targetId && inhParcId && targetId === inhParcId) {
+        return true
+      }
+
+      const inhNom = extractInhumacionNomenclatura(inh)
+      if (normTargetNom && inhNom) {
+        return normalizeNomenclatura(inhNom) === normTargetNom
+      }
+
+      return false
+    })
+    .sort((a, b) => (Number(a.nivel_posicion) || 1) - (Number(b.nivel_posicion) || 1))
+}
+
+/**
+ * Calcula el estado real de ocupación por niveles (fosas) de una parcela a partir de las inhumaciones.
+ * Garantiza que ningún difunto quede oculto si dos registros comparten el mismo nivel_posicion.
+ */
+export function getOcupacionParcela<T extends Record<string, any> = any>(
+  parcela:
+    | { id?: string | null; nomenclatura?: string | null; capacidad_total?: number | null }
+    | null
+    | undefined,
+  inhumaciones: T[] = [],
+  ignoreInhumacionId?: string | null
+) {
+  const difuntos = getDifuntosEnParcela(parcela, inhumaciones, ignoreInhumacionId)
+  const baseCapacidad = Number(parcela?.capacidad_total) || 3
+  const capacidad = Math.max(baseCapacidad, difuntos.length)
+  const porNivel = new Map<number, T>()
+  const pendientes: T[] = []
+
+  for (const d of difuntos) {
+    const lvl = Number(d.nivel_posicion) || 1
+    if (lvl >= 1 && lvl <= capacidad && !porNivel.has(lvl)) {
+      porNivel.set(lvl, d)
+    } else {
+      pendientes.push(d)
+    }
+  }
+
+  for (const d of pendientes) {
+    for (let lvl = 1; lvl <= capacidad; lvl++) {
+      if (!porNivel.has(lvl)) {
+        porNivel.set(lvl, d)
+        break
+      }
+    }
+  }
+
+  return {
+    capacidad,
+    ocupados: difuntos.length,
+    difuntos,
+    porNivel,
+  }
+}
+
+

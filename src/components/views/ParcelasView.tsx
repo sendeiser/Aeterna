@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { Parcela, Inhumacion, EstadoTitular } from '../../types/database'
-import { formatCurrency, formatDateHour } from '../../lib/formatters'
+import { Parcela, Inhumacion, EstadoTitular, EstadoParcela } from '../../types/database'
+import { formatCurrency, formatDateHour, getOcupacionParcela } from '../../lib/formatters'
 import { reactivarParcelaStandby, liberarParcelaStandby } from '../../services/dataService'
 import { ParcelaForm } from '../forms/ParcelaForm'
 
@@ -13,7 +13,7 @@ interface ParcelasViewProps {
   onDeleteParcela?: (id: string) => void
   onBatchDeleteParcelas?: (ids: string[]) => Promise<void> | void
   onBatchUpdateParcelas?: (ids: string[], changes: Partial<Parcela>) => Promise<void> | void
-  onNuevaInhumacionParaParcela?: (nomenclatura: string) => void
+  onNuevaInhumacionParaParcela?: (nomenclatura: string, nivel?: number) => void
   onReactivarParcela?: (parcela: Parcela) => void
   onLiberarParcela?: (parcela: Parcela) => void
   onNuevaParcela?: () => void
@@ -206,17 +206,37 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
     }
   }
 
-  // Mapa de conteo de inhumaciones por parcela
-  const inhumadosMap = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const inh of inhumaciones) {
-      const nom = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela
-      if (nom) {
-        map.set(nom, (map.get(nom) || 0) + 1)
+  // Mapa unificado de ocupación y conteo real de inhumaciones por parcela
+  const ocupacionMap = useMemo(() => {
+    const map = new Map<string, ReturnType<typeof getOcupacionParcela<Inhumacion>>>()
+    for (const p of parcelas) {
+      const info = getOcupacionParcela<Inhumacion>(p, inhumaciones)
+      map.set(p.id, info)
+      if (p.nomenclatura) {
+        map.set(p.nomenclatura, info)
       }
     }
     return map
-  }, [inhumaciones])
+  }, [parcelas, inhumaciones])
+
+  const inhumadosMap = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const p of parcelas) {
+      const count = ocupacionMap.get(p.id)?.ocupados ?? 0
+      map.set(p.id, count)
+      if (p.nomenclatura) {
+        map.set(p.nomenclatura, count)
+      }
+    }
+    return map
+  }, [parcelas, ocupacionMap])
+
+  const getEstadoEfectivo = (p: Parcela): EstadoParcela => {
+    const ocupados = ocupacionMap.get(p.id)?.ocupados ?? 0
+    if (ocupados === 0 && p.estado === 'ocupada') return 'disponible'
+    if (ocupados > 0 && p.estado === 'disponible') return 'ocupada'
+    return p.estado
+  }
 
   // Filtrado de parcelas
   const filteredParcelas = parcelas.filter((p) => {
@@ -329,20 +349,20 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
         return fA !== fB ? fB - fA : (b.manzana_fila || '').localeCompare(a.manzana_fila || '')
       }
       if (sortOption === 'ocupacion-asc') {
-        const oA = a.espacios_ocupados || (a.estado === 'ocupada' ? 1 : 0)
-        const oB = b.espacios_ocupados || (b.estado === 'ocupada' ? 1 : 0)
+        const oA = ocupacionMap.get(a.id)?.ocupados ?? 0
+        const oB = ocupacionMap.get(b.id)?.ocupados ?? 0
         return oA - oB
       }
       if (sortOption === 'ocupacion-desc') {
-        const oA = a.espacios_ocupados || (a.estado === 'ocupada' ? 1 : 0)
-        const oB = b.espacios_ocupados || (b.estado === 'ocupada' ? 1 : 0)
+        const oA = ocupacionMap.get(a.id)?.ocupados ?? 0
+        const oB = ocupacionMap.get(b.id)?.ocupados ?? 0
         return oB - oA
       }
       if (sortOption === 'estado-asc') {
-        return (a.estado || '').localeCompare(b.estado || '')
+        return (getEstadoEfectivo(a) || '').localeCompare(getEstadoEfectivo(b) || '')
       }
       if (sortOption === 'estado-desc') {
-        return (b.estado || '').localeCompare(a.estado || '')
+        return (getEstadoEfectivo(b) || '').localeCompare(getEstadoEfectivo(a) || '')
       }
       if (sortOption === 'deuda-desc' || sortOption === 'saldo-desc') {
         return (b.saldo_mantenimiento || 0) - (a.saldo_mantenimiento || 0)
@@ -375,11 +395,9 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
   const selectedParcela = parcelas.find((p) => p.id === selectedParcelaId) || sortedParcelas[0] || parcelas[0]
 
   // Difuntos asociados a la parcela seleccionada
-  const difuntosEnParcela = inhumaciones.filter((inh) => {
-    if (!selectedParcela) return false
-    const inhParc = typeof inh.parcela === 'object' ? inh.parcela?.nomenclatura : inh.parcela
-    return inhParc === selectedParcela.nomenclatura
-  })
+  const difuntosEnParcela = selectedParcela
+    ? ocupacionMap.get(selectedParcela.id)?.difuntos || []
+    : []
 
   // Counters
   const countSecA = parcelas.filter((p) => p.sector_id === 'A').length
@@ -497,17 +515,22 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
       'Ocupados/Capacidad',
       'Saldo Mantenimiento',
     ]
-    const rows = targetList.map((p) => [
-      `"${p.nomenclatura || ''}"`,
-      `"${p.sector_id || ''}"`,
-      `"${(p.titular?.nombre_completo || '').replace(/"/g, '""')}"`,
-      `"${p.titular?.dni || ''}"`,
-      `"${(p.titular?.direccion || '').replace(/"/g, '""')}"`,
-      `"${p.titular?.telefono || ''}"`,
-      `"${p.estado || ''}"`,
-      `"${p.espacios_ocupados || 0}/${p.capacidad_total || 3}"`,
-      `${p.saldo_mantenimiento || 0}`,
-    ])
+    const rows = targetList.map((p) => {
+      const ocupInfo = ocupacionMap.get(p.id)
+      const ocupados = ocupInfo?.ocupados ?? 0
+      const cap = ocupInfo?.capacidad ?? (p.capacidad_total || 3)
+      return [
+        `"${p.nomenclatura || ''}"`,
+        `"${p.sector_id || ''}"`,
+        `"${(p.titular?.nombre_completo || '').replace(/"/g, '""')}"`,
+        `"${p.titular?.dni || ''}"`,
+        `"${(p.titular?.direccion || '').replace(/"/g, '""')}"`,
+        `"${p.titular?.telefono || ''}"`,
+        `"${p.estado || ''}"`,
+        `"${ocupados}/${cap}"`,
+        `${p.saldo_mantenimiento || 0}`,
+      ]
+    })
 
     const csvContent =
       'data:text/csv;charset=utf-8,\uFEFF' +
@@ -1283,8 +1306,9 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 selectedParcelaIds.has(p.id) ||
                 (!multiSelectMode && selectedParcelaIds.size === 0 && p.id === selectedParcela?.id)
               const isEditing = editingRowId === p.id && editRowData
-              const ocupados = p.espacios_ocupados || (p.estado === 'ocupada' || p.estado === 'en_mora' ? 1 : 0)
-              const totalNiveles = p.capacidad_total || 3
+              const ocupInfo = ocupacionMap.get(p.id)
+              const ocupados = ocupInfo?.ocupados ?? 0
+              const totalNiveles = ocupInfo?.capacidad ?? (p.capacidad_total || 3)
 
               if (isEditing) {
                 return (
@@ -1448,29 +1472,34 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                         Fila {p.manzana_fila || '0'} • Parcela #{p.numero_parcela || '1'}
                       </div>
                     </div>
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${
-                        p.estado === 'standby' || p.estado === 'baja'
-                          ? (inhumadosMap.get(p.nomenclatura) || 0) > 0
-                            ? 'bg-purple-100 text-purple-900 border-purple-300'
-                            : 'bg-emerald-100 text-emerald-900 border-emerald-300'
-                          : p.estado === 'ocupada'
-                          ? 'bg-blue-50 text-blue-900 border-blue-200'
-                          : p.estado === 'en_mora'
-                          ? 'bg-amber-50 text-amber-900 border-amber-200'
-                          : p.estado === 'disponible'
-                          ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
-                          : 'bg-red-50 text-red-900 border-red-200'
-                      }`}
-                    >
-                      {p.estado === 'standby' || p.estado === 'baja'
-                        ? (inhumadosMap.get(p.nomenclatura) || 0) > 0
-                          ? `Baja (c/ Inhumados)`
-                          : `Baja Libre`
-                        : p.estado === 'en_mora'
-                        ? 'En Mora'
-                        : p.estado.toUpperCase()}
-                    </span>
+                    {(() => {
+                      const est = getEstadoEfectivo(p)
+                      return (
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                            est === 'standby' || est === 'baja'
+                              ? (inhumadosMap.get(p.nomenclatura) || 0) > 0
+                                ? 'bg-purple-100 text-purple-900 border-purple-300'
+                                : 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                              : est === 'ocupada'
+                              ? 'bg-blue-50 text-blue-900 border-blue-200'
+                              : est === 'en_mora'
+                              ? 'bg-amber-50 text-amber-900 border-amber-200'
+                              : est === 'disponible'
+                              ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                              : 'bg-red-50 text-red-900 border-red-200'
+                          }`}
+                        >
+                          {est === 'standby' || est === 'baja'
+                            ? (inhumadosMap.get(p.nomenclatura) || 0) > 0
+                              ? `Baja (c/ Inhumados)`
+                              : `Baja Libre`
+                            : est === 'en_mora'
+                            ? 'En Mora'
+                            : est.toUpperCase()}
+                        </span>
+                      )
+                    })()}
                   </div>
 
                   {/* Titular info */}
@@ -1560,15 +1589,23 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                       Capacidad: {ocupados}/{totalNiveles} niveles
                     </span>
                     <div className="flex gap-1.5">
-                      {Array.from({ length: totalNiveles }).map((_, idx) => (
-                        <div
-                          key={idx}
-                          className={`w-5 h-2 rounded-xs ${
-                            idx < ocupados ? 'bg-primary' : 'bg-outline-variant/60'
-                          }`}
-                          title={`Nivel ${idx + 1}`}
-                        />
-                      ))}
+                      {Array.from({ length: totalNiveles }).map((_, idx) => {
+                        const lvl = idx + 1
+                        const dif = ocupInfo?.porNivel.get(lvl)
+                        return (
+                          <div
+                            key={idx}
+                            className={`w-5 h-2 rounded-xs ${
+                              dif ? 'bg-primary' : 'bg-outline-variant/60'
+                            }`}
+                            title={
+                              dif
+                                ? `Nivel ${lvl}: Ocupado (${dif.nombre_difunto})`
+                                : `Nivel ${lvl}: Disponible`
+                            }
+                          />
+                        )
+                      })}
                     </div>
                   </div>
 
@@ -1778,9 +1815,9 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                 selectedParcelaIds.has(p.id) ||
                 (!multiSelectMode && selectedParcelaIds.size === 0 && p.id === selectedParcela?.id)
                   const isEditing = editingRowId === p.id && editRowData
-                  const ocupados =
-                    p.espacios_ocupados || (p.estado === 'ocupada' || p.estado === 'en_mora' ? 1 : 0)
-                  const totalNiveles = p.capacidad_total || 3
+                  const ocupInfo = ocupacionMap.get(p.id)
+                  const ocupados = ocupInfo?.ocupados ?? 0
+                  const totalNiveles = ocupInfo?.capacidad ?? (p.capacidad_total || 3)
 
                   if (isEditing) {
                     return (
@@ -2060,48 +2097,61 @@ export const ParcelasView: React.FC<ParcelasViewProps> = ({
                             {ocupados} de {totalNiveles} ocupados
                           </span>
                           <div className="flex gap-1 mt-1">
-                            {Array.from({ length: totalNiveles }).map((_, idx) => (
-                              <div
-                                key={idx}
-                                className={`w-4 h-1.5 rounded-sm ${
-                                  idx < ocupados ? 'bg-primary' : 'bg-outline-variant/60'
-                                }`}
-                                title={`Nivel ${idx + 1} ${idx < ocupados ? 'Ocupado' : 'Disponible'}`}
-                              />
-                            ))}
+                            {Array.from({ length: totalNiveles }).map((_, idx) => {
+                              const lvl = idx + 1
+                              const dif = ocupInfo?.porNivel.get(lvl)
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`w-4 h-1.5 rounded-sm ${
+                                    dif ? 'bg-primary' : 'bg-outline-variant/60'
+                                  }`}
+                                  title={
+                                    dif
+                                      ? `Nivel ${lvl}: Ocupado (${dif.nombre_difunto})`
+                                      : `Nivel ${lvl}: Disponible`
+                                  }
+                                />
+                              )
+                            })}
                           </div>
                         </div>
                       </td>
 
                       {/* Estado */}
                       <td className="py-2.5 px-3">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${
-                            p.estado === 'standby' || p.estado === 'baja'
-                              ? (inhumadosMap.get(p.nomenclatura) || 0) > 0
-                                ? 'bg-purple-100 text-purple-900 border-purple-300'
-                                : 'bg-emerald-100 text-emerald-900 border-emerald-300'
-                              : p.estado === 'ocupada'
-                              ? 'bg-blue-50 text-blue-900 border-blue-200'
-                              : p.estado === 'en_mora'
-                              ? 'bg-amber-50 text-amber-900 border-amber-200'
-                              : p.estado === 'disponible'
-                              ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
-                              : 'bg-red-50 text-red-900 border-red-200'
-                          }`}
-                        >
-                          {p.estado === 'standby' || p.estado === 'baja'
-                            ? (inhumadosMap.get(p.nomenclatura) || 0) > 0
-                              ? 'Baja (c/ Inhumados)'
-                              : 'Baja Libre'
-                            : p.estado === 'en_mora'
-                            ? 'En Mora'
-                            : p.estado === 'ocupada'
-                            ? 'Ocupada'
-                            : p.estado === 'disponible'
-                            ? 'Disponible'
-                            : 'Baja'}
-                        </span>
+                        {(() => {
+                          const est = getEstadoEfectivo(p)
+                          return (
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${
+                                est === 'standby' || est === 'baja'
+                                  ? (inhumadosMap.get(p.nomenclatura) || 0) > 0
+                                    ? 'bg-purple-100 text-purple-900 border-purple-300'
+                                    : 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                                  : est === 'ocupada'
+                                  ? 'bg-blue-50 text-blue-900 border-blue-200'
+                                  : est === 'en_mora'
+                                  ? 'bg-amber-50 text-amber-900 border-amber-200'
+                                  : est === 'disponible'
+                                  ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                                  : 'bg-red-50 text-red-900 border-red-200'
+                              }`}
+                            >
+                              {est === 'standby' || est === 'baja'
+                                ? (inhumadosMap.get(p.nomenclatura) || 0) > 0
+                                  ? 'Baja (c/ Inhumados)'
+                                  : 'Baja Libre'
+                                : est === 'en_mora'
+                                ? 'En Mora'
+                                : est === 'ocupada'
+                                ? 'Ocupada'
+                                : est === 'disponible'
+                                ? 'Disponible'
+                                : 'Baja'}
+                            </span>
+                          )
+                        })()}
                       </td>
 
                       {/* Fecha / Registro */}

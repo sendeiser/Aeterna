@@ -21,6 +21,7 @@ import { LoginView } from './components/auth/LoginView'
 import { PwaInstallPrompt } from './components/pwa/PwaInstallPrompt'
 import { Parcela, Inhumacion, AfiliadoSeguro, ConfiguracionCobro } from './types/database'
 import { isSupabaseConfigured } from './lib/supabase'
+import { getDifuntosEnParcela, normalizeNomenclatura } from './lib/formatters'
 import {
   loadInitialData,
   saveConfigToStorage,
@@ -44,6 +45,7 @@ import {
   deleteInhumacionSupabase,
   upsertAfiliadoSupabase,
   deleteAfiliadoSupabase,
+  actualizarCuotaMasivaSupabase,
   registrarPagoCuotaSupabase,
   revertirPagoCuotaSupabase,
   registrarPagoSupabase,
@@ -163,13 +165,29 @@ export default function App() {
         setConfig(cloudConfig)
         saveConfigToStorage(cloudConfig)
       }
-      if (cloudParcelas && cloudParcelas.length > 0) {
-        setParcelas(cloudParcelas)
-        saveParcelasToStorage(cloudParcelas)
-      }
       if (cloudInhumaciones && cloudInhumaciones.length > 0) {
         setInhumaciones(cloudInhumaciones)
         saveInhumacionesToStorage(cloudInhumaciones)
+      }
+      if (cloudParcelas && cloudParcelas.length > 0) {
+        const effectiveInhs =
+          cloudInhumaciones && cloudInhumaciones.length > 0 ? cloudInhumaciones : inhumaciones
+        const syncedParcelas = cloudParcelas.map((p) => {
+          const realCount = getDifuntosEnParcela(p, effectiveInhs).length
+          let nextEstado = p.estado
+          if (realCount === 0 && p.estado === 'ocupada') {
+            nextEstado = 'disponible'
+          } else if (realCount > 0 && p.estado === 'disponible') {
+            nextEstado = 'ocupada'
+          }
+          return {
+            ...p,
+            espacios_ocupados: realCount,
+            estado: nextEstado,
+          }
+        })
+        setParcelas(syncedParcelas)
+        saveParcelasToStorage(syncedParcelas)
       }
       if (cloudAfiliados && cloudAfiliados.length > 0) {
         setAfiliados(cloudAfiliados)
@@ -773,19 +791,19 @@ export default function App() {
       const targetParcId = datos.parcela_id || (typeof datos.parcela === 'object' ? datos.parcela?.id : null)
 
       if (targetParcNom || targetParcId) {
+        const normTarget = normalizeNomenclatura(targetParcNom)
         setParcelas((prev) => {
+          const nextInhs = [inhumacionTarget!, ...inhumaciones]
           const updated = prev.map((p) => {
             const matchesNom = Boolean(
-              targetParcNom && (
-                p.nomenclatura === targetParcNom ||
-                p.nomenclatura.replace(/[\s-]/g, '').toUpperCase() === String(targetParcNom).replace(/[\s-]/g, '').toUpperCase()
-              )
+              normTarget && normalizeNomenclatura(p.nomenclatura) === normTarget
             )
             const matchesId = Boolean(targetParcId && p.id === targetParcId)
             if (matchesNom || matchesId) {
+              const realCount = getDifuntosEnParcela(p, nextInhs).length
               return {
                 ...p,
-                espacios_ocupados: Math.min(p.capacidad_total || 3, (p.espacios_ocupados || 0) + 1),
+                espacios_ocupados: realCount,
                 estado: 'ocupada' as const,
               }
             }
@@ -908,10 +926,62 @@ export default function App() {
 
   const handleDeleteInhumacion = async (inhId: string) => {
     const target = inhumaciones.find((i) => i.id === inhId)
-    setInhumaciones((prev) => prev.filter((i) => i.id !== inhId))
+    const remaining = inhumaciones.filter((i) => i.id !== inhId)
+    setInhumaciones(remaining)
+    saveInhumacionesToStorage(remaining)
+    setParcelas((prev) => {
+      const updated = prev.map((p) => {
+        const realCount = getDifuntosEnParcela(p, remaining).length
+        let nextEstado = p.estado
+        if (realCount === 0 && p.estado === 'ocupada') {
+          nextEstado = 'disponible'
+        } else if (realCount > 0 && p.estado === 'disponible') {
+          nextEstado = 'ocupada'
+        }
+        return {
+          ...p,
+          espacios_ocupados: realCount,
+          estado: nextEstado,
+        }
+      })
+      saveParcelasToStorage(updated)
+      return updated
+    })
     if (isSupabaseConfigured) {
       await deleteInhumacionSupabase(inhId, target)
       await fetchCloudData()
+    }
+  }
+
+  const handleActualizarCuotaMasiva = async (
+    nuevoMonto: number,
+    soloActivos: boolean
+  ): Promise<{ success: boolean; count: number }> => {
+    let updatedCount = 0
+    setAfiliados((prev) => {
+      const updated = prev.map((a) => {
+        if (!soloActivos || a.estado !== 'baja') {
+          updatedCount++
+          const nextDetalles = (a.cuotasDetalle || []).map((c: any) =>
+            c.estado_cuota === 'pendiente' || c.estado === 'pendiente'
+              ? { ...c, monto: nuevoMonto }
+              : c
+          )
+          return { ...a, monto_cuota_mensual: nuevoMonto, cuotasDetalle: nextDetalles }
+        }
+        return a
+      })
+      saveAfiliadosToStorage(updated)
+      return updated
+    })
+
+    const res = await actualizarCuotaMasivaSupabase(nuevoMonto, soloActivos)
+    if (isSupabaseConfigured) {
+      await fetchCloudData()
+    }
+    return {
+      success: res.success,
+      count: res.count || updatedCount,
     }
   }
 
@@ -1104,13 +1174,13 @@ export default function App() {
                 setEditingParcela(null)
                 setFormParcelaOpen(true)
               }}
-              onNuevaInhumacionParaParcela={(nom) => {
+              onNuevaInhumacionParaParcela={(nom, nivel) => {
                 setEditingInhumacion({
                   id: '',
                   nombre_difunto: '',
                   parcela: nom,
                   fecha_inhumacion: new Date().toISOString(),
-                  nivel_posicion: 2,
+                  nivel_posicion: nivel || 1,
                   es_covid: false,
                 } as any)
                 setFormInhumacionOpen(true)
@@ -1155,6 +1225,7 @@ export default function App() {
                 setFormAfiliadoOpen(true)
               }}
               onSaveAfiliado={handleSaveAfiliado}
+              onActualizarCuotaMasiva={handleActualizarCuotaMasiva}
               onEliminarAfiliado={handleDeleteAfiliado}
               onRefresh={() => fetchCloudData(true)}
               isRefreshing={isRefreshing}
@@ -1288,7 +1359,7 @@ export default function App() {
             setFormParcelaOpen(false)
             setEditingParcela(null)
           }}
-          onNuevaInhumacionParaParcela={(nom) => {
+          onNuevaInhumacionParaParcela={(nom, nivel) => {
             setFormParcelaOpen(false)
             setEditingParcela(null)
             setEditingInhumacion({
@@ -1296,7 +1367,7 @@ export default function App() {
               nombre_difunto: '',
               parcela: nom,
               fecha_inhumacion: new Date().toISOString(),
-              nivel_posicion: 2,
+              nivel_posicion: nivel || 1,
               es_covid: false,
             } as any)
             setFormInhumacionOpen(true)

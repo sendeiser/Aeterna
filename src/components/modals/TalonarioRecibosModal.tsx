@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { AfiliadoSeguro } from '../../types/database'
 import { ReciboSeguroFisico } from '../recibos/ReciboSeguroFisico'
 import { montoEnLetras, formatCurrency } from '../../lib/formatters'
+import { ReportModeToggle } from '../../lib/reportPrintHelper'
 
 interface TalonarioRecibosModalProps {
   isOpen: boolean
@@ -24,6 +25,7 @@ export const TalonarioRecibosModal: React.FC<TalonarioRecibosModalProps> = ({
   const [selectedZone, setSelectedZone] = useState<string>('all')
   const [selectedMes, setSelectedMes] = useState<number>(3) // Marzo por defecto
   const [cantidadHojas, setCantidadHojas] = useState<number>(1) // 1 hoja = 8 recibos
+  const [isBW, setIsBW] = useState(true)
 
   // Obtener zonas únicas
   const zonas = useMemo(() => {
@@ -199,16 +201,19 @@ export const TalonarioRecibosModal: React.FC<TalonarioRecibosModalProps> = ({
             </div>
           </div>
 
-          {/* Botón Imprimir */}
-          <button
-            id="btn-confirmar-imprimir-talonario"
-            type="button"
-            onClick={handlePrint}
-            className="h-9 px-4 bg-primary hover:bg-secondary text-white font-semibold rounded-lg flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[18px]">print</span>
-            <span>Imprimir Hoja A4 ({totalRecibosRequeridos} Recibos)</span>
-          </button>
+          {/* Modo B&N / Color + Botón Imprimir */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <ReportModeToggle isBW={isBW} onChange={setIsBW} darkBg={false} />
+            <button
+              id="btn-confirmar-imprimir-talonario"
+              type="button"
+              onClick={handlePrint}
+              className="h-9 px-4 bg-primary hover:bg-secondary text-white font-semibold rounded-lg flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px]">print</span>
+              <span>Imprimir Hoja A4 ({totalRecibosRequeridos} Recibos)</span>
+            </button>
+          </div>
         </div>
 
         {/* Contenedor Imprimible: Hoja A4 en Grilla 2 Columnas x 4 Filas */}
@@ -238,6 +243,7 @@ export const TalonarioRecibosModal: React.FC<TalonarioRecibosModalProps> = ({
                       <ReciboSeguroFisico
                         variante="a4-grid"
                         esBlanco={rec.esBlanco}
+                        isBW={isBW}
                         recibiDe={rec.recibiDe}
                         certificado={rec.certificado}
                         laSumaDePesos={rec.laSumaDePesos}

@@ -2,6 +2,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { Parcela, Inhumacion, AfiliadoSeguro, ConfiguracionCobro } from '../types/database'
 import seedData from '../data/initial_seed.json' with { type: 'json' }
 import { evaluarMoraParcela, evaluarMoraAfiliado, sincronizarRenovacionAnualParcela, inyectarMetaAnualEnNotas } from '../lib/reglasNegocio'
+import { getDifuntosEnParcela, normalizeNomenclatura } from '../lib/formatters'
 
 const STORAGE_KEYS = {
   PARCELAS: 'aeterna_parcelas_v4',
@@ -147,28 +148,51 @@ export function loadInitialData() {
     } catch (e) {}
   }
   if (!inhumaciones || inhumaciones.length === 0) {
-    inhumaciones = seedData.inhumaciones_covid.map((i, idx) => ({
-      id: `inh-${idx + 1}`,
-      parcela_id: `parc-${idx + 1}`,
-      nombre_difunto: i.nombre_difunto,
-      fecha_inhumacion: i.fecha_inhumacion,
-      nivel_posicion: 1,
-      es_covid: i.es_covid,
-      causa_defuncion: i.causa_defuncion,
-      empresa_funebrera: 'Aeterna Sepelios',
-      parcela: {
-        id: `parc-${idx + 1}`,
-        nomenclatura: i.parcela,
-        capacidad_total: 3,
-        espacios_ocupados: 1,
-        estado: 'ocupada',
-        saldo_mantenimiento: 0,
-      },
-    }))
+    inhumaciones = seedData.inhumaciones_covid.map((i, idx) => {
+      const matchedParc = parcelas.find(
+        (p) => normalizeNomenclatura(p.nomenclatura) === normalizeNomenclatura(i.parcela)
+      )
+      const pId = matchedParc?.id || `parc-${idx + 1}`
+      const lvl = Number((i as any).nivel_posicion) || 1
+      return {
+        id: `inh-${idx + 1}`,
+        parcela_id: pId,
+        parcela_nomenclatura: i.parcela,
+        nombre_difunto: i.nombre_difunto,
+        fecha_inhumacion: i.fecha_inhumacion,
+        nivel_posicion: lvl,
+        es_covid: i.es_covid,
+        causa_defuncion: i.causa_defuncion,
+        empresa_funebrera: 'Aeterna Sepelios',
+        parcela: {
+          id: pId,
+          nomenclatura: matchedParc?.nomenclatura || i.parcela,
+          capacidad_total: matchedParc?.capacidad_total || 3,
+          espacios_ocupados: 1,
+          estado: 'ocupada',
+          saldo_mantenimiento: matchedParc?.saldo_mantenimiento || 0,
+        },
+      }
+    })
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.INHUMACIONES, JSON.stringify(inhumaciones))
     }
   }
+
+  // Sincronizar espacios_ocupados y estado de todas las parcelas con las inhumaciones reales
+  parcelas = parcelas.map((p) => {
+    const realCount = getDifuntosEnParcela(p, inhumaciones).length
+    let nextEstado = p.estado
+    if (realCount === 0 && p.estado === 'ocupada') {
+      nextEstado = 'disponible'
+    } else if (realCount > 0 && p.estado === 'disponible') {
+      nextEstado = 'ocupada'
+    }
+    if (p.espacios_ocupados !== realCount || p.estado !== nextEstado) {
+      return { ...p, espacios_ocupados: realCount, estado: nextEstado }
+    }
+    return p
+  })
 
   // Afiliados con matriz de cuotas (Ene-Dic)
   let afiliados: (AfiliadoSeguro & { cuotasPagadas: number[] })[] = []
@@ -528,6 +552,12 @@ export async function fetchParcelasSupabase(): Promise<Parcela[] | null> {
         }
       }
 
+      if ((baseParcela.espacios_ocupados || 0) === 0 && baseParcela.estado === 'ocupada') {
+        baseParcela.estado = 'disponible'
+      } else if ((baseParcela.espacios_ocupados || 0) > 0 && baseParcela.estado === 'disponible') {
+        baseParcela.estado = 'ocupada'
+      }
+
       return baseParcela
     })
   } catch (err) {
@@ -735,6 +765,82 @@ export async function fetchInhumacionesSupabase(): Promise<Inhumacion[] | null> 
   }
 }
 
+export async function recalcularOcupacionParcelaSupabase(
+  parcelaId?: string | null,
+  parcelaNom?: string | null
+): Promise<void> {
+  if (!isSupabaseConfigured) return
+  try {
+    let targetId = parcelaId && isUuid(parcelaId) ? parcelaId : null
+    let targetNom = (parcelaNom || '').trim()
+
+    if (!targetId && targetNom) {
+      const { data: pRow } = await supabase
+        .from('parcelas')
+        .select('id, nomenclatura')
+        .eq('nomenclatura', targetNom)
+        .maybeSingle()
+      if (pRow) {
+        targetId = pRow.id
+        targetNom = pRow.nomenclatura
+      }
+    } else if (targetId && !targetNom) {
+      const { data: pRow } = await supabase
+        .from('parcelas')
+        .select('id, nomenclatura')
+        .eq('id', targetId)
+        .maybeSingle()
+      if (pRow) {
+        targetNom = pRow.nomenclatura
+      }
+    }
+
+    if (!targetId && !targetNom) return
+
+    let countQuery = supabase.from('inhumaciones').select('id', { count: 'exact', head: true })
+    if (targetId && targetNom) {
+      countQuery = countQuery.or(`parcela_id.eq.${targetId},parcela_nomenclatura.eq.${targetNom}`)
+    } else if (targetId) {
+      countQuery = countQuery.eq('parcela_id', targetId)
+    } else {
+      countQuery = countQuery.eq('parcela_nomenclatura', targetNom)
+    }
+
+    const { count } = await countQuery
+    const realCount = count || 0
+
+    let currentEstado: string | undefined
+    if (targetId) {
+      const { data: curr } = await supabase.from('parcelas').select('estado').eq('id', targetId).maybeSingle()
+      currentEstado = curr?.estado
+    } else if (targetNom) {
+      const { data: curr } = await supabase.from('parcelas').select('estado').eq('nomenclatura', targetNom).maybeSingle()
+      currentEstado = curr?.estado
+    }
+
+    const updatePayload: Record<string, any> = { espacios_ocupados: realCount }
+    if (realCount === 0 && currentEstado === 'ocupada') {
+      updatePayload.estado = 'disponible'
+    } else if (realCount > 0 && currentEstado === 'disponible') {
+      updatePayload.estado = 'ocupada'
+    }
+
+    if (targetId) {
+      await supabase
+        .from('parcelas')
+        .update(updatePayload)
+        .eq('id', targetId)
+    } else if (targetNom) {
+      await supabase
+        .from('parcelas')
+        .update(updatePayload)
+        .eq('nomenclatura', targetNom)
+    }
+  } catch (err) {
+    console.warn('Error al recalcular ocupación de parcela en Supabase:', err)
+  }
+}
+
 export async function insertInhumacionSupabase(inhumacion: Inhumacion): Promise<boolean> {
   if (!isSupabaseConfigured) return false
   try {
@@ -762,24 +868,13 @@ export async function insertInhumacionSupabase(inhumacion: Inhumacion): Promise<
       }
     }
 
-    // Actualizar ocupación en la parcela si se identificó
-    if (pId) {
+    if (pId && !parcNom) {
       const { data: pData } = await supabase
         .from('parcelas')
-        .select('id, nomenclatura, espacios_ocupados, capacidad_total')
+        .select('id, nomenclatura')
         .eq('id', pId)
         .maybeSingle()
-
-      if (pData) {
-        if (!parcNom) parcNom = pData.nomenclatura
-        await supabase
-          .from('parcelas')
-          .update({
-            espacios_ocupados: Math.min(pData.capacidad_total || 3, (pData.espacios_ocupados || 0) + 1),
-            estado: 'ocupada',
-          })
-          .eq('id', pId)
-      }
+      if (pData?.nomenclatura) parcNom = pData.nomenclatura
     }
 
     const payload: any = {
@@ -815,6 +910,12 @@ export async function insertInhumacionSupabase(inhumacion: Inhumacion): Promise<
       console.error('Error insertando inhumación en Supabase:', error.message, error.details || error)
       return false
     }
+
+    // Recalcular ocupación exacta de la parcela y marcar como ocupada
+    if (pId) {
+      await supabase.from('parcelas').update({ estado: 'ocupada' }).eq('id', pId)
+    }
+    await recalcularOcupacionParcelaSupabase(pId, parcNom)
 
     return true
   } catch (err) {
@@ -886,6 +987,9 @@ export async function updateInhumacionSupabase(inhumacion: Inhumacion): Promise<
       }
       const retryRes = await retryQuery
       error = retryRes.error
+    }
+    if (!error) {
+      await recalcularOcupacionParcelaSupabase(pId || inhumacion.parcela_id, parcNom)
     }
     return !error
   } catch (err) {
@@ -1051,7 +1155,7 @@ export async function upsertAfiliadoSupabase(afiliado: any): Promise<boolean> {
               afiliado_id: targetId,
               anio: 2026,
               mes: m,
-              monto: Number(afiliado.monto_cuota_mensual) || 18000,
+              monto: Number(detalle?.monto) || Number(afiliado.monto_cuota_mensual) || 18000,
               estado_cuota: 'pagada',
               fecha_pago: detalle?.fecha_pago || new Date().toISOString(),
               metodo_pago: detalle?.metodo_pago || 'transferencia_qr',
@@ -1264,22 +1368,34 @@ export async function deleteParcelaSupabase(idOrNomenclatura: string): Promise<b
 export async function deleteInhumacionSupabase(idOrKey: string, item?: Partial<Inhumacion>): Promise<boolean> {
   if (!isSupabaseConfigured) return false
   try {
+    const parcId = item?.parcela_id || (typeof item?.parcela === 'object' ? item?.parcela?.id : null)
+    const parcNom =
+      typeof item?.parcela === 'object'
+        ? item?.parcela?.nomenclatura
+        : typeof item?.parcela === 'string'
+        ? item.parcela
+        : (item as any)?.parcela_nomenclatura || null
+
     const isUu = isUuid(idOrKey)
+    let ok = false
     if (isUu) {
       const { error } = await supabase.from('inhumaciones').delete().eq('id', idOrKey)
-      return !error
-    }
-    // Si no es UUID, buscar por DNI o Nombre
-    if (item?.dni_difunto) {
+      ok = !error
+    } else if (item?.dni_difunto) {
       const { error } = await supabase.from('inhumaciones').delete().eq('dni_difunto', item.dni_difunto)
-      return !error
-    }
-    if (item?.nombre_difunto) {
+      ok = !error
+    } else if (item?.nombre_difunto) {
       const { error } = await supabase.from('inhumaciones').delete().eq('nombre_difunto', item.nombre_difunto)
-      return !error
+      ok = !error
+    } else {
+      const { error } = await supabase.from('inhumaciones').delete().eq('nombre_difunto', idOrKey)
+      ok = !error
     }
-    const { error } = await supabase.from('inhumaciones').delete().eq('nombre_difunto', idOrKey)
-    return !error
+
+    if (ok) {
+      await recalcularOcupacionParcelaSupabase(parcId, parcNom)
+    }
+    return ok
   } catch (err) {
     console.error('Error al eliminar inhumación en Supabase:', err)
     return false
@@ -1472,7 +1588,7 @@ export async function actualizarCuotaMasivaSupabase(
     // Actualizar en LocalStorage
     const localAfiliados = JSON.parse(localStorage.getItem(STORAGE_KEYS.AFILIADOS) || '[]')
     const updatedLocal = localAfiliados.map((a: any) => {
-      if (!soloActivos || a.estado === 'activo') {
+      if (!soloActivos || a.estado !== 'baja') {
         count++
         return { ...a, monto_cuota_mensual: nuevoMonto }
       }
@@ -1483,13 +1599,23 @@ export async function actualizarCuotaMasivaSupabase(
     if (isSupabaseConfigured) {
       let query = supabase.from('afiliados_seguro').update({ monto_cuota_mensual: nuevoMonto })
       if (soloActivos) {
-        query = query.eq('estado', 'activo')
+        query = query.neq('estado', 'baja')
+      } else {
+        query = query.gt('numero_afiliado', 0)
       }
-      const { data, error } = await query.select()
+      const { data, error } = await query.select('id')
       if (error) {
         console.warn('Advertencia al actualizar cuota masiva en Supabase:', error.message)
       } else if (data) {
         count = data.length
+        const ids = data.map((row: any) => row.id).filter(Boolean)
+        if (ids.length > 0) {
+          await supabase
+            .from('cuotas_seguro')
+            .update({ monto: nuevoMonto })
+            .in('afiliado_id', ids)
+            .eq('estado_cuota', 'pendiente')
+        }
       }
     }
     return { success: true, count }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 export interface CobroCajaData {
   titularNombre: string
@@ -69,9 +70,9 @@ export const CobroCajaModal: React.FC<CobroCajaModalProps> = ({
 
   const quickAmounts = [10000, 15000, 18000, 25000, 50000]
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
@@ -226,6 +227,7 @@ export const CobroCajaModal: React.FC<CobroCajaModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
